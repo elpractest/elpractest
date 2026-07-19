@@ -1,0 +1,307 @@
+---
+import Layout from '../layouts/Layout.astro';
+
+const apiUrl = import.meta.env.PUBLIC_API_URL || 'http://localhost:8000';
+---
+
+<Layout title="Contact Us - Practest Support">
+  <div class="contact-page-container">
+    <div class="contact-header">
+      <h1>Get in Touch</h1>
+      <p>Have questions about courses, mock test schedules, or subscription activation? Contact our support team.</p>
+    </div>
+
+    <div class="contact-content-grid">
+      
+      <!-- Contact Details Panel -->
+      <div class="glass-panel info-panel">
+        <h3>Contact Channels</h3>
+        
+        <div class="info-items">
+          <div class="info-item">
+            <span class="info-icon">📧</span>
+            <div>
+              <span class="info-label">Email Support</span>
+              <span class="info-value" id="contact-email">support@practest.live</span>
+            </div>
+          </div>
+
+          <div class="info-item">
+            <span class="info-icon">📞</span>
+            <div>
+              <span class="info-label">Phone Support</span>
+              <span class="info-value" id="contact-phone">+91 98765 43210</span>
+            </div>
+          </div>
+
+          <div class="info-item">
+            <span class="info-icon">🏢</span>
+            <div>
+              <span class="info-label">Office Address</span>
+              <span class="info-value" id="contact-address">Practest HQ, New Delhi, India</span>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Contact Form Panel -->
+      <div class="glass-panel form-panel">
+        <h3>Send a Message</h3>
+        
+        <div id="alert-box" class="alert-box" style="display: none;"></div>
+
+        <form id="contact-form">
+          <div class="form-group">
+            <label for="name">Your Name</label>
+            <input type="text" id="name" name="name" class="form-input" placeholder="John Doe" required />
+          </div>
+
+          <div class="form-group">
+            <label for="email">Email Address</label>
+            <input type="email" id="email" name="email" class="form-input" placeholder="john@example.com" required />
+          </div>
+
+          <div class="form-group">
+            <label for="phone">Phone Number (Optional)</label>
+            <input type="tel" id="phone" name="phone" class="form-input" placeholder="9876543210" />
+          </div>
+
+          <div class="form-group">
+            <label for="message">Your Message</label>
+            <textarea id="message" name="message" class="form-input" rows="5" placeholder="Write your message here..." required></textarea>
+          </div>
+
+          <button type="submit" id="submit-btn" class="btn-primary" style="width: 100%; margin-top: 10px;">
+            Send Message
+          </button>
+        </form>
+      </div>
+
+    </div>
+  </div>
+</Layout>
+
+<script define:vars={{ apiUrl }}>
+  // Fetch public settings to render real contact details
+  async function loadContactInfo() {
+    try {
+      const res = await fetch(`${apiUrl}/api/settings/public`);
+      if (res.ok) {
+        const settings = await res.json();
+        
+        const email = settings.contact_email || settings.support_email;
+        const phone = settings.contact_phone;
+        const address = settings.contact_address;
+
+        if (email) document.getElementById('contact-email').textContent = email;
+        if (phone) document.getElementById('contact-phone').textContent = phone;
+        if (address) document.getElementById('contact-address').textContent = address;
+      }
+    } catch (e) {
+      console.error('Failed to load contact info settings', e);
+    }
+  }
+
+  // Handle Form Submission
+  const form = document.getElementById('contact-form');
+  const alertBox = document.getElementById('alert-box');
+  const submitBtn = document.getElementById('submit-btn');
+
+  form.addEventListener('submit', async (e) => {
+    e.preventDefault();
+    alertBox.style.display = 'none';
+    submitBtn.disabled = true;
+    submitBtn.textContent = 'Sending...';
+
+    const payload = {
+      name: document.getElementById('name').value,
+      email: document.getElementById('email').value,
+      phone: document.getElementById('phone').value || null,
+      message: document.getElementById('message').value,
+      recaptcha_token: 'dummy_token' // Development-friendly recaptcha bypass
+    };
+
+    try {
+      const response = await fetch(`${apiUrl}/api/contact`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Accept': 'application/json'
+        },
+        body: JSON.stringify(payload)
+      });
+
+      const data = await response.json();
+
+      if (response.status === 201) {
+        alertBox.className = 'alert-box alert-success';
+        alertBox.textContent = data.message || 'Thank you! Your message has been sent successfully.';
+        alertBox.style.display = 'block';
+        
+        // Push Lead event to GTM dataLayer
+        window.dataLayer = window.dataLayer || [];
+        window.dataLayer.push({
+          event: 'Lead',
+          contact_email: payload.email,
+          contact_name: payload.name
+        });
+
+        form.reset();
+      } else {
+        alertBox.className = 'alert-box alert-error';
+        alertBox.textContent = data.message || 'Failed to send message. Please try again.';
+        alertBox.style.display = 'block';
+      }
+    } catch (error) {
+      alertBox.className = 'alert-box alert-error';
+      alertBox.textContent = 'A network error occurred. Please try again later.';
+      alertBox.style.display = 'block';
+    } finally {
+      submitBtn.disabled = false;
+      submitBtn.textContent = 'Send Message';
+    }
+  });
+
+  // Execute on load
+  loadContactInfo();
+</script>
+
+<style>
+  .contact-page-container {
+    max-width: 1000px;
+    margin: 0 auto;
+    padding: 80px 24px;
+    display: flex;
+    flex-direction: column;
+    gap: 40px;
+  }
+
+  .contact-header {
+    text-align: center;
+  }
+
+  .contact-header h1 {
+    font-size: 2.5rem;
+    font-weight: 800;
+    margin: 0 0 12px 0;
+    color: #ffffff;
+  }
+
+  .contact-header p {
+    color: var(--text-secondary);
+    font-size: 1.05rem;
+    max-width: 600px;
+    margin: 0 auto;
+    line-height: 1.6;
+  }
+
+  .contact-content-grid {
+    display: grid;
+    grid-template-columns: 2fr 3fr;
+    gap: 40px;
+    align-items: start;
+  }
+
+  .info-panel {
+    padding: 35px;
+    display: flex;
+    flex-direction: column;
+    gap: 24px;
+  }
+
+  .info-panel h3, .form-panel h3 {
+    margin: 0;
+    font-size: 1.3rem;
+    font-weight: 700;
+    color: #ffffff;
+    border-bottom: 1px solid var(--border-color);
+    padding-bottom: 14px;
+  }
+
+  .info-items {
+    display: flex;
+    flex-direction: column;
+    gap: 24px;
+  }
+
+  .info-item {
+    display: flex;
+    gap: 16px;
+    align-items: flex-start;
+  }
+
+  .info-icon {
+    font-size: 1.5rem;
+    padding: 10px;
+    background: rgba(255, 255, 255, 0.03);
+    border: 1px solid var(--border-color);
+    border-radius: 8px;
+  }
+
+  .info-label {
+    display: block;
+    font-size: 0.8rem;
+    color: var(--text-secondary);
+    text-transform: uppercase;
+    font-weight: 600;
+    margin-bottom: 2px;
+  }
+
+  .info-value {
+    color: #ffffff;
+    font-size: 0.95rem;
+    font-weight: 500;
+    word-break: break-all;
+  }
+
+  .form-panel {
+    padding: 35px;
+    display: flex;
+    flex-direction: column;
+    gap: 20px;
+  }
+
+  .form-group {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    margin-bottom: 16px;
+  }
+
+  .form-group label {
+    font-size: 0.85rem;
+    color: var(--text-secondary);
+    font-weight: 500;
+  }
+
+  textarea.form-input {
+    resize: vertical;
+  }
+
+  /* Alerts */
+  .alert-box {
+    padding: 12px 16px;
+    border-radius: 8px;
+    font-size: 0.9rem;
+    margin-bottom: 16px;
+  }
+
+  .alert-success {
+    background: rgba(16, 185, 129, 0.1);
+    border: 1px solid #10b981;
+    color: #10b981;
+  }
+
+  .alert-error {
+    background: rgba(239, 68, 68, 0.1);
+    border: 1px solid #ef4444;
+    color: #ef4444;
+  }
+
+  @media (max-width: 768px) {
+    .contact-content-grid {
+      grid-template-columns: 1fr;
+      gap: 30px;
+    }
+  }
+</style>

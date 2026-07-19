@@ -1,0 +1,54 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>app</title>
+    <!-- GTM Script Loader gated by cookie consent -->
+    <script>
+      window.dataLayer = window.dataLayer || [];
+      
+      function getConsentCookie() {
+        const value = "; " + document.cookie;
+        const parts = value.split("; practest_consent=");
+        if (parts.length === 2) return parts.pop().split(';').shift();
+      }
+
+      function loadGTM() {
+        if (window.gtmInitialized) return;
+        var gtmId = "%VITE_GTM_ID%";
+        if (!gtmId || gtmId.startsWith('%')) return;
+        window.gtmInitialized = true;
+
+        (function(w,d,s,l,i){
+          w[l]=w[l]||[];
+          w[l].push({'gtm.start': new Date().getTime(), event:'gtm.js'});
+          var f=d.getElementsByTagName(s)[0],
+              j=d.createElement(s),
+              dl=l!='dataLayer'?'&l='+l:'';
+          j.async=true;
+          j.src='https://www.googletagmanager.com/gtm.js?id='+i+dl;
+          f.parentNode.insertBefore(j,f);
+        })(window,document,'script','dataLayer',gtmId);
+      }
+
+      var consent = getConsentCookie();
+      if (consent === 'accepted') {
+        loadGTM();
+      } else {
+        window.addEventListener('practest-consent-granted', function() {
+          loadGTM();
+        });
+      }
+    </script>
+  </head>
+  <body>
+    <noscript>
+      <iframe src="https://www.googletagmanager.com/ns.html?id=%VITE_GTM_ID%" height="0" width="0" style="display:none;visibility:hidden"></iframe>
+    </noscript>
+    <div id="root"></div>
+    <script src="https://checkout.razorpay.com/v1/checkout.js"></script>
+    <script type="module" src="/src/main.jsx"></script>
+  </body>
+</html>

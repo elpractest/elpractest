@@ -1,0 +1,251 @@
+---
+import Layout from '../../layouts/Layout.astro';
+
+const apiUrl = import.meta.env.PUBLIC_API_URL || 'http://localhost:8000';
+---
+
+<Layout title="All Courses - Practest mock tests and LMS lectures">
+  <div class="courses-page-container">
+    
+    <div class="courses-header">
+      <h1>Our Course Catalogue</h1>
+      <p>Explore high-quality study materials, video lectures, and timed practice test series.</p>
+    </div>
+
+    <!-- Live Courses Grid (Hydrated Client-Side) -->
+    <div id="loading-spinner" class="loading-state">
+      <div class="spinner"></div>
+      <p>Loading course catalog...</p>
+    </div>
+
+    <div id="error-state" class="error-state" style="display: none;">
+      <p>Failed to load the course catalog. Please refresh the page.</p>
+    </div>
+
+    <div id="empty-state" class="empty-state" style="display: none;">
+      <p>No active courses are available at the moment. Please check back later.</p>
+    </div>
+
+    <div id="courses-grid" class="courses-grid" style="display: none;">
+      <!-- Hydrated by JS -->
+    </div>
+
+  </div>
+</Layout>
+
+<script define:vars={{ apiUrl }}>
+  async function fetchCourses() {
+    const spinner = document.getElementById('loading-spinner');
+    const errorState = document.getElementById('error-state');
+    const emptyState = document.getElementById('empty-state');
+    const grid = document.getElementById('courses-grid');
+
+    try {
+      const response = await fetch(`${apiUrl}/api/courses/public`);
+      if (!response.ok) throw new Error('API response not ok');
+      const courses = await response.json();
+
+      spinner.style.display = 'none';
+
+      if (!courses || courses.length === 0) {
+        emptyState.style.display = 'block';
+        return;
+      }
+
+      // Render courses
+      grid.innerHTML = courses.map(course => {
+        // Find cheapest active batch price
+        const prices = (course.batches || [])
+          .map(b => b.price_paise)
+          .filter(p => p !== null && p !== undefined);
+        
+        let priceTag = 'Free / Contact Us';
+        if (prices.length > 0) {
+          const minPrice = Math.min(...prices);
+          priceTag = `Starts from ₹${(minPrice / 100).toLocaleString()}`;
+        }
+
+        return `
+          <div class="glass-panel glass-panel-hover course-card" style="padding: 0; display: flex; flex-direction: column; overflow: hidden;">
+            <div style="position: relative; width: 100%; height: 180px; overflow: hidden; border-bottom: 1px solid var(--border-color);">
+              <img src="${course.banner_url || '/images/course-placeholder.svg'}" alt="${escapeHtml(course.title)}" style="width: 100%; height: 100%; object-fit: cover;" />
+              <div class="course-badge" style="position: absolute; top: 16px; right: 16px; background: rgba(0, 0, 0, 0.75); color: #fff; border: 1px solid rgba(255, 255, 255, 0.15); border-radius: 4px; font-size: 0.75rem; font-weight: 700; padding: 4px 10px; margin: 0;">${course.exam_category || 'General'}</div>
+            </div>
+            
+            <div class="course-info" style="padding: 24px; display: flex; flex-direction: column; gap: 12px; flex-grow: 1; margin: 0;">
+              <h2>${escapeHtml(course.title)}</h2>
+              <p class="course-desc">${escapeHtml(course.short_description || course.description || '')}</p>
+              
+              <div class="course-meta" style="display: flex; justify-content: space-between; align-items: center; margin-top: auto; padding-top: 12px; border-top: 1px solid rgba(255,255,255,0.05); width: 100%;">
+                <span class="course-mode">💻 ${capitalize(course.mode || 'online')}</span>
+                <span class="course-price" style="font-weight: 700; color: var(--accent-color);">${priceTag}</span>
+              </div>
+
+              <a href="/courses/${course.slug}" class="btn-primary view-btn" style="width: 100%; text-align: center; margin-top: 12px;">
+                View Course Details
+              </a>
+            </div>
+          </div>
+        `;
+      }).join('');
+
+      grid.style.display = 'grid';
+
+    } catch (err) {
+      console.error('Error fetching public courses:', err);
+      spinner.style.display = 'none';
+      errorState.style.display = 'block';
+    }
+  }
+
+  function escapeHtml(str) {
+    if (!str) return '';
+    return str
+      .replace(/&/g, "&amp;")
+      .replace(/</g, "&lt;")
+      .replace(/>/g, "&gt;")
+      .replace(/"/g, "&quot;")
+      .replace(/'/g, "&#039;");
+  }
+
+  function capitalize(str) {
+    if (!str) return '';
+    return str.charAt(0).toUpperCase() + str.slice(1);
+  }
+
+  // Load courses
+  fetchCourses();
+</script>
+
+<style>
+  .courses-page-container {
+    max-width: 1200px;
+    margin: 0 auto;
+    padding: 80px 24px;
+    display: flex;
+    flex-direction: column;
+    gap: 50px;
+  }
+
+  .courses-header {
+    text-align: center;
+  }
+
+  .courses-header h1 {
+    font-size: 2.5rem;
+    font-weight: 800;
+    margin: 0 0 12px 0;
+    color: #ffffff;
+  }
+
+  .courses-header p {
+    color: var(--text-secondary);
+    font-size: 1.05rem;
+    max-width: 600px;
+    margin: 0 auto;
+  }
+
+  /* Grid Layout */
+  .courses-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(350px, 1fr));
+    gap: 30px;
+  }
+
+  /* Course Card */
+  .course-card {
+    padding: 30px;
+    display: flex;
+    flex-direction: column;
+    gap: 20px;
+    position: relative;
+    overflow: hidden;
+  }
+
+  .course-badge {
+    position: absolute;
+    top: 20px;
+    right: 20px;
+    padding: 4px 10px;
+    background: rgba(99, 102, 241, 0.15);
+    color: var(--accent-color);
+    border: 1px solid rgba(99, 102, 241, 0.3);
+    border-radius: 4px;
+    font-size: 0.75rem;
+    font-weight: 700;
+  }
+
+  .course-info {
+    flex-grow: 1;
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+    margin-top: 10px;
+  }
+
+  .course-info h2 {
+    margin: 0;
+    font-size: 1.4rem;
+    font-weight: 700;
+    color: #ffffff;
+    line-height: 1.3;
+  }
+
+  .course-desc {
+    margin: 0;
+    color: var(--text-secondary);
+    font-size: 0.9rem;
+    line-height: 1.5;
+    display: -webkit-box;
+    -webkit-line-clamp: 3;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+  }
+
+  .course-meta {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    border-top: 1px solid var(--border-color);
+    padding-top: 16px;
+    font-size: 0.85rem;
+  }
+
+  .course-mode {
+    color: var(--text-secondary);
+    font-weight: 500;
+  }
+
+  .course-price {
+    color: #ffffff;
+    font-weight: 700;
+  }
+
+  .view-btn {
+    width: 100%;
+    text-align: center;
+    font-size: 0.9rem;
+  }
+
+  /* States */
+  .loading-state, .error-state, .empty-state {
+    text-align: center;
+    padding: 80px 20px;
+    color: var(--text-secondary);
+  }
+
+  .spinner {
+    width: 40px;
+    height: 40px;
+    border: 3px solid rgba(255,255,255,0.05);
+    border-top: 3px solid var(--accent-color);
+    border-radius: 50%;
+    margin: 0 auto 16px auto;
+    animation: spin 1s linear infinite;
+  }
+
+  @keyframes spin {
+    0% { transform: rotate(0deg); }
+    100% { transform: rotate(360deg); }
+  }
+</style>

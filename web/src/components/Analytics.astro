@@ -1,0 +1,56 @@
+---
+const gtmId = import.meta.env.PUBLIC_GTM_ID || '';
+---
+
+{gtmId && (
+  <>
+    <!-- GTM Script Loader gated by cookie consent -->
+    <script is:inline define:vars={{ gtmId }}>
+      window.dataLayer = window.dataLayer || [];
+      
+      function getConsentCookie() {
+        const value = `; ${document.cookie}`;
+        const parts = value.split(`; practest_consent=`);
+        if (parts.length === 2) return parts.pop().split(';').shift();
+      }
+
+      function loadGTM() {
+        // Prevent duplicate load
+        if (window.gtmInitialized) return;
+        window.gtmInitialized = true;
+
+        (function(w,d,s,l,i){
+          w[l]=w[l]||[];
+          w[l].push({'gtm.start': new Date().getTime(), event:'gtm.js'});
+          var f=d.getElementsByTagName(s)[0],
+              j=d.createElement(s),
+              dl=l!='dataLayer'?'&l='+l:'';
+          j.async=true;
+          j.src='https://www.googletagmanager.com/gtm.js?id='+i+dl;
+          f.parentNode.insertBefore(j,f);
+        })(window,document,'script','dataLayer',gtmId);
+      }
+
+      // Check current consent status
+      const consent = getConsentCookie();
+      if (consent === 'accepted') {
+        loadGTM();
+      } else {
+        // Wait for event from ConsentBanner
+        window.addEventListener('practest-consent-granted', () => {
+          loadGTM();
+        });
+      }
+    </script>
+
+    <!-- GTM Fallback Noscript -->
+    <noscript>
+      <iframe 
+        src={`https://www.googletagmanager.com/ns.html?id=${gtmId}`}
+        height="0" 
+        width="0" 
+        style="display:none;visibility:hidden"
+      />
+    </noscript>
+  </>
+)}

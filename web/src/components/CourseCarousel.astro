@@ -1,0 +1,302 @@
+---
+const apiUrl = import.meta.env.PUBLIC_API_URL || 'http://localhost:8000';
+---
+
+<div class="carousel-section">
+  <div class="carousel-header">
+    <div>
+      <span class="badge">🔥 Featured Outline</span>
+      <h2>Our Premium Course Batches</h2>
+    </div>
+    <div class="carousel-nav">
+      <button id="carousel-prev" aria-label="Previous Course">←</button>
+      <button id="carousel-next" aria-label="Next Course">→</button>
+    </div>
+  </div>
+
+  <!-- Loading State -->
+  <div id="carousel-loading" class="carousel-loading">
+    <div class="spinner"></div>
+    <p>Loading course catalog...</p>
+  </div>
+
+  <!-- Empty State -->
+  <div id="carousel-empty" class="carousel-empty" style="display: none;">
+    <p>No featured courses scheduled at the moment.</p>
+  </div>
+
+  <!-- Carousel Wrapper -->
+  <div id="carousel-track" class="carousel-track" style="display: none;">
+    <!-- Items dynamically injected -->
+  </div>
+</div>
+
+<script define:vars={{ apiUrl }}>
+  const track = document.getElementById('carousel-track');
+  const loading = document.getElementById('carousel-loading');
+  const empty = document.getElementById('carousel-empty');
+  const prevBtn = document.getElementById('carousel-prev');
+  const nextBtn = document.getElementById('carousel-next');
+
+  async function fetchCatalog() {
+    try {
+      const res = await fetch(`${apiUrl}/api/courses/public`);
+      if (!res.ok) throw new Error('API failed');
+      const courses = await res.json();
+      
+      if (courses.length === 0) {
+        loading.style.display = 'none';
+        empty.style.display = 'flex';
+        return;
+      }
+
+      renderCarousel(courses);
+    } catch (e) {
+      console.error('Failed to load carousel catalog', e);
+      loading.style.display = 'none';
+      empty.style.display = 'flex';
+      empty.innerHTML = '<p style="color: #ef4444;">Could not load course carousel. Please try again later.</p>';
+    }
+  }
+
+  function renderCarousel(courses) {
+    track.innerHTML = courses.map(course => {
+      const activePrices = (course.batches || []).map(b => b.price_paise).filter(p => p !== null && p !== undefined);
+      const minPrice = activePrices.length > 0 ? Math.min(...activePrices) / 100 : null;
+      const priceText = minPrice !== null ? `Starting at ₹${minPrice.toLocaleString('en-IN')}` : 'Pricing TBD';
+      const imgUrl = course.banner_url || '/images/course-placeholder.svg';
+
+      return `
+        <div class="carousel-item glass-panel">
+          <div class="carousel-item-image">
+            <img src="${imgUrl}" alt="${escapeHtml(course.title)}" loading="lazy" />
+            <span class="item-category">${escapeHtml(course.exam_category)}</span>
+          </div>
+          <div class="carousel-item-body">
+            <h3>${escapeHtml(course.title)}</h3>
+            <p>${escapeHtml(course.short_description || course.description || 'No description available.')}</p>
+            <div class="item-footer">
+              <span class="item-price">${priceText}</span>
+              <a href="/courses/${course.slug}" class="btn-primary">Learn More</a>
+            </div>
+          </div>
+        </div>
+      `;
+    }).join('');
+
+    loading.style.display = 'none';
+    track.style.display = 'flex';
+  }
+
+  function escapeHtml(str) {
+    if (!str) return '';
+    return str
+      .replace(/&/g, "&amp;")
+      .replace(/</g, "&lt;")
+      .replace(/>/g, "&gt;")
+      .replace(/"/g, "&quot;")
+      .replace(/'/g, "&#039;");
+  }
+
+  // Navigation Logic
+  if (prevBtn && nextBtn && track) {
+    prevBtn.addEventListener('click', () => {
+      const itemWidth = track.querySelector('.carousel-item')?.offsetWidth || 300;
+      track.scrollBy({ left: -(itemWidth + 24), behavior: 'smooth' });
+    });
+
+    nextBtn.addEventListener('click', () => {
+      const itemWidth = track.querySelector('.carousel-item')?.offsetWidth || 300;
+      track.scrollBy({ left: itemWidth + 24, behavior: 'smooth' });
+    });
+  }
+
+  fetchCatalog();
+</script>
+
+<style>
+  .carousel-section {
+    position: relative;
+    width: 100%;
+    margin: 80px 0;
+  }
+
+  .carousel-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-end;
+    margin-bottom: 32px;
+  }
+
+  .carousel-header h2 {
+    font-size: 2.2rem;
+    font-weight: 800;
+    margin: 8px 0 0 0;
+    letter-spacing: -0.5px;
+    background: linear-gradient(to right, #fff, var(--text-secondary));
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+  }
+
+  .carousel-nav {
+    display: flex;
+    gap: 12px;
+  }
+
+  .carousel-nav button {
+    width: 44px;
+    height: 44px;
+    border-radius: 50%;
+    border: 1px solid var(--border-color);
+    background: rgba(255, 255, 255, 0.02);
+    color: var(--text-primary);
+    font-size: 1.1rem;
+    cursor: pointer;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+  }
+
+  .carousel-nav button:hover {
+    background: var(--accent-color);
+    border-color: var(--accent-color);
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(99, 102, 241, 0.3);
+  }
+
+  .carousel-track {
+    display: flex;
+    gap: 24px;
+    overflow-x: auto;
+    scroll-snap-type: x mandatory;
+    scroll-behavior: smooth;
+    padding-bottom: 24px;
+    scrollbar-width: none; /* Firefox */
+  }
+
+  .carousel-track::-webkit-scrollbar {
+    display: none; /* Chrome/Safari */
+  }
+
+  .carousel-item {
+    flex: 0 0 380px;
+    scroll-snap-align: start;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+    transition: transform 0.3s ease, border-color 0.3s ease;
+  }
+
+  .carousel-item:hover {
+    transform: translateY(-4px);
+    border-color: rgba(99, 102, 241, 0.4);
+  }
+
+  .carousel-item-image {
+    position: relative;
+    width: 100%;
+    height: 190px;
+    overflow: hidden;
+    border-bottom: 1px solid var(--border-color);
+  }
+
+  .carousel-item-image img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    transition: transform 0.5s ease;
+  }
+
+  .carousel-item:hover .carousel-item-image img {
+    transform: scale(1.05);
+  }
+
+  .item-category {
+    position: absolute;
+    top: 16px;
+    left: 16px;
+    background: rgba(0, 0, 0, 0.75);
+    border: 1px solid rgba(255, 255, 255, 0.15);
+    color: #fff;
+    font-size: 0.75rem;
+    font-weight: 700;
+    padding: 4px 10px;
+    border-radius: 4px;
+    letter-spacing: 0.5px;
+    text-transform: uppercase;
+  }
+
+  .carousel-item-body {
+    padding: 24px;
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+    flex: 1;
+  }
+
+  .carousel-item-body h3 {
+    margin: 0;
+    font-size: 1.25rem;
+    font-weight: 700;
+  }
+
+  .carousel-item-body p {
+    margin: 0;
+    font-size: 0.9rem;
+    color: var(--text-secondary);
+    line-height: 1.5;
+    display: -webkit-box;
+    -webkit-line-clamp: 2;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+  }
+
+  .item-footer {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-top: auto;
+    padding-top: 16px;
+    border-top: 1px solid rgba(255, 255, 255, 0.05);
+  }
+
+  .item-price {
+    font-size: 0.95rem;
+    font-weight: 700;
+    color: var(--accent-color);
+  }
+
+  .carousel-item-body .btn-primary {
+    padding: 8px 16px;
+    font-size: 0.8rem;
+  }
+
+  .carousel-loading, .carousel-empty {
+    width: 100%;
+    height: 300px;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    gap: 16px;
+    background: rgba(255, 255, 255, 0.01);
+    border: 1px dashed var(--border-color);
+    border-radius: 12px;
+  }
+
+  .carousel-loading p, .carousel-empty p {
+    color: var(--text-secondary);
+    font-size: 0.9rem;
+    margin: 0;
+  }
+
+  @media (max-width: 600px) {
+    .carousel-item {
+      flex: 0 0 290px;
+    }
+    .carousel-header h2 {
+      font-size: 1.7rem;
+    }
+  }
+</style>

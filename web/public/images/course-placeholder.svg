@@ -1,0 +1,38 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 600" width="100%" height="100%">
+  <defs>
+    <linearGradient id="bg-grad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#0b0f19" />
+      <stop offset="50%" stop-color="#111827" />
+      <stop offset="100%" stop-color="#1e1b4b" />
+    </linearGradient>
+    <linearGradient id="accent-grad" x1="0%" y1="0%" x2="100%" y2="0%">
+      <stop offset="0%" stop-color="#6366f1" stop-opacity="0.8" />
+      <stop offset="100%" stop-color="#a855f7" stop-opacity="0.8" />
+    </linearGradient>
+    <pattern id="grid" width="40" height="40" patternUnits="userSpaceOnUse">
+      <path d="M 40 0 L 0 0 0 40" fill="none" stroke="rgba(255, 255, 255, 0.03)" stroke-width="1"/>
+    </pattern>
+  </defs>
+  
+  <!-- Background -->
+  <rect width="1200" height="600" fill="url(#bg-grad)" />
+  <rect width="1200" height="600" fill="url(#grid)" />
+  
+  <!-- Decorative Glows -->
+  <circle cx="200" cy="200" r="300" fill="#6366f1" opacity="0.15" filter="blur(80px)" />
+  <circle cx="1000" cy="400" r="250" fill="#a855f7" opacity="0.15" filter="blur(80px)" />
+
+  <!-- Center Graphics -->
+  <g transform="translate(600, 260)">
+    <!-- Shield / Hexagon -->
+    <polygon points="0,-90 78,-45 78,45 0,90 -78,45 -78,-45" fill="rgba(99, 102, 241, 0.1)" stroke="url(#accent-grad)" stroke-width="3" />
+    
+    <!-- Book/Exam Icon -->
+    <path d="M-30,-20 L0,-35 L30,-20 L30,20 L0,35 L-30,20 Z" fill="none" stroke="#fff" stroke-width="3" stroke-linejoin="round" />
+    <path d="M0,-35 L0,35 M-30,-20 L0,-5 L30,-20" fill="none" stroke="#fff" stroke-width="2" />
+  </g>
+
+  <!-- Text -->
+  <text x="600" y="440" text-anchor="middle" fill="#fff" font-family="'Inter', sans-serif" font-size="28" font-weight="bold" letter-spacing="2">PRACTEST PREMIUM COURSE</text>
+  <text x="600" y="480" text-anchor="middle" fill="rgba(255, 255, 255, 0.5)" font-family="'Inter', sans-serif" font-size="16" letter-spacing="1">Preparing you for competitive success</text>
+</svg>

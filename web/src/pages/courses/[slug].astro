@@ -1,0 +1,517 @@
+---
+import Layout from '../../layouts/Layout.astro';
+
+export async function getStaticPaths() {
+  console.log("--- GETSTATICPATHS EXECUTION START ---");
+  try {
+    const apiUrl = import.meta.env.PUBLIC_API_URL || 'http://localhost:8000';
+    console.log("apiUrl is: " + apiUrl);
+    const res = await fetch(`${apiUrl}/api/courses/public`);
+    if (res.ok) {
+      const courses = await res.json();
+      console.log("Fetched courses: " + courses.length);
+      if (courses.length > 0) {
+        return courses.map(course => ({
+          params: { slug: course.slug },
+          props: { course }
+        }));
+      }
+    }
+  } catch (e) {
+    console.warn('Could not fetch public courses at build time. Generating fallback path.', e.message);
+  }
+  console.log("Returning fallback math-special route");
+  return [
+    { params: { slug: 'math-special' }, props: { course: null } },
+  ];
+}
+
+const { slug } = Astro.params;
+const { course } = Astro.props;
+
+const spaUrl = import.meta.env.PUBLIC_SPA_URL || 'http://localhost:3000';
+const apiUrl = import.meta.env.PUBLIC_API_URL || 'http://localhost:8000';
+const bannerStyle = course?.banner_url 
+  ? `background-image: linear-gradient(135deg, rgba(11, 15, 25, 0.95) 0%, rgba(17, 24, 39, 0.8) 100%), url(${course.banner_url}); background-size: cover; background-position: center;`
+  : `background-image: linear-gradient(135deg, rgba(11, 15, 25, 0.95) 0%, rgba(99, 102, 241, 0.08) 100%), url('/images/course-placeholder.svg'); background-size: cover; background-position: center;`;
+---
+
+<Layout 
+  title={course ? `${course.title} - Practest Courses` : 'Course Details - Practest'}
+  description={course ? course.short_description : 'View mock tests, video syllabus and pricing.'}
+>
+  <div class="details-page-container">
+    
+    <!-- Header Hero banner -->
+    <div id="course-banner-bg" class="course-header-banner glass-panel" style={bannerStyle}>
+      <div id="course-category" class="category-badge">{course?.exam_category || 'General'}</div>
+      <h1 id="course-title">{course?.title || 'Loading Course Details...'}</h1>
+      <p id="course-desc">{course?.short_description || course?.description || 'Retrieving latest pricing and schedules...'}</p>
+      <div class="banner-meta">
+        <span id="course-mode">💻 Mode: {course?.mode || 'online'}</span>
+      </div>
+    </div>
+
+    <!-- Main Details Grid -->
+    <div class="details-grid">
+      
+      <!-- Left side: Syllabus Outline & FAQ -->
+      <div class="content-left">
+        
+        <!-- Syllabus Accordion -->
+        <div class="glass-panel info-section">
+          <h3>📚 Syllabus & Curriculum</h3>
+          <div id="syllabus-container" class="syllabus-list">
+            {course?.syllabus && Array.isArray(course.syllabus) ? (
+              course.syllabus.map((s, idx) => (
+                <div class="syllabus-item">
+                  <div class="item-number">{idx + 1}</div>
+                  <div class="item-title">{s}</div>
+                </div>
+              ))
+            ) : (
+              <p class="empty-notice">Syllabus outline will be loaded dynamically.</p>
+            )}
+          </div>
+        </div>
+
+        <!-- FAQs -->
+        <div class="glass-panel info-section" style="margin-top: 30px;">
+          <h3>🙋 Frequently Asked Questions</h3>
+          <div id="faq-container" class="faq-list">
+            {course?.faq && Array.isArray(course.faq) ? (
+              course.faq.map((f) => (
+                <div class="faq-item">
+                  <div class="faq-q">❓ {f.question || f.q}</div>
+                  <div class="faq-a">{f.answer || f.a}</div>
+                </div>
+              ))
+            ) : (
+              <p class="empty-notice">FAQ topics will be loaded dynamically.</p>
+            )}
+          </div>
+        </div>
+
+      </div>
+
+      <!-- Right side: Batch Purchase widget -->
+      <div class="content-right">
+        <div class="glass-panel purchase-card">
+          <h3>💰 Available Batches</h3>
+          
+          <div id="batches-loading" class="batches-loading">
+            <div class="mini-spinner"></div>
+            <span>Checking live batch availability...</span>
+          </div>
+
+          <div id="batches-container" class="batches-list" style="display: none;">
+            <!-- Hydrated by JS -->
+          </div>
+
+          <div id="no-batches-state" class="no-batches-state" style="display: none;">
+            <p>No priced batches currently open for online enrollment.</p>
+            <a href="/contact" class="btn-secondary" style="width: 100%; text-align: center;">Contact Admin to Join</a>
+          </div>
+
+        </div>
+      </div>
+
+    </div>
+
+  </div>
+</Layout>
+
+<script define:vars={{ apiUrl, spaUrl, slug, initialCourse: course }}>
+  // Escapes strings for HTML injection
+  function escapeHtml(str) {
+    if (!str) return '';
+    return str
+      .replace(/&/g, "&amp;")
+      .replace(/</g, "&lt;")
+      .replace(/>/g, "&gt;")
+      .replace(/"/g, "&quot;")
+      .replace(/'/g, "&#039;");
+  }
+
+  // Renders batches dynamically in the DOM
+  function renderBatches(batches) {
+    const loading = document.getElementById('batches-loading');
+    const container = document.getElementById('batches-container');
+    const noBatches = document.getElementById('no-batches-state');
+
+    loading.style.display = 'none';
+
+    if (!batches || batches.length === 0) {
+      container.style.display = 'none';
+      noBatches.style.display = 'block';
+      return;
+    }
+
+    container.innerHTML = batches.map(batch => {
+      const price = batch.price_paise ? (batch.price_paise / 100).toLocaleString() : '0';
+      const startDate = batch.starts_at ? new Date(batch.starts_at).toLocaleDateString() : 'Immediate';
+      
+      return `
+        <div class="batch-card">
+          <div class="batch-header">
+            <h4>${escapeHtml(batch.name)}</h4>
+            <span class="batch-price">₹${price}</span>
+          </div>
+          <p class="batch-dates">📅 Starts: ${startDate}</p>
+          <a href="${spaUrl}/login?enroll_batch=${batch.id}" class="btn-primary buy-btn">
+            Register & Enroll
+          </a>
+        </div>
+      `;
+    }).join('');
+
+    noBatches.style.display = 'none';
+    container.style.display = 'flex';
+  }
+
+  // Hydrate full course details and live batches
+  async function hydrateCourse() {
+    try {
+      const res = await fetch(`${apiUrl}/api/courses/public`);
+      if (!res.ok) throw new Error('Failed to fetch courses catalog');
+      const courses = await res.json();
+      
+      const currentCourse = courses.find(c => c.slug === slug);
+      if (!currentCourse) {
+        document.getElementById('batches-loading').style.display = 'none';
+        document.getElementById('no-batches-state').style.display = 'block';
+        return;
+      }
+
+      // Update basic fields in case static generation was empty/fallback
+      document.getElementById('course-title').textContent = currentCourse.title;
+      document.getElementById('course-desc').textContent = currentCourse.short_description || currentCourse.description || '';
+      document.getElementById('course-category').textContent = currentCourse.exam_category || 'General';
+      document.getElementById('course-mode').textContent = `💻 Mode: ${currentCourse.mode || 'online'}`;
+
+      // Update background image
+      const bannerBg = document.getElementById('course-banner-bg');
+      if (bannerBg) {
+        const bannerUrl = currentCourse.banner_url || '/images/course-placeholder.svg';
+        bannerBg.style.backgroundImage = `linear-gradient(135deg, rgba(11, 15, 25, 0.95) 0%, rgba(17, 24, 39, 0.8) 100%), url(${bannerUrl})`;
+        bannerBg.style.backgroundSize = 'cover';
+        bannerBg.style.backgroundPosition = 'center';
+      }
+
+      // Update Syllabus list if fallback empty
+      const syllabusList = document.getElementById('syllabus-container');
+      if (currentCourse.syllabus && Array.isArray(currentCourse.syllabus) && currentCourse.syllabus.length > 0) {
+        syllabusList.innerHTML = currentCourse.syllabus.map((s, idx) => `
+          <div class="syllabus-item">
+            <div class="item-number">${idx + 1}</div>
+            <div class="item-title">${escapeHtml(s)}</div>
+          </div>
+        `).join('');
+      }
+
+      // Update FAQ list if fallback empty
+      const faqList = document.getElementById('faq-container');
+      if (currentCourse.faq && Array.isArray(currentCourse.faq) && currentCourse.faq.length > 0) {
+        faqList.innerHTML = currentCourse.faq.map(f => `
+          <div class="faq-item">
+            <div class="faq-q">❓ ${escapeHtml(f.question || f.q || '')}</div>
+            <div class="faq-a">${escapeHtml(f.answer || f.a || '')}</div>
+          </div>
+        `).join('');
+      }
+
+      // Render Batches
+      renderBatches(currentCourse.batches);
+
+      // Push ViewContent event to GTM dataLayer
+      window.dataLayer = window.dataLayer || [];
+      const activePrices = (currentCourse.batches || []).map(b => b.price_paise).filter(p => p !== null && p !== undefined);
+      const minPrice = activePrices.length > 0 ? Math.min(...activePrices) / 100 : 0;
+      window.dataLayer.push({
+        event: 'ViewContent',
+        content_name: currentCourse.title,
+        content_category: currentCourse.exam_category || 'General',
+        content_ids: [currentCourse.id],
+        content_type: 'product',
+        value: minPrice,
+        currency: 'INR'
+      });
+
+    } catch (e) {
+      console.error('Failed to hydrate course details', e);
+      document.getElementById('batches-loading').style.display = 'none';
+      
+      // If we had static values, fall back to rendering them
+      if (initialCourse && initialCourse.batches) {
+        renderBatches(initialCourse.batches);
+
+        // Push fallback ViewContent event to GTM dataLayer
+        window.dataLayer = window.dataLayer || [];
+        const staticPrices = (initialCourse.batches || []).map(b => b.price_paise).filter(p => p !== null && p !== undefined);
+        const minStaticPrice = staticPrices.length > 0 ? Math.min(...staticPrices) / 100 : 0;
+        window.dataLayer.push({
+          event: 'ViewContent',
+          content_name: initialCourse.title,
+          content_category: initialCourse.exam_category || 'General',
+          content_ids: [initialCourse.id],
+          content_type: 'product',
+          value: minStaticPrice,
+          currency: 'INR'
+        });
+      } else {
+        document.getElementById('no-batches-state').style.display = 'block';
+      }
+    }
+  }
+
+  // Load course details
+  hydrateCourse();
+</script>
+
+<style>
+  .details-page-container {
+    max-width: 1200px;
+    margin: 0 auto;
+    padding: 60px 24px 100px 24px;
+    display: flex;
+    flex-direction: column;
+    gap: 40px;
+  }
+
+  /* Header Banner */
+  .course-header-banner {
+    padding: 40px;
+    position: relative;
+    background: linear-gradient(135deg, rgba(17, 25, 40, 0.9) 0%, rgba(99, 102, 241, 0.08) 100%);
+  }
+
+  .category-badge {
+    display: inline-block;
+    padding: 4px 10px;
+    background: rgba(99, 102, 241, 0.15);
+    color: var(--accent-color);
+    border: 1px solid rgba(99, 102, 241, 0.3);
+    border-radius: 4px;
+    font-size: 0.75rem;
+    font-weight: 700;
+    margin-bottom: 16px;
+    text-transform: uppercase;
+  }
+
+  .course-header-banner h1 {
+    font-size: 2.2rem;
+    font-weight: 800;
+    margin: 0 0 12px 0;
+    color: #ffffff;
+    line-height: 1.2;
+  }
+
+  .course-header-banner p {
+    color: var(--text-secondary);
+    font-size: 1.05rem;
+    max-width: 800px;
+    margin: 0 0 20px 0;
+    line-height: 1.6;
+  }
+
+  .banner-meta {
+    font-size: 0.9rem;
+    color: var(--text-secondary);
+    font-weight: 500;
+  }
+
+  /* Details Grid */
+  .details-grid {
+    display: grid;
+    grid-template-columns: 2fr 1fr;
+    gap: 40px;
+    align-items: start;
+  }
+
+  .info-section {
+    padding: 35px;
+  }
+
+  .info-section h3 {
+    margin: 0 0 24px 0;
+    font-size: 1.25rem;
+    font-weight: 700;
+    color: #ffffff;
+  }
+
+  /* Syllabus items */
+  .syllabus-list {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+  }
+
+  .syllabus-item {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    padding: 14px 20px;
+    background: rgba(255,255,255,0.02);
+    border: 1px solid var(--border-color);
+    border-radius: 8px;
+  }
+
+  .item-number {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 28px;
+    height: 28px;
+    background: var(--accent-color);
+    color: #ffffff;
+    border-radius: 50%;
+    font-size: 0.85rem;
+    font-weight: 700;
+  }
+
+  .item-title {
+    color: var(--text-primary);
+    font-size: 0.95rem;
+    font-weight: 500;
+  }
+
+  /* FAQ */
+  .faq-list {
+    display: flex;
+    flex-direction: column;
+    gap: 20px;
+  }
+
+  .faq-item {
+    padding: 16px 20px;
+    background: rgba(255,255,255,0.02);
+    border: 1px solid var(--border-color);
+    border-radius: 8px;
+  }
+
+  .faq-q {
+    font-weight: 600;
+    color: #ffffff;
+    margin-bottom: 6px;
+    font-size: 0.95rem;
+  }
+
+  .faq-a {
+    color: var(--text-secondary);
+    font-size: 0.9rem;
+    line-height: 1.5;
+  }
+
+  /* Purchase widget */
+  .purchase-card {
+    padding: 30px;
+    display: flex;
+    flex-direction: column;
+    gap: 20px;
+    position: sticky;
+    top: 100px;
+  }
+
+  .purchase-card h3 {
+    margin: 0;
+    font-size: 1.15rem;
+    font-weight: 700;
+    color: #ffffff;
+    border-bottom: 1px solid var(--border-color);
+    padding-bottom: 12px;
+  }
+
+  .batches-list {
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+  }
+
+  .batch-card {
+    padding: 16px;
+    background: rgba(255, 255, 255, 0.02);
+    border: 1px solid var(--border-color);
+    border-radius: 8px;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+  }
+
+  .batch-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+  }
+
+  .batch-header h4 {
+    margin: 0;
+    font-size: 0.95rem;
+    font-weight: 700;
+    color: #ffffff;
+  }
+
+  .batch-price {
+    font-weight: 800;
+    color: var(--accent-color);
+    font-size: 1.1rem;
+  }
+
+  .batch-dates {
+    margin: 0;
+    font-size: 0.8rem;
+    color: var(--text-secondary);
+  }
+
+  .buy-btn {
+    width: 100%;
+    padding: 8px 16px;
+    font-size: 0.85rem;
+    text-align: center;
+  }
+
+  /* Spinner */
+  .batches-loading {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    color: var(--text-secondary);
+    font-size: 0.85rem;
+    padding: 10px 0;
+  }
+
+  .mini-spinner {
+    width: 20px;
+    height: 20px;
+    border: 2px solid rgba(255,255,255,0.05);
+    border-top: 2px solid var(--accent-color);
+    border-radius: 50%;
+    animation: spin 1s linear infinite;
+  }
+
+  .no-batches-state {
+    text-align: center;
+    color: var(--text-secondary);
+    font-size: 0.9rem;
+    padding: 10px 0;
+  }
+
+  .empty-notice {
+    color: var(--text-secondary);
+    font-size: 0.9rem;
+  }
+
+  @keyframes spin {
+    0% { transform: rotate(0deg); }
+    100% { transform: rotate(360deg); }
+  }
+
+  @media (max-width: 768px) {
+    .details-grid {
+      grid-template-columns: 1fr;
+      gap: 30px;
+    }
+    .purchase-card {
+      position: static;
+    }
+  }
+</style>

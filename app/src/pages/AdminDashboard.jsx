@@ -1,0 +1,302 @@
+import React, { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
+import api from '../api';
+
+// Sub-components import
+import AdminCourses from './AdminCourses';
+import AdminQuestions from './AdminQuestions';
+import AdminTests from './AdminTests';
+import AdminEnrollments from './AdminEnrollments';
+import AdminActivations from './AdminActivations';
+import AdminActivationCodes from './AdminActivationCodes';
+import AdminResults from './AdminResults';
+import AdminResultDetail from './AdminResultDetail';
+import SuperAdminSettings from './SuperAdminSettings';
+import SuperAdminOnboarding from './SuperAdminOnboarding';
+import SuperAdminAuditLogs from './SuperAdminAuditLogs';
+
+export default function AdminDashboard({ user, setUser }) {
+  const [activeTab, setActiveTab] = useState('courses');
+  const [selectedResultSessionId, setSelectedResultSessionId] = useState(null);
+  const navigate = useNavigate();
+
+  // Global CSV Import Polling State
+  const [csvJobId, setCsvJobId] = useState(null);
+  const [csvState, setCsvState] = useState({
+    status: null, // 'pending', 'complete', 'failed'
+    imported: 0,
+    errors: []
+  });
+  const [showCsvAlert, setShowCsvAlert] = useState(false);
+
+  // Trigger CSV import polling
+  const triggerCsvImport = (jobId) => {
+    setCsvJobId(jobId);
+    setCsvState({ status: 'pending', imported: 0, errors: [] });
+    setShowCsvAlert(true);
+  };
+
+  // Poll CSV import status
+  useEffect(() => {
+    if (!csvJobId) return;
+
+    let timer;
+    const poll = async () => {
+      try {
+        const res = await api.get(`/api/admin/questions/import/${csvJobId}/status`);
+        const { status, imported, errors } = res.data;
+        
+        setCsvState({ status, imported, errors });
+
+        if (status === 'complete' || status === 'failed') {
+          // Finished. Stop polling.
+          setCsvJobId(null);
+        }
+      } catch (err) {
+        // Ignore errors and keep polling unless expired
+      }
+    };
+
+    // Initial check
+    poll();
+
+    // Setup interval
+    timer = setInterval(poll, 2000);
+
+    return () => clearInterval(timer);
+  }, [csvJobId]);
+
+  const handleLogout = async () => {
+    try {
+      await api.post('/api/logout');
+    } catch (e) {
+      // ignore
+    } finally {
+      setUser(null);
+      navigate('/login');
+    }
+  };
+
+  // Render active panel content
+  const renderContent = () => {
+    switch (activeTab) {
+      case 'courses':
+        return <AdminCourses />;
+      case 'questions':
+        return (
+          <AdminQuestions 
+            csvState={csvState} 
+            triggerCsvImport={triggerCsvImport}
+            csvJobId={csvJobId}
+          />
+        );
+      case 'tests':
+        return <AdminTests />;
+      case 'enrollments':
+        return <AdminEnrollments />;
+      case 'activations':
+        return <AdminActivations />;
+      case 'codes':
+        return <AdminActivationCodes />;
+      case 'results':
+        return (
+          <AdminResults 
+            onViewDetail={(sessionId) => {
+              setSelectedResultSessionId(sessionId);
+              setActiveTab('result_detail');
+            }} 
+          />
+        );
+      case 'result_detail':
+        return (
+          <AdminResultDetail 
+            sessionId={selectedResultSessionId} 
+            onBack={() => {
+              setSelectedResultSessionId(null);
+              setActiveTab('results');
+            }} 
+          />
+        );
+      case 'settings':
+        return <SuperAdminSettings />;
+      case 'onboarding':
+        return <SuperAdminOnboarding />;
+      case 'audit_logs':
+        return <SuperAdminAuditLogs />;
+      default:
+        return <AdminCourses />;
+    }
+  };
+
+  return (
+    <div style={{ display: 'flex', minHeight: '100vh', backgroundColor: '#0b0f19', color: '#f3f4f6' }}>
+      
+      {/* Sidebar Navigation */}
+      <aside style={{ width: '280px', background: 'rgba(17, 25, 40, 0.95)', borderRight: '1px solid var(--border-color)', display: 'flex', flexDirection: 'column', flexShrink: 0 }}>
+        
+        {/* Sidebar Header Logo */}
+        <div style={{ padding: '24px', display: 'flex', alignItems: 'center', gap: '12px', borderBottom: '1px solid var(--border-color)' }}>
+          <span style={{ fontSize: '1.4rem', fontWeight: 800, color: 'var(--accent-color)', letterSpacing: '1px' }}>PRACTEST</span>
+          <span style={{ fontSize: '0.8rem', color: '#10b981', background: 'rgba(16,185,129,0.1)', padding: '2px 6px', borderRadius: '4px', fontWeight: 'bold' }}>
+            {user?.roles?.includes('super-admin') ? 'Super Admin' : 'Admin'}
+          </span>
+        </div>
+
+        {/* Sidebar Navigation Links */}
+        <nav style={{ flex: 1, padding: '20px 16px', display: 'flex', flexDirection: 'column', gap: '8px', overflowY: 'auto' }}>
+          {[
+            { id: 'courses', label: 'Courses & Syllabus', icon: '📚' },
+            { id: 'questions', label: 'Question Bank', icon: '📝' },
+            { id: 'tests', label: 'Tests Manager', icon: '🏆' },
+            { id: 'enrollments', label: 'Batches & Enrollments', icon: '👥' },
+            { id: 'activations', label: 'Activation Requests', icon: '⏳' },
+            { id: 'codes', label: 'Activation Codes', icon: '🔑' },
+            { id: 'results', label: 'Results Dashboard', icon: '📊' },
+          ].map((tab) => {
+            const isSelected = activeTab === tab.id || (tab.id === 'results' && activeTab === 'result_detail');
+            return (
+              <button
+                key={tab.id}
+                onClick={() => {
+                  setActiveTab(tab.id);
+                  if (tab.id !== 'results') setSelectedResultSessionId(null);
+                }}
+                style={{
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '12px',
+                  width: '100%',
+                  padding: '12px 16px',
+                  background: isSelected ? 'var(--accent-color)' : 'transparent',
+                  border: 'none',
+                  borderRadius: '8px',
+                  color: isSelected ? '#ffffff' : 'var(--text-secondary)',
+                  fontSize: '0.95rem',
+                  fontWeight: 600,
+                  cursor: 'pointer',
+                  textAlign: 'left',
+                  transition: 'all 0.2s ease',
+                }}
+                onMouseOver={(e) => { if (!isSelected) e.currentTarget.style.color = 'var(--text-primary)'; }}
+                onMouseOut={(e) => { if (!isSelected) e.currentTarget.style.color = 'var(--text-secondary)'; }}
+              >
+                <span style={{ fontSize: '1.2rem' }}>{tab.icon}</span>
+                <span>{tab.label}</span>
+              </button>
+            );
+          })}
+
+          {user?.roles?.includes('super-admin') && (
+            <>
+              <div style={{ margin: '16px 0 8px 0', borderTop: '1px solid var(--border-color)', paddingTop: '16px', fontSize: '0.75rem', fontWeight: 'bold', color: 'var(--text-secondary)', textTransform: 'uppercase', letterSpacing: '1px', paddingLeft: '8px' }}>
+                Platform Control
+              </div>
+              {[
+                { id: 'settings', label: 'White-Label Settings', icon: '🎨' },
+                { id: 'onboarding', label: 'Onboarding & Support', icon: '🚀' },
+                { id: 'audit_logs', label: 'Audit Logs', icon: '📋' },
+              ].map((tab) => {
+                const isSelected = activeTab === tab.id;
+                return (
+                  <button
+                    key={tab.id}
+                    onClick={() => {
+                      setActiveTab(tab.id);
+                      setSelectedResultSessionId(null);
+                    }}
+                    style={{
+                      display: 'flex',
+                      alignItems: 'center',
+                      gap: '12px',
+                      width: '100%',
+                      padding: '12px 16px',
+                      background: isSelected ? 'var(--accent-color)' : 'transparent',
+                      border: 'none',
+                      borderRadius: '8px',
+                      color: isSelected ? '#ffffff' : 'var(--text-secondary)',
+                      fontSize: '0.95rem',
+                      fontWeight: 600,
+                      cursor: 'pointer',
+                      textAlign: 'left',
+                      transition: 'all 0.2s ease',
+                    }}
+                    onMouseOver={(e) => { if (!isSelected) e.currentTarget.style.color = 'var(--text-primary)'; }}
+                    onMouseOut={(e) => { if (!isSelected) e.currentTarget.style.color = 'var(--text-secondary)'; }}
+                  >
+                    <span style={{ fontSize: '1.2rem' }}>{tab.icon}</span>
+                    <span>{tab.label}</span>
+                  </button>
+                );
+              })}
+            </>
+          )}
+        </nav>
+
+        {/* Sidebar Footer User Info */}
+        {user && (
+          <div style={{ padding: '20px', borderTop: '1px solid var(--border-color)', display: 'flex', flexDirection: 'column', gap: '12px' }}>
+            <div>
+              <div style={{ fontSize: '0.9rem', fontWeight: 600, color: 'var(--text-primary)' }}>{user.name}</div>
+              <div style={{ fontSize: '0.8rem', color: 'var(--text-secondary)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{user.email}</div>
+            </div>
+            <button onClick={handleLogout} className="btn-secondary" style={{ padding: '8px 12px', fontSize: '0.85rem', width: '100%' }}>
+              Logout
+            </button>
+          </div>
+        )}
+      </aside>
+
+      {/* Main Content Area */}
+      <main style={{ flex: 1, display: 'flex', flexDirection: 'column', overflowY: 'auto' }}>
+        
+        {/* Global CSV Import Polling Indicator Bar */}
+        {showCsvAlert && csvState.status && (
+          <div 
+            style={{ 
+              background: csvState.status === 'pending' ? 'rgba(99, 102, 241, 0.15)' : csvState.status === 'complete' && csvState.errors.length === 0 ? 'rgba(16, 185, 129, 0.15)' : 'rgba(239, 68, 68, 0.15)',
+              borderBottom: '1px solid ' + (csvState.status === 'pending' ? 'rgba(99, 102, 241, 0.3)' : csvState.status === 'complete' && csvState.errors.length === 0 ? 'rgba(16, 185, 129, 0.3)' : 'rgba(239, 68, 68, 0.3)'),
+              padding: '12px 24px',
+              display: 'flex',
+              justifyContent: 'space-between',
+              alignItems: 'center',
+              fontSize: '0.9rem'
+            }}
+          >
+            <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+              <span style={{ fontWeight: 'bold' }}>CSV Question Import Status:</span>
+              {csvState.status === 'pending' ? (
+                <span style={{ color: 'var(--accent-color)' }}>⏳ Processing in background (Imported: {csvState.imported})...</span>
+              ) : csvState.status === 'complete' && csvState.errors.length === 0 ? (
+                <span style={{ color: '#10b981' }}>✅ Successfully imported {csvState.imported} questions!</span>
+              ) : (
+                <span style={{ color: '#ef4444' }}>⚠️ Completed with {csvState.errors.length} failed rows (Imported: {csvState.imported}).</span>
+              )}
+            </div>
+            <div style={{ display: 'flex', gap: '12px' }}>
+              {activeTab !== 'questions' && (
+                <button 
+                  onClick={() => setActiveTab('questions')} 
+                  style={{ background: 'transparent', border: 'none', color: 'var(--accent-color)', fontWeight: 'bold', cursor: 'pointer', fontSize: '0.9rem', padding: 0 }}
+                >
+                  View Details
+                </button>
+              )}
+              <button 
+                onClick={() => setShowCsvAlert(false)} 
+                style={{ background: 'transparent', border: 'none', color: 'var(--text-secondary)', cursor: 'pointer', fontSize: '1rem', padding: 0 }}
+              >
+                ✕
+              </button>
+            </div>
+          </div>
+        )}
+
+        {/* Dynamic Panel Content */}
+        <div style={{ padding: '40px', boxSizing: 'border-box' }}>
+          {renderContent()}
+        </div>
+      </main>
+
+    </div>
+  );
+}

@@ -1,0 +1,267 @@
+---
+import Layout from '../layouts/Layout.astro';
+import CourseCarousel from '../components/CourseCarousel.astro';
+
+const spaUrl = import.meta.env.PUBLIC_SPA_URL || 'http://localhost:3000';
+---
+
+<Layout title="Practest - State-of-the-Art Mock Test Series & LMS">
+  <!-- Hero Section -->
+  <section class="hero-section">
+    <div class="hero-container">
+      <div class="badge">🚀 Premium Learning Platform</div>
+      <h1 class="hero-title">
+        Ace Your Competitive Exams with <span class="text-gradient">Practest</span>
+      </h1>
+      <p class="hero-subtitle">
+        High-performance timed mock test series, detailed performance analytics, and structured LMS video courses. Crafted for serious students and top coaching institutes.
+      </p>
+      
+      <div class="hero-actions">
+        <a href="/courses" class="btn-primary">Browse Courses</a>
+        <a href={`${spaUrl}/register`} class="btn-secondary">Create Free Account</a>
+      </div>
+    </div>
+  </section>
+
+  <!-- Carousel Section -->
+  <CourseCarousel />
+
+  <!-- Features Grid Section -->
+  <section class="features-section">
+    <div class="section-header">
+      <h2>Engineered for Success</h2>
+      <p>Everything you need to analyze your weaknesses and level up your scores.</p>
+    </div>
+    
+    <div class="features-grid">
+      <div class="glass-panel glass-panel-hover feature-card">
+        <div class="feature-icon">⏱️</div>
+        <h3>CBT timed exam engine</h3>
+        <p>Realistic mock test simulator with section locks, timed auto-submissions, and five-state question response palettes.</p>
+      </div>
+
+      <div class="glass-panel glass-panel-hover feature-card">
+        <div class="feature-icon">📊</div>
+        <h3>Deep performance analytics</h3>
+        <p>Instant scorecard breakdowns, accuracy tracking, sectional performance diagnostics, and batch-wide percentile rankings.</p>
+      </div>
+
+      <div class="glass-panel glass-panel-hover feature-card">
+        <div class="feature-icon">🎥</div>
+        <h3>Structured LMS curriculum</h3>
+        <p>Curriculum structured by modules and video lessons. Automatic watch progress logs with resume tracking.</p>
+      </div>
+    </div>
+  </section>
+
+  <!-- Stats Banner -->
+  <section class="stats-section">
+    <div class="stats-container glass-panel">
+      <div class="stat-item">
+        <span class="stat-number">10k+</span>
+        <span class="stat-label">Active Students</span>
+      </div>
+      <div class="stat-item">
+        <span class="stat-number">50k+</span>
+        <span class="stat-label">Mock Tests Taken</span>
+      </div>
+      <div class="stat-item">
+        <span class="stat-number">99.4%</span>
+        <span class="stat-label">System Uptime</span>
+      </div>
+    </div>
+  </section>
+
+  <!-- Call to Action -->
+  <section class="cta-section">
+    <div class="cta-card glass-panel">
+      <h2>Ready to Start Your Preparation?</h2>
+      <p>Sign up now to access mock examinations, syllabus outlines, and free video lessons.</p>
+      <a href={`${spaUrl}/register`} class="btn-primary" style="margin-top: 10px;">Get Started Instantly</a>
+    </div>
+  </section>
+</Layout>
+
+<style>
+  /* Hero section styles */
+  .hero-section {
+    padding: 100px 24px;
+    background: radial-gradient(circle at 50% 30%, rgba(99, 102, 241, 0.15), transparent 60%);
+    text-align: center;
+  }
+
+  .hero-container {
+    max-width: 800px;
+    margin: 0 auto;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 24px;
+  }
+
+  .badge {
+    padding: 6px 14px;
+    background: rgba(99, 102, 241, 0.15);
+    color: var(--accent-color);
+    border: 1px solid rgba(99, 102, 241, 0.3);
+    border-radius: 20px;
+    font-size: 0.85rem;
+    font-weight: 600;
+    letter-spacing: 0.05em;
+  }
+
+  .hero-title {
+    font-size: 3.5rem;
+    font-weight: 800;
+    line-height: 1.15;
+    margin: 0;
+    color: #ffffff;
+    letter-spacing: -0.02em;
+  }
+
+  .hero-subtitle {
+    font-size: 1.2rem;
+    color: var(--text-secondary);
+    line-height: 1.6;
+    margin: 0;
+    max-width: 650px;
+  }
+
+  .hero-actions {
+    display: flex;
+    gap: 16px;
+    margin-top: 12px;
+  }
+
+  /* Features section styles */
+  .features-section {
+    max-width: 1200px;
+    margin: 0 auto;
+    padding: 80px 24px;
+  }
+
+  .section-header {
+    text-align: center;
+    margin-bottom: 50px;
+  }
+
+  .section-header h2 {
+    font-size: 2.2rem;
+    font-weight: 800;
+    margin: 0 0 12px 0;
+    color: #ffffff;
+  }
+
+  .section-header p {
+    color: var(--text-secondary);
+    font-size: 1.05rem;
+    margin: 0;
+  }
+
+  .features-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+    gap: 30px;
+  }
+
+  .feature-card {
+    padding: 35px;
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+  }
+
+  .feature-icon {
+    font-size: 2rem;
+    margin-bottom: 4px;
+  }
+
+  .feature-card h3 {
+    margin: 0;
+    font-size: 1.25rem;
+    font-weight: 700;
+    color: #ffffff;
+  }
+
+  .feature-card p {
+    margin: 0;
+    color: var(--text-secondary);
+    font-size: 0.95rem;
+    line-height: 1.6;
+  }
+
+  /* Stats Section */
+  .stats-section {
+    max-width: 1200px;
+    margin: 0 auto;
+    padding: 20px 24px 60px 24px;
+  }
+
+  .stats-container {
+    padding: 40px;
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    text-align: center;
+    gap: 20px;
+  }
+
+  .stat-item {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+  }
+
+  .stat-number {
+    font-size: 2.5rem;
+    font-weight: 800;
+    color: #ffffff;
+  }
+
+  .stat-label {
+    color: var(--text-secondary);
+    font-size: 0.95rem;
+    font-weight: 500;
+  }
+
+  /* CTA Section */
+  .cta-section {
+    max-width: 1200px;
+    margin: 0 auto 100px auto;
+    padding: 0 24px;
+  }
+
+  .cta-card {
+    padding: 50px 24px;
+    text-align: center;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 16px;
+    background: linear-gradient(135deg, rgba(17, 25, 40, 0.9) 0%, rgba(99, 102, 241, 0.08) 100%);
+  }
+
+  .cta-card h2 {
+    font-size: 2rem;
+    font-weight: 800;
+    margin: 0;
+    color: #ffffff;
+  }
+
+  .cta-card p {
+    color: var(--text-secondary);
+    font-size: 1.05rem;
+    max-width: 550px;
+    margin: 0 0 10px 0;
+  }
+
+  @media (max-width: 768px) {
+    .hero-title {
+      font-size: 2.5rem;
+    }
+    .stats-container {
+      grid-template-columns: 1fr;
+      gap: 40px;
+    }
+  }
+</style>
