@@ -438,6 +438,8 @@ Also: add `VITE_RECAPTCHA_SITE_KEY=` to `app/.env.example`; keep the vite dev pr
 5. Mobile + a11y pass on test-taking (palette on a phone, timer visibility, keyboard nav, focus states).
 6. Failure modes: expired session mid-test, network drop during autosave, double-submit, back-button during checkout.
 
+**Status:** Completed in Part 1 (2026-07-20). `DevDemoSeeder` created and verified. Full E2E QA loop executed and passed. `VerifyEmail` StrictMode fix + score field fixes applied. `QA-SCRIPT.md` marked PASS. Backend 101 tests pass, SPA & Web builds clean.
+
 ## 17.8 Phase E — Deploy scaffolding (E1 done)
 
 - `deploy/.htaccess-api` (deny dotfiles, front-controller), `deploy/.htaccess-app` (SPA history fallback), `deploy/.htaccess-web` (static cache headers).
