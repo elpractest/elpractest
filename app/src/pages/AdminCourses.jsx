@@ -191,7 +191,7 @@ export default function AdminCourses() {
       </div>
 
       {error && (
-        <div style={{ padding: '16px', background: 'rgba(239, 68, 68, 0.1)', border: '1px solid #ef4444', borderRadius: '8px', color: '#ef4444' }}>
+        <div style={{ padding: '16px', background: 'var(--danger-bg)', border: '1px solid var(--danger)', borderRadius: '8px', color: 'var(--danger)' }}>
           {error}
         </div>
       )}
@@ -218,7 +218,7 @@ export default function AdminCourses() {
                     style={{
                       padding: '16px',
                       borderRadius: '8px',
-                      background: isSelected ? 'rgba(99, 102, 241, 0.15)' : 'rgba(255,255,255,0.02)',
+                      background: isSelected ? 'var(--accent-soft)' : 'var(--surface-1)',
                       border: isSelected ? '1px solid var(--accent-color)' : '1px solid var(--border-color)',
                       cursor: 'pointer',
                       transition: 'all 0.2s ease',
@@ -284,13 +284,13 @@ export default function AdminCourses() {
                     <img src={selectedCourse.banner_url} alt="Course Banner" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
                     <button 
                       onClick={triggerBannerUpload}
-                      style={{ position: 'absolute', right: '12px', bottom: '12px', background: 'rgba(0,0,0,0.75)', color: '#fff', border: 'none', padding: '6px 12px', borderRadius: '4px', cursor: 'pointer', fontSize: '0.8rem', fontWeight: 600 }}
+                      style={{ position: 'absolute', right: '12px', bottom: '12px', background: 'var(--overlay)', color: '#fff', border: 'none', padding: '6px 12px', borderRadius: '4px', cursor: 'pointer', fontSize: '0.8rem', fontWeight: 600 }}
                     >
                       📷 Change Banner
                     </button>
                   </div>
                 ) : (
-                  <div style={{ width: '100%', height: '120px', display: 'flex', justifyContent: 'center', alignItems: 'center', background: 'rgba(255,255,255,0.01)', border: '1px dashed var(--border-color)', borderRadius: '8px' }}>
+                  <div style={{ width: '100%', height: '120px', display: 'flex', justifyContent: 'center', alignItems: 'center', background: 'var(--surface-1)', border: '1px dashed var(--border-color)', borderRadius: '8px' }}>
                     <button 
                       onClick={triggerBannerUpload}
                       className="btn-secondary"
@@ -304,7 +304,7 @@ export default function AdminCourses() {
                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'start' }}>
                   <div>
                     <h2 style={{ fontSize: '1.6rem', margin: 0, fontWeight: 800 }}>{selectedCourse.title}</h2>
-                    <p style={{ color: 'var(--accent-color)', fontSize: '0.9rem', margin: '4px 0 0 0', fontFamily: 'monospace' }}>Slug: {selectedCourse.slug}</p>
+                    <p style={{ color: 'var(--accent-color)', fontSize: '0.9rem', margin: '4px 0 0 0', fontFamily: 'var(--font-mono)' }}>Slug: {selectedCourse.slug}</p>
                     <p style={{ color: 'var(--text-secondary)', fontSize: '0.95rem', marginTop: '12px', lineHeight: '1.5' }}>{selectedCourse.description || 'No description provided.'}</p>
                   </div>
                 <button 
@@ -325,16 +325,16 @@ export default function AdminCourses() {
                 <h3 style={{ fontSize: '1.2rem', margin: '0 0 16px 0', fontWeight: 700 }}>Course Syllabus Outline</h3>
                 
                 {!selectedCourse.modules || selectedCourse.modules.length === 0 ? (
-                  <div style={{ color: 'var(--text-secondary)', padding: '24px', textAlign: 'center', background: 'rgba(255,255,255,0.01)', border: '1px dashed var(--border-color)', borderRadius: '8px' }}>
+                  <div style={{ color: 'var(--text-secondary)', padding: '24px', textAlign: 'center', background: 'var(--surface-1)', border: '1px dashed var(--border-color)', borderRadius: '8px' }}>
                     Syllabus is empty. Create a module to start adding lessons.
                   </div>
                 ) : (
                   <div style={{ display: 'flex', flexDirection: 'column', gap: '24px' }}>
                     {selectedCourse.modules.map((module) => (
-                      <div key={module.id} className="glass-panel" style={{ background: 'rgba(255,255,255,0.01)', padding: '20px', display: 'flex', flexDirection: 'column', gap: '16px' }}>
+                      <div key={module.id} className="glass-panel" style={{ background: 'var(--surface-1)', padding: '20px', display: 'flex', flexDirection: 'column', gap: '16px' }}>
                         
                         {/* Module header */}
-                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderBottom: '1px solid rgba(255,255,255,0.05)', paddingBottom: '10px' }}>
+                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderBottom: '1px solid var(--surface-2)', paddingBottom: '10px' }}>
                           <span style={{ fontWeight: 700, fontSize: '1.05rem', color: 'var(--text-primary)' }}>📁 {module.title}</span>
                           <div style={{ display: 'flex', gap: '12px', alignItems: 'center' }}>
                             <button 
@@ -378,22 +378,22 @@ export default function AdminCourses() {
                                   justifyContent: 'space-between',
                                   alignItems: 'center',
                                   padding: '12px 16px',
-                                  background: 'rgba(255,255,255,0.02)',
+                                  background: 'var(--surface-1)',
                                   borderRadius: '6px',
-                                  border: '1px solid rgba(255,255,255,0.03)'
+                                  border: '1px solid var(--surface-2)'
                                 }}
                               >
                                 <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
                                   <div style={{ fontWeight: 600, fontSize: '0.9rem', display: 'flex', alignItems: 'center', gap: '8px' }}>
                                     <span>📺 {lesson.title}</span>
                                     {lesson.is_free_preview && (
-                                      <span style={{ fontSize: '0.75rem', color: '#10b981', background: 'rgba(16,185,129,0.1)', padding: '1px 6px', borderRadius: '4px', fontWeight: 'bold' }}>
+                                      <span style={{ fontSize: '0.75rem', color: 'var(--success)', background: 'var(--success-bg)', padding: '1px 6px', borderRadius: '4px', fontWeight: 'bold' }}>
                                         Free Preview
                                       </span>
                                     )}
                                   </div>
                                   <div style={{ fontSize: '0.8rem', color: 'var(--text-secondary)' }}>
-                                    YouTube ID: <span style={{ fontFamily: 'monospace', color: 'var(--text-primary)' }}>{lesson.youtube_video_id || 'None'}</span> • Duration: {Math.round(lesson.duration_seconds / 60)}m
+                                    YouTube ID: <span style={{ fontFamily: 'var(--font-mono)', color: 'var(--text-primary)' }}>{lesson.youtube_video_id || 'None'}</span> • Duration: {Math.round(lesson.duration_seconds / 60)}m
                                   </div>
                                 </div>
                                 <div style={{ display: 'flex', gap: '10px' }}>
@@ -437,7 +437,7 @@ export default function AdminCourses() {
 
       {/* Course Form Modal */}
       {showCourseForm && (
-        <div style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, background: 'rgba(0,0,0,0.7)', display: 'flex', justifyContent: 'center', alignItems: 'center', zIndex: 1000, padding: '20px' }}>
+        <div style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, background: 'var(--overlay)', display: 'flex', justifyContent: 'center', alignItems: 'center', zIndex: 1000, padding: '20px' }}>
           <div className="glass-panel" style={{ width: '100%', maxWidth: '500px', padding: '30px', display: 'flex', flexDirection: 'column', gap: '20px' }}>
             <h3 style={{ fontSize: '1.3rem', margin: 0, fontWeight: 700 }}>
               {courseForm.id ? 'Edit Course' : 'Create Course'}
@@ -464,7 +464,7 @@ export default function AdminCourses() {
                   className="form-input" 
                   placeholder="Auto-generated if left blank"
                   readOnly={!!courseForm.id} // Slug is locked read-only after creation
-                  style={{ background: courseForm.id ? 'rgba(255,255,255,0.02)' : 'rgba(255,255,255,0.05)', color: courseForm.id ? 'var(--text-secondary)' : 'var(--text-primary)' }}
+                  style={{ background: courseForm.id ? 'var(--surface-1)' : 'var(--surface-2)', color: courseForm.id ? 'var(--text-secondary)' : 'var(--text-primary)' }}
                 />
               </div>
 
@@ -503,7 +503,7 @@ export default function AdminCourses() {
 
       {/* Module Form Modal */}
       {showModuleForm && (
-        <div style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, background: 'rgba(0,0,0,0.7)', display: 'flex', justifyContent: 'center', alignItems: 'center', zIndex: 1000, padding: '20px' }}>
+        <div style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, background: 'var(--overlay)', display: 'flex', justifyContent: 'center', alignItems: 'center', zIndex: 1000, padding: '20px' }}>
           <div className="glass-panel" style={{ width: '100%', maxWidth: '440px', padding: '30px', display: 'flex', flexDirection: 'column', gap: '20px' }}>
             <h3 style={{ fontSize: '1.3rem', margin: 0, fontWeight: 700 }}>
               {moduleForm.id ? 'Edit Module' : 'Create Module'}
@@ -532,7 +532,7 @@ export default function AdminCourses() {
 
       {/* Lesson Form Modal */}
       {showLessonForm && (
-        <div style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, background: 'rgba(0,0,0,0.7)', display: 'flex', justifyContent: 'center', alignItems: 'center', zIndex: 1000, padding: '20px' }}>
+        <div style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, background: 'var(--overlay)', display: 'flex', justifyContent: 'center', alignItems: 'center', zIndex: 1000, padding: '20px' }}>
           <div className="glass-panel" style={{ width: '100%', maxWidth: '500px', padding: '30px', display: 'flex', flexDirection: 'column', gap: '20px' }}>
             <h3 style={{ fontSize: '1.3rem', margin: 0, fontWeight: 700 }}>
               {lessonForm.id ? 'Edit Lesson' : 'Create Lesson'}

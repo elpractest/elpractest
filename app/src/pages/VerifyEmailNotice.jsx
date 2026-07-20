@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { Link, useSearchParams } from 'react-router-dom';
 import api from '../api';
+import Icon from '../components/Icon';
 
 export default function VerifyEmailNotice() {
   const [searchParams] = useSearchParams();
@@ -39,13 +40,13 @@ export default function VerifyEmailNotice() {
   return (
     <div style={{ display: 'flex', flex: 1, justifyContent: 'center', alignItems: 'center', minHeight: '80vh', padding: '16px' }}>
       <div className="glass-panel" style={{ width: '100%', maxWidth: '460px', padding: '40px', textAlign: 'center', display: 'flex', flexDirection: 'column', gap: '20px' }}>
-        <div style={{ fontSize: '3rem' }}>📧</div>
+        <div style={{ display: 'flex', justifyContent: 'center' }}><span style={{ display: 'inline-flex', padding: '15px', borderRadius: '18px', background: 'var(--accent-soft)', color: 'var(--accent-color)', border: '1px solid var(--accent-border)' }}><Icon name="mail" size={34} /></span></div>
         <h2 style={{ margin: 0, fontSize: '1.6rem', fontWeight: 800, color: 'var(--accent-color)' }}>Verify Your Email</h2>
         <p style={{ margin: 0, color: 'var(--text-secondary)', fontSize: '0.95rem', lineHeight: '1.6' }}>
           We've sent a verification link to your email. Please click the link to verify your account before logging in.
         </p>
 
-        <div style={{ display: 'flex', flexDirection: 'column', gap: '12px', padding: '20px', background: 'rgba(255,255,255,0.03)', borderRadius: '8px', border: '1px solid var(--border-color)' }}>
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '12px', padding: '20px', background: 'var(--surface-2)', borderRadius: '8px', border: '1px solid var(--border-color)' }}>
           <label style={{ fontSize: '0.85rem', fontWeight: 600, color: 'var(--text-secondary)', textAlign: 'left' }}>Didn't receive the email? Enter your email to resend:</label>
           <input
             type="email"
@@ -66,10 +67,10 @@ export default function VerifyEmailNotice() {
 
         {resendMsg && (
           <div style={{ 
-            background: resendMsg.includes('sent') ? 'rgba(16, 185, 129, 0.1)' : 'rgba(239, 68, 68, 0.1)', 
-            border: `1px solid ${resendMsg.includes('sent') ? 'rgba(16, 185, 129, 0.2)' : 'rgba(239, 68, 68, 0.2)'}`,
+            background: resendMsg.includes('sent') ? 'var(--success-bg)' : 'var(--danger-bg)', 
+            border: `1px solid ${resendMsg.includes('sent') ? 'var(--success-border)' : 'var(--danger-border)'}`,
             padding: '12px 16px', borderRadius: '8px', 
-            color: resendMsg.includes('sent') ? '#34d399' : '#f87171', 
+            color: resendMsg.includes('sent') ? 'var(--success-text)' : 'var(--danger-text)', 
             fontSize: '0.85rem' 
           }}>
             {resendMsg}

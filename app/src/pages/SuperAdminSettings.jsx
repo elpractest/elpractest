@@ -91,7 +91,7 @@ export default function SuperAdminSettings() {
   return (
     <div style={{ maxWidth: '900px', margin: '0 auto' }}>
       <div style={{ marginBottom: '32px' }}>
-        <h1 style={{ fontSize: '2rem', fontWeight: 800, margin: '0 0 8px 0', background: 'linear-gradient(to right, #ffffff, #a78bfa)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent' }}>
+        <h1 style={{ fontSize: '2rem', fontWeight: 800, margin: '0 0 8px 0', background: 'linear-gradient(to right, #ffffff, var(--violet-text))', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent' }}>
           White-Label & Platform Settings
         </h1>
         <p style={{ margin: 0, color: 'var(--text-secondary)' }}>
@@ -100,13 +100,13 @@ export default function SuperAdminSettings() {
       </div>
 
       {error && (
-        <div style={{ background: 'rgba(239, 68, 68, 0.1)', border: '1px solid rgba(239, 68, 68, 0.2)', padding: '12px 16px', borderRadius: '8px', color: '#f87171', marginBottom: '24px', fontSize: '0.9rem' }}>
+        <div style={{ background: 'var(--danger-bg)', border: '1px solid var(--danger-border)', padding: '12px 16px', borderRadius: '8px', color: 'var(--danger-text)', marginBottom: '24px', fontSize: '0.9rem' }}>
           ⚠️ {error}
         </div>
       )}
 
       {success && (
-        <div style={{ background: 'rgba(16, 185, 129, 0.1)', border: '1px solid rgba(16, 185, 129, 0.2)', padding: '12px 16px', borderRadius: '8px', color: '#34d399', marginBottom: '24px', fontSize: '0.9rem' }}>
+        <div style={{ background: 'var(--success-bg)', border: '1px solid var(--success-border)', padding: '12px 16px', borderRadius: '8px', color: 'var(--success-text)', marginBottom: '24px', fontSize: '0.9rem' }}>
           ✅ {success}
         </div>
       )}
@@ -125,7 +125,7 @@ export default function SuperAdminSettings() {
             onClick={() => setActiveSubTab(subTab.id)}
             style={{
               padding: '8px 16px',
-              background: activeSubTab === subTab.id ? 'rgba(99, 102, 241, 0.15)' : 'transparent',
+              background: activeSubTab === subTab.id ? 'var(--accent-soft)' : 'transparent',
               border: 'none',
               borderBottom: activeSubTab === subTab.id ? '2px solid var(--accent-color)' : '2px solid transparent',
               color: activeSubTab === subTab.id ? '#ffffff' : 'var(--text-secondary)',
@@ -224,7 +224,7 @@ export default function SuperAdminSettings() {
                 </label>
                 <div style={{ display: 'flex', alignItems: 'center', gap: '16px' }}>
                   {settings.site_logo ? (
-                    <img src={settings.site_logo} alt="Logo" style={{ maxHeight: '48px', maxWidth: '120px', objectFit: 'contain', border: '1px solid var(--border-color)', borderRadius: '6px', padding: '6px', background: 'rgba(255,255,255,0.02)' }} />
+                    <img src={settings.site_logo} alt="Logo" style={{ maxHeight: '48px', maxWidth: '120px', objectFit: 'contain', border: '1px solid var(--border-color)', borderRadius: '6px', padding: '6px', background: 'var(--surface-1)' }} />
                   ) : (
                     <div style={{ height: '48px', width: '100px', display: 'flex', alignItems: 'center', justifyContent: 'center', border: '1px dashed var(--border-color)', borderRadius: '6px', fontSize: '0.8rem', color: 'var(--text-secondary)' }}>
                       No Logo
@@ -250,7 +250,7 @@ export default function SuperAdminSettings() {
                 </label>
                 <div style={{ display: 'flex', alignItems: 'center', gap: '16px' }}>
                   {settings.site_favicon ? (
-                    <img src={settings.site_favicon} alt="Favicon" style={{ height: '32px', width: '32px', objectFit: 'contain', border: '1px solid var(--border-color)', borderRadius: '6px', padding: '4px', background: 'rgba(255,255,255,0.02)' }} />
+                    <img src={settings.site_favicon} alt="Favicon" style={{ height: '32px', width: '32px', objectFit: 'contain', border: '1px solid var(--border-color)', borderRadius: '6px', padding: '4px', background: 'var(--surface-1)' }} />
                   ) : (
                     <div style={{ height: '32px', width: '32px', display: 'flex', alignItems: 'center', justifyContent: 'center', border: '1px dashed var(--border-color)', borderRadius: '6px', fontSize: '0.8rem', color: 'var(--text-secondary)' }}>
                       -
@@ -459,7 +459,7 @@ export default function SuperAdminSettings() {
             <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
               
               {/* Payment Gateway Switch */}
-              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '20px', background: 'rgba(255,255,255,0.02)', border: '1px solid var(--border-color)', borderRadius: '10px' }}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '20px', background: 'var(--surface-1)', border: '1px solid var(--border-color)', borderRadius: '10px' }}>
                 <div style={{ flex: 1, paddingRight: '20px' }}>
                   <div style={{ fontSize: '0.95rem', fontWeight: 700, color: '#ffffff', marginBottom: '4px' }}>Razorpay Online Payments</div>
                   <div style={{ fontSize: '0.8rem', color: 'var(--text-secondary)' }}>
@@ -473,12 +473,12 @@ export default function SuperAdminSettings() {
                     position: 'relative',
                     width: '60px',
                     height: '32px',
-                    background: (settings.payment_gateway_enabled === 'true' || settings.payment_gateway_enabled === true) ? 'var(--accent-color)' : 'rgba(255,255,255,0.1)',
+                    background: (settings.payment_gateway_enabled === 'true' || settings.payment_gateway_enabled === true) ? 'var(--accent-color)' : 'var(--surface-3)',
                     border: 'none',
                     borderRadius: '32px',
                     cursor: 'pointer',
                     transition: 'all 0.3s ease',
-                    boxShadow: (settings.payment_gateway_enabled === 'true' || settings.payment_gateway_enabled === true) ? '0 0 10px rgba(99, 102, 241, 0.4)' : 'none',
+                    boxShadow: (settings.payment_gateway_enabled === 'true' || settings.payment_gateway_enabled === true) ? '0 0 10px var(--accent-border)' : 'none',
                     padding: 0,
                   }}
                 >
@@ -498,7 +498,7 @@ export default function SuperAdminSettings() {
               </div>
 
               {/* Social Login Switch */}
-              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '20px', background: 'rgba(255,255,255,0.02)', border: '1px solid var(--border-color)', borderRadius: '10px' }}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '20px', background: 'var(--surface-1)', border: '1px solid var(--border-color)', borderRadius: '10px' }}>
                 <div style={{ flex: 1, paddingRight: '20px' }}>
                   <div style={{ fontSize: '0.95rem', fontWeight: 700, color: '#ffffff', marginBottom: '4px' }}>OAuth Social Login (Google & Facebook)</div>
                   <div style={{ fontSize: '0.8rem', color: 'var(--text-secondary)' }}>
@@ -512,12 +512,12 @@ export default function SuperAdminSettings() {
                     position: 'relative',
                     width: '60px',
                     height: '32px',
-                    background: (settings.social_login_enabled === 'true' || settings.social_login_enabled === true) ? 'var(--accent-color)' : 'rgba(255,255,255,0.1)',
+                    background: (settings.social_login_enabled === 'true' || settings.social_login_enabled === true) ? 'var(--accent-color)' : 'var(--surface-3)',
                     border: 'none',
                     borderRadius: '32px',
                     cursor: 'pointer',
                     transition: 'all 0.3s ease',
-                    boxShadow: (settings.social_login_enabled === 'true' || settings.social_login_enabled === true) ? '0 0 10px rgba(99, 102, 241, 0.4)' : 'none',
+                    boxShadow: (settings.social_login_enabled === 'true' || settings.social_login_enabled === true) ? '0 0 10px var(--accent-border)' : 'none',
                     padding: 0,
                   }}
                 >
@@ -537,7 +537,7 @@ export default function SuperAdminSettings() {
               </div>
 
               {/* LMS Video Module Switch */}
-              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '20px', background: 'rgba(255,255,255,0.02)', border: '1px solid var(--border-color)', borderRadius: '10px' }}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '20px', background: 'var(--surface-1)', border: '1px solid var(--border-color)', borderRadius: '10px' }}>
                 <div style={{ flex: 1, paddingRight: '20px' }}>
                   <div style={{ fontSize: '0.95rem', fontWeight: 700, color: '#ffffff', marginBottom: '4px' }}>LMS Video Course Player</div>
                   <div style={{ fontSize: '0.8rem', color: 'var(--text-secondary)' }}>
@@ -551,12 +551,12 @@ export default function SuperAdminSettings() {
                     position: 'relative',
                     width: '60px',
                     height: '32px',
-                    background: (settings.lms_video_enabled === 'true' || settings.lms_video_enabled === true) ? 'var(--accent-color)' : 'rgba(255,255,255,0.1)',
+                    background: (settings.lms_video_enabled === 'true' || settings.lms_video_enabled === true) ? 'var(--accent-color)' : 'var(--surface-3)',
                     border: 'none',
                     borderRadius: '32px',
                     cursor: 'pointer',
                     transition: 'all 0.3s ease',
-                    boxShadow: (settings.lms_video_enabled === 'true' || settings.lms_video_enabled === true) ? '0 0 10px rgba(99, 102, 241, 0.4)' : 'none',
+                    boxShadow: (settings.lms_video_enabled === 'true' || settings.lms_video_enabled === true) ? '0 0 10px var(--accent-border)' : 'none',
                     padding: 0,
                   }}
                 >

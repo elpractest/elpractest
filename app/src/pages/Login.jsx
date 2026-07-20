@@ -75,7 +75,7 @@ export default function Login({ setUser }) {
         </div>
 
         {error && (
-          <div style={{ background: 'rgba(239, 68, 68, 0.1)', border: '1px solid rgba(239, 68, 68, 0.2)', padding: '12px 16px', borderRadius: '8px', color: '#f87171', fontSize: '0.85rem', lineHeight: '1.4' }}>
+          <div style={{ background: 'var(--danger-bg)', border: '1px solid var(--danger-border)', padding: '12px 16px', borderRadius: '8px', color: 'var(--danger-text)', fontSize: '0.85rem', lineHeight: '1.4' }}>
             {error}
           </div>
         )}
@@ -84,10 +84,10 @@ export default function Login({ setUser }) {
           <>
             <div style={{ display: 'flex', gap: '12px' }}>
               <button onClick={() => handleSocialLogin('google')} className="btn-secondary" style={{ flex: 1, padding: '10px', fontSize: '0.85rem', gap: '8px' }} type="button">
-                <span>🔵</span> Google
+                Google
               </button>
               <button onClick={() => handleSocialLogin('facebook')} className="btn-secondary" style={{ flex: 1, padding: '10px', fontSize: '0.85rem', gap: '8px' }} type="button">
-                <span>🔷</span> Facebook
+                Facebook
               </button>
             </div>
             <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>

@@ -108,13 +108,13 @@ export default function AdminActivations() {
       </div>
 
       {success && (
-        <div style={{ padding: '16px', background: 'rgba(16, 185, 129, 0.1)', border: '1px solid #10b981', borderRadius: '8px', color: '#10b981' }}>
+        <div style={{ padding: '16px', background: 'var(--success-bg)', border: '1px solid var(--success)', borderRadius: '8px', color: 'var(--success)' }}>
           {success}
         </div>
       )}
 
       {error && (
-        <div style={{ padding: '16px', background: 'rgba(239, 68, 68, 0.1)', border: '1px solid #ef4444', borderRadius: '8px', color: '#ef4444' }}>
+        <div style={{ padding: '16px', background: 'var(--danger-bg)', border: '1px solid var(--danger)', borderRadius: '8px', color: 'var(--danger)' }}>
           {error}
         </div>
       )}
@@ -147,7 +147,7 @@ export default function AdminActivations() {
                 </tr>
               ) : (
                 requests.map((req) => (
-                  <tr key={req.id} style={{ borderBottom: '1px solid rgba(255,255,255,0.03)', fontSize: '0.9rem' }}>
+                  <tr key={req.id} style={{ borderBottom: '1px solid var(--surface-2)', fontSize: '0.9rem' }}>
                     <td style={{ padding: '16px' }}>
                       <div style={{ fontWeight: 600 }}>{req.user?.name}</div>
                       <div style={{ fontSize: '0.8rem', color: 'var(--text-secondary)', marginTop: '2px' }}>{req.user?.email}</div>
@@ -160,7 +160,7 @@ export default function AdminActivations() {
                         </div>
                       )}
                     </td>
-                    <td style={{ padding: '16px', fontFamily: 'monospace', fontWeight: 'bold' }}>
+                    <td style={{ padding: '16px', fontFamily: 'var(--font-mono)', fontWeight: 'bold' }}>
                       {req.payment_reference || 'N/A'}
                     </td>
                     <td style={{ padding: '16px' }}>
@@ -193,10 +193,10 @@ export default function AdminActivations() {
                 <p style={{ color: 'var(--text-secondary)', fontSize: '0.85rem', marginTop: '6px' }}>
                   Submitted by: <strong>{selectedReq.user?.name}</strong> ({selectedReq.user?.email})
                 </p>
-                <div style={{ background: 'rgba(255,255,255,0.03)', padding: '12px', borderRadius: '8px', marginTop: '12px', fontSize: '0.85rem' }}>
+                <div style={{ background: 'var(--surface-2)', padding: '12px', borderRadius: '8px', marginTop: '12px', fontSize: '0.85rem' }}>
                   <div>Target Course: <strong>{selectedReq.course?.title}</strong></div>
                   {selectedReq.batch && <div>Target Batch: <strong>{selectedReq.batch?.name}</strong></div>}
-                  <div style={{ marginTop: '4px' }}>Transaction Ref: <span style={{ fontFamily: 'monospace', fontWeight: 'bold', color: 'var(--accent-color)' }}>{selectedReq.payment_reference}</span></div>
+                  <div style={{ marginTop: '4px' }}>Transaction Ref: <span style={{ fontFamily: 'var(--font-mono)', fontWeight: 'bold', color: 'var(--accent-color)' }}>{selectedReq.payment_reference}</span></div>
                 </div>
               </div>
 
@@ -205,7 +205,7 @@ export default function AdminActivations() {
                 <label style={{ fontSize: '0.85rem', color: 'var(--text-secondary)', textTransform: 'uppercase', fontWeight: 600 }}>Uploaded Payment Proof</label>
                 
                 {loadingProof ? (
-                  <div style={{ height: '220px', background: 'rgba(0,0,0,0.2)', border: '1px solid var(--border-color)', borderRadius: '8px', display: 'flex', justifyContent: 'center', alignItems: 'center', color: 'var(--text-secondary)', fontSize: '0.9rem' }}>
+                  <div style={{ height: '220px', background: 'var(--surface-sunken)', border: '1px solid var(--border-color)', borderRadius: '8px', display: 'flex', justifyContent: 'center', alignItems: 'center', color: 'var(--text-secondary)', fontSize: '0.9rem' }}>
                     Downloading secure file...
                   </div>
                 ) : proofUrl ? (
@@ -233,7 +233,7 @@ export default function AdminActivations() {
                         />
                       </div>
                     ) : (
-                      <div style={{ height: '100px', background: 'rgba(255,255,255,0.02)', border: '1px solid var(--border-color)', borderRadius: '8px', display: 'flex', flexDirection: 'column', justifyContent: 'center', alignItems: 'center', gap: '8px' }}>
+                      <div style={{ height: '100px', background: 'var(--surface-1)', border: '1px solid var(--border-color)', borderRadius: '8px', display: 'flex', flexDirection: 'column', justifyContent: 'center', alignItems: 'center', gap: '8px' }}>
                         <span style={{ fontSize: '0.85rem', color: 'var(--text-secondary)' }}>PDF or Document Uploaded ({proofType})</span>
                       </div>
                     )}
@@ -274,7 +274,7 @@ export default function AdminActivations() {
                     type="button" 
                     onClick={handleReject} 
                     className="btn-secondary" 
-                    style={{ color: '#ef4444', borderColor: 'rgba(239,68,68,0.3)', padding: '12px' }}
+                    style={{ color: 'var(--danger)', borderColor: 'var(--danger-border)', padding: '12px' }}
                     disabled={actionLoading}
                   >
                     ❌ Reject Request
@@ -283,7 +283,7 @@ export default function AdminActivations() {
                     type="button" 
                     onClick={handleApprove} 
                     className="btn-primary" 
-                    style={{ background: '#10b981', boxShadow: 'none', padding: '12px' }}
+                    style={{ background: 'var(--success)', boxShadow: 'none', padding: '12px' }}
                     disabled={actionLoading}
                   >
                     ✓ Approve Request

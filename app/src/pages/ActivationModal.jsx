@@ -105,7 +105,7 @@ export default function ActivationModal({ user, onClose, onSuccess }) {
       left: 0,
       right: 0,
       bottom: 0,
-      backgroundColor: 'rgba(0, 0, 0, 0.75)',
+      backgroundColor: 'var(--overlay)',
       backdropFilter: 'blur(8px)',
       display: 'flex',
       alignItems: 'center',
@@ -177,13 +177,13 @@ export default function ActivationModal({ user, onClose, onSuccess }) {
         </div>
 
         {error && (
-          <div style={{ background: 'rgba(239, 68, 68, 0.1)', border: '1px solid rgba(239, 68, 68, 0.2)', padding: '12px 16px', borderRadius: '8px', color: '#f87171', fontSize: '0.85rem' }}>
+          <div style={{ background: 'var(--danger-bg)', border: '1px solid var(--danger-border)', padding: '12px 16px', borderRadius: '8px', color: 'var(--danger-text)', fontSize: '0.85rem' }}>
             {error}
             {!user?.phone_verified && tab === 'request' && (
               <div style={{ marginTop: '8px' }}>
                 <button
                   onClick={() => { onClose(); navigate('/verify-otp'); }}
-                  style={{ background: '#f59e0b', color: '#000', border: 'none', padding: '6px 12px', borderRadius: '6px', fontSize: '0.8rem', fontWeight: 700, cursor: 'pointer' }}
+                  style={{ background: 'var(--warning)', color: '#000', border: 'none', padding: '6px 12px', borderRadius: '6px', fontSize: '0.8rem', fontWeight: 700, cursor: 'pointer' }}
                 >
                   Verify Phone Number Now →
                 </button>
@@ -193,7 +193,7 @@ export default function ActivationModal({ user, onClose, onSuccess }) {
         )}
 
         {successMsg && (
-          <div style={{ background: 'rgba(16, 185, 129, 0.1)', border: '1px solid rgba(16, 185, 129, 0.2)', padding: '12px 16px', borderRadius: '8px', color: '#34d399', fontSize: '0.85rem' }}>
+          <div style={{ background: 'var(--success-bg)', border: '1px solid var(--success-border)', padding: '12px 16px', borderRadius: '8px', color: 'var(--success-text)', fontSize: '0.85rem' }}>
             {successMsg}
           </div>
         )}
@@ -210,12 +210,12 @@ export default function ActivationModal({ user, onClose, onSuccess }) {
                   value={selectedBatchId}
                   onChange={(e) => setSelectedBatchId(e.target.value)}
                   required
-                  style={{ background: 'rgba(255, 255, 255, 0.05)', color: 'var(--text-primary)' }}
+                  style={{ background: 'var(--surface-2)', color: 'var(--text-primary)' }}
                 >
-                  <option value="" style={{ background: '#0b0f19' }}>-- Select Course Batch --</option>
+                  <option value="" style={{ background: 'var(--bg-color)' }}>-- Select Course Batch --</option>
                   {courses.map(c => (
                     c.batches?.map(b => (
-                      <option key={b.id} value={b.id} style={{ background: '#0b0f19' }}>
+                      <option key={b.id} value={b.id} style={{ background: 'var(--bg-color)' }}>
                         {c.title} — {b.name} ({b.price_in_rupees || (b.price_paise ? `₹${b.price_paise / 100}` : 'Free')})
                       </option>
                     ))

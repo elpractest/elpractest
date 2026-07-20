@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { useParams, useNavigate, Link } from 'react-router-dom';
 import api from '../api';
+import Icon from '../components/Icon';
 
 export default function LessonPlayer() {
   const { lessonId } = useParams();
@@ -142,7 +143,7 @@ export default function LessonPlayer() {
     return (
       <div style={{ padding: '32px 24px', maxWidth: '800px', margin: '0 auto' }}>
         <div className="glass-panel" style={{ padding: '32px', textAlign: 'center' }}>
-          <div style={{ fontSize: '2.5rem', marginBottom: '12px' }}>🔒</div>
+          <div style={{ display: 'flex', justifyContent: 'center', marginBottom: '12px' }}><span style={{ display: 'inline-flex', padding: '15px', borderRadius: '18px', background: 'var(--accent-soft)', color: 'var(--accent-color)', border: '1px solid var(--accent-border)' }}><Icon name="lock" size={30} /></span></div>
           <h2 style={{ margin: '0 0 12px 0' }}>Lesson Locked</h2>
           <p style={{ color: 'var(--text-secondary)', marginBottom: '24px' }}>{error}</p>
           <Link to="/dashboard" className="btn-primary" style={{ textDecoration: 'none' }}>
@@ -166,7 +167,7 @@ export default function LessonPlayer() {
         </button>
 
         {progress?.is_completed && (
-          <span style={{ fontSize: '0.82rem', padding: '4px 12px', borderRadius: '12px', background: 'rgba(16, 185, 129, 0.15)', color: '#34d399', border: '1px solid rgba(16, 185, 129, 0.3)', fontWeight: 600 }}>
+          <span style={{ fontSize: '0.82rem', padding: '4px 12px', borderRadius: '12px', background: 'var(--success-bg)', color: 'var(--success-text)', border: '1px solid var(--success-border)', fontWeight: 600 }}>
             ✓ Completed
           </span>
         )}
@@ -188,7 +189,7 @@ export default function LessonPlayer() {
         <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
           <h1 style={{ margin: 0, fontSize: '1.5rem', fontWeight: 800 }}>{lesson.title}</h1>
           {lesson.is_free_preview && (
-            <span style={{ fontSize: '0.75rem', padding: '3px 8px', borderRadius: '6px', background: 'rgba(52, 211, 153, 0.15)', color: '#34d399', border: '1px solid rgba(52, 211, 153, 0.25)' }}>
+            <span style={{ fontSize: '0.75rem', padding: '3px 8px', borderRadius: '6px', background: 'var(--success-bg)', color: 'var(--success-text)', border: '1px solid var(--success-border)' }}>
               Free Preview
             </span>
           )}

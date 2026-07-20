@@ -71,7 +71,7 @@ export default function TestResult() {
   if (error) {
     return (
       <div style={{ padding: '40px 24px', textAlign: 'center' }}>
-        <div style={{ color: '#f87171', marginBottom: '16px' }}>{error}</div>
+        <div style={{ color: 'var(--danger-text)', marginBottom: '16px' }}>{error}</div>
         <Link to="/dashboard" className="btn-primary">Back to Dashboard</Link>
       </div>
     );
@@ -85,7 +85,7 @@ export default function TestResult() {
       
       {/* Top Banner / Hero */}
       <div className="glass-panel" style={{ padding: '32px', textAlign: 'center', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '12px' }}>
-        <span style={{ fontSize: '0.85rem', fontWeight: 700, padding: '4px 12px', background: 'rgba(16, 185, 129, 0.15)', color: '#10b981', borderRadius: '20px', textTransform: 'uppercase' }}>
+        <span style={{ fontSize: '0.85rem', fontWeight: 700, padding: '4px 12px', background: 'var(--success-bg)', color: 'var(--success)', borderRadius: '20px', textTransform: 'uppercase' }}>
           Test Submitted Successfully
         </span>
         <h1 style={{ margin: 0, fontSize: '2.2rem', fontWeight: 800 }}>Your Scorecard</h1>
@@ -110,7 +110,7 @@ export default function TestResult() {
         {/* Percentile Rank Card */}
         <div className="glass-panel" style={{ padding: '24px', textAlign: 'center' }}>
           <span style={{ fontSize: '0.85rem', color: 'var(--text-secondary)', fontWeight: 600 }}>Percentile Rank</span>
-          <div style={{ fontSize: '2.5rem', fontWeight: 800, color: '#a78bfa', margin: '8px 0' }}>
+          <div style={{ fontSize: '2.5rem', fontWeight: 800, color: 'var(--violet-text)', margin: '8px 0' }}>
             {parseFloat(percentile).toFixed(1)}%
           </div>
           <span style={{ fontSize: '0.8rem', color: 'var(--text-secondary)' }}>
@@ -121,7 +121,7 @@ export default function TestResult() {
         {/* Accuracy Card */}
         <div className="glass-panel" style={{ padding: '24px', textAlign: 'center' }}>
           <span style={{ fontSize: '0.85rem', color: 'var(--text-secondary)', fontWeight: 600 }}>Accuracy Rate</span>
-          <div style={{ fontSize: '2.5rem', fontWeight: 800, color: '#10b981', margin: '8px 0' }}>
+          <div style={{ fontSize: '2.5rem', fontWeight: 800, color: 'var(--success)', margin: '8px 0' }}>
             {parseFloat(analytic.accuracy_percentage || 0).toFixed(1)}%
           </div>
           <span style={{ fontSize: '0.8rem', color: 'var(--text-secondary)' }}>
@@ -132,11 +132,11 @@ export default function TestResult() {
         {/* Correct/Incorrect Counts */}
         <div className="glass-panel" style={{ padding: '24px', display: 'flex', flexDirection: 'column', justifyContent: 'center', gap: '12px' }}>
           <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.9rem' }}>
-            <span style={{ color: '#10b981', fontWeight: 600 }}>Correct answers:</span>
+            <span style={{ color: 'var(--success)', fontWeight: 600 }}>Correct answers:</span>
             <strong>{analytic.correct_count}</strong>
           </div>
           <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.9rem' }}>
-            <span style={{ color: '#ef4444', fontWeight: 600 }}>Incorrect answers:</span>
+            <span style={{ color: 'var(--danger)', fontWeight: 600 }}>Incorrect answers:</span>
             <strong>{analytic.incorrect_count}</strong>
           </div>
           <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.9rem' }}>
@@ -166,14 +166,14 @@ export default function TestResult() {
                 style={{ 
                   padding: '24px',
                   borderLeft: '4px solid',
-                  borderLeftColor: isCorrect ? '#10b981' : isUnanswered ? '#9ca3af' : '#ef4444'
+                  borderLeftColor: isCorrect ? 'var(--success)' : isUnanswered ? 'var(--text-secondary)' : 'var(--danger)'
                 }}
               >
                 {/* Review Header */}
                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px', fontSize: '0.85rem' }}>
                   <span style={{ fontWeight: 700 }}>Question {idx + 1}</span>
                   <span style={{ 
-                    color: isCorrect ? '#10b981' : isUnanswered ? 'var(--text-secondary)' : '#ef4444',
+                    color: isCorrect ? 'var(--success)' : isUnanswered ? 'var(--text-secondary)' : 'var(--danger)',
                     fontWeight: 700,
                     textTransform: 'uppercase'
                   }}>
@@ -192,14 +192,14 @@ export default function TestResult() {
                     const wasSelected = ans.selected_option_id === opt.id;
                     const isRight = opt.is_correct;
                     
-                    let bg = 'rgba(255,255,255,0.02)';
+                    let bg = 'var(--surface-1)';
                     let border = 'var(--border-color)';
                     if (isRight) {
-                      bg = 'rgba(16, 185, 129, 0.1)';
-                      border = '#10b981';
+                      bg = 'var(--success-bg)';
+                      border = 'var(--success)';
                     } else if (wasSelected && !isRight) {
-                      bg = 'rgba(239, 68, 68, 0.1)';
-                      border = '#ef4444';
+                      bg = 'var(--danger-bg)';
+                      border = 'var(--danger)';
                     }
 
                     return (
@@ -223,7 +223,7 @@ export default function TestResult() {
                           width: '24px', 
                           height: '24px', 
                           borderRadius: '50%',
-                          background: isRight ? '#10b981' : wasSelected ? '#ef4444' : 'rgba(255,255,255,0.05)',
+                          background: isRight ? 'var(--success)' : wasSelected ? 'var(--danger)' : 'var(--surface-2)',
                           color: '#ffffff',
                           marginRight: '12px',
                           fontWeight: 'bold',
@@ -240,7 +240,7 @@ export default function TestResult() {
 
                 {/* Explanation */}
                 {ans.explanation && (
-                  <div style={{ background: 'rgba(255,255,255,0.03)', border: '1px dashed var(--border-color)', padding: '16px', borderRadius: '8px', marginTop: '16px' }}>
+                  <div style={{ background: 'var(--surface-2)', border: '1px dashed var(--border-color)', padding: '16px', borderRadius: '8px', marginTop: '16px' }}>
                     <div style={{ fontSize: '0.85rem', fontWeight: 700, color: 'var(--accent-color)', marginBottom: '6px' }}>Explanation:</div>
                     <div style={{ fontSize: '0.9rem', color: 'var(--text-secondary)', lineHeight: '1.5' }}>
                       <MathRenderer text={ans.explanation} />

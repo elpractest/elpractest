@@ -47,7 +47,7 @@ export default function Admin2FASetup({ setUser }) {
   };
 
   return (
-    <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', minHeight: '100vh', padding: '20px', backgroundColor: '#0b0f19' }}>
+    <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', minHeight: '100vh', padding: '20px', backgroundColor: 'var(--bg-color)' }}>
       <div className="glass-panel" style={{ width: '100%', maxWidth: '500px', padding: '40px', display: 'flex', flexDirection: 'col', gap: '24px', boxSizing: 'border-box' }}>
         <div style={{ textAlign: 'center' }}>
           <h2 style={{ fontSize: '1.8rem', fontWeight: 800, margin: '0 0 8px 0', color: 'var(--text-primary)' }}>Secure Admin Account</h2>
@@ -59,7 +59,7 @@ export default function Admin2FASetup({ setUser }) {
             Generating secure keys...
           </div>
         ) : error && !qrSvg ? (
-          <div style={{ padding: '16px', background: 'rgba(239, 68, 68, 0.1)', border: '1px solid #ef4444', borderRadius: '8px', color: '#ef4444', fontSize: '0.95rem' }}>
+          <div style={{ padding: '16px', background: 'var(--danger-bg)', border: '1px solid var(--danger)', borderRadius: '8px', color: 'var(--danger)', fontSize: '0.95rem' }}>
             {error}
           </div>
         ) : (
@@ -73,13 +73,13 @@ export default function Admin2FASetup({ setUser }) {
                   display: 'inline-flex',
                   justifyContent: 'center',
                   alignItems: 'center',
-                  boxShadow: '0 8px 24px rgba(0,0,0,0.2)'
+                  boxShadow: '0 8px 24px var(--surface-sunken)'
                 }}
                 dangerouslySetInnerHTML={{ __html: qrSvg }}
               />
               <div style={{ textAlign: 'center' }}>
                 <span style={{ fontSize: '0.85rem', color: 'var(--text-secondary)' }}>Or enter secret key manually:</span>
-                <div style={{ fontFamily: 'monospace', fontSize: '1.1rem', letterSpacing: '2px', color: 'var(--accent-color)', fontWeight: 'bold', marginTop: '4px', background: 'rgba(255,255,255,0.05)', padding: '6px 12px', borderRadius: '6px' }}>
+                <div style={{ fontFamily: 'var(--font-mono)', fontSize: '1.1rem', letterSpacing: '2px', color: 'var(--accent-color)', fontWeight: 'bold', marginTop: '4px', background: 'var(--surface-2)', padding: '6px 12px', borderRadius: '6px' }}>
                   {secretKey}
                 </div>
               </div>
@@ -91,7 +91,7 @@ export default function Admin2FASetup({ setUser }) {
             </div>
 
             {error && (
-              <div style={{ padding: '12px', background: 'rgba(239, 68, 68, 0.1)', border: '1px solid #ef4444', borderRadius: '8px', color: '#ef4444', fontSize: '0.9rem' }}>
+              <div style={{ padding: '12px', background: 'var(--danger-bg)', border: '1px solid var(--danger)', borderRadius: '8px', color: 'var(--danger)', fontSize: '0.9rem' }}>
                 {error}
               </div>
             )}

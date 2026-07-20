@@ -1,6 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import { BrowserRouter, Routes, Route, Navigate, useNavigate, Link } from 'react-router-dom';
 import api, { setOn2FARequired } from './api';
+import ThemeToggle from './components/ThemeToggle';
+import Icon from './components/Icon';
 import Login from './pages/Login';
 import Register from './pages/Register';
 import VerifyEmailNotice from './pages/VerifyEmailNotice';
@@ -24,8 +26,9 @@ import Admin2FAVerify from './pages/Admin2FAVerify';
 const StudentGuard = ({ user, loading, children }) => {
   if (loading) {
     return (
-      <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', height: '100vh', backgroundColor: '#0b0f19' }}>
-        <div style={{ color: '#f3f4f6', fontSize: '1.2rem', fontWeight: 600 }}>Loading Practest...</div>
+      <div style={{ display: 'flex', flexDirection: 'column', gap: '18px', justifyContent: 'center', alignItems: 'center', height: '100vh' }}>
+        <div className="spinner" />
+        <div style={{ color: 'var(--text-secondary)', fontSize: '0.95rem', fontWeight: 600, letterSpacing: '0.05em' }}>LOADING PRACTEST</div>
       </div>
     );
   }
@@ -43,8 +46,9 @@ const StudentGuard = ({ user, loading, children }) => {
 const AdminGuard = ({ user, loading, children }) => {
   if (loading) {
     return (
-      <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', height: '100vh', backgroundColor: '#0b0f19' }}>
-        <div style={{ color: '#f3f4f6', fontSize: '1.2rem', fontWeight: 600 }}>Loading Practest Admin...</div>
+      <div style={{ display: 'flex', flexDirection: 'column', gap: '18px', justifyContent: 'center', alignItems: 'center', height: '100vh' }}>
+        <div className="spinner" />
+        <div style={{ color: 'var(--text-secondary)', fontSize: '0.95rem', fontWeight: 600, letterSpacing: '0.05em' }}>LOADING PRACTEST ADMIN</div>
       </div>
     );
   }
@@ -87,24 +91,36 @@ function AppContent({ user, setUser, loading }) {
 
   return (
     <>
+      <ThemeToggle />
       {isStudent && (
-        <header className="glass-panel" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '16px 24px', margin: '16px', borderBottom: '1px solid var(--border-color)', borderRadius: '12px' }}>
+        <header className="glass-panel" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '10px', padding: '14px 22px', margin: '16px', position: 'sticky', top: '12px', zIndex: 100 }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
-            <Link to="/dashboard" style={{ textDecoration: 'none', fontSize: '1.4rem', fontWeight: 800, color: 'var(--accent-color)', letterSpacing: '1px' }}>PRACTEST</Link>
-            <span style={{ fontSize: '0.9rem', color: 'var(--text-secondary)', background: 'rgba(255,255,255,0.05)', padding: '4px 8px', borderRadius: '6px' }}>Student SPA</span>
+            <Link to="/dashboard" style={{ display: 'inline-flex', alignItems: 'center', gap: '12px', textDecoration: 'none' }}>
+              <span style={{ display: 'inline-flex', alignItems: 'center', justifyContent: 'center', width: '34px', height: '34px', borderRadius: '10px', background: 'var(--grad-primary)', color: '#ffffff', boxShadow: '0 6px 16px -6px var(--accent-glow)' }}>
+                <Icon name="graduation-cap" size={19} />
+              </span>
+              <span className="text-gradient" style={{ fontSize: '1.3rem', fontWeight: 700, letterSpacing: '0.02em', fontFamily: 'var(--font-display)' }}>PRACTEST</span>
+            </Link>
+            <span className="chip">STUDENT</span>
           </div>
-          <div style={{ display: 'flex', alignItems: 'center', gap: '16px' }}>
-            <span style={{ fontSize: '0.95rem', fontWeight: 500 }}>{user.name}</span>
-            <button onClick={handleLogout} className="btn-secondary" style={{ padding: '8px 16px', fontSize: '0.9rem' }}>Logout</button>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '14px' }}>
+            <span style={{ display: 'inline-flex', alignItems: 'center', gap: '8px', fontSize: '0.92rem', fontWeight: 600, color: 'var(--text-secondary)' }}>
+              <Icon name="user" size={16} /> {user.name}
+            </span>
+            <button onClick={handleLogout} className="btn-secondary" style={{ padding: '8px 16px', fontSize: '0.88rem' }}>
+              <Icon name="log-out" size={16} /> Logout
+            </button>
           </div>
         </header>
       )}
 
       {/* Non-blocking banner nudge if student phone is unverified */}
       {isStudent && !user.phone_verified && (
-        <div style={{ margin: '0 16px 16px 16px', padding: '12px 20px', background: 'rgba(245, 158, 11, 0.1)', border: '1px solid rgba(245, 158, 11, 0.25)', borderRadius: '8px', display: 'flex', justifyContent: 'space-between', alignItems: 'center', color: '#fbbf24', fontSize: '0.88rem' }}>
-          <span>⚠️ Your phone number is unverified. Mobile OTP verification is required to request course activation.</span>
-          <Link to="/verify-otp" className="btn-primary" style={{ padding: '6px 14px', fontSize: '0.8rem', background: '#f59e0b', color: '#000', textDecoration: 'none' }}>
+        <div style={{ margin: '0 16px 16px 16px', padding: '12px 20px', background: 'var(--warning-bg)', border: '1px solid var(--warning-border)', borderRadius: 'var(--radius-sm)', display: 'flex', flexWrap: 'wrap', gap: '10px', justifyContent: 'space-between', alignItems: 'center', color: 'var(--warning-text)', fontSize: '0.88rem' }}>
+          <span style={{ display: 'inline-flex', alignItems: 'center', gap: '9px' }}>
+            <Icon name="alert" size={17} /> Your phone number is unverified. Mobile OTP verification is required to request course activation.
+          </span>
+          <Link to="/verify-otp" className="btn-primary" style={{ padding: '7px 14px', fontSize: '0.8rem', textDecoration: 'none' }}>
             Verify Phone Now
           </Link>
         </div>

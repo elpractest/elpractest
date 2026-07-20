@@ -104,13 +104,13 @@ export default function AdminActivationCodes() {
       </div>
 
       {success && (
-        <div style={{ padding: '16px', background: 'rgba(16, 185, 129, 0.1)', border: '1px solid #10b981', borderRadius: '8px', color: '#10b981' }}>
+        <div style={{ padding: '16px', background: 'var(--success-bg)', border: '1px solid var(--success)', borderRadius: '8px', color: 'var(--success)' }}>
           {success}
         </div>
       )}
 
       {error && (
-        <div style={{ padding: '16px', background: 'rgba(239, 68, 68, 0.1)', border: '1px solid #ef4444', borderRadius: '8px', color: '#ef4444' }}>
+        <div style={{ padding: '16px', background: 'var(--danger-bg)', border: '1px solid var(--danger)', borderRadius: '8px', color: 'var(--danger)' }}>
           {error}
         </div>
       )}
@@ -145,8 +145,8 @@ export default function AdminActivationCodes() {
                 const isValid = !isExpired && !isFull;
                 
                 return (
-                  <tr key={code.id} style={{ borderBottom: '1px solid rgba(255,255,255,0.03)', fontSize: '0.9rem' }}>
-                    <td style={{ padding: '16px', fontFamily: 'monospace', fontWeight: 'bold', fontSize: '1.1rem', color: 'var(--accent-color)' }}>
+                  <tr key={code.id} style={{ borderBottom: '1px solid var(--surface-2)', fontSize: '0.9rem' }}>
+                    <td style={{ padding: '16px', fontFamily: 'var(--font-mono)', fontWeight: 'bold', fontSize: '1.1rem', color: 'var(--accent-color)' }}>
                       {code.code}
                     </td>
                     <td style={{ padding: '16px' }}>
@@ -170,8 +170,8 @@ export default function AdminActivationCodes() {
                           fontWeight: 'bold', 
                           padding: '2px 8px', 
                           borderRadius: '4px',
-                          background: isValid ? 'rgba(16,185,129,0.1)' : 'rgba(239,68,68,0.1)',
-                          color: isValid ? '#10b981' : '#ef4444'
+                          background: isValid ? 'var(--success-bg)' : 'var(--danger-bg)',
+                          color: isValid ? 'var(--success)' : 'var(--danger)'
                         }}
                       >
                         {isValid ? 'Valid' : isExpired ? 'Expired' : 'Max Redeemed'}
@@ -187,7 +187,7 @@ export default function AdminActivationCodes() {
 
       {/* Code Generation Form Modal */}
       {showForm && (
-        <div style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, background: 'rgba(0,0,0,0.7)', display: 'flex', justifyContent: 'center', alignItems: 'center', zIndex: 1000, padding: '20px' }}>
+        <div style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, background: 'var(--overlay)', display: 'flex', justifyContent: 'center', alignItems: 'center', zIndex: 1000, padding: '20px' }}>
           <div className="glass-panel" style={{ width: '100%', maxWidth: '480px', padding: '30px', display: 'flex', flexDirection: 'column', gap: '20px' }}>
             <h3 style={{ fontSize: '1.3rem', margin: 0, fontWeight: 700 }}>
               Bulk Code Generator

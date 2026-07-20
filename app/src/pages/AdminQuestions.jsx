@@ -277,21 +277,21 @@ export default function AdminQuestions({ csvState, triggerCsvImport, csvJobId })
       </div>
 
       {success && (
-        <div style={{ padding: '16px', background: 'rgba(16, 185, 129, 0.1)', border: '1px solid #10b981', borderRadius: '8px', color: '#10b981' }}>
+        <div style={{ padding: '16px', background: 'var(--success-bg)', border: '1px solid var(--success)', borderRadius: '8px', color: 'var(--success)' }}>
           {success}
         </div>
       )}
 
       {error && (
-        <div style={{ padding: '16px', background: 'rgba(239, 68, 68, 0.1)', border: '1px solid #ef4444', borderRadius: '8px', color: '#ef4444' }}>
+        <div style={{ padding: '16px', background: 'var(--danger-bg)', border: '1px solid var(--danger)', borderRadius: '8px', color: 'var(--danger)' }}>
           {error}
         </div>
       )}
 
       {/* CSV Import Progress Banner (If errors exist, render them) */}
       {csvState.status === 'complete' && csvState.errors && csvState.errors.length > 0 && (
-        <div className="glass-panel" style={{ padding: '24px', border: '1px solid rgba(239, 68, 68, 0.3)', background: 'rgba(239,68,68,0.05)' }}>
-          <h3 style={{ color: '#ef4444', margin: '0 0 12px 0', fontSize: '1.1rem', fontWeight: 700 }}>⚠️ Failed CSV Rows Report</h3>
+        <div className="glass-panel" style={{ padding: '24px', border: '1px solid var(--danger-border)', background: 'var(--danger-bg)' }}>
+          <h3 style={{ color: 'var(--danger)', margin: '0 0 12px 0', fontSize: '1.1rem', fontWeight: 700 }}>⚠️ Failed CSV Rows Report</h3>
           <p style={{ color: 'var(--text-secondary)', fontSize: '0.9rem', margin: '0 0 16px 0' }}>The import successfully registered some rows, but skipped the following lines due to validation errors:</p>
           <div style={{ overflowX: 'auto' }}>
             <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '0.85rem' }}>
@@ -304,10 +304,10 @@ export default function AdminQuestions({ csvState, triggerCsvImport, csvJobId })
               </thead>
               <tbody>
                 {csvState.errors.map((err, idx) => (
-                  <tr key={idx} style={{ borderBottom: '1px solid rgba(255,255,255,0.03)' }}>
+                  <tr key={idx} style={{ borderBottom: '1px solid var(--surface-2)' }}>
                     <td style={{ padding: '8px 12px', fontWeight: 'bold' }}>{err.row}</td>
                     <td style={{ padding: '8px 12px', color: 'var(--accent-color)' }}>{err.field || 'General'}</td>
-                    <td style={{ padding: '8px 12px', color: '#fca5a5' }}>{err.message}</td>
+                    <td style={{ padding: '8px 12px', color: 'var(--danger-text)' }}>{err.message}</td>
                   </tr>
                 ))}
               </tbody>
@@ -329,7 +329,7 @@ export default function AdminQuestions({ csvState, triggerCsvImport, csvJobId })
             padding: '40px 24px',
             textAlign: 'center',
             border: dragOver ? '2px dashed var(--accent-color)' : '2px dashed var(--border-color)',
-            background: dragOver ? 'rgba(99,102,241,0.05)' : 'var(--panel-bg)',
+            background: dragOver ? 'var(--accent-soft)' : 'var(--panel-bg)',
             borderRadius: '12px',
             cursor: 'pointer',
             transition: 'all 0.2s ease',
@@ -355,7 +355,7 @@ export default function AdminQuestions({ csvState, triggerCsvImport, csvJobId })
             />
           </label>
           {uploadingCsv && <div style={{ fontSize: '0.85rem', color: 'var(--accent-color)' }}>Uploading and parsing CSV...</div>}
-          {csvJobId && <div style={{ fontSize: '0.85rem', color: '#10b981' }}>Queued in background...</div>}
+          {csvJobId && <div style={{ fontSize: '0.85rem', color: 'var(--success)' }}>Queued in background...</div>}
         </div>
 
         {/* Filters */}
@@ -418,7 +418,7 @@ export default function AdminQuestions({ csvState, triggerCsvImport, csvJobId })
               </tr>
             ) : (
               questions.map((q) => (
-                <tr key={q.id} style={{ borderBottom: '1px solid rgba(255,255,255,0.03)', fontSize: '0.9rem' }}>
+                <tr key={q.id} style={{ borderBottom: '1px solid var(--surface-2)', fontSize: '0.9rem' }}>
                   <td style={{ padding: '16px' }}>
                     <div style={{ fontWeight: 600 }}>{q.subject}</div>
                     <div style={{ fontSize: '0.8rem', color: 'var(--text-secondary)', marginTop: '4px' }}>{q.topic}</div>
@@ -431,8 +431,8 @@ export default function AdminQuestions({ csvState, triggerCsvImport, csvJobId })
                         padding: '2px 8px', 
                         borderRadius: '4px',
                         textTransform: 'uppercase',
-                        background: q.difficulty === 'easy' ? 'rgba(16,185,129,0.1)' : q.difficulty === 'medium' ? 'rgba(245,158,11,0.1)' : 'rgba(239,68,68,0.1)',
-                        color: q.difficulty === 'easy' ? '#10b981' : q.difficulty === 'medium' ? '#f59e0b' : '#ef4444'
+                        background: q.difficulty === 'easy' ? 'var(--success-bg)' : q.difficulty === 'medium' ? 'var(--warning-bg)' : 'var(--danger-bg)',
+                        color: q.difficulty === 'easy' ? 'var(--success)' : q.difficulty === 'medium' ? 'var(--warning)' : 'var(--danger)'
                       }}
                     >
                       {q.difficulty}
@@ -443,8 +443,8 @@ export default function AdminQuestions({ csvState, triggerCsvImport, csvJobId })
                     <span dangerouslySetInnerHTML={renderMath(q.question_text.substring(0, 100))} />
                   </td>
                   <td style={{ padding: '16px' }}>
-                    <span style={{ fontWeight: 'bold', color: '#10b981' }}>+{q.marks}</span>
-                    <span style={{ fontSize: '0.8rem', color: '#ef4444', marginLeft: '6px' }}>-{q.negative_marks}</span>
+                    <span style={{ fontWeight: 'bold', color: 'var(--success)' }}>+{q.marks}</span>
+                    <span style={{ fontSize: '0.8rem', color: 'var(--danger)', marginLeft: '6px' }}>-{q.negative_marks}</span>
                   </td>
                   <td style={{ padding: '16px', textAlign: 'right' }}>
                     <div style={{ display: 'flex', gap: '12px', justifyContent: 'flex-end' }}>
@@ -486,7 +486,7 @@ export default function AdminQuestions({ csvState, triggerCsvImport, csvJobId })
 
       {/* Single Question Creator/Editor Form modal */}
       {showForm && (
-        <div style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, background: 'rgba(0,0,0,0.8)', display: 'flex', justifyContent: 'center', alignItems: 'center', zIndex: 1000, padding: '20px' }}>
+        <div style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, background: 'var(--overlay)', display: 'flex', justifyContent: 'center', alignItems: 'center', zIndex: 1000, padding: '20px' }}>
           <div className="glass-panel" style={{ width: '100%', maxWidth: '1000px', height: '90vh', padding: '30px', display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '30px', overflowY: 'auto' }}>
             
             {/* Left side: Inputs */}
@@ -589,14 +589,14 @@ export default function AdminQuestions({ csvState, triggerCsvImport, csvJobId })
             <div style={{ borderLeft: '1px solid var(--border-color)', paddingLeft: '30px', display: 'flex', flexDirection: 'column', gap: '20px' }}>
               <h3 style={{ fontSize: '1.2rem', margin: 0, fontWeight: 700, color: 'var(--accent-color)' }}>👁️ Live Render Preview</h3>
               
-              <div className="glass-panel" style={{ padding: '24px', flex: 1, display: 'flex', flexDirection: 'column', gap: '20px', overflowY: 'auto', background: 'rgba(0,0,0,0.2)' }}>
+              <div className="glass-panel" style={{ padding: '24px', flex: 1, display: 'flex', flexDirection: 'column', gap: '20px', overflowY: 'auto', background: 'var(--surface-sunken)' }}>
                 {/* Subject & topic breadcrumb */}
                 <div style={{ fontSize: '0.8rem', color: 'var(--text-secondary)' }}>
                   {form.subject || 'Subject'} &gt; {form.topic || 'Topic'} • {form.difficulty} • +{form.marks}/-{form.negative_marks} Marks
                 </div>
 
                 {/* Question Text preview */}
-                <div style={{ fontSize: '1.05rem', lineHeight: '1.6', borderBottom: '1px solid rgba(255,255,255,0.05)', paddingBottom: '16px' }}>
+                <div style={{ fontSize: '1.05rem', lineHeight: '1.6', borderBottom: '1px solid var(--surface-2)', paddingBottom: '16px' }}>
                   {form.question_text ? (
                     <div dangerouslySetInnerHTML={renderMath(form.question_text)} />
                   ) : (
@@ -620,7 +620,7 @@ export default function AdminQuestions({ csvState, triggerCsvImport, csvJobId })
 
                 {/* Explanation preview */}
                 {form.explanation && (
-                  <div style={{ marginTop: '16px', padding: '16px', background: 'rgba(99, 102, 241, 0.05)', borderLeft: '3px solid var(--accent-color)', borderRadius: '4px' }}>
+                  <div style={{ marginTop: '16px', padding: '16px', background: 'var(--accent-soft)', borderLeft: '3px solid var(--accent-color)', borderRadius: '4px' }}>
                     <div style={{ fontWeight: 'bold', fontSize: '0.9rem', marginBottom: '6px' }}>Explanation:</div>
                     <div style={{ fontSize: '0.9rem', lineHeight: '1.5' }} dangerouslySetInnerHTML={renderMath(form.explanation)} />
                   </div>

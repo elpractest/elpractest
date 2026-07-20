@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { Link, useSearchParams } from 'react-router-dom';
 import api from '../api';
+import Icon from '../components/Icon';
 
 export default function Register() {
   const [form, setForm] = useState({ name: '', email: '', phone: '', password: '', password_confirmation: '' });
@@ -76,7 +77,7 @@ export default function Register() {
     return (
       <div style={{ display: 'flex', flex: 1, justifyContent: 'center', alignItems: 'center', minHeight: '80vh', padding: '16px' }}>
         <div className="glass-panel" style={{ width: '100%', maxWidth: '460px', padding: '40px', textAlign: 'center' }}>
-          <div style={{ fontSize: '3rem', marginBottom: '16px' }}>📧</div>
+          <div style={{ display: 'flex', justifyContent: 'center', marginBottom: '16px' }}><span style={{ display: 'inline-flex', padding: '15px', borderRadius: '18px', background: 'var(--accent-soft)', color: 'var(--accent-color)', border: '1px solid var(--accent-border)' }}><Icon name="mail" size={34} /></span></div>
           <h2 style={{ margin: '0 0 12px 0', fontSize: '1.6rem', fontWeight: 800, color: 'var(--accent-color)' }}>Check Your Inbox</h2>
           <p style={{ margin: '0 0 24px 0', color: 'var(--text-secondary)', fontSize: '0.95rem', lineHeight: '1.6' }}>
             We've sent a verification link to <strong style={{ color: 'var(--text-primary)' }}>{form.email}</strong>. 
@@ -94,7 +95,7 @@ export default function Register() {
     const errList = errors[field];
     if (!errList) return null;
     return (
-      <div style={{ color: '#f87171', fontSize: '0.8rem', marginTop: '4px' }}>
+      <div style={{ color: 'var(--danger-text)', fontSize: '0.8rem', marginTop: '4px' }}>
         {Array.isArray(errList) ? errList[0] : errList}
       </div>
     );
@@ -114,13 +115,13 @@ export default function Register() {
         </div>
 
         {searchParams.get('error') === 'social_failed' && (
-          <div style={{ background: 'rgba(239, 68, 68, 0.1)', border: '1px solid rgba(239, 68, 68, 0.2)', padding: '12px 16px', borderRadius: '8px', color: '#f87171', fontSize: '0.85rem' }}>
+          <div style={{ background: 'var(--danger-bg)', border: '1px solid var(--danger-border)', padding: '12px 16px', borderRadius: '8px', color: 'var(--danger-text)', fontSize: '0.85rem' }}>
             Social login failed. Please try again or register with email.
           </div>
         )}
 
         {globalError && (
-          <div style={{ background: 'rgba(239, 68, 68, 0.1)', border: '1px solid rgba(239, 68, 68, 0.2)', padding: '12px 16px', borderRadius: '8px', color: '#f87171', fontSize: '0.85rem' }}>
+          <div style={{ background: 'var(--danger-bg)', border: '1px solid var(--danger-border)', padding: '12px 16px', borderRadius: '8px', color: 'var(--danger-text)', fontSize: '0.85rem' }}>
             {globalError}
           </div>
         )}
@@ -129,10 +130,10 @@ export default function Register() {
           <>
             <div style={{ display: 'flex', gap: '12px' }}>
               <button onClick={() => handleSocialLogin('google')} className="btn-secondary" style={{ flex: 1, padding: '10px', fontSize: '0.85rem', gap: '8px' }} type="button">
-                <span>🔵</span> Google
+                Google
               </button>
               <button onClick={() => handleSocialLogin('facebook')} className="btn-secondary" style={{ flex: 1, padding: '10px', fontSize: '0.85rem', gap: '8px' }} type="button">
-                <span>🔷</span> Facebook
+                Facebook
               </button>
             </div>
             <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>

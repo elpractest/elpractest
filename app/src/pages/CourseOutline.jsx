@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate, Link } from 'react-router-dom';
 import api from '../api';
+import Icon from '../components/Icon';
 
 export default function CourseOutline() {
   const { courseId } = useParams();
@@ -37,7 +38,7 @@ export default function CourseOutline() {
     return (
       <div style={{ padding: '32px 24px', maxWidth: '800px', margin: '0 auto' }}>
         <div className="glass-panel" style={{ padding: '32px', textAlign: 'center' }}>
-          <div style={{ fontSize: '2.5rem', marginBottom: '12px' }}>⚠️</div>
+          <div style={{ display: 'flex', justifyContent: 'center', marginBottom: '12px' }}><span style={{ display: 'inline-flex', padding: '15px', borderRadius: '18px', background: 'var(--warning-bg)', color: 'var(--warning-text)', border: '1px solid var(--warning-border)' }}><Icon name="alert" size={30} /></span></div>
           <h2 style={{ margin: '0 0 12px 0' }}>Access Denied</h2>
           <p style={{ color: 'var(--text-secondary)', marginBottom: '24px' }}>{error}</p>
           <Link to="/dashboard" className="btn-primary" style={{ textDecoration: 'none' }}>
@@ -85,7 +86,7 @@ export default function CourseOutline() {
       <div className="glass-panel" style={{ padding: '32px', display: 'flex', flexDirection: 'column', gap: '20px' }}>
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', flexWrap: 'wrap', gap: '16px' }}>
           <div>
-            <span style={{ fontSize: '0.75rem', fontWeight: 700, padding: '4px 8px', background: 'rgba(99, 102, 241, 0.15)', color: 'var(--accent-color)', borderRadius: '6px', textTransform: 'uppercase', marginBottom: '8px', display: 'inline-block' }}>
+            <span style={{ fontSize: '0.75rem', fontWeight: 700, padding: '4px 8px', background: 'var(--accent-soft)', color: 'var(--accent-color)', borderRadius: '6px', textTransform: 'uppercase', marginBottom: '8px', display: 'inline-block' }}>
               {course.exam_category}
             </span>
             <h1 style={{ margin: '4px 0 8px 0', fontSize: '1.8rem', fontWeight: 800 }}>{course.title}</h1>
@@ -99,7 +100,7 @@ export default function CourseOutline() {
               className="btn-primary"
               style={{ padding: '12px 24px', fontSize: '0.95rem', gap: '8px' }}
             >
-              <span>▶</span> {completedLessons > 0 ? 'Continue Learning' : 'Start Course'}
+              <Icon name="play" size={16} /> {completedLessons > 0 ? 'Continue Learning' : 'Start Course'}
             </button>
           )}
         </div>
@@ -110,8 +111,8 @@ export default function CourseOutline() {
             <span>Course Progress</span>
             <span style={{ color: 'var(--accent-color)' }}>{completedLessons} of {totalLessons} lessons ({percentComplete}%)</span>
           </div>
-          <div style={{ width: '100%', height: '10px', background: 'rgba(255, 255, 255, 0.08)', borderRadius: '5px', overflow: 'hidden' }}>
-            <div style={{ width: `${percentComplete}%`, height: '100%', background: 'linear-gradient(90deg, var(--accent-color), #818cf8)', borderRadius: '5px', transition: 'width 0.4s ease' }} />
+          <div style={{ width: '100%', height: '10px', background: 'var(--surface-3)', borderRadius: '5px', overflow: 'hidden' }}>
+            <div style={{ width: `${percentComplete}%`, height: '100%', background: 'linear-gradient(90deg, var(--accent-color), var(--accent-color))', borderRadius: '5px', transition: 'width 0.4s ease' }} />
           </div>
         </div>
       </div>
@@ -127,7 +128,7 @@ export default function CourseOutline() {
         ) : (
           modules.map((module, mIdx) => (
             <div key={module.id} className="glass-panel" style={{ overflow: 'hidden' }}>
-              <div style={{ padding: '18px 24px', background: 'rgba(255,255,255,0.02)', borderBottom: '1px solid var(--border-color)', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+              <div style={{ padding: '18px 24px', background: 'var(--surface-1)', borderBottom: '1px solid var(--border-color)', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                 <h3 style={{ margin: 0, fontSize: '1.05rem', fontWeight: 700 }}>
                   Module {mIdx + 1}: {module.title}
                 </h3>
@@ -151,11 +152,11 @@ export default function CourseOutline() {
                         display: 'flex',
                         alignItems: 'center',
                         justifyContent: 'space-between',
-                        borderBottom: lIdx === module.lessons.length - 1 ? 'none' : '1px solid rgba(255,255,255,0.05)',
+                        borderBottom: lIdx === module.lessons.length - 1 ? 'none' : '1px solid var(--surface-2)',
                         cursor: 'pointer',
                         transition: 'background 0.2s ease',
                       }}
-                      onMouseEnter={(e) => e.currentTarget.style.background = 'rgba(255,255,255,0.04)'}
+                      onMouseEnter={(e) => e.currentTarget.style.background = 'var(--surface-2)'}
                       onMouseLeave={(e) => e.currentTarget.style.background = 'transparent'}
                     >
                       <div style={{ display: 'flex', alignItems: 'center', gap: '16px' }}>
@@ -168,9 +169,9 @@ export default function CourseOutline() {
                           justifyContent: 'center',
                           fontSize: '0.85rem',
                           fontWeight: 700,
-                          background: isCompleted ? 'rgba(16, 185, 129, 0.15)' : 'rgba(255, 255, 255, 0.05)',
-                          color: isCompleted ? '#34d399' : 'var(--text-secondary)',
-                          border: isCompleted ? '1px solid rgba(16, 185, 129, 0.3)' : '1px solid var(--border-color)',
+                          background: isCompleted ? 'var(--success-bg)' : 'var(--surface-2)',
+                          color: isCompleted ? 'var(--success-text)' : 'var(--text-secondary)',
+                          border: isCompleted ? '1px solid var(--success-border)' : '1px solid var(--border-color)',
                         }}>
                           {isCompleted ? '✓' : lIdx + 1}
                         </div>
@@ -179,7 +180,7 @@ export default function CourseOutline() {
                           <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
                             <span style={{ fontSize: '0.95rem', fontWeight: 600 }}>{lesson.title}</span>
                             {lesson.is_free_preview && (
-                              <span style={{ fontSize: '0.7rem', padding: '2px 6px', borderRadius: '4px', background: 'rgba(52, 211, 153, 0.15)', color: '#34d399', border: '1px solid rgba(52, 211, 153, 0.25)' }}>
+                              <span style={{ fontSize: '0.7rem', padding: '2px 6px', borderRadius: '4px', background: 'var(--success-bg)', color: 'var(--success-text)', border: '1px solid var(--success-border)' }}>
                                 Free Preview
                               </span>
                             )}
@@ -194,8 +195,8 @@ export default function CourseOutline() {
                       </div>
 
                       <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
-                        <span style={{ fontSize: '0.85rem', color: isCompleted ? '#34d399' : 'var(--accent-color)', fontWeight: 600 }}>
-                          {isCompleted ? 'Completed' : watchedSec > 0 ? 'Resume' : 'Play ▶'}
+                        <span style={{ fontSize: '0.85rem', color: isCompleted ? 'var(--success-text)' : 'var(--accent-color)', fontWeight: 600 }}>
+                          {isCompleted ? 'Completed' : watchedSec > 0 ? 'Resume' : 'Play'}
                         </span>
                       </div>
                     </div>

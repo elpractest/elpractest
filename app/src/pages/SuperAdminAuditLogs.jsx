@@ -56,7 +56,7 @@ export default function SuperAdminAuditLogs() {
     <div style={{ maxWidth: '1000px', margin: '0 auto' }}>
       
       <div style={{ marginBottom: '32px' }}>
-        <h1 style={{ fontSize: '2rem', fontWeight: 800, margin: '0 0 8px 0', background: 'linear-gradient(to right, #ffffff, #a78bfa)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent' }}>
+        <h1 style={{ fontSize: '2rem', fontWeight: 800, margin: '0 0 8px 0', background: 'linear-gradient(to right, #ffffff, var(--violet-text))', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent' }}>
           Platform Audit Logs
         </h1>
         <p style={{ margin: 0, color: 'var(--text-secondary)' }}>
@@ -65,7 +65,7 @@ export default function SuperAdminAuditLogs() {
       </div>
 
       {error && (
-        <div style={{ background: 'rgba(239, 68, 68, 0.1)', border: '1px solid rgba(239, 68, 68, 0.2)', padding: '12px 16px', borderRadius: '8px', color: '#f87171', marginBottom: '24px', fontSize: '0.9rem' }}>
+        <div style={{ background: 'var(--danger-bg)', border: '1px solid var(--danger-border)', padding: '12px 16px', borderRadius: '8px', color: 'var(--danger-text)', marginBottom: '24px', fontSize: '0.9rem' }}>
           ⚠️ {error}
         </div>
       )}
@@ -73,7 +73,7 @@ export default function SuperAdminAuditLogs() {
       <div className="glass-panel" style={{ overflow: 'hidden' }}>
         <table style={{ width: '100%', borderCollapse: 'collapse', textAlign: 'left', fontSize: '0.9rem' }}>
           <thead>
-            <tr style={{ borderBottom: '1px solid var(--border-color)', background: 'rgba(255,255,255,0.02)' }}>
+            <tr style={{ borderBottom: '1px solid var(--border-color)', background: 'var(--surface-1)' }}>
               <th style={{ padding: '16px 20px', fontWeight: 600, color: '#ffffff' }}>Timestamp</th>
               <th style={{ padding: '16px 20px', fontWeight: 600, color: '#ffffff' }}>Action</th>
               <th style={{ padding: '16px 20px', fontWeight: 600, color: '#ffffff' }}>User</th>
@@ -93,12 +93,12 @@ export default function SuperAdminAuditLogs() {
                 const isExpanded = expandedLogId === log.id;
                 return (
                   <React.Fragment key={log.id}>
-                    <tr style={{ borderBottom: '1px solid var(--border-color)', background: isExpanded ? 'rgba(99, 102, 241, 0.03)' : 'transparent', transition: 'background 0.2s ease' }}>
+                    <tr style={{ borderBottom: '1px solid var(--border-color)', background: isExpanded ? 'var(--accent-soft)' : 'transparent', transition: 'background 0.2s ease' }}>
                       <td style={{ padding: '16px 20px', color: 'var(--text-secondary)' }}>
                         {new Date(log.created_at).toLocaleString()}
                       </td>
                       <td style={{ padding: '16px 20px' }}>
-                        <span style={{ background: 'rgba(99, 102, 241, 0.1)', color: '#a78bfa', padding: '4px 8px', borderRadius: '4px', fontSize: '0.8rem', fontWeight: 600 }}>
+                        <span style={{ background: 'var(--accent-soft)', color: 'var(--violet-text)', padding: '4px 8px', borderRadius: '4px', fontSize: '0.8rem', fontWeight: 600 }}>
                           {log.action}
                         </span>
                       </td>
@@ -112,7 +112,7 @@ export default function SuperAdminAuditLogs() {
                           <span style={{ color: 'var(--text-secondary)', fontStyle: 'italic' }}>System / Guest</span>
                         )}
                       </td>
-                      <td style={{ padding: '16px 20px', fontFamily: 'monospace', color: 'var(--text-secondary)' }}>
+                      <td style={{ padding: '16px 20px', fontFamily: 'var(--font-mono)', color: 'var(--text-secondary)' }}>
                         {log.ip_address}
                       </td>
                       <td style={{ padding: '16px 20px', textAlign: 'right' }}>
@@ -133,18 +133,18 @@ export default function SuperAdminAuditLogs() {
                       </td>
                     </tr>
                     {isExpanded && (
-                      <tr style={{ borderBottom: '1px solid var(--border-color)', background: 'rgba(0, 0, 0, 0.2)' }}>
+                      <tr style={{ borderBottom: '1px solid var(--border-color)', background: 'var(--surface-sunken)' }}>
                         <td colSpan="5" style={{ padding: '20px' }}>
                           <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '20px' }}>
                             <div>
                               <div style={{ fontSize: '0.75rem', fontWeight: 'bold', color: 'var(--text-secondary)', marginBottom: '8px', textTransform: 'uppercase' }}>Old Values</div>
-                              <pre style={{ margin: 0, padding: '12px', background: '#090d16', border: '1px solid var(--border-color)', borderRadius: '6px', overflowX: 'auto', fontSize: '0.75rem', fontFamily: 'monospace', color: '#f87171', maxHeight: '180px' }}>
+                              <pre style={{ margin: 0, padding: '12px', background: 'var(--surface-sunken)', border: '1px solid var(--border-color)', borderRadius: '6px', overflowX: 'auto', fontSize: '0.75rem', fontFamily: 'var(--font-mono)', color: 'var(--danger-text)', maxHeight: '180px' }}>
                                 {formatJSON(log.old_values)}
                               </pre>
                             </div>
                             <div>
                               <div style={{ fontSize: '0.75rem', fontWeight: 'bold', color: 'var(--text-secondary)', marginBottom: '8px', textTransform: 'uppercase' }}>New Values</div>
-                              <pre style={{ margin: 0, padding: '12px', background: '#090d16', border: '1px solid var(--border-color)', borderRadius: '6px', overflowX: 'auto', fontSize: '0.75rem', fontFamily: 'monospace', color: '#34d399', maxHeight: '180px' }}>
+                              <pre style={{ margin: 0, padding: '12px', background: 'var(--surface-sunken)', border: '1px solid var(--border-color)', borderRadius: '6px', overflowX: 'auto', fontSize: '0.75rem', fontFamily: 'var(--font-mono)', color: 'var(--success-text)', maxHeight: '180px' }}>
                                 {formatJSON(log.new_values)}
                               </pre>
                             </div>
@@ -166,7 +166,7 @@ export default function SuperAdminAuditLogs() {
 
         {/* Pagination */}
         {pagination.lastPage > 1 && (
-          <div style={{ padding: '16px 20px', display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderTop: '1px solid var(--border-color)', background: 'rgba(255,255,255,0.01)' }}>
+          <div style={{ padding: '16px 20px', display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderTop: '1px solid var(--border-color)', background: 'var(--surface-1)' }}>
             <span style={{ fontSize: '0.8rem', color: 'var(--text-secondary)' }}>
               Page {pagination.currentPage} of {pagination.lastPage}
             </span>

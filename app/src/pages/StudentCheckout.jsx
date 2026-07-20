@@ -138,7 +138,7 @@ export default function StudentCheckout({ batch, onClose, onEnrolled }) {
         modal: {
           ondismiss: () => setPayLoading(false),
         },
-        theme: { color: "#6366f1" }, // Matches --accent-color
+        theme: { color: "var(--accent-color)" }, // Matches --accent-color
       });
 
       rzp.on("payment.failed", () => {
@@ -155,7 +155,7 @@ export default function StudentCheckout({ batch, onClose, onEnrolled }) {
 
   if (status === "success") {
     return (
-      <div style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, background: 'rgba(0,0,0,0.7)', display: 'flex', justifyContent: 'center', alignItems: 'center', zIndex: 1000, padding: '20px' }}>
+      <div style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, background: 'var(--overlay)', display: 'flex', justifyContent: 'center', alignItems: 'center', zIndex: 1000, padding: '20px' }}>
         <div className="glass-panel" style={{ width: '100%', maxWidth: '400px', padding: '32px', textAlign: 'center', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '16px' }}>
           <div style={{ fontSize: '3rem', margin: '0 auto 8px auto' }}>🎉</div>
           <h2 style={{ fontSize: '1.25rem', fontWeight: 700, margin: 0, color: 'var(--text-primary)' }}>You're enrolled</h2>
@@ -175,7 +175,7 @@ export default function StudentCheckout({ batch, onClose, onEnrolled }) {
   }
 
   return (
-    <div style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, background: 'rgba(0,0,0,0.7)', display: 'flex', justifyContent: 'center', alignItems: 'center', zIndex: 1000, padding: '20px' }}>
+    <div style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, background: 'var(--overlay)', display: 'flex', justifyContent: 'center', alignItems: 'center', zIndex: 1000, padding: '20px' }}>
       <div className="glass-panel" style={{ width: '100%', maxWidth: '400px', padding: '32px', display: 'flex', flexDirection: 'column', gap: '20px' }}>
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
           <div>
@@ -191,7 +191,7 @@ export default function StudentCheckout({ batch, onClose, onEnrolled }) {
           </button>
         </div>
 
-        <div style={{ display: 'flex', flexDirection: 'column', gap: '8px', padding: '12px', border: '1px solid var(--border-color)', borderRadius: '8px', background: 'rgba(255,255,255,0.02)' }}>
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '8px', padding: '12px', border: '1px solid var(--border-color)', borderRadius: '8px', background: 'var(--surface-1)' }}>
           {!couponState?.valid && (
             <button
               type="button"
@@ -202,7 +202,7 @@ export default function StudentCheckout({ batch, onClose, onEnrolled }) {
             </button>
           )}
           {couponState?.valid && (
-            <p style={{ fontSize: '0.85rem', fontWeight: 600, color: '#10b981', margin: 0 }}>
+            <p style={{ fontSize: '0.85rem', fontWeight: 600, color: 'var(--success)', margin: 0 }}>
               Coupon "{couponCode.trim()}" applied!
             </p>
           )}
@@ -230,7 +230,7 @@ export default function StudentCheckout({ batch, onClose, onEnrolled }) {
           )}
 
           {couponState?.valid === false && couponState?.message && (
-            <p style={{ fontSize: '0.75rem', color: '#ef4444', margin: '4px 0 0 0' }}>{couponState.message}</p>
+            <p style={{ fontSize: '0.75rem', color: 'var(--danger)', margin: '4px 0 0 0' }}>{couponState.message}</p>
           )}
         </div>
 
@@ -240,7 +240,7 @@ export default function StudentCheckout({ batch, onClose, onEnrolled }) {
             <span>{formatRupees(originalPrice)}</span>
           </div>
           {couponState?.valid && (
-            <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.9rem', color: '#10b981' }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.9rem', color: 'var(--success)' }}>
               <span>Discount</span>
               <span>-{formatRupees(originalPrice - couponState.discounted_price)}</span>
             </div>
@@ -252,7 +252,7 @@ export default function StudentCheckout({ batch, onClose, onEnrolled }) {
         </div>
 
         {error && (
-          <p style={{ margin: 0, background: 'rgba(239,68,68,0.1)', border: '1px solid rgba(239,68,68,0.2)', padding: '12px', borderRadius: '8px', color: '#f87171', fontSize: '0.8rem' }}>
+          <p style={{ margin: 0, background: 'var(--danger-bg)', border: '1px solid var(--danger-border)', padding: '12px', borderRadius: '8px', color: 'var(--danger-text)', fontSize: '0.8rem' }}>
             {error}
           </p>
         )}

@@ -73,7 +73,7 @@ export default function AdminResultDetail({ sessionId, onBack }) {
   if (error) {
     return (
       <div style={{ padding: '24px', textAlign: 'center' }}>
-        <div style={{ color: '#ef4444', marginBottom: '16px' }}>{error}</div>
+        <div style={{ color: 'var(--danger)', marginBottom: '16px' }}>{error}</div>
         <button onClick={onBack} className="btn-primary">Back to Results</button>
       </div>
     );
@@ -111,7 +111,7 @@ export default function AdminResultDetail({ sessionId, onBack }) {
 
           <div className="glass-panel" style={{ padding: '20px', textAlign: 'center' }}>
             <span style={{ fontSize: '0.8rem', color: 'var(--text-secondary)', fontWeight: 600 }}>Percentile Rank</span>
-            <div style={{ fontSize: '2.2rem', fontWeight: 800, color: '#a78bfa', margin: '6px 0' }}>
+            <div style={{ fontSize: '2.2rem', fontWeight: 800, color: 'var(--violet-text)', margin: '6px 0' }}>
               {parseFloat(percentile).toFixed(1)}%
             </div>
             <span style={{ fontSize: '0.75rem', color: 'var(--text-secondary)' }}>
@@ -121,7 +121,7 @@ export default function AdminResultDetail({ sessionId, onBack }) {
 
           <div className="glass-panel" style={{ padding: '20px', textAlign: 'center' }}>
             <span style={{ fontSize: '0.8rem', color: 'var(--text-secondary)', fontWeight: 600 }}>Accuracy Rate</span>
-            <div style={{ fontSize: '2.2rem', fontWeight: 800, color: '#10b981', margin: '6px 0' }}>
+            <div style={{ fontSize: '2.2rem', fontWeight: 800, color: 'var(--success)', margin: '6px 0' }}>
               {parseFloat(analytic.accuracy_percentage || 0).toFixed(1)}%
             </div>
             <span style={{ fontSize: '0.75rem', color: 'var(--text-secondary)' }}>
@@ -131,11 +131,11 @@ export default function AdminResultDetail({ sessionId, onBack }) {
 
           <div className="glass-panel" style={{ padding: '20px', display: 'flex', flexDirection: 'column', justifyContent: 'center', gap: '8px' }}>
             <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.85rem' }}>
-              <span style={{ color: '#10b981', fontWeight: 600 }}>Correct:</span>
+              <span style={{ color: 'var(--success)', fontWeight: 600 }}>Correct:</span>
               <strong>{analytic.correct_count}</strong>
             </div>
             <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.85rem' }}>
-              <span style={{ color: '#ef4444', fontWeight: 600 }}>Incorrect:</span>
+              <span style={{ color: 'var(--danger)', fontWeight: 600 }}>Incorrect:</span>
               <strong>{analytic.incorrect_count}</strong>
             </div>
             <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.85rem' }}>
@@ -166,8 +166,8 @@ export default function AdminResultDetail({ sessionId, onBack }) {
                   key={ans.question_id}
                   style={{
                     padding: '24px',
-                    border: '1px solid ' + (isSkipped ? 'var(--border-color)' : isCorrect ? 'rgba(16, 185, 129, 0.3)' : 'rgba(239, 68, 68, 0.3)'),
-                    background: isSkipped ? 'rgba(255,255,255,0.01)' : isCorrect ? 'rgba(16, 185, 129, 0.02)' : 'rgba(239, 68, 68, 0.02)',
+                    border: '1px solid ' + (isSkipped ? 'var(--border-color)' : isCorrect ? 'var(--success-border)' : 'var(--danger-border)'),
+                    background: isSkipped ? 'var(--surface-1)' : isCorrect ? 'var(--success-bg)' : 'var(--danger-bg)',
                     borderRadius: '12px',
                     display: 'flex',
                     flexDirection: 'column',
@@ -186,7 +186,7 @@ export default function AdminResultDetail({ sessionId, onBack }) {
                         padding: '4px 12px',
                         borderRadius: '20px',
                         textTransform: 'uppercase',
-                        background: isSkipped ? '#4b5563' : isCorrect ? '#10b981' : '#ef4444',
+                        background: isSkipped ? 'var(--status-not-visited-bg)' : isCorrect ? 'var(--success)' : 'var(--danger)',
                         color: '#ffffff'
                       }}
                     >
@@ -206,14 +206,14 @@ export default function AdminResultDetail({ sessionId, onBack }) {
                       const isOptionCorrect = opt.is_correct;
                       
                       let borderStyle = '1px solid var(--border-color)';
-                      let bgStyle = 'rgba(255,255,255,0.02)';
+                      let bgStyle = 'var(--surface-1)';
                       
                       if (isOptionCorrect) {
-                        borderStyle = '1px solid #10b981';
-                        bgStyle = 'rgba(16, 185, 129, 0.1)';
+                        borderStyle = '1px solid var(--success)';
+                        bgStyle = 'var(--success-bg)';
                       } else if (isOptionSelected && !isOptionCorrect) {
-                        borderStyle = '1px solid #ef4444';
-                        bgStyle = 'rgba(239, 68, 68, 0.1)';
+                        borderStyle = '1px solid var(--danger)';
+                        bgStyle = 'var(--danger-bg)';
                       }
 
                       return (
@@ -233,7 +233,7 @@ export default function AdminResultDetail({ sessionId, onBack }) {
                           <span 
                             className="option-badge"
                             style={{
-                              background: isOptionSelected ? (isOptionCorrect ? '#10b981' : '#ef4444') : isOptionCorrect ? '#10b981' : 'transparent',
+                              background: isOptionSelected ? (isOptionCorrect ? 'var(--success)' : 'var(--danger)') : isOptionCorrect ? 'var(--success)' : 'transparent',
                               borderColor: isOptionSelected || isOptionCorrect ? 'transparent' : 'var(--border-color)',
                               color: isOptionSelected || isOptionCorrect ? '#ffffff' : 'inherit'
                             }}
@@ -247,7 +247,7 @@ export default function AdminResultDetail({ sessionId, onBack }) {
                   </div>
 
                   {/* Summary info */}
-                  <div style={{ display: 'flex', gap: '16px', fontSize: '0.85rem', color: 'var(--text-secondary)', borderTop: '1px solid rgba(255,255,255,0.03)', paddingTop: '12px' }}>
+                  <div style={{ display: 'flex', gap: '16px', fontSize: '0.85rem', color: 'var(--text-secondary)', borderTop: '1px solid var(--surface-2)', paddingTop: '12px' }}>
                     <span>Marks: <strong>{ans.marks}</strong></span>
                     <span>Negative: <strong>-{ans.negative_marks}</strong></span>
                     <span>Time Spent: <strong>{ans.time_spent_seconds}s</strong></span>
@@ -255,7 +255,7 @@ export default function AdminResultDetail({ sessionId, onBack }) {
 
                   {/* Solution Explanation */}
                   {ans.explanation && (
-                    <div style={{ marginTop: '8px', padding: '16px', background: 'rgba(99, 102, 241, 0.05)', borderLeft: '3px solid var(--accent-color)', borderRadius: '4px' }}>
+                    <div style={{ marginTop: '8px', padding: '16px', background: 'var(--accent-soft)', borderLeft: '3px solid var(--accent-color)', borderRadius: '4px' }}>
                       <div style={{ fontWeight: 'bold', fontSize: '0.9rem', marginBottom: '6px', color: 'var(--text-primary)' }}>Solution / Explanation:</div>
                       <div style={{ fontSize: '0.9rem', lineHeight: '1.5', color: 'var(--text-secondary)' }}>
                         <MathRenderer text={ans.explanation} />

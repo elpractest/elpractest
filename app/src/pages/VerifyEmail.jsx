@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { Link, useSearchParams } from 'react-router-dom';
 import api from '../api';
+import Icon from '../components/Icon';
 
 export default function VerifyEmail() {
   const [searchParams] = useSearchParams();
@@ -37,19 +38,24 @@ export default function VerifyEmail() {
       });
   }, [id, hash]);
 
-  const icons = { verifying: '⏳', success: '✅', already: '✅', error: '❌' };
-  const titles = { 
-    verifying: 'Verifying...', 
-    success: 'Email Verified!', 
-    already: 'Already Verified', 
-    error: 'Verification Failed' 
+  const titles = {
+    verifying: 'Verifying...',
+    success: 'Email Verified!',
+    already: 'Already Verified',
+    error: 'Verification Failed'
   };
+
+  const medallion = status === 'verifying'
+    ? <div className="spinner" />
+    : status === 'error'
+      ? <span style={{ display: 'inline-flex', padding: '15px', borderRadius: '18px', background: 'var(--danger-bg)', color: 'var(--danger-text)', border: '1px solid var(--danger-border)' }}><Icon name="x" size={34} /></span>
+      : <span style={{ display: 'inline-flex', padding: '15px', borderRadius: '18px', background: 'var(--success-bg)', color: 'var(--success-text)', border: '1px solid var(--success-border)' }}><Icon name="check-circle" size={34} /></span>;
 
   return (
     <div style={{ display: 'flex', flex: 1, justifyContent: 'center', alignItems: 'center', minHeight: '80vh', padding: '16px' }}>
       <div className="glass-panel" style={{ width: '100%', maxWidth: '460px', padding: '40px', textAlign: 'center', display: 'flex', flexDirection: 'column', gap: '20px' }}>
-        <div style={{ fontSize: '3rem' }}>{icons[status]}</div>
-        <h2 style={{ margin: 0, fontSize: '1.6rem', fontWeight: 800, color: status === 'error' ? '#f87171' : 'var(--accent-color)' }}>
+        <div style={{ display: 'flex', justifyContent: 'center' }}>{medallion}</div>
+        <h2 style={{ margin: 0, fontSize: '1.6rem', fontWeight: 800, color: status === 'error' ? 'var(--danger-text)' : 'var(--accent-color)' }}>
           {titles[status]}
         </h2>
         

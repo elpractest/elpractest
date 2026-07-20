@@ -129,15 +129,15 @@ export default function AdminDashboard({ user, setUser }) {
   };
 
   return (
-    <div style={{ display: 'flex', minHeight: '100vh', backgroundColor: '#0b0f19', color: '#f3f4f6' }}>
+    <div style={{ display: 'flex', minHeight: '100vh', backgroundColor: 'var(--bg-color)', color: 'var(--text-primary)' }}>
       
       {/* Sidebar Navigation */}
-      <aside style={{ width: '280px', background: 'rgba(17, 25, 40, 0.95)', borderRight: '1px solid var(--border-color)', display: 'flex', flexDirection: 'column', flexShrink: 0 }}>
+      <aside style={{ width: '280px', background: 'var(--panel-bg-solid)', borderRight: '1px solid var(--border-color)', display: 'flex', flexDirection: 'column', flexShrink: 0 }}>
         
         {/* Sidebar Header Logo */}
         <div style={{ padding: '24px', display: 'flex', alignItems: 'center', gap: '12px', borderBottom: '1px solid var(--border-color)' }}>
           <span style={{ fontSize: '1.4rem', fontWeight: 800, color: 'var(--accent-color)', letterSpacing: '1px' }}>PRACTEST</span>
-          <span style={{ fontSize: '0.8rem', color: '#10b981', background: 'rgba(16,185,129,0.1)', padding: '2px 6px', borderRadius: '4px', fontWeight: 'bold' }}>
+          <span style={{ fontSize: '0.8rem', color: 'var(--success)', background: 'var(--success-bg)', padding: '2px 6px', borderRadius: '4px', fontWeight: 'bold' }}>
             {user?.roles?.includes('super-admin') ? 'Super Admin' : 'Admin'}
           </span>
         </div>
@@ -253,8 +253,8 @@ export default function AdminDashboard({ user, setUser }) {
         {showCsvAlert && csvState.status && (
           <div 
             style={{ 
-              background: csvState.status === 'pending' ? 'rgba(99, 102, 241, 0.15)' : csvState.status === 'complete' && csvState.errors.length === 0 ? 'rgba(16, 185, 129, 0.15)' : 'rgba(239, 68, 68, 0.15)',
-              borderBottom: '1px solid ' + (csvState.status === 'pending' ? 'rgba(99, 102, 241, 0.3)' : csvState.status === 'complete' && csvState.errors.length === 0 ? 'rgba(16, 185, 129, 0.3)' : 'rgba(239, 68, 68, 0.3)'),
+              background: csvState.status === 'pending' ? 'var(--accent-soft)' : csvState.status === 'complete' && csvState.errors.length === 0 ? 'var(--success-bg)' : 'var(--danger-bg)',
+              borderBottom: '1px solid ' + (csvState.status === 'pending' ? 'var(--accent-border)' : csvState.status === 'complete' && csvState.errors.length === 0 ? 'var(--success-border)' : 'var(--danger-border)'),
               padding: '12px 24px',
               display: 'flex',
               justifyContent: 'space-between',
@@ -267,9 +267,9 @@ export default function AdminDashboard({ user, setUser }) {
               {csvState.status === 'pending' ? (
                 <span style={{ color: 'var(--accent-color)' }}>⏳ Processing in background (Imported: {csvState.imported})...</span>
               ) : csvState.status === 'complete' && csvState.errors.length === 0 ? (
-                <span style={{ color: '#10b981' }}>✅ Successfully imported {csvState.imported} questions!</span>
+                <span style={{ color: 'var(--success)' }}>✅ Successfully imported {csvState.imported} questions!</span>
               ) : (
-                <span style={{ color: '#ef4444' }}>⚠️ Completed with {csvState.errors.length} failed rows (Imported: {csvState.imported}).</span>
+                <span style={{ color: 'var(--danger)' }}>⚠️ Completed with {csvState.errors.length} failed rows (Imported: {csvState.imported}).</span>
               )}
             </div>
             <div style={{ display: 'flex', gap: '12px' }}>

@@ -286,13 +286,13 @@ export default function AdminTests() {
       </div>
 
       {success && (
-        <div style={{ padding: '16px', background: 'rgba(16, 185, 129, 0.1)', border: '1px solid #10b981', borderRadius: '8px', color: '#10b981' }}>
+        <div style={{ padding: '16px', background: 'var(--success-bg)', border: '1px solid var(--success)', borderRadius: '8px', color: 'var(--success)' }}>
           {success}
         </div>
       )}
 
       {error && (
-        <div style={{ padding: '16px', background: 'rgba(239, 68, 68, 0.1)', border: '1px solid #ef4444', borderRadius: '8px', color: '#ef4444' }}>
+        <div style={{ padding: '16px', background: 'var(--danger-bg)', border: '1px solid var(--danger)', borderRadius: '8px', color: 'var(--danger)' }}>
           {error}
         </div>
       )}
@@ -321,7 +321,7 @@ export default function AdminTests() {
               </tr>
             ) : (
               tests.map((test) => (
-                <tr key={test.id} style={{ borderBottom: '1px solid rgba(255,255,255,0.03)', fontSize: '0.9rem' }}>
+                <tr key={test.id} style={{ borderBottom: '1px solid var(--surface-2)', fontSize: '0.9rem' }}>
                   <td style={{ padding: '16px' }}>
                     <div style={{ fontWeight: 600 }}>{test.title}</div>
                     <div style={{ fontSize: '0.8rem', color: 'var(--text-secondary)', marginTop: '4px' }}>
@@ -342,8 +342,8 @@ export default function AdminTests() {
                         padding: '2px 8px', 
                         borderRadius: '4px',
                         textTransform: 'uppercase',
-                        background: test.type === 'mock' ? 'rgba(99,102,241,0.1)' : 'rgba(16,185,129,0.1)',
-                        color: test.type === 'mock' ? 'var(--accent-color)' : '#10b981'
+                        background: test.type === 'mock' ? 'var(--accent-soft)' : 'var(--success-bg)',
+                        color: test.type === 'mock' ? 'var(--accent-color)' : 'var(--success)'
                       }}
                     >
                       {test.type}
@@ -362,8 +362,8 @@ export default function AdminTests() {
                         fontWeight: 'bold', 
                         padding: '2px 8px', 
                         borderRadius: '4px',
-                        background: test.is_published ? 'rgba(16,185,129,0.1)' : 'rgba(255,255,255,0.05)',
-                        color: test.is_published ? '#10b981' : 'var(--text-secondary)'
+                        background: test.is_published ? 'var(--success-bg)' : 'var(--surface-2)',
+                        color: test.is_published ? 'var(--success)' : 'var(--text-secondary)'
                       }}
                     >
                       {test.is_published ? 'Published' : 'Draft'}
@@ -415,7 +415,7 @@ export default function AdminTests() {
 
       {/* Editor Modal containing Syllabus Sections and Question Bank Picker */}
       {showForm && (
-        <div style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, background: 'rgba(0,0,0,0.8)', display: 'flex', justifyContent: 'center', alignItems: 'center', zIndex: 1000, padding: '20px' }}>
+        <div style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, background: 'var(--overlay)', display: 'flex', justifyContent: 'center', alignItems: 'center', zIndex: 1000, padding: '20px' }}>
           <div className="glass-panel" style={{ width: '95%', maxWidth: '1400px', height: '90vh', padding: '30px', display: 'grid', gridTemplateColumns: '1.2fr 1fr 1fr', gap: '20px', overflow: 'hidden' }}>
             
             {/* Column 1: Test Details & Section Setup */}
@@ -500,7 +500,7 @@ export default function AdminTests() {
                           padding: '12px',
                           borderRadius: '8px',
                           border: isActive ? '1px solid var(--accent-color)' : '1px solid var(--border-color)',
-                          background: isActive ? 'rgba(99, 102, 241, 0.1)' : 'rgba(255,255,255,0.02)',
+                          background: isActive ? 'var(--accent-soft)' : 'var(--surface-1)',
                           cursor: 'pointer',
                           display: 'flex',
                           justifyContent: 'space-between',
@@ -580,7 +580,7 @@ export default function AdminTests() {
                       key={q.id}
                       style={{
                         padding: '12px',
-                        background: 'rgba(255,255,255,0.02)',
+                        background: 'var(--surface-1)',
                         borderRadius: '6px',
                         border: '1px solid var(--border-color)',
                         display: 'flex',
@@ -595,7 +595,7 @@ export default function AdminTests() {
                       </div>
                       <button 
                         onClick={() => toggleQuestionSelection(q)}
-                        style={{ background: 'transparent', border: 'none', cursor: 'pointer', color: '#ef4444', fontWeight: 'bold' }}
+                        style={{ background: 'transparent', border: 'none', cursor: 'pointer', color: 'var(--danger)', fontWeight: 'bold' }}
                       >
                         ✕
                       </button>
@@ -634,8 +634,8 @@ export default function AdminTests() {
                       onClick={() => toggleQuestionSelection(q)}
                       style={{
                         padding: '12px',
-                        background: isSelected ? 'rgba(16, 185, 129, 0.1)' : 'rgba(255,255,255,0.02)',
-                        border: isSelected ? '1px solid #10b981' : '1px solid var(--border-color)',
+                        background: isSelected ? 'var(--success-bg)' : 'var(--surface-1)',
+                        border: isSelected ? '1px solid var(--success)' : '1px solid var(--border-color)',
                         borderRadius: '6px',
                         cursor: 'pointer',
                         display: 'flex',
@@ -647,7 +647,7 @@ export default function AdminTests() {
                     >
                       <div style={{ fontWeight: 'bold', display: 'flex', justifyContent: 'space-between' }}>
                         <span>{q.subject} &gt; {q.topic}</span>
-                        <span style={{ color: isSelected ? '#10b981' : 'var(--text-secondary)' }}>{isSelected ? '✓ Added' : '➕ Add'}</span>
+                        <span style={{ color: isSelected ? 'var(--success)' : 'var(--text-secondary)' }}>{isSelected ? '✓ Added' : '➕ Add'}</span>
                       </div>
                       <div style={{ color: 'var(--text-secondary)', overflow: 'hidden', textOverflow: 'ellipsis', display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical', lineHeight: '1.4' }}>
                         {q.question_text.replace(/\$/g, '')}

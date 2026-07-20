@@ -105,7 +105,7 @@ export default function SuperAdminOnboarding() {
     <div style={{ maxWidth: '1000px', margin: '0 auto' }}>
       
       <div style={{ marginBottom: '32px' }}>
-        <h1 style={{ fontSize: '2rem', fontWeight: 800, margin: '0 0 8px 0', background: 'linear-gradient(to right, #ffffff, #a78bfa)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent' }}>
+        <h1 style={{ fontSize: '2rem', fontWeight: 800, margin: '0 0 8px 0', background: 'linear-gradient(to right, #ffffff, var(--violet-text))', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent' }}>
           Onboarding & Support Tooling
         </h1>
         <p style={{ margin: 0, color: 'var(--text-secondary)' }}>
@@ -114,13 +114,13 @@ export default function SuperAdminOnboarding() {
       </div>
 
       {error && (
-        <div style={{ background: 'rgba(239, 68, 68, 0.1)', border: '1px solid rgba(239, 68, 68, 0.2)', padding: '12px 16px', borderRadius: '8px', color: '#f87171', marginBottom: '24px', fontSize: '0.9rem' }}>
+        <div style={{ background: 'var(--danger-bg)', border: '1px solid var(--danger-border)', padding: '12px 16px', borderRadius: '8px', color: 'var(--danger-text)', marginBottom: '24px', fontSize: '0.9rem' }}>
           ⚠️ {error}
         </div>
       )}
 
       {success && (
-        <div style={{ background: 'rgba(16, 185, 129, 0.1)', border: '1px solid rgba(16, 185, 129, 0.2)', padding: '12px 16px', borderRadius: '8px', color: '#34d399', marginBottom: '24px', fontSize: '0.9rem' }}>
+        <div style={{ background: 'var(--success-bg)', border: '1px solid var(--success-border)', padding: '12px 16px', borderRadius: '8px', color: 'var(--success-text)', marginBottom: '24px', fontSize: '0.9rem' }}>
           ✅ {success}
         </div>
       )}
@@ -132,7 +132,7 @@ export default function SuperAdminOnboarding() {
           <h2 style={{ fontSize: '1.2rem', fontWeight: 700, margin: '0 0 16px 0', color: '#ffffff' }}>Onboard Admin Account</h2>
           
           {adminExists ? (
-            <div style={{ background: 'rgba(99, 102, 241, 0.05)', border: '1px solid rgba(99, 102, 241, 0.15)', padding: '16px', borderRadius: '8px', color: 'var(--text-secondary)', fontSize: '0.85rem', lineHeight: '1.5' }}>
+            <div style={{ background: 'var(--accent-soft)', border: '1px solid var(--accent-soft)', padding: '16px', borderRadius: '8px', color: 'var(--text-secondary)', fontSize: '0.85rem', lineHeight: '1.5' }}>
               ℹ️ <strong>Limit Reached:</strong> This deployment already has an active Admin account. In alignment with our white-label business model, only exactly one Admin account is allowed per tenant deployment.
             </div>
           ) : (
@@ -211,7 +211,7 @@ export default function SuperAdminOnboarding() {
                   <div
                     key={admin.id}
                     style={{
-                      background: 'rgba(255,255,255,0.02)',
+                      background: 'var(--surface-1)',
                       border: '1px solid var(--border-color)',
                       borderRadius: '8px',
                       padding: '16px',
@@ -224,7 +224,7 @@ export default function SuperAdminOnboarding() {
                       <div style={{ fontWeight: 'bold', fontSize: '0.95rem', color: '#ffffff' }}>{admin.name}</div>
                       <div style={{ fontSize: '0.8rem', color: 'var(--text-secondary)', marginTop: '2px' }}>{admin.email}</div>
                       {admin.phone && <div style={{ fontSize: '0.8rem', color: 'var(--text-secondary)' }}>📞 {admin.phone}</div>}
-                      <div style={{ fontSize: '0.7rem', color: 'rgba(255,255,255,0.3)', marginTop: '6px' }}>
+                      <div style={{ fontSize: '0.7rem', color: 'var(--surface-strong)', marginTop: '6px' }}>
                         Created: {new Date(admin.created_at).toLocaleDateString()}
                       </div>
                     </div>
@@ -232,7 +232,7 @@ export default function SuperAdminOnboarding() {
                     <button
                       onClick={() => setResettingUser(admin)}
                       className="btn-secondary"
-                      style={{ padding: '8px 12px', fontSize: '0.8rem', borderColor: '#f59e0b', color: '#fbbf24' }}
+                      style={{ padding: '8px 12px', fontSize: '0.8rem', borderColor: 'var(--warning)', color: 'var(--warning-text)' }}
                     >
                       Reset Password
                     </button>
@@ -254,7 +254,7 @@ export default function SuperAdminOnboarding() {
             left: 0,
             right: 0,
             bottom: 0,
-            background: 'rgba(0,0,0,0.8)',
+            background: 'var(--overlay)',
             backdropFilter: 'blur(4px)',
             display: 'flex',
             justifyContent: 'center',
@@ -291,7 +291,7 @@ export default function SuperAdminOnboarding() {
                 type="submit"
                 className="btn-primary"
                 disabled={actionLoading}
-                style={{ flex: 1, background: '#d97706', boxShadow: 'none' }}
+                style={{ flex: 1, background: 'var(--warning)', boxShadow: 'none' }}
               >
                 {actionLoading ? '⏳ Resetting...' : 'Reset Password'}
               </button>

@@ -376,7 +376,7 @@ export default function TestTaking() {
         <div>
           <span style={{ fontSize: '1.1rem', fontWeight: 700 }}>{session.test_title || 'Mock Test Series'}</span>
           {activeSection && (
-            <span style={{ marginLeft: '12px', background: 'rgba(99, 102, 241, 0.15)', color: 'var(--accent-color)', padding: '4px 10px', borderRadius: '6px', fontSize: '0.8rem', fontWeight: 600 }}>
+            <span style={{ marginLeft: '12px', background: 'var(--accent-soft)', color: 'var(--accent-color)', padding: '4px 10px', borderRadius: '6px', fontSize: '0.8rem', fontWeight: 600 }}>
               Active Section: {activeSection.title}
             </span>
           )}
@@ -386,7 +386,7 @@ export default function TestTaking() {
           {sectionTimeRemaining !== null && (
             <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end' }}>
               <span style={{ fontSize: '0.75rem', color: 'var(--text-secondary)' }}>Section Time Remaining</span>
-              <div className="header-clock" style={{ color: sectionTimeRemaining < 60 ? '#f87171' : 'var(--text-primary)' }}>
+              <div className="header-clock" style={{ color: sectionTimeRemaining < 60 ? 'var(--danger-text)' : 'var(--text-primary)' }}>
                 {formatTime(sectionTimeRemaining)}
               </div>
             </div>
@@ -394,7 +394,7 @@ export default function TestTaking() {
 
           <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end' }}>
             <span style={{ fontSize: '0.75rem', color: 'var(--text-secondary)' }}>Total Exam Time Remaining</span>
-            <div className="header-clock" style={{ color: timeRemaining < 300 ? '#f87171' : 'var(--text-primary)' }}>
+            <div className="header-clock" style={{ color: timeRemaining < 300 ? 'var(--danger-text)' : 'var(--text-primary)' }}>
               {formatTime(timeRemaining)}
             </div>
           </div>
@@ -402,7 +402,7 @@ export default function TestTaking() {
       </div>
 
       {error && (
-        <div style={{ background: 'rgba(239, 68, 68, 0.1)', border: '1px solid rgba(239, 68, 68, 0.2)', padding: '10px 16px', borderRadius: '8px', color: '#f87171', fontSize: '0.85rem', marginBottom: '16px' }}>
+        <div style={{ background: 'var(--danger-bg)', border: '1px solid var(--danger-border)', padding: '10px 16px', borderRadius: '8px', color: 'var(--danger-text)', fontSize: '0.85rem', marginBottom: '16px' }}>
           {error}
         </div>
       )}
@@ -420,7 +420,7 @@ export default function TestTaking() {
                   Question {currentQuestionIndex + 1}
                 </span>
                 <span style={{ fontSize: '0.8rem', color: 'var(--text-secondary)' }}>
-                  Marks: <span style={{ color: '#10b981', fontWeight: 'bold' }}>+{activeQuestion.marks}</span> / Negative: <span style={{ color: '#ef4444', fontWeight: 'bold' }}>-{activeQuestion.negative_marks}</span>
+                  Marks: <span style={{ color: 'var(--success)', fontWeight: 'bold' }}>+{activeQuestion.marks}</span> / Negative: <span style={{ color: 'var(--danger)', fontWeight: 'bold' }}>-{activeQuestion.negative_marks}</span>
                 </span>
               </div>
 
@@ -453,7 +453,7 @@ export default function TestTaking() {
           {/* Action Control Bar */}
           <div style={{ display: 'flex', justifyContent: 'space-between', borderTop: '1px solid var(--border-color)', paddingTop: '20px', marginTop: '24px' }}>
             <div style={{ display: 'flex', gap: '12px' }}>
-              <button onClick={toggleMarkForReview} className="btn-secondary" style={{ borderColor: 'var(--status-marked-bg)', color: '#a78bfa' }}>
+              <button onClick={toggleMarkForReview} className="btn-secondary" style={{ borderColor: 'var(--status-marked-bg)', color: 'var(--violet-text)' }}>
                 {markedForReview[activeQuestion?.id] ? 'Unmark Review' : 'Mark for Review'}
               </button>
               <button onClick={clearResponse} className="btn-secondary">
@@ -501,7 +501,7 @@ export default function TestTaking() {
                     style={{
                       width: '100%',
                       padding: '10px 14px',
-                      background: isCurrent ? 'var(--accent-color)' : 'rgba(255,255,255,0.03)',
+                      background: isCurrent ? 'var(--accent-color)' : 'var(--surface-2)',
                       color: isCurrent ? '#ffffff' : isLocked ? 'var(--text-secondary)' : 'var(--text-primary)',
                       border: '1px solid',
                       borderColor: isCurrent ? 'var(--accent-color)' : 'var(--border-color)',
@@ -516,7 +516,7 @@ export default function TestTaking() {
                     }}
                   >
                     <span>{section.title}</span>
-                    {isLocked && <span style={{ fontSize: '0.7rem', background: '#374151', padding: '2px 6px', borderRadius: '4px' }}>Locked</span>}
+                    {isLocked && <span style={{ fontSize: '0.7rem', background: 'var(--surface-3)', padding: '2px 6px', borderRadius: '4px' }}>Locked</span>}
                   </button>
                 );
               })}
@@ -567,7 +567,7 @@ export default function TestTaking() {
             </div>
           </div>
 
-          <button onClick={() => setShowSubmitConfirm(true)} className="btn-primary" style={{ background: '#ef4444', width: '100%' }}>
+          <button onClick={() => setShowSubmitConfirm(true)} className="btn-primary" style={{ background: 'var(--danger)', width: '100%' }}>
             Submit Test
           </button>
         </div>
@@ -575,7 +575,7 @@ export default function TestTaking() {
 
       {/* Submit Confirmation Modal Overlay */}
       {showSubmitConfirm && (
-        <div style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, backgroundColor: 'rgba(0,0,0,0.7)', display: 'flex', justifyContent: 'center', alignItems: 'center', zIndex: 1000, padding: '16px' }}>
+        <div style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, backgroundColor: 'var(--overlay)', display: 'flex', justifyContent: 'center', alignItems: 'center', zIndex: 1000, padding: '16px' }}>
           <div className="glass-panel" style={{ width: '100%', maxWidth: '400px', padding: '32px', display: 'flex', flexDirection: 'column', gap: '20px' }}>
             <h3 style={{ margin: 0, fontSize: '1.25rem', fontWeight: 800 }}>Confirm Test Submission</h3>
             <p style={{ margin: 0, color: 'var(--text-secondary)', fontSize: '0.9rem', lineHeight: '1.5' }}>
@@ -585,7 +585,7 @@ export default function TestTaking() {
               <button onClick={() => setShowSubmitConfirm(false)} className="btn-secondary" style={{ padding: '8px 16px' }}>
                 Cancel
               </button>
-              <button onClick={handleManualSubmit} className="btn-primary" style={{ background: '#ef4444', padding: '8px 16px' }} disabled={isSubmitting}>
+              <button onClick={handleManualSubmit} className="btn-primary" style={{ background: 'var(--danger)', padding: '8px 16px' }} disabled={isSubmitting}>
                 {isSubmitting ? 'Submitting...' : 'Yes, Submit'}
               </button>
             </div>

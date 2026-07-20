@@ -1,10 +1,28 @@
 <!doctype html>
-<html lang="en">
+<html lang="en" data-theme="dark">
   <head>
     <meta charset="UTF-8" />
     <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>app</title>
+    <title>Practest — Exam Prep</title>
+    <meta name="theme-color" content="#070b16" media="(prefers-color-scheme: dark)" />
+    <meta name="theme-color" content="#eef1fa" media="(prefers-color-scheme: light)" />
+    <!-- Theme boot: applies saved day/night choice before first paint (no flash) -->
+    <script>
+      (function () {
+        try {
+          var t = localStorage.getItem('practest-theme');
+          if (t === 'light' || t === 'dark') document.documentElement.dataset.theme = t;
+        } catch (e) { /* private mode etc. — default dark stands */ }
+      })();
+    </script>
+    <!-- Fonts: Space Grotesk (display) · Inter (UI) · JetBrains Mono (data) -->
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      rel="stylesheet"
+      href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@500;700&family=Space+Grotesk:wght@500;600;700&display=swap"
+    />
     <!-- GTM Script Loader gated by cookie consent -->
     <script>
       window.dataLayer = window.dataLayer || [];

@@ -247,13 +247,13 @@ export default function AdminEnrollments() {
       </div>
 
       {success && (
-        <div style={{ padding: '16px', background: 'rgba(16, 185, 129, 0.1)', border: '1px solid #10b981', borderRadius: '8px', color: '#10b981' }}>
+        <div style={{ padding: '16px', background: 'var(--success-bg)', border: '1px solid var(--success)', borderRadius: '8px', color: 'var(--success)' }}>
           {success}
         </div>
       )}
 
       {error && (
-        <div style={{ padding: '16px', background: 'rgba(239, 68, 68, 0.1)', border: '1px solid #ef4444', borderRadius: '8px', color: '#ef4444' }}>
+        <div style={{ padding: '16px', background: 'var(--danger-bg)', border: '1px solid var(--danger)', borderRadius: '8px', color: 'var(--danger)' }}>
           {error}
         </div>
       )}
@@ -329,7 +329,7 @@ export default function AdminEnrollments() {
                       padding: '10px 12px',
                       borderRadius: '6px',
                       textAlign: 'left',
-                      background: selectedBatch === null ? 'rgba(99, 102, 241, 0.15)' : 'transparent',
+                      background: selectedBatch === null ? 'var(--accent-soft)' : 'transparent',
                       border: selectedBatch === null ? '1px solid var(--accent-color)' : '1px solid var(--border-color)',
                       color: selectedBatch === null ? '#ffffff' : 'var(--text-secondary)',
                       fontWeight: 600,
@@ -346,7 +346,7 @@ export default function AdminEnrollments() {
                       style={{
                         padding: '10px 12px',
                         borderRadius: '6px',
-                        background: selectedBatch?.id === b.id ? 'rgba(99, 102, 241, 0.15)' : 'rgba(255,255,255,0.02)',
+                        background: selectedBatch?.id === b.id ? 'var(--accent-soft)' : 'var(--surface-1)',
                         border: selectedBatch?.id === b.id ? '1px solid var(--accent-color)' : '1px solid var(--border-color)',
                         cursor: 'pointer',
                         fontSize: '0.85rem',
@@ -418,7 +418,7 @@ export default function AdminEnrollments() {
                   </tr>
                 ) : (
                   enrollments.map((en) => (
-                    <tr key={en.id} style={{ borderBottom: '1px solid rgba(255,255,255,0.03)', fontSize: '0.9rem' }}>
+                    <tr key={en.id} style={{ borderBottom: '1px solid var(--surface-2)', fontSize: '0.9rem' }}>
                       <td style={{ padding: '16px' }}>
                         <div style={{ fontWeight: 600 }}>{en.user?.name}</div>
                         <div style={{ fontSize: '0.8rem', color: 'var(--text-secondary)', marginTop: '2px' }}>{en.user?.email}</div>
@@ -442,8 +442,8 @@ export default function AdminEnrollments() {
                             fontWeight: 'bold', 
                             padding: '2px 8px', 
                             borderRadius: '4px',
-                            background: en.is_active ? 'rgba(16,185,129,0.1)' : 'rgba(239,68,68,0.1)',
-                            color: en.is_active ? '#10b981' : '#ef4444'
+                            background: en.is_active ? 'var(--success-bg)' : 'var(--danger-bg)',
+                            color: en.is_active ? 'var(--success)' : 'var(--danger)'
                           }}
                         >
                           {en.is_active ? 'Active' : 'Suspended'}
@@ -456,8 +456,8 @@ export default function AdminEnrollments() {
                           style={{ 
                             padding: '4px 10px', 
                             fontSize: '0.8rem', 
-                            color: en.is_active ? '#ef4444' : '#10b981',
-                            borderColor: en.is_active ? 'rgba(239,68,68,0.3)' : 'rgba(16,185,129,0.3)',
+                            color: en.is_active ? 'var(--danger)' : 'var(--success)',
+                            borderColor: en.is_active ? 'var(--danger-border)' : 'var(--success-border)',
                             whiteSpace: 'nowrap'
                           }}
                         >
@@ -503,7 +503,7 @@ export default function AdminEnrollments() {
                 </tr>
               ) : (
                 payments.map((p) => (
-                  <tr key={p.id} style={{ borderBottom: '1px solid rgba(255,255,255,0.03)', fontSize: '0.9rem' }}>
+                  <tr key={p.id} style={{ borderBottom: '1px solid var(--surface-2)', fontSize: '0.9rem' }}>
                     <td style={{ padding: '16px' }}>
                       <div style={{ fontWeight: 600 }}>{p.user?.name}</div>
                       <div style={{ fontSize: '0.8rem', color: 'var(--text-secondary)', marginTop: '2px' }}>{p.user?.email}</div>
@@ -521,7 +521,7 @@ export default function AdminEnrollments() {
                     </td>
                     <td style={{ padding: '16px' }}>
                       {p.coupon?.code ? (
-                        <span style={{ fontSize: '0.8rem', padding: '2px 6px', background: 'rgba(99,102,241,0.15)', color: 'var(--accent-color)', borderRadius: '4px', fontWeight: 600 }}>
+                        <span style={{ fontSize: '0.8rem', padding: '2px 6px', background: 'var(--accent-soft)', color: 'var(--accent-color)', borderRadius: '4px', fontWeight: 600 }}>
                           {p.coupon.code}
                         </span>
                       ) : (
@@ -535,8 +535,8 @@ export default function AdminEnrollments() {
                           fontWeight: 'bold', 
                           padding: '2px 8px', 
                           borderRadius: '4px',
-                          background: p.status === 'paid' ? 'rgba(16,185,129,0.1)' : p.status === 'failed' ? 'rgba(239,68,68,0.1)' : 'rgba(245,158,11,0.1)',
-                          color: p.status === 'paid' ? '#10b981' : p.status === 'failed' ? '#ef4444' : '#f59e0b'
+                          background: p.status === 'paid' ? 'var(--success-bg)' : p.status === 'failed' ? 'var(--danger-bg)' : 'var(--warning-bg)',
+                          color: p.status === 'paid' ? 'var(--success)' : p.status === 'failed' ? 'var(--danger)' : 'var(--warning)'
                         }}
                       >
                         {p.status}
@@ -580,7 +580,7 @@ export default function AdminEnrollments() {
 
       {/* Batch Form Modal */}
       {showBatchForm && (
-        <div style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, background: 'rgba(0,0,0,0.7)', display: 'flex', justifyContent: 'center', alignItems: 'center', zIndex: 1000, padding: '20px' }}>
+        <div style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, background: 'var(--overlay)', display: 'flex', justifyContent: 'center', alignItems: 'center', zIndex: 1000, padding: '20px' }}>
           <div className="glass-panel" style={{ width: '100%', maxWidth: '480px', padding: '30px', display: 'flex', flexDirection: 'column', gap: '20px' }}>
             <h3 style={{ fontSize: '1.3rem', margin: 0, fontWeight: 700 }}>
               {batchForm.id ? 'Edit Batch' : 'Create Batch'}
@@ -673,7 +673,7 @@ export default function AdminEnrollments() {
 
       {/* Manual Enrollment Modal */}
       {showEnrollForm && (
-        <div style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, background: 'rgba(0,0,0,0.7)', display: 'flex', justifyContent: 'center', alignItems: 'center', zIndex: 1000, padding: '20px' }}>
+        <div style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, background: 'var(--overlay)', display: 'flex', justifyContent: 'center', alignItems: 'center', zIndex: 1000, padding: '20px' }}>
           <div className="glass-panel" style={{ width: '100%', maxWidth: '500px', padding: '30px', display: 'flex', flexDirection: 'column', gap: '20px' }}>
             <h3 style={{ fontSize: '1.3rem', margin: 0, fontWeight: 700 }}>
               Enroll Student Manual Form
@@ -682,7 +682,7 @@ export default function AdminEnrollments() {
             <form onSubmit={handleEnrollSubmit} style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
               
               {/* Course detail readout */}
-              <div style={{ background: 'rgba(255,255,255,0.03)', padding: '12px', borderRadius: '6px', fontSize: '0.85rem' }}>
+              <div style={{ background: 'var(--surface-2)', padding: '12px', borderRadius: '6px', fontSize: '0.85rem' }}>
                 <div style={{ color: 'var(--text-secondary)' }}>Target Scoping:</div>
                 <div style={{ fontWeight: 'bold', color: '#ffffff', marginTop: '2px' }}>
                   Course: {selectedCourse?.title}
@@ -717,8 +717,8 @@ export default function AdminEnrollments() {
                       overflowY: 'auto', 
                       zIndex: 1010, 
                       marginTop: '4px',
-                      background: '#111928',
-                      boxShadow: '0 10px 20px rgba(0,0,0,0.5)'
+                      background: 'var(--panel-bg-solid)',
+                      boxShadow: '0 10px 20px var(--overlay)'
                     }}
                   >
                     {studentSearchResults.map(student => (
@@ -732,10 +732,10 @@ export default function AdminEnrollments() {
                         style={{ 
                           padding: '10px 14px', 
                           cursor: 'pointer', 
-                          borderBottom: '1px solid rgba(255,255,255,0.03)',
+                          borderBottom: '1px solid var(--surface-2)',
                           fontSize: '0.85rem'
                         }}
-                        onMouseOver={(e) => e.currentTarget.style.background = 'rgba(255,255,255,0.05)'}
+                        onMouseOver={(e) => e.currentTarget.style.background = 'var(--surface-2)'}
                         onMouseOut={(e) => e.currentTarget.style.background = 'transparent'}
                       >
                         <div style={{ fontWeight: 'bold' }}>{student.name}</div>
@@ -746,7 +746,7 @@ export default function AdminEnrollments() {
                 )}
 
                 {selectedStudent && (
-                  <div style={{ fontSize: '0.8rem', color: '#10b981', marginTop: '4px', fontWeight: 'bold' }}>
+                  <div style={{ fontSize: '0.8rem', color: 'var(--success)', marginTop: '4px', fontWeight: 'bold' }}>
                     Selected student ID: #{selectedStudent.id}
                   </div>
                 )}

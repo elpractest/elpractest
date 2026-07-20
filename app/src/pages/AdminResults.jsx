@@ -81,7 +81,7 @@ export default function AdminResults({ onViewDetail }) {
       </div>
 
       {error && (
-        <div style={{ padding: '16px', background: 'rgba(239, 68, 68, 0.1)', border: '1px solid #ef4444', borderRadius: '8px', color: '#ef4444' }}>
+        <div style={{ padding: '16px', background: 'var(--danger-bg)', border: '1px solid var(--danger)', borderRadius: '8px', color: 'var(--danger)' }}>
           {error}
         </div>
       )}
@@ -159,7 +159,7 @@ export default function AdminResults({ onViewDetail }) {
               </tr>
             ) : (
               results.map((res) => (
-                <tr key={res.id} style={{ borderBottom: '1px solid rgba(255,255,255,0.03)', fontSize: '0.9rem' }}>
+                <tr key={res.id} style={{ borderBottom: '1px solid var(--surface-2)', fontSize: '0.9rem' }}>
                   <td style={{ padding: '16px' }}>
                     <div style={{ fontWeight: 600 }}>{res.user?.name}</div>
                     <div style={{ fontSize: '0.8rem', color: 'var(--text-secondary)', marginTop: '2px' }}>{res.user?.email}</div>
@@ -179,7 +179,7 @@ export default function AdminResults({ onViewDetail }) {
                       / {parseFloat(res.analytic?.max_score || 0).toFixed(2)}
                     </span>
                   </td>
-                  <td style={{ padding: '16px', fontWeight: 'bold', color: '#10b981' }}>
+                  <td style={{ padding: '16px', fontWeight: 'bold', color: 'var(--success)' }}>
                     {parseFloat(res.analytic?.accuracy_percentage || 0).toFixed(1)}%
                   </td>
                   <td style={{ padding: '16px' }}>

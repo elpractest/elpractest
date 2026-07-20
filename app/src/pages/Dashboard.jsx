@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import api from '../api';
+import Icon from '../components/Icon';
 import StudentCheckout from './StudentCheckout';
 import ActivationModal from './ActivationModal';
 
@@ -127,9 +128,9 @@ export default function Dashboard({ user }) {
   };
 
   const statusColors = {
-    pending: { bg: 'rgba(245, 158, 11, 0.15)', text: '#fbbf24', border: 'rgba(245, 158, 11, 0.3)' },
-    approved: { bg: 'rgba(16, 185, 129, 0.15)', text: '#34d399', border: 'rgba(16, 185, 129, 0.3)' },
-    rejected: { bg: 'rgba(239, 68, 68, 0.15)', text: '#f87171', border: 'rgba(239, 68, 68, 0.3)' },
+    pending: { bg: 'var(--warning-bg)', text: 'var(--warning-text)', border: 'var(--warning-border)' },
+    approved: { bg: 'var(--success-bg)', text: 'var(--success-text)', border: 'var(--success-border)' },
+    rejected: { bg: 'var(--danger-bg)', text: 'var(--danger-text)', border: 'var(--danger-border)' },
   };
 
   return (
@@ -147,20 +148,20 @@ export default function Dashboard({ user }) {
             className="btn-primary"
             style={{ padding: '10px 18px', fontSize: '0.88rem', gap: '8px' }}
           >
-            <span>🔑</span> Request Activation / Redeem Code
+            <Icon name="key" size={18} /> Request Activation / Redeem Code
           </button>
           <Link
             to="/results"
             className="btn-secondary"
             style={{ padding: '10px 18px', fontSize: '0.88rem', textDecoration: 'none', gap: '8px', display: 'inline-flex', alignItems: 'center' }}
           >
-            <span>📊</span> Results History
+            <Icon name="chart" size={18} /> Results History
           </Link>
         </div>
       </div>
 
       {error && (
-        <div style={{ background: 'rgba(239, 68, 68, 0.1)', border: '1px solid rgba(239, 68, 68, 0.2)', padding: '12px 16px', borderRadius: '8px', color: '#f87171', fontSize: '0.85rem' }}>
+        <div style={{ background: 'var(--danger-bg)', border: '1px solid var(--danger-border)', padding: '12px 16px', borderRadius: '8px', color: 'var(--danger-text)', fontSize: '0.85rem' }}>
           {error}
         </div>
       )}
@@ -175,7 +176,7 @@ export default function Dashboard({ user }) {
             {activationRequests.map(req => {
               const sc = statusColors[req.status] || statusColors.pending;
               return (
-                <div key={req.id} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', background: 'rgba(255,255,255,0.02)', padding: '10px 14px', borderRadius: '8px', border: '1px solid var(--border-color)', flexWrap: 'wrap', gap: '8px' }}>
+                <div key={req.id} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', background: 'var(--surface-1)', padding: '10px 14px', borderRadius: '8px', border: '1px solid var(--border-color)', flexWrap: 'wrap', gap: '8px' }}>
                   <div style={{ fontSize: '0.88rem' }}>
                     <strong>{req.batch?.course?.title || 'Course'}</strong> — {req.batch?.name || 'Batch'}
                     <span style={{ fontSize: '0.78rem', color: 'var(--text-secondary)', marginLeft: '8px' }}>Ref: {req.payment_reference}</span>
@@ -202,7 +203,7 @@ export default function Dashboard({ user }) {
           <div style={{ color: 'var(--text-secondary)' }}>Loading your courses...</div>
         ) : courses.length === 0 ? (
           <div className="glass-panel" style={{ padding: '32px', textAlign: 'center', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '16px' }}>
-            <div style={{ fontSize: '2.5rem' }}>📚</div>
+            <div style={{ display: 'flex', justifyContent: 'center' }}><span style={{ display: 'inline-flex', padding: '15px', borderRadius: '18px', background: 'var(--accent-soft)', color: 'var(--accent-color)', border: '1px solid var(--accent-border)' }}><Icon name="book" size={30} /></span></div>
             <div style={{ color: 'var(--text-secondary)', fontSize: '0.95rem' }}>
               You are not enrolled in any courses yet. Request activation or redeem a code to start learning!
             </div>
@@ -234,7 +235,7 @@ export default function Dashboard({ user }) {
                 >
                   <div>
                     <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '12px' }}>
-                      <span style={{ fontSize: '0.75rem', fontWeight: 700, padding: '4px 8px', background: 'rgba(99, 102, 241, 0.15)', color: 'var(--accent-color)', borderRadius: '6px', textTransform: 'uppercase' }}>
+                      <span style={{ fontSize: '0.75rem', fontWeight: 700, padding: '4px 8px', background: 'var(--accent-soft)', color: 'var(--accent-color)', borderRadius: '6px', textTransform: 'uppercase' }}>
                         {course.exam_category}
                       </span>
                       <span style={{ fontSize: '0.75rem', color: 'var(--text-secondary)', textTransform: 'capitalize' }}>
@@ -253,7 +254,7 @@ export default function Dashboard({ user }) {
                       className="btn-primary"
                       style={{ flex: 1, padding: '8px 12px', fontSize: '0.82rem', textDecoration: 'none', textAlign: 'center' }}
                     >
-                      ▶ Course Outline
+                      Course Outline
                     </Link>
                     <button
                       onClick={() => handleCourseClick(course)}
@@ -291,7 +292,7 @@ export default function Dashboard({ user }) {
                 >
                   <div>
                     <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '12px' }}>
-                      <span style={{ fontSize: '0.75rem', fontWeight: 700, padding: '4px 8px', background: 'rgba(99, 102, 241, 0.15)', color: 'var(--accent-color)', borderRadius: '6px', textTransform: 'uppercase' }}>
+                      <span style={{ fontSize: '0.75rem', fontWeight: 700, padding: '4px 8px', background: 'var(--accent-soft)', color: 'var(--accent-color)', borderRadius: '6px', textTransform: 'uppercase' }}>
                         {course.exam_category}
                       </span>
                       <span style={{ fontSize: '0.75rem', color: 'var(--text-secondary)', textTransform: 'capitalize' }}>
@@ -314,7 +315,7 @@ export default function Dashboard({ user }) {
                             display: 'flex', 
                             justifyContent: 'space-between', 
                             alignItems: 'center', 
-                            background: 'rgba(255,255,255,0.02)', 
+                            background: 'var(--surface-1)', 
                             padding: '10px 12px', 
                             borderRadius: '8px', 
                             border: '1px solid var(--border-color)' 
