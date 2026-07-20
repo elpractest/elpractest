@@ -417,7 +417,7 @@ class TestTakingController extends Controller
                     'course_title' => $session->test && $session->test->course ? $session->test->course->title : null,
                     'submitted_at' => $session->submitted_at,
                     'is_auto_submitted' => $session->is_auto_submitted,
-                    'score' => $analytic ? $analytic->score : 0,
+                    'score' => $analytic ? $analytic->total_score : 0,
                     'total_marks' => $session->test ? $session->test->total_marks : 0,
                     'accuracy_percentage' => $analytic ? $analytic->accuracy_percentage : 0,
                     'rank' => $rankAndPercentile['rank'],

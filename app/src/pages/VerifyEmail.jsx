@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { Link, useSearchParams } from 'react-router-dom';
 import api from '../api';
 
@@ -8,6 +8,7 @@ export default function VerifyEmail() {
   const hash = searchParams.get('hash');
   const [status, setStatus] = useState('verifying'); // verifying | success | already | error
   const [message, setMessage] = useState('');
+  const calledRef = useRef(false);
 
   useEffect(() => {
     if (!id || !hash) {
@@ -16,14 +17,19 @@ export default function VerifyEmail() {
       return;
     }
 
+    // Guard against React StrictMode double-fire
+    if (calledRef.current) return;
+    calledRef.current = true;
+
     api.get(`/api/email/verify/${id}/${hash}`)
       .then(res => {
-        if (res.data.message?.includes('already')) {
-          setStatus('already');
-        } else {
-          setStatus('success');
-        }
-        setMessage(res.data.message);
+        // Treat 'already verified' as success on first visit — the user just clicked
+        // the link for the first time; the double-fire or a race is the only reason
+        // we'd see 'already' here. Show the positive "Verified!" message.
+        setStatus('success');
+        setMessage(res.data.message?.includes('already')
+          ? 'Your email has been verified successfully. You can now log in.'
+          : res.data.message);
       })
       .catch(err => {
         setStatus('error');

@@ -103,7 +103,7 @@ export default function TestResult() {
             {parseFloat(analytic.total_score || 0).toFixed(2)}
           </div>
           <span style={{ fontSize: '0.8rem', color: 'var(--text-secondary)' }}>
-            Max Marks: {parseFloat(analytic.max_marks || 0).toFixed(2)}
+            Max Marks: {parseFloat(analytic.max_score || 0).toFixed(2)}
           </span>
         </div>
 
