@@ -34,8 +34,9 @@ class SocialAuthController extends Controller
      *
      * Creates or links the social account, then logs in.
      * If the user registers via social login, they get auto-verified email.
+     * Redirects to the SPA (not JSON) because this is a full-page browser navigation.
      */
-    public function callback(Request $request, string $provider): JsonResponse
+    public function callback(Request $request, string $provider): JsonResponse|\Illuminate\Http\RedirectResponse
     {
         if (! in_array($provider, self::PROVIDERS)) {
             return response()->json(['message' => 'Unsupported provider.'], 422);
@@ -44,9 +45,7 @@ class SocialAuthController extends Controller
         try {
             $socialUser = Socialite::driver($provider)->stateless()->user();
         } catch (\Exception $e) {
-            return response()->json([
-                'message' => 'Social authentication failed. Please try again.',
-            ], 401);
+            return redirect(config('app.frontend_url') . '/login?error=social_failed');
         }
 
         // Check if this social account is already linked
@@ -83,14 +82,6 @@ class SocialAuthController extends Controller
         Auth::login($user);
         $request->session()->regenerate();
 
-        return response()->json([
-            'message' => 'Login successful.',
-            'user' => [
-                'id' => $user->id,
-                'name' => $user->name,
-                'email' => $user->email,
-                'roles' => $user->getRoleNames(),
-            ],
-        ]);
+        return redirect(config('app.frontend_url') . '/dashboard');
     }
 }

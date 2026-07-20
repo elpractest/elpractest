@@ -36,10 +36,10 @@ class ActivationFlowTest extends TestCase
             'google2fa_secret' => 'B39XKJ2938JJD982',
         ]);
 
-        $this->student = User::factory()->create();
+        $this->student = User::factory()->create(['phone_verified_at' => now()]);
         $this->student->assignRole('student');
 
-        $this->student2 = User::factory()->create();
+        $this->student2 = User::factory()->create(['phone_verified_at' => now()]);
         $this->student2->assignRole('student');
 
         $this->course = Course::create([

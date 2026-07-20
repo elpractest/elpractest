@@ -2,6 +2,8 @@
 
 namespace App\Providers;
 
+use Illuminate\Auth\Notifications\ResetPassword;
+use Illuminate\Auth\Notifications\VerifyEmail;
 use Illuminate\Support\ServiceProvider;
 
 use Spatie\Permission\Events\RoleAttached;
@@ -22,6 +24,18 @@ class AppServiceProvider extends ServiceProvider
      */
     public function boot(): void
     {
+        // Fix #2: Password-reset link → SPA page (no named route exists in this API-only app)
+        ResetPassword::createUrlUsing(function (object $user, string $token) {
+            return config('app.frontend_url') . "/reset-password?token={$token}&email=" . urlencode($user->email);
+        });
+
+        // Fix #3: Email-verification link → SPA page (avoids stranding user on raw JSON API response)
+        VerifyEmail::createUrlUsing(function (object $notifiable) {
+            $id = $notifiable->getKey();
+            $hash = sha1($notifiable->getEmailForVerification());
+            return config('app.frontend_url') . "/verify-email?id={$id}&hash={$hash}";
+        });
+
         Event::listen(RoleAttached::class, function (RoleAttached $event) {
             $user = $event->model;
             if ($user instanceof \App\Models\User) {

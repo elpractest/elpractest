@@ -9,6 +9,14 @@ class StoreActivationRequest extends FormRequest
 {
     public function authorize(): bool
     {
+        // §6: OTP verification is required before an activation request is accepted
+        if ($this->user()->phone_verified_at === null) {
+            abort(response()->json([
+                'message' => 'Please verify your phone number first.',
+                'phone_verified' => false,
+            ], 403));
+        }
+
         return true;
     }
 

@@ -64,8 +64,8 @@ class SuperAdminProtectionTest extends TestCase
 
         $response = $this->withHeaders([
             'Referer' => 'http://localhost:3000',
-        ])->withSession([])->getJson('/api/auth/google/callback');
-        $response->assertStatus(200);
+        ])->withSession([])->get('/api/auth/google/callback');
+        $response->assertRedirect(config('app.frontend_url') . '/dashboard');
 
         $user = User::where('email', 'oauth-student@example.com')->first();
         $this->assertNotNull($user);
