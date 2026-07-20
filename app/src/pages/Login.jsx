@@ -1,5 +1,5 @@
-import React, { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import React, { useState, useEffect } from 'react';
+import { useNavigate, Link, useSearchParams } from 'react-router-dom';
 import api from '../api';
 
 export default function Login({ setUser }) {
@@ -8,6 +8,21 @@ export default function Login({ setUser }) {
   const [error, setError] = useState('');
   const [submitting, setSubmitting] = useState(false);
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
+
+  // Social login settings
+  const [socialEnabled, setSocialEnabled] = useState(false);
+  useEffect(() => {
+    api.get('/api/settings/public').then(res => {
+      const s = res.data.settings || {};
+      setSocialEnabled(s.social_login_enabled === 'true' || s.social_login_enabled === true);
+    }).catch(() => {});
+
+    // Handle social login error from redirect
+    if (searchParams.get('error') === 'social_failed') {
+      setError('Social login failed. Please try again or sign in with email.');
+    }
+  }, []);
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -15,10 +30,8 @@ export default function Login({ setUser }) {
     setSubmitting(true);
 
     try {
-      // Step 1: CSRF cookie is pre-fetched automatically via interceptor,
-      // but let's call login directly (which will trigger it)
       const res = await api.post('/api/login', { email, password });
-      
+
       if (res.data['2fa_required']) {
         if (res.data['2fa_setup_needed']) {
           navigate('/admin/2fa/setup');
@@ -28,19 +41,29 @@ export default function Login({ setUser }) {
         return;
       }
 
-      // Step 2: Fetch current user details
+      // Fetch current user details
       const userRes = await api.get('/api/me');
       setUser(userRes.data.user || userRes.data);
       navigate('/dashboard');
     } catch (err) {
-      setError(
-        err.response?.data?.message || 
-        err.response?.data?.errors?.email?.[0] || 
-        'Invalid credentials. Please try again.'
-      );
+      const status = err.response?.status;
+      const data = err.response?.data;
+
+      if (status === 403 && data?.email_verified === false) {
+        setError('Please verify your email address before logging in. Check your inbox for the verification link.');
+      } else if (status === 429) {
+        setError('Too many login attempts. Please wait a moment and try again.');
+      } else {
+        setError(data?.message || 'Invalid credentials. Please try again.');
+      }
     } finally {
       setSubmitting(false);
     }
+  };
+
+  const handleSocialLogin = (provider) => {
+    const apiBase = import.meta.env.VITE_API_URL || '';
+    window.location.href = `${apiBase}/api/auth/${provider}/redirect`;
   };
 
   return (
@@ -57,12 +80,30 @@ export default function Login({ setUser }) {
           </div>
         )}
 
+        {socialEnabled && (
+          <>
+            <div style={{ display: 'flex', gap: '12px' }}>
+              <button onClick={() => handleSocialLogin('google')} className="btn-secondary" style={{ flex: 1, padding: '10px', fontSize: '0.85rem', gap: '8px' }} type="button">
+                <span>🔵</span> Google
+              </button>
+              <button onClick={() => handleSocialLogin('facebook')} className="btn-secondary" style={{ flex: 1, padding: '10px', fontSize: '0.85rem', gap: '8px' }} type="button">
+                <span>🔷</span> Facebook
+              </button>
+            </div>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+              <div style={{ flex: 1, height: '1px', background: 'var(--border-color)' }} />
+              <span style={{ color: 'var(--text-secondary)', fontSize: '0.8rem' }}>or sign in with email</span>
+              <div style={{ flex: 1, height: '1px', background: 'var(--border-color)' }} />
+            </div>
+          </>
+        )}
+
         <form onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
           <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
             <label style={{ fontSize: '0.85rem', fontWeight: 600, color: 'var(--text-secondary)' }}>Email Address</label>
-            <input 
-              type="email" 
-              className="form-input" 
+            <input
+              type="email"
+              className="form-input"
               placeholder="e.g. student@example.com"
               value={email}
               onChange={(e) => setEmail(e.target.value)}
@@ -72,10 +113,15 @@ export default function Login({ setUser }) {
           </div>
 
           <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
-            <label style={{ fontSize: '0.85rem', fontWeight: 600, color: 'var(--text-secondary)' }}>Password</label>
-            <input 
-              type="password" 
-              className="form-input" 
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+              <label style={{ fontSize: '0.85rem', fontWeight: 600, color: 'var(--text-secondary)' }}>Password</label>
+              <Link to="/forgot-password" style={{ fontSize: '0.8rem', color: 'var(--accent-color)', textDecoration: 'none' }}>
+                Forgot password?
+              </Link>
+            </div>
+            <input
+              type="password"
+              className="form-input"
               placeholder="••••••••"
               value={password}
               onChange={(e) => setPassword(e.target.value)}
@@ -84,9 +130,9 @@ export default function Login({ setUser }) {
             />
           </div>
 
-          <button 
-            type="submit" 
-            className="btn-primary" 
+          <button
+            type="submit"
+            className="btn-primary"
             style={{ width: '100%', marginTop: '8px' }}
             disabled={submitting}
           >
@@ -94,8 +140,9 @@ export default function Login({ setUser }) {
           </button>
         </form>
 
-        <div style={{ textAlign: 'center', fontSize: '0.8rem', color: 'var(--text-secondary)' }}>
-          Tip: Log in with admin credentials to generate activation codes.
+        <div style={{ textAlign: 'center', fontSize: '0.85rem', color: 'var(--text-secondary)' }}>
+          Don't have an account?{' '}
+          <Link to="/register" style={{ color: 'var(--accent-color)', textDecoration: 'none', fontWeight: 600 }}>Create Account</Link>
         </div>
       </div>
     </div>

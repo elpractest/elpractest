@@ -1,7 +1,13 @@
 import React, { useState, useEffect } from 'react';
-import { BrowserRouter, Routes, Route, Navigate, useNavigate } from 'react-router-dom';
+import { BrowserRouter, Routes, Route, Navigate, useNavigate, Link } from 'react-router-dom';
 import api, { setOn2FARequired } from './api';
 import Login from './pages/Login';
+import Register from './pages/Register';
+import VerifyEmailNotice from './pages/VerifyEmailNotice';
+import VerifyEmail from './pages/VerifyEmail';
+import VerifyOtp from './pages/VerifyOtp';
+import ForgotPassword from './pages/ForgotPassword';
+import ResetPassword from './pages/ResetPassword';
 import Dashboard from './pages/Dashboard';
 import TestTaking from './pages/TestTaking';
 import TestResult from './pages/TestResult';
@@ -74,12 +80,14 @@ function AppContent({ user, setUser, loading }) {
     });
   }, [navigate]);
 
+  const isStudent = user && !user.roles?.includes('admin') && !user.roles?.includes('super-admin');
+
   return (
     <>
-      {user && !user.roles?.includes('admin') && !user.roles?.includes('super-admin') && (
+      {isStudent && (
         <header className="glass-panel" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '16px 24px', margin: '16px', borderBottom: '1px solid var(--border-color)', borderRadius: '12px' }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
-            <span style={{ fontSize: '1.4rem', fontWeight: 800, color: 'var(--accent-color)', letterSpacing: '1px' }}>PRACTEST</span>
+            <Link to="/dashboard" style={{ textDecoration: 'none', fontSize: '1.4rem', fontWeight: 800, color: 'var(--accent-color)', letterSpacing: '1px' }}>PRACTEST</Link>
             <span style={{ fontSize: '0.9rem', color: 'var(--text-secondary)', background: 'rgba(255,255,255,0.05)', padding: '4px 8px', borderRadius: '6px' }}>Student SPA</span>
           </div>
           <div style={{ display: 'flex', alignItems: 'center', gap: '16px' }}>
@@ -89,8 +97,18 @@ function AppContent({ user, setUser, loading }) {
         </header>
       )}
 
+      {/* Non-blocking banner nudge if student phone is unverified */}
+      {isStudent && !user.phone_verified && (
+        <div style={{ margin: '0 16px 16px 16px', padding: '12px 20px', background: 'rgba(245, 158, 11, 0.1)', border: '1px solid rgba(245, 158, 11, 0.25)', borderRadius: '8px', display: 'flex', justifyContent: 'space-between', alignItems: 'center', color: '#fbbf24', fontSize: '0.88rem' }}>
+          <span>⚠️ Your phone number is unverified. Mobile OTP verification is required to request course activation.</span>
+          <Link to="/verify-otp" className="btn-primary" style={{ padding: '6px 14px', fontSize: '0.8rem', background: '#f59e0b', color: '#000', textDecoration: 'none' }}>
+            Verify Phone Now
+          </Link>
+        </div>
+      )}
+
       <Routes>
-        {/* Public Login Route */}
+        {/* Public Auth & Onboarding Routes */}
         <Route path="/login" element={
           user ? (
             user.roles?.includes('admin') || user.roles?.includes('super-admin') ? (
@@ -103,10 +121,22 @@ function AppContent({ user, setUser, loading }) {
           )
         } />
         
+        <Route path="/register" element={<Register />} />
+        <Route path="/verify-email-notice" element={<VerifyEmailNotice />} />
+        <Route path="/verify-email" element={<VerifyEmail />} />
+        <Route path="/forgot-password" element={<ForgotPassword />} />
+        <Route path="/reset-password" element={<ResetPassword />} />
+
         {/* Student Protected Routes */}
         <Route path="/dashboard" element={
           <StudentGuard user={user} loading={loading}>
-            <Dashboard />
+            <Dashboard user={user} />
+          </StudentGuard>
+        } />
+
+        <Route path="/verify-otp" element={
+          <StudentGuard user={user} loading={loading}>
+            <VerifyOtp />
           </StudentGuard>
         } />
         
