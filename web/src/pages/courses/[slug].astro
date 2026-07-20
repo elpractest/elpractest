@@ -34,12 +34,38 @@ const apiUrl = import.meta.env.PUBLIC_API_URL || 'http://localhost:8000';
 const bannerStyle = course?.banner_url 
   ? `background-image: linear-gradient(135deg, rgba(11, 15, 25, 0.95) 0%, rgba(17, 24, 39, 0.8) 100%), url(${course.banner_url}); background-size: cover; background-position: center;`
   : `background-image: linear-gradient(135deg, rgba(11, 15, 25, 0.95) 0%, rgba(99, 102, 241, 0.08) 100%), url('/images/course-placeholder.svg'); background-size: cover; background-position: center;`;
+const courseSchema = course ? JSON.stringify({
+  "@context": "https://schema.org",
+  "@type": "Course",
+  "name": course.title,
+  "description": course.short_description || course.description,
+  "provider": {
+    "@type": "Organization",
+    "name": "Practest",
+    "sameAs": "https://www.pactest.live"
+  }
+}) : null;
+
+const faqSchema = (course?.faq && Array.isArray(course.faq) && course.faq.length > 0) ? JSON.stringify({
+  "@context": "https://schema.org",
+  "@type": "FAQPage",
+  "mainEntity": course.faq.map((f) => ({
+    "@type": "Question",
+    "name": f.question || f.q,
+    "acceptedAnswer": {
+      "@type": "Answer",
+      "text": f.answer || f.a
+    }
+  }))
+}) : null;
 ---
 
 <Layout 
   title={course ? `${course.title} - Practest Courses` : 'Course Details - Practest'}
-  description={course ? course.short_description : 'View mock tests, video syllabus and pricing.'}
+  description={course ? course.short_description || course.description : 'View mock tests, video syllabus and pricing.'}
 >
+  {courseSchema && <script type="application/ld+json" set:html={courseSchema} />}
+  {faqSchema && <script type="application/ld+json" set:html={faqSchema} />}
   <div class="details-page-container">
     
     <!-- Header Hero banner -->

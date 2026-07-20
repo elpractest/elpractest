@@ -1,0 +1,259 @@
+---
+import Layout from '../layouts/Layout.astro';
+
+const spaUrl = import.meta.env.PUBLIC_SPA_URL || 'http://localhost:3000';
+---
+
+<Layout 
+  title="About Us - Practest Computer Based Test Engine"
+  description="Learn about Practest, our mission to provide exam-pattern accurate computer-based test series for SSC, Banking, Railway, UPSC & State PCS exams."
+>
+  <div class="about-container">
+    {/* Hero Section */}
+    <section class="about-hero">
+      <span class="badge">About Practest</span>
+      <h1>Empowering Aspirants with Exam-Accurate CBT Technology</h1>
+      <p class="hero-sub">
+        Designed from the ground up for serious Indian competitive exam preparation. We deliver precision timed test series, subject-wise analytics, and seamless learning resources.
+      </p>
+    </section>
+
+    {/* Mission & Vision Section */}
+    <section class="grid-section">
+      <div class="glass-card">
+        <div class="card-icon">🎯</div>
+        <h2>Our Mission</h2>
+        <p>
+          To make real-exam environment practice accessible to every competitive exam aspirant. We replicate exact CBT interface standards (SSC CGL, SBI PO, IBPS, RRB NTPC) so you walk into the exam hall with complete confidence.
+        </p>
+      </div>
+
+      <div class="glass-card">
+        <div class="card-icon">🚀</div>
+        <h2>Why Practest?</h2>
+        <p>
+          Unlike generic learning platforms, Practest focuses on true test engine fidelity: server-authoritative sectional timers, KaTeX LaTeX math rendered questions, instant autosave, and detailed post-test percentile analysis.
+        </p>
+      </div>
+    </section>
+
+    {/* Key Pillars / Trust Signals */}
+    <section class="trust-section">
+      <h2 class="section-title">Built for Indian One-Day & Civil Service Exams</h2>
+      
+      <div class="trust-grid">
+        <div class="trust-item">
+          <div class="trust-number">01</div>
+          <h3>Exact Exam Interface</h3>
+          <p>4-color question palette, marked-for-review tags, and section switching engineered to match official vendor software.</p>
+        </div>
+
+        <div class="trust-item">
+          <div class="trust-number">02</div>
+          <h3>Percentile Analytics</h3>
+          <p>Instant rank and percentile computed across all batch test takers with comprehensive subject and topic breakdowns.</p>
+        </div>
+
+        <div class="trust-item">
+          <div class="trust-number">03</div>
+          <h3>HD Video Lectures</h3>
+          <p>Curated LMS course modules with structured video lessons and automatic progress tracking per student.</p>
+        </div>
+
+        <div class="trust-item">
+          <div class="trust-number">04</div>
+          <h3>Offline + Online Support</h3>
+          <p>Seamless batch activation via registration codes and receipt verification for institute students.</p>
+        </div>
+      </div>
+    </section>
+
+    {/* CTA Banner */}
+    <section class="cta-banner glass-card">
+      <h2>Ready to Boost Your Exam Score?</h2>
+      <p>Explore our active course batches or jump straight into the test engine portal.</p>
+      <div class="cta-buttons">
+        <a href="/courses" class="btn-primary">Browse Courses</a>
+        <a href={`${spaUrl}/login`} class="btn-secondary">Student Portal →</a>
+      </div>
+    </section>
+  </div>
+</Layout>
+
+<style>
+  .about-container {
+    max-width: 1100px;
+    margin: 0 auto;
+    padding: 60px 24px;
+    display: flex;
+    flex-direction: column;
+    gap: 60px;
+  }
+
+  .about-hero {
+    text-align: center;
+    max-width: 800px;
+    margin: 0 auto;
+  }
+
+  .badge {
+    display: inline-block;
+    padding: 6px 14px;
+    background: rgba(99, 102, 241, 0.15);
+    color: var(--accent-color);
+    border: 1px solid rgba(99, 102, 241, 0.3);
+    border-radius: 20px;
+    font-size: 0.85rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    margin-bottom: 16px;
+  }
+
+  .about-hero h1 {
+    font-size: 2.5rem;
+    font-weight: 800;
+    margin: 0 0 16px 0;
+    line-height: 1.25;
+    background: linear-gradient(135deg, #ffffff 0%, #a5b4fc 100%);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+  }
+
+  .hero-sub {
+    font-size: 1.1rem;
+    color: var(--text-secondary);
+    line-height: 1.6;
+    margin: 0;
+  }
+
+  .grid-section {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+    gap: 24px;
+  }
+
+  .glass-card {
+    background: rgba(17, 25, 40, 0.75);
+    backdrop-filter: blur(16px);
+    border: 1px solid var(--border-color);
+    border-radius: 16px;
+    padding: 36px;
+  }
+
+  .card-icon {
+    font-size: 2.5rem;
+    margin-bottom: 16px;
+  }
+
+  .glass-card h2 {
+    font-size: 1.4rem;
+    font-weight: 700;
+    margin: 0 0 12px 0;
+  }
+
+  .glass-card p {
+    color: var(--text-secondary);
+    font-size: 0.98rem;
+    line-height: 1.6;
+    margin: 0;
+  }
+
+  .trust-section {
+    text-align: center;
+  }
+
+  .section-title {
+    font-size: 1.8rem;
+    font-weight: 800;
+    margin-bottom: 40px;
+  }
+
+  .trust-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+    gap: 24px;
+    text-align: left;
+  }
+
+  .trust-item {
+    background: rgba(255, 255, 255, 0.02);
+    border: 1px solid var(--border-color);
+    border-radius: 12px;
+    padding: 28px;
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+  }
+
+  .trust-number {
+    font-size: 1.5rem;
+    font-weight: 800;
+    color: var(--accent-color);
+  }
+
+  .trust-item h3 {
+    font-size: 1.1rem;
+    font-weight: 700;
+    margin: 0;
+  }
+
+  .trust-item p {
+    font-size: 0.9rem;
+    color: var(--text-secondary);
+    line-height: 1.5;
+    margin: 0;
+  }
+
+  .cta-banner {
+    text-align: center;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 16px;
+    background: linear-gradient(135deg, rgba(17, 25, 40, 0.9), rgba(99, 102, 241, 0.15));
+    border: 1px solid rgba(99, 102, 241, 0.3);
+  }
+
+  .cta-banner h2 {
+    margin: 0;
+    font-size: 1.8rem;
+  }
+
+  .cta-banner p {
+    margin: 0;
+    color: var(--text-secondary);
+  }
+
+  .cta-buttons {
+    display: flex;
+    gap: 16px;
+    margin-top: 8px;
+    flex-wrap: wrap;
+    justify-content: center;
+  }
+
+  .btn-primary {
+    display: inline-flex;
+    align-items: center;
+    padding: 12px 24px;
+    background-color: var(--accent-color);
+    color: #ffffff;
+    border-radius: 8px;
+    font-weight: 600;
+    text-decoration: none;
+    transition: background 0.2s ease;
+  }
+
+  .btn-secondary {
+    display: inline-flex;
+    align-items: center;
+    padding: 12px 24px;
+    background-color: transparent;
+    color: #ffffff;
+    border: 1px solid var(--border-color);
+    border-radius: 8px;
+    font-weight: 600;
+    text-decoration: none;
+    transition: background 0.2s ease;
+  }
+</style>

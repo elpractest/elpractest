@@ -14,6 +14,17 @@ const {
 } = Astro.props;
 
 const spaUrl = import.meta.env.PUBLIC_SPA_URL || 'http://localhost:3000';
+const siteUrl = 'https://www.pactest.live';
+const canonicalUrl = new URL(Astro.url.pathname, siteUrl).href;
+const orgSchema = JSON.stringify({
+  "@context": "https://schema.org",
+  "@type": "Organization",
+  "name": "Practest",
+  "url": siteUrl,
+  "logo": `${siteUrl}/logo.png`,
+  "description": description,
+  "sameAs": []
+});
 ---
 
 <!doctype html>
@@ -23,6 +34,7 @@ const spaUrl = import.meta.env.PUBLIC_SPA_URL || 'http://localhost:3000';
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
     <link rel="icon" href="/favicon.ico" />
+    <link rel="canonical" href={canonicalUrl} />
     <meta name="generator" content={Astro.generator} />
     
     <!-- Primary Meta Tags -->
@@ -34,6 +46,7 @@ const spaUrl = import.meta.env.PUBLIC_SPA_URL || 'http://localhost:3000';
     <meta property="og:type" content="website" />
     <meta property="og:title" content={title} />
     <meta property="og:description" content={description} />
+    <meta property="og:url" content={canonicalUrl} />
     <meta property="og:image" content="/og-image.png" />
 
     <!-- Twitter -->
@@ -41,6 +54,9 @@ const spaUrl = import.meta.env.PUBLIC_SPA_URL || 'http://localhost:3000';
     <meta property="twitter:title" content={title} />
     <meta property="twitter:description" content={description} />
     <meta property="twitter:image" content="/og-image.png" />
+
+    <!-- Schema.org Organization -->
+    <script type="application/ld+json" set:html={orgSchema} />
     
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
@@ -62,6 +78,7 @@ const spaUrl = import.meta.env.PUBLIC_SPA_URL || 'http://localhost:3000';
           <nav class="navbar-links">
             <a href="/">Home</a>
             <a href="/courses">Courses</a>
+            <a href="/about">About Us</a>
             <a href="/contact">Contact</a>
           </nav>
           
@@ -95,6 +112,7 @@ const spaUrl = import.meta.env.PUBLIC_SPA_URL || 'http://localhost:3000';
             <div class="footer-col">
               <h4>Platform</h4>
               <a href="/courses">All Courses</a>
+              <a href="/about">About Us</a>
               <a href={`${spaUrl}/login`}>Practice Tests</a>
               <a href={`${spaUrl}/register`}>Get Started</a>
             </div>
