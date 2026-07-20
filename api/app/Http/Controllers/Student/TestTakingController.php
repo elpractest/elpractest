@@ -395,6 +395,43 @@ class TestTakingController extends Controller
     }
 
     /**
+     * Fetch student's own completed test sessions history.
+     */
+    public function resultsHistory(Request $request): JsonResponse
+    {
+        $user = $request->user();
+
+        $sessions = TestSession::where('user_id', $user->id)
+            ->whereNotNull('submitted_at')
+            ->with(['test:id,title,total_marks,duration_seconds,course_id', 'test.course:id,title', 'analytic'])
+            ->latest('submitted_at')
+            ->get()
+            ->map(function ($session) {
+                $analytic = $session->analytic;
+                $rankAndPercentile = $session->getRankAndPercentile();
+
+                return [
+                    'session_id' => $session->id,
+                    'test_id' => $session->test_id,
+                    'test_title' => $session->test ? $session->test->title : 'Unknown Test',
+                    'course_title' => $session->test && $session->test->course ? $session->test->course->title : null,
+                    'submitted_at' => $session->submitted_at,
+                    'is_auto_submitted' => $session->is_auto_submitted,
+                    'score' => $analytic ? $analytic->score : 0,
+                    'total_marks' => $session->test ? $session->test->total_marks : 0,
+                    'accuracy_percentage' => $analytic ? $analytic->accuracy_percentage : 0,
+                    'rank' => $rankAndPercentile['rank'],
+                    'percentile' => $rankAndPercentile['percentile'],
+                    'time_taken_seconds' => $analytic ? $analytic->total_time_seconds : 0,
+                ];
+            });
+
+        return response()->json([
+            'results' => $sessions,
+        ]);
+    }
+
+    /**
      * Get the current question palette state.
      */
     public function palette(Request $request, TestSession $session): JsonResponse

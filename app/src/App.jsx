@@ -8,6 +8,9 @@ import VerifyEmail from './pages/VerifyEmail';
 import VerifyOtp from './pages/VerifyOtp';
 import ForgotPassword from './pages/ForgotPassword';
 import ResetPassword from './pages/ResetPassword';
+import CourseOutline from './pages/CourseOutline';
+import LessonPlayer from './pages/LessonPlayer';
+import ResultsHistory from './pages/ResultsHistory';
 import Dashboard from './pages/Dashboard';
 import TestTaking from './pages/TestTaking';
 import TestResult from './pages/TestResult';
@@ -131,6 +134,24 @@ function AppContent({ user, setUser, loading }) {
         <Route path="/dashboard" element={
           <StudentGuard user={user} loading={loading}>
             <Dashboard user={user} />
+          </StudentGuard>
+        } />
+
+        <Route path="/courses/:courseId/outline" element={
+          <StudentGuard user={user} loading={loading}>
+            <CourseOutline />
+          </StudentGuard>
+        } />
+
+        <Route path="/lessons/:lessonId" element={
+          <StudentGuard user={user} loading={loading}>
+            <LessonPlayer />
+          </StudentGuard>
+        } />
+
+        <Route path="/results" element={
+          <StudentGuard user={user} loading={loading}>
+            <ResultsHistory />
           </StudentGuard>
         } />
 

@@ -10,12 +10,28 @@ use App\Models\ActivationCode;
 use App\Models\Enrollment;
 use App\Models\Batch;
 use Illuminate\Http\JsonResponse;
+use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Storage;
 use Exception;
 
 class StudentActivationController extends Controller
 {
+    /**
+     * Get all activation requests submitted by the logged-in student.
+     */
+    public function index(Request $request): JsonResponse
+    {
+        $requests = ActivationRequest::where('user_id', $request->user()->id)
+            ->with(['batch:id,course_id,name', 'batch.course:id,title,exam_category'])
+            ->latest()
+            ->get();
+
+        return response()->json([
+            'requests' => $requests,
+        ]);
+    }
+
     /**
      * Request access by uploading receipt proof.
      */

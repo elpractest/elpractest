@@ -1,0 +1,293 @@
+import React, { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
+import api from '../api';
+
+export default function ActivationModal({ user, onClose, onSuccess }) {
+  const [tab, setTab] = useState('request'); // 'request' | 'redeem'
+  const [courses, setCourses] = useState([]);
+  const [loadingCourses, setLoadingCourses] = useState(true);
+  const [selectedBatchId, setSelectedBatchId] = useState('');
+  const [paymentRef, setPaymentRef] = useState('');
+  const [file, setFile] = useState(null);
+
+  const [code, setCode] = useState('');
+
+  const [submitting, setSubmitting] = useState(false);
+  const [error, setError] = useState('');
+  const [successMsg, setSuccessMsg] = useState('');
+  const navigate = useNavigate();
+
+  // Load public courses and batches for request tab
+  useEffect(() => {
+    setLoadingCourses(true);
+    api.get('/api/courses/public')
+      .then(res => {
+        setCourses(res.data.courses || res.data || []);
+      })
+      .catch(() => {})
+      .finally(() => setLoadingCourses(false));
+  }, []);
+
+  const handleRequestSubmit = async (e) => {
+    e.preventDefault();
+    setError('');
+    setSuccessMsg('');
+
+    if (!user?.phone_verified) {
+      setError('Mobile OTP verification is required before submitting an activation request.');
+      return;
+    }
+
+    if (!selectedBatchId || !paymentRef || !file) {
+      setError('Please select a batch, enter your payment reference, and attach proof document.');
+      return;
+    }
+
+    setSubmitting(true);
+    try {
+      const formData = new FormData();
+      formData.append('batch_id', selectedBatchId);
+      formData.append('payment_reference', paymentRef);
+      formData.append('proof_document', file);
+
+      await api.post('/api/student/activation-requests', formData, {
+        headers: { 'Content-Type': 'multipart/form-data' }
+      });
+
+      setSuccessMsg('Your activation request has been submitted! An admin will review your receipt shortly.');
+      setTimeout(() => {
+        if (onSuccess) onSuccess();
+        onClose();
+      }, 2000);
+    } catch (err) {
+      if (err.response?.status === 403 && err.response?.data?.phone_verified === false) {
+        setError('Please verify your phone number first before requesting activation.');
+      } else {
+        setError(err.response?.data?.message || err.response?.data?.errors?.payment_reference?.[0] || 'Failed to submit activation request.');
+      }
+    } finally {
+      setSubmitting(false);
+    }
+  };
+
+  const handleRedeemSubmit = async (e) => {
+    e.preventDefault();
+    setError('');
+    setSuccessMsg('');
+
+    if (!code || code.trim().length !== 8) {
+      setError('Please enter a valid 8-character activation code.');
+      return;
+    }
+
+    setSubmitting(true);
+    try {
+      const res = await api.post('/api/student/activation-codes/redeem', {
+        code: code.trim().toUpperCase(),
+      });
+
+      setSuccessMsg(res.data.message || 'Activation code redeemed! Course unlocked.');
+      setTimeout(() => {
+        if (onSuccess) onSuccess();
+        onClose();
+      }, 1500);
+    } catch (err) {
+      setError(err.response?.data?.message || 'Invalid or expired activation code.');
+    } finally {
+      setSubmitting(false);
+    }
+  };
+
+  return (
+    <div style={{
+      position: 'fixed',
+      top: 0,
+      left: 0,
+      right: 0,
+      bottom: 0,
+      backgroundColor: 'rgba(0, 0, 0, 0.75)',
+      backdropFilter: 'blur(8px)',
+      display: 'flex',
+      alignItems: 'center',
+      justifyContent: 'center',
+      zIndex: 1000,
+      padding: '16px',
+    }}>
+      <div className="glass-panel" style={{
+        width: '100%',
+        maxWidth: '520px',
+        padding: '32px',
+        borderRadius: '16px',
+        display: 'flex',
+        flexDirection: 'column',
+        gap: '20px',
+        position: 'relative',
+        maxHeight: '90vh',
+        overflowY: 'auto',
+      }}>
+        {/* Close Button */}
+        <button
+          onClick={onClose}
+          style={{
+            position: 'absolute',
+            top: '16px',
+            right: '16px',
+            background: 'none',
+            border: 'none',
+            color: 'var(--text-secondary)',
+            fontSize: '1.5rem',
+            cursor: 'pointer',
+          }}
+        >
+          ×
+        </button>
+
+        {/* Tab Switcher */}
+        <div style={{ display: 'flex', borderBottom: '1px solid var(--border-color)', gap: '16px' }}>
+          <button
+            onClick={() => { setTab('request'); setError(''); setSuccessMsg(''); }}
+            style={{
+              padding: '10px 16px',
+              background: 'none',
+              border: 'none',
+              borderBottom: tab === 'request' ? '2px solid var(--accent-color)' : '2px solid transparent',
+              color: tab === 'request' ? 'var(--accent-color)' : 'var(--text-secondary)',
+              fontWeight: 700,
+              fontSize: '0.95rem',
+              cursor: 'pointer',
+            }}
+          >
+            Request Batch Activation
+          </button>
+          <button
+            onClick={() => { setTab('redeem'); setError(''); setSuccessMsg(''); }}
+            style={{
+              padding: '10px 16px',
+              background: 'none',
+              border: 'none',
+              borderBottom: tab === 'redeem' ? '2px solid var(--accent-color)' : '2px solid transparent',
+              color: tab === 'redeem' ? 'var(--accent-color)' : 'var(--text-secondary)',
+              fontWeight: 700,
+              fontSize: '0.95rem',
+              cursor: 'pointer',
+            }}
+          >
+            Redeem Activation Code
+          </button>
+        </div>
+
+        {error && (
+          <div style={{ background: 'rgba(239, 68, 68, 0.1)', border: '1px solid rgba(239, 68, 68, 0.2)', padding: '12px 16px', borderRadius: '8px', color: '#f87171', fontSize: '0.85rem' }}>
+            {error}
+            {!user?.phone_verified && tab === 'request' && (
+              <div style={{ marginTop: '8px' }}>
+                <button
+                  onClick={() => { onClose(); navigate('/verify-otp'); }}
+                  style={{ background: '#f59e0b', color: '#000', border: 'none', padding: '6px 12px', borderRadius: '6px', fontSize: '0.8rem', fontWeight: 700, cursor: 'pointer' }}
+                >
+                  Verify Phone Number Now →
+                </button>
+              </div>
+            )}
+          </div>
+        )}
+
+        {successMsg && (
+          <div style={{ background: 'rgba(16, 185, 129, 0.1)', border: '1px solid rgba(16, 185, 129, 0.2)', padding: '12px 16px', borderRadius: '8px', color: '#34d399', fontSize: '0.85rem' }}>
+            {successMsg}
+          </div>
+        )}
+
+        {tab === 'request' ? (
+          <form onSubmit={handleRequestSubmit} style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
+              <label style={{ fontSize: '0.85rem', fontWeight: 600, color: 'var(--text-secondary)' }}>Select Course & Batch *</label>
+              {loadingCourses ? (
+                <div style={{ fontSize: '0.85rem', color: 'var(--text-secondary)' }}>Loading batches...</div>
+              ) : (
+                <select
+                  className="form-input"
+                  value={selectedBatchId}
+                  onChange={(e) => setSelectedBatchId(e.target.value)}
+                  required
+                  style={{ background: 'rgba(255, 255, 255, 0.05)', color: 'var(--text-primary)' }}
+                >
+                  <option value="" style={{ background: '#0b0f19' }}>-- Select Course Batch --</option>
+                  {courses.map(c => (
+                    c.batches?.map(b => (
+                      <option key={b.id} value={b.id} style={{ background: '#0b0f19' }}>
+                        {c.title} — {b.name} ({b.price_in_rupees || (b.price_paise ? `₹${b.price_paise / 100}` : 'Free')})
+                      </option>
+                    ))
+                  ))}
+                </select>
+              )}
+            </div>
+
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
+              <label style={{ fontSize: '0.85rem', fontWeight: 600, color: 'var(--text-secondary)' }}>Payment Reference / Transaction ID *</label>
+              <input
+                type="text"
+                className="form-input"
+                placeholder="e.g. UTR-9876543210 or Bank Reference No."
+                value={paymentRef}
+                onChange={(e) => setPaymentRef(e.target.value)}
+                required
+              />
+            </div>
+
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
+              <label style={{ fontSize: '0.85rem', fontWeight: 600, color: 'var(--text-secondary)' }}>Upload Payment Proof (JPG, PNG, PDF ≤ 4MB) *</label>
+              <input
+                type="file"
+                accept=".jpg,.jpeg,.png,.pdf"
+                className="form-input"
+                onChange={(e) => setFile(e.target.files[0])}
+                required
+                style={{ padding: '8px' }}
+              />
+            </div>
+
+            <button
+              type="submit"
+              className="btn-primary"
+              style={{ width: '100%', marginTop: '8px' }}
+              disabled={submitting || !selectedBatchId || !paymentRef || !file}
+            >
+              {submitting ? 'Submitting Request...' : 'Submit Activation Request'}
+            </button>
+          </form>
+        ) : (
+          <form onSubmit={handleRedeemSubmit} style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
+              <label style={{ fontSize: '0.85rem', fontWeight: 600, color: 'var(--text-secondary)' }}>8-Character Activation Code *</label>
+              <input
+                type="text"
+                className="form-input"
+                placeholder="e.g. PRAC8821"
+                value={code}
+                onChange={(e) => setCode(e.target.value.toUpperCase())}
+                maxLength={8}
+                required
+                style={{ textAlign: 'center', letterSpacing: '4px', fontSize: '1.2rem', fontWeight: 700 }}
+              />
+            </div>
+
+            <p style={{ margin: 0, fontSize: '0.8rem', color: 'var(--text-secondary)', lineHeight: '1.4' }}>
+              Enter the unique 8-character activation code issued by your coaching admin to immediately unlock course access.
+            </p>
+
+            <button
+              type="submit"
+              className="btn-primary"
+              style={{ width: '100%', marginTop: '8px' }}
+              disabled={submitting || code.trim().length !== 8}
+            >
+              {submitting ? 'Redeeming Code...' : 'Redeem Code'}
+            </button>
+          </form>
+        )}
+      </div>
+    </div>
+  );
+}

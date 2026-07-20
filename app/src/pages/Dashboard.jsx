@@ -1,7 +1,8 @@
 import React, { useState, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, Link } from 'react-router-dom';
 import api from '../api';
 import StudentCheckout from './StudentCheckout';
+import ActivationModal from './ActivationModal';
 
 function formatRupees(paise) {
   if (paise === null || paise === undefined) return 'Free';
@@ -12,7 +13,7 @@ function formatRupees(paise) {
   });
 }
 
-export default function Dashboard() {
+export default function Dashboard({ user }) {
   const [courses, setCourses] = useState([]);
   const [selectedCourse, setSelectedCourse] = useState(null);
   const [tests, setTests] = useState([]);
@@ -20,6 +21,10 @@ export default function Dashboard() {
   const [loadingTests, setLoadingTests] = useState(false);
   const [error, setError] = useState('');
   const navigate = useNavigate();
+
+  // Activation requests & modal state
+  const [activationRequests, setActivationRequests] = useState([]);
+  const [showActivationModal, setShowActivationModal] = useState(false);
 
   // Payment integration state
   const [paymentGatewayEnabled, setPaymentGatewayEnabled] = useState(false);
@@ -41,11 +46,19 @@ export default function Dashboard() {
       });
   };
 
-  useEffect(() => {
-    // Fetch enrolled courses
+  const fetchActivationRequests = () => {
+    api.get('/api/student/activation-requests')
+      .then((res) => {
+        setActivationRequests(res.data.requests || []);
+      })
+      .catch(() => {});
+  };
+
+  const fetchEnrolledCourses = () => {
+    setLoadingCourses(true);
     api.get('/api/student/courses')
       .then((res) => {
-        setCourses(res.data.courses || res.data);
+        setCourses(res.data.courses || res.data || []);
       })
       .catch((err) => {
         setError('Failed to load courses. Please refresh.');
@@ -53,6 +66,11 @@ export default function Dashboard() {
       .finally(() => {
         setLoadingCourses(false);
       });
+  };
+
+  useEffect(() => {
+    fetchEnrolledCourses();
+    fetchActivationRequests();
 
     // Fetch public settings for payment gateway toggle
     api.get('/api/settings/public')
@@ -101,27 +119,79 @@ export default function Dashboard() {
   };
 
   const handleEnrolled = () => {
-    // Re-fetch my courses
-    api.get('/api/student/courses')
-      .then((res) => {
-        setCourses(res.data.courses || res.data);
-      });
-    // Re-fetch purchasable courses
+    fetchEnrolledCourses();
+    fetchActivationRequests();
     if (paymentGatewayEnabled) {
       fetchPurchasableCourses();
     }
   };
 
+  const statusColors = {
+    pending: { bg: 'rgba(245, 158, 11, 0.15)', text: '#fbbf24', border: 'rgba(245, 158, 11, 0.3)' },
+    approved: { bg: 'rgba(16, 185, 129, 0.15)', text: '#34d399', border: 'rgba(16, 185, 129, 0.3)' },
+    rejected: { bg: 'rgba(239, 68, 68, 0.15)', text: '#f87171', border: 'rgba(239, 68, 68, 0.3)' },
+  };
+
   return (
     <div style={{ display: 'flex', flex: 1, flexDirection: 'column', gap: '32px', padding: '0 24px 40px 24px' }}>
-      <div>
-        <h1 style={{ margin: '0 0 8px 0', fontSize: '2rem', fontWeight: 800 }}>Student Dashboard</h1>
-        <p style={{ margin: 0, color: 'var(--text-secondary)' }}>Select a course to view and start mock tests.</p>
+      {/* Header & Quick Action Bar */}
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '16px' }}>
+        <div>
+          <h1 style={{ margin: '0 0 8px 0', fontSize: '2rem', fontWeight: 800 }}>Student Dashboard</h1>
+          <p style={{ margin: 0, color: 'var(--text-secondary)' }}>Access your enrolled course lectures, practice tests, and analytics.</p>
+        </div>
+
+        <div style={{ display: 'flex', gap: '12px', flexWrap: 'wrap' }}>
+          <button
+            onClick={() => setShowActivationModal(true)}
+            className="btn-primary"
+            style={{ padding: '10px 18px', fontSize: '0.88rem', gap: '8px' }}
+          >
+            <span>🔑</span> Request Activation / Redeem Code
+          </button>
+          <Link
+            to="/results"
+            className="btn-secondary"
+            style={{ padding: '10px 18px', fontSize: '0.88rem', textDecoration: 'none', gap: '8px', display: 'inline-flex', alignItems: 'center' }}
+          >
+            <span>📊</span> Results History
+          </Link>
+        </div>
       </div>
 
       {error && (
         <div style={{ background: 'rgba(239, 68, 68, 0.1)', border: '1px solid rgba(239, 68, 68, 0.2)', padding: '12px 16px', borderRadius: '8px', color: '#f87171', fontSize: '0.85rem' }}>
           {error}
+        </div>
+      )}
+
+      {/* Activation Requests Status Chips */}
+      {activationRequests.length > 0 && (
+        <div className="glass-panel" style={{ padding: '20px', display: 'flex', flexDirection: 'column', gap: '12px' }}>
+          <h3 style={{ margin: 0, fontSize: '0.95rem', fontWeight: 700, color: 'var(--text-secondary)', textTransform: 'uppercase', letterSpacing: '0.5px' }}>
+            Your Activation Requests Status
+          </h3>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
+            {activationRequests.map(req => {
+              const sc = statusColors[req.status] || statusColors.pending;
+              return (
+                <div key={req.id} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', background: 'rgba(255,255,255,0.02)', padding: '10px 14px', borderRadius: '8px', border: '1px solid var(--border-color)', flexWrap: 'wrap', gap: '8px' }}>
+                  <div style={{ fontSize: '0.88rem' }}>
+                    <strong>{req.batch?.course?.title || 'Course'}</strong> — {req.batch?.name || 'Batch'}
+                    <span style={{ fontSize: '0.78rem', color: 'var(--text-secondary)', marginLeft: '8px' }}>Ref: {req.payment_reference}</span>
+                  </div>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                    <span style={{ fontSize: '0.75rem', fontWeight: 700, padding: '3px 10px', borderRadius: '12px', background: sc.bg, color: sc.text, border: `1px solid ${sc.border}`, textTransform: 'uppercase' }}>
+                      {req.status}
+                    </span>
+                    {req.admin_notes && (
+                      <span style={{ fontSize: '0.8rem', color: 'var(--text-secondary)' }}>({req.admin_notes})</span>
+                    )}
+                  </div>
+                </div>
+              );
+            })}
+          </div>
         </div>
       )}
 
@@ -131,39 +201,68 @@ export default function Dashboard() {
         {loadingCourses ? (
           <div style={{ color: 'var(--text-secondary)' }}>Loading your courses...</div>
         ) : courses.length === 0 ? (
-          <div className="glass-panel" style={{ padding: '24px', textAlign: 'center', color: 'var(--text-secondary)' }}>
-            You are not enrolled in any courses yet. Please contact your admin or redeem an activation code.
+          <div className="glass-panel" style={{ padding: '32px', textAlign: 'center', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '16px' }}>
+            <div style={{ fontSize: '2.5rem' }}>📚</div>
+            <div style={{ color: 'var(--text-secondary)', fontSize: '0.95rem' }}>
+              You are not enrolled in any courses yet. Request activation or redeem a code to start learning!
+            </div>
+            <button
+              onClick={() => setShowActivationModal(true)}
+              className="btn-primary"
+              style={{ padding: '10px 20px', fontSize: '0.9rem' }}
+            >
+              Request Activation / Enter Code
+            </button>
           </div>
         ) : (
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(300px, 1fr))', gap: '20px' }}>
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(320px, 1fr))', gap: '20px' }}>
             {courses.map((course) => {
               const isSelected = selectedCourse?.id === course.id;
               return (
                 <div 
                   key={course.id} 
                   className="glass-panel"
-                  onClick={() => handleCourseClick(course)}
                   style={{ 
                     padding: '24px', 
-                    cursor: 'pointer', 
-                    transition: 'all 0.25s ease',
+                    display: 'flex',
+                    flexDirection: 'column',
+                    justifyContent: 'space-between',
                     borderColor: isSelected ? 'var(--accent-color)' : 'var(--border-color)',
                     boxShadow: isSelected ? '0 0 16px var(--accent-glow)' : 'none',
-                    transform: isSelected ? 'translateY(-2px)' : 'none'
+                    gap: '16px'
                   }}
                 >
-                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '12px' }}>
-                    <span style={{ fontSize: '0.75rem', fontWeight: 700, padding: '4px 8px', background: 'rgba(99, 102, 241, 0.15)', color: 'var(--accent-color)', borderRadius: '6px', textTransform: 'uppercase' }}>
-                      {course.exam_category}
-                    </span>
-                    <span style={{ fontSize: '0.75rem', color: 'var(--text-secondary)', textTransform: 'capitalize' }}>
-                      Mode: {course.mode}
-                    </span>
+                  <div>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '12px' }}>
+                      <span style={{ fontSize: '0.75rem', fontWeight: 700, padding: '4px 8px', background: 'rgba(99, 102, 241, 0.15)', color: 'var(--accent-color)', borderRadius: '6px', textTransform: 'uppercase' }}>
+                        {course.exam_category}
+                      </span>
+                      <span style={{ fontSize: '0.75rem', color: 'var(--text-secondary)', textTransform: 'capitalize' }}>
+                        Mode: {course.mode}
+                      </span>
+                    </div>
+                    <h3 style={{ margin: '0 0 8px 0', fontSize: '1.2rem', fontWeight: 700 }}>{course.title}</h3>
+                    <p style={{ margin: 0, fontSize: '0.85rem', color: 'var(--text-secondary)', display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical', overflow: 'hidden' }}>
+                      {course.short_description || course.description}
+                    </p>
                   </div>
-                  <h3 style={{ margin: '0 0 8px 0', fontSize: '1.2rem', fontWeight: 700 }}>{course.title}</h3>
-                  <p style={{ margin: 0, fontSize: '0.85rem', color: 'var(--text-secondary)', display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical', overflow: 'hidden' }}>
-                    {course.short_description || course.description}
-                  </p>
+
+                  <div style={{ display: 'flex', gap: '10px', marginTop: 'auto', borderTop: '1px solid var(--border-color)', paddingTop: '16px' }}>
+                    <Link
+                      to={`/courses/${course.id}/outline`}
+                      className="btn-primary"
+                      style={{ flex: 1, padding: '8px 12px', fontSize: '0.82rem', textDecoration: 'none', textAlign: 'center' }}
+                    >
+                      ▶ Course Outline
+                    </Link>
+                    <button
+                      onClick={() => handleCourseClick(course)}
+                      className="btn-secondary"
+                      style={{ flex: 1, padding: '8px 12px', fontSize: '0.82rem' }}
+                    >
+                      📝 View Tests
+                    </button>
+                  </div>
                 </div>
               );
             })}
@@ -295,6 +394,15 @@ export default function Dashboard() {
             </div>
           )}
         </div>
+      )}
+
+      {/* Activation Request & Code Modal */}
+      {showActivationModal && (
+        <ActivationModal
+          user={user}
+          onClose={() => setShowActivationModal(false)}
+          onSuccess={handleEnrolled}
+        />
       )}
 
       {/* Checkout Modal overlay */}

@@ -191,6 +191,9 @@ Route::middleware('auth:sanctum')->group(function () {
         Route::get('tests/sessions/{session}/result', [TestTakingController::class, 'result']);
         Route::get('tests/sessions/{session}/palette', [TestTakingController::class, 'palette']);
 
+        // Test results history
+        Route::get('results', [TestTakingController::class, 'resultsHistory']);
+
         // LMS Viewer
         Route::get('courses', [LmsController::class, 'myCourses']);
         Route::get('purchasable-courses', [LmsController::class, 'purchasableCourses']);
@@ -199,6 +202,7 @@ Route::middleware('auth:sanctum')->group(function () {
         Route::post('lessons/{lesson}/progress', [LmsController::class, 'updateProgress']);
 
         // Activation
+        Route::get('activation-requests', [StudentActivationController::class, 'index']);
         Route::post('activation-requests', [StudentActivationController::class, 'requestActivation']);
         Route::post('activation-codes/redeem', [StudentActivationController::class, 'redeemCode']);
 
