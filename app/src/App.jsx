@@ -157,7 +157,7 @@ function AppContent({ user, setUser, loading }) {
 
         <Route path="/verify-otp" element={
           <StudentGuard user={user} loading={loading}>
-            <VerifyOtp />
+            <VerifyOtp setUser={setUser} />
           </StudentGuard>
         } />
         

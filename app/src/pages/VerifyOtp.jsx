@@ -2,7 +2,7 @@ import React, { useState, useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import api from '../api';
 
-export default function VerifyOtp() {
+export default function VerifyOtp({ setUser }) {
   const [phone, setPhone] = useState('');
   const [otp, setOtp] = useState('');
   const [step, setStep] = useState('phone'); // phone | otp
@@ -75,6 +75,13 @@ export default function VerifyOtp() {
     try {
       await api.post('/api/otp/verify', { phone, otp });
       setSuccess('Phone verified successfully!');
+      // Refresh app-level user state so verification banners clear without a reload
+      try {
+        const meRes = await api.get('/api/me');
+        setUser?.(meRes.data.user || meRes.data);
+      } catch (refreshErr) {
+        // non-fatal — next full load picks up the verified state
+      }
       setTimeout(() => navigate('/dashboard'), 1500);
     } catch (err) {
       setError(err.response?.data?.message || 'Invalid or expired OTP.');
