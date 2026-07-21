@@ -54,7 +54,10 @@ const faqSchema = JSON.stringify({
     <div class="hero-grid">
       <div class="hero-copy">
         <span class="section-label"><span class="idx">✳</span> Govt-exam preparation, done properly</span>
-        <h1>Practise like it's the <span class="marker-underline">real exam hall</span>.</h1>
+        <h1 class="hero-heading">
+          <span class="red-dot-bg"></span>
+          Practise like it's the <span class="marker-underline">real exam hall</span>.
+        </h1>
         <p class="hero-sub">
           Server-timed CBT mocks with the exact palette, section locks and negative marking of
           SSC, Banking, Railways, UPSC and State PCS papers — plus video courses and analytics
@@ -70,41 +73,71 @@ const faqSchema = JSON.stringify({
         </div>
       </div>
 
-      <!-- hand-built CBT simulator, not a stock illustration -->
-      <div class="hero-visual" aria-hidden="true">
-        <div class="sim glass-panel">
-          <div class="sim-head">
-            <span class="sim-title">SSC CGL Mock 04 — Tier I</span>
-            <span class="sim-clock">00:47:1<span class="tick">2</span></span>
-          </div>
-          <div class="sim-tabs">
-            <span>Reasoning</span><span class="active">Quant</span><span>English</span><span class="locked">GA 🔒</span>
-          </div>
-          <div class="sim-q">
-            <p class="sim-qno">Q.47 <span>+2.0 / −0.5</span></p>
-            <p class="sim-qtext">If 3x − 7 = 2x + 5, then the value of x is —</p>
-            <div class="sim-opts">
-              <span class="opt"><i>A</i> 10</span>
-              <span class="opt selected"><i>B</i> 12</span>
-              <span class="opt"><i>C</i> 15</span>
-              <span class="opt"><i>D</i> 17</span>
+      <!-- Hero Visual with Indian Student Image & CBT simulator card -->
+      <div class="hero-visual">
+        <div class="hero-image-frame">
+          <div class="vector-outline-box"></div>
+          <div class="red-circle-accent"></div>
+          <img src="/images/hero-student.png" alt="Indian Student preparing for CBT exam" class="hero-student-img" />
+          
+          <!-- Floating CBT simulator badge -->
+          <div class="sim glass-panel hero-sim-overlay">
+            <div class="sim-head">
+              <span class="sim-title">SSC CGL Mock 04 — Tier I</span>
+              <span class="sim-clock">00:47:1<span class="tick">2</span></span>
+            </div>
+            <div class="sim-tabs">
+              <span>Reasoning</span><span class="active">Quant</span><span>English</span>
+            </div>
+            <div class="sim-q">
+              <p class="sim-qno">Q.47 <span>+2.0 / −0.5</span></p>
+              <p class="sim-qtext">If 3x − 7 = 2x + 5, then x = ?</p>
             </div>
           </div>
-          <div class="sim-palette">
-            <span class="pal green">41</span><span class="pal green">42</span><span class="pal red">43</span>
-            <span class="pal violet">44</span><span class="pal green">45</span><span class="pal violet-green">46</span>
-            <span class="pal gray">47</span><span class="pal gray">48</span><span class="pal gray">49</span><span class="pal gray">50</span>
-          </div>
-          <div class="sim-foot">
-            <span class="sim-btn ghost">Mark for Review</span>
-            <span class="sim-btn solid">Save &amp; Next</span>
+
+          <div class="rank-card glass-panel hero-rank-overlay">
+            <span class="rank-label">TOP PERCENTILE</span>
+            <span class="rank-value">99.4%</span>
+            <div class="rank-bar"><i style="width: 99.4%"></i></div>
+            <span class="rank-sub">Rank 12 in Batch</span>
           </div>
         </div>
-        <div class="rank-card glass-panel">
-          <span class="rank-label">YOUR PERCENTILE</span>
-          <span class="rank-value">94.2</span>
-          <div class="rank-bar"><i style="width: 94.2%"></i></div>
-          <span class="rank-sub">Rank 128 / 2,214 in batch</span>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============ ASPIRANTS SPOTLIGHT (VISUAL STUDENT GALLERY) ============ -->
+  <section class="aspirants-spotlight reveal">
+    <div class="wrap">
+      <div class="spotlight-container glass-panel">
+        <div class="spotlight-grid">
+          <div class="spotlight-copy">
+            <span class="badge">Trusted by 15,000+ Aspirants</span>
+            <h2>Join India's Most Accurate CBT Mock Test Series</h2>
+            <p>Designed by top exam rankers. Engineered for SSC CGL, SBI PO, IBPS, Railways RRB, UPSC, and State PCS aspirants across India.</p>
+            <div class="spotlight-stats">
+              <div class="stat-box">
+                <span class="stat-num">15k+</span>
+                <span class="stat-lbl">Active Students</span>
+              </div>
+              <div class="stat-box">
+                <span class="stat-num">98.4%</span>
+                <span class="stat-lbl">Exam Accuracy</span>
+              </div>
+              <div class="stat-box">
+                <span class="stat-num">100%</span>
+                <span class="stat-lbl">CBT Pattern Sync</span>
+              </div>
+            </div>
+          </div>
+          <div class="spotlight-visual">
+            <div class="group-frame">
+              <div class="rounded-contour-line"></div>
+              <img src="/images/toppers-group.png" alt="Successful Indian Students Community" class="toppers-img" />
+              <div class="topper-badge badge-1">SSC CGL Rank 14</div>
+              <div class="topper-badge badge-2">SBI PO Cleared</div>
+            </div>
+          </div>
         </div>
       </div>
     </div>
@@ -644,6 +677,155 @@ const faqSchema = JSON.stringify({
   .final-copy h2 { margin: 0 0 8px; font-size: clamp(1.5rem, 2.6vw, 2rem); }
   .final-copy p { margin: 0; color: var(--text-secondary); font-size: 0.95rem; }
   .final-actions { display: flex; gap: 12px; flex-wrap: wrap; }
+
+  /* ---------- Visa Cart Concept Visual Design (Indian Student Image Boxes) ---------- */
+  .hero-heading {
+    position: relative;
+  }
+  .red-dot-bg {
+    position: absolute;
+    top: -12px;
+    left: -20px;
+    width: 68px;
+    height: 68px;
+    background: #e63946;
+    border-radius: 50%;
+    z-index: -1;
+    opacity: 0.85;
+    filter: blur(1px);
+  }
+  .hero-image-frame {
+    position: relative;
+    width: 100%;
+    max-width: 480px;
+    margin: 0 auto;
+  }
+  .vector-outline-box {
+    position: absolute;
+    inset: -12px -12px 12px 12px;
+    border: 2px solid rgba(230, 57, 70, 0.4);
+    border-radius: 2rem;
+    pointer-events: none;
+    z-index: 1;
+  }
+  .red-circle-accent {
+    position: absolute;
+    top: 10%;
+    right: 5%;
+    width: 140px;
+    height: 140px;
+    background: radial-gradient(circle, #e63946 0%, rgba(230, 57, 70, 0.2) 100%);
+    border-radius: 50%;
+    z-index: 0;
+    filter: blur(8px);
+  }
+  .hero-student-img {
+    position: relative;
+    z-index: 2;
+    width: 100%;
+    height: auto;
+    border-radius: 1.75rem;
+    object-fit: cover;
+    box-shadow: 0 20px 40px rgba(0, 0, 0, 0.3);
+    border: 1px solid var(--border-color);
+  }
+  .hero-sim-overlay {
+    position: absolute;
+    top: -20px;
+    left: -24px;
+    z-index: 3;
+    max-width: 240px;
+    padding: 12px 16px;
+    box-shadow: 0 16px 32px rgba(0,0,0,0.4);
+    border: 1px solid rgba(255,255,255,0.15);
+  }
+  .hero-rank-overlay {
+    position: absolute;
+    bottom: -15px;
+    right: -15px;
+    z-index: 3;
+    box-shadow: 0 16px 32px rgba(0,0,0,0.4);
+  }
+
+  /* Aspirants Spotlight Section */
+  .aspirants-spotlight {
+    padding: 60px 0;
+  }
+  .spotlight-container {
+    padding: 44px;
+    border-radius: 1.75rem;
+    border: 1px solid var(--border-color);
+  }
+  .spotlight-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 48px;
+    align-items: center;
+  }
+  @media (max-width: 900px) {
+    .spotlight-grid { grid-template-columns: 1fr; }
+    .hero-sim-overlay { display: none; }
+  }
+  .spotlight-copy h2 {
+    font-size: clamp(1.8rem, 3vw, 2.4rem);
+    font-weight: 700;
+    margin: 16px 0;
+    line-height: 1.2;
+  }
+  .spotlight-copy p {
+    color: var(--text-secondary);
+    font-size: 1.05rem;
+    line-height: 1.6;
+  }
+  .spotlight-stats {
+    display: flex;
+    gap: 28px;
+    margin-top: 28px;
+    padding-top: 24px;
+    border-top: 1px solid var(--border-color);
+  }
+  .stat-num {
+    display: block;
+    font-size: 1.75rem;
+    font-weight: 800;
+    color: var(--accent);
+    font-family: var(--font-mono);
+  }
+  .stat-lbl {
+    font-size: 0.8rem;
+    color: var(--text-secondary);
+  }
+  .group-frame {
+    position: relative;
+  }
+  .rounded-contour-line {
+    position: absolute;
+    inset: -14px;
+    border: 2px dashed rgba(99, 102, 241, 0.35);
+    border-radius: 2rem;
+    pointer-events: none;
+  }
+  .toppers-img {
+    width: 100%;
+    border-radius: 1.5rem;
+    box-shadow: 0 20px 40px rgba(0,0,0,0.3);
+    border: 1px solid var(--border-color);
+    display: block;
+  }
+  .topper-badge {
+    position: absolute;
+    padding: 8px 16px;
+    background: rgba(15, 23, 42, 0.85);
+    backdrop-filter: blur(12px);
+    border: 1px solid var(--accent);
+    color: #fff;
+    font-weight: 700;
+    font-size: 0.82rem;
+    border-radius: 999px;
+    box-shadow: 0 10px 20px rgba(0,0,0,0.3);
+  }
+  .badge-1 { top: 12px; left: 12px; }
+  .badge-2 { bottom: 12px; right: 12px; }
 
   /* ---------- responsive ---------- */
   @media (max-width: 920px) {
