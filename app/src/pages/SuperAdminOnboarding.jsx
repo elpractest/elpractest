@@ -199,7 +199,7 @@ export default function SuperAdminOnboarding() {
         {/* Support Tooling */}
         <div className="glass-panel" style={{ padding: '24px', display: 'flex', flexDirection: 'column', justifyBetween: 'space-between' }}>
           <div>
-            <h2 style={{ fontSize: '1.2rem', fontWeight: 700, margin: '0 0 16px 0', color: '#ffffff' }}>Support Directory</h2>
+            <h2 style={{ fontSize: '1.2rem', fontWeight: 700, margin: '0 0 16px 0', color: 'var(--text-primary)' }}>Support Directory</h2>
             
             {admins.length === 0 ? (
               <div style={{ color: 'var(--text-secondary)', fontSize: '0.9rem', textAlign: 'center', padding: '40px 0' }}>
@@ -221,7 +221,7 @@ export default function SuperAdminOnboarding() {
                     }}
                   >
                     <div>
-                      <div style={{ fontWeight: 'bold', fontSize: '0.95rem', color: '#ffffff' }}>{admin.name}</div>
+                      <div style={{ fontWeight: 'bold', fontSize: '0.95rem', color: 'var(--text-primary)' }}>{admin.name}</div>
                       <div style={{ fontSize: '0.8rem', color: 'var(--text-secondary)', marginTop: '2px' }}>{admin.email}</div>
                       {admin.phone && <div style={{ fontSize: '0.8rem', color: 'var(--text-secondary)' }}>📞 {admin.phone}</div>}
                       <div style={{ fontSize: '0.7rem', color: 'var(--surface-strong)', marginTop: '6px' }}>
@@ -267,7 +267,7 @@ export default function SuperAdminOnboarding() {
             className="glass-panel"
             style={{ width: '400px', padding: '24px', display: 'flex', flexDirection: 'column', gap: '16px' }}
           >
-            <h3 style={{ margin: 0, fontSize: '1.1rem', fontWeight: 700, color: '#ffffff' }}>
+            <h3 style={{ margin: 0, fontSize: '1.1rem', fontWeight: 700, color: 'var(--text-primary)' }}>
               Reset Admin Password
             </h3>
             <p style={{ margin: 0, fontSize: '0.85rem', color: 'var(--text-secondary)' }}>

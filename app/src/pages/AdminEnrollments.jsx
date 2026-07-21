@@ -684,7 +684,7 @@ export default function AdminEnrollments() {
               {/* Course detail readout */}
               <div style={{ background: 'var(--surface-2)', padding: '12px', borderRadius: '6px', fontSize: '0.85rem' }}>
                 <div style={{ color: 'var(--text-secondary)' }}>Target Scoping:</div>
-                <div style={{ fontWeight: 'bold', color: '#ffffff', marginTop: '2px' }}>
+                <div style={{ fontWeight: 'bold', color: 'var(--text-primary)', marginTop: '2px' }}>
                   Course: {selectedCourse?.title}
                 </div>
                 <div style={{ color: 'var(--accent-color)', fontWeight: 'bold', marginTop: '2px' }}>

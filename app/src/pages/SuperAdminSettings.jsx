@@ -317,7 +317,7 @@ export default function SuperAdminSettings() {
             </div>
 
             <div style={{ borderTop: '1px solid var(--border-color)', paddingTop: '24px', display: 'flex', flexDirection: 'column', gap: '20px' }}>
-              <h3 style={{ margin: '0 0 8px 0', fontSize: '1rem', fontWeight: 700, color: '#ffffff' }}>Social Links</h3>
+              <h3 style={{ margin: '0 0 8px 0', fontSize: '1rem', fontWeight: 700, color: 'var(--text-primary)' }}>Social Links</h3>
               
               <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '20px' }}>
                 <div>
@@ -409,7 +409,7 @@ export default function SuperAdminSettings() {
             </div>
 
             <div style={{ borderTop: '1px solid var(--border-color)', paddingTop: '24px', display: 'flex', flexDirection: 'column', gap: '20px' }}>
-              <h3 style={{ margin: '0 0 8px 0', fontSize: '1rem', fontWeight: 700, color: '#ffffff' }}>Tracking & Analytics IDs</h3>
+              <h3 style={{ margin: '0 0 8px 0', fontSize: '1rem', fontWeight: 700, color: 'var(--text-primary)' }}>Tracking &amp; Analytics IDs</h3>
               
               <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '20px' }}>
                 <div>
@@ -451,7 +451,7 @@ export default function SuperAdminSettings() {
         {/* FEATURE TOGGLES SUB-TAB */}
         {activeSubTab === 'features' && (
           <div style={{ display: 'flex', flexDirection: 'column', gap: '24px' }}>
-            <h3 style={{ margin: '0 0 8px 0', fontSize: '1rem', fontWeight: 700, color: '#ffffff' }}>Toggle Platforms Features</h3>
+            <h3 style={{ margin: '0 0 8px 0', fontSize: '1rem', fontWeight: 700, color: 'var(--text-primary)' }}>Toggle Platforms Features</h3>
             <p style={{ margin: '-12px 0 12px 0', fontSize: '0.85rem', color: 'var(--text-secondary)' }}>
               Enable or disable core system systems at the tenant level. Disabling toggles will hide all linked routes and action fields.
             </p>
@@ -461,7 +461,7 @@ export default function SuperAdminSettings() {
               {/* Payment Gateway Switch */}
               <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '20px', background: 'var(--surface-1)', border: '1px solid var(--border-color)', borderRadius: '10px' }}>
                 <div style={{ flex: 1, paddingRight: '20px' }}>
-                  <div style={{ fontSize: '0.95rem', fontWeight: 700, color: '#ffffff', marginBottom: '4px' }}>Razorpay Online Payments</div>
+                  <div style={{ fontSize: '0.95rem', fontWeight: 700, color: 'var(--text-primary)', marginBottom: '4px' }}>Razorpay Online Payments</div>
                   <div style={{ fontSize: '0.8rem', color: 'var(--text-secondary)' }}>
                     Allow students to pay online for instant enrollment. When disabled, only manual Admin activations and activation codes are supported.
                   </div>
@@ -500,7 +500,7 @@ export default function SuperAdminSettings() {
               {/* Social Login Switch */}
               <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '20px', background: 'var(--surface-1)', border: '1px solid var(--border-color)', borderRadius: '10px' }}>
                 <div style={{ flex: 1, paddingRight: '20px' }}>
-                  <div style={{ fontSize: '0.95rem', fontWeight: 700, color: '#ffffff', marginBottom: '4px' }}>OAuth Social Login (Google & Facebook)</div>
+                  <div style={{ fontSize: '0.95rem', fontWeight: 700, color: 'var(--text-primary)', marginBottom: '4px' }}>OAuth Social Login (Google &amp; Facebook)</div>
                   <div style={{ fontSize: '0.8rem', color: 'var(--text-secondary)' }}>
                     Enable social login option on the registration and login forms using Google and Facebook Socialite integrations.
                   </div>
@@ -539,7 +539,7 @@ export default function SuperAdminSettings() {
               {/* LMS Video Module Switch */}
               <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '20px', background: 'var(--surface-1)', border: '1px solid var(--border-color)', borderRadius: '10px' }}>
                 <div style={{ flex: 1, paddingRight: '20px' }}>
-                  <div style={{ fontSize: '0.95rem', fontWeight: 700, color: '#ffffff', marginBottom: '4px' }}>LMS Video Course Player</div>
+                  <div style={{ fontSize: '0.95rem', fontWeight: 700, color: 'var(--text-primary)', marginBottom: '4px' }}>LMS Video Course Player</div>
                   <div style={{ fontSize: '0.8rem', color: 'var(--text-secondary)' }}>
                     Enable course LMS video playback features for students. If disabled, students will only see test-series details and analytics reports.
                   </div>

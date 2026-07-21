@@ -74,11 +74,11 @@ export default function SuperAdminAuditLogs() {
         <table style={{ width: '100%', borderCollapse: 'collapse', textAlign: 'left', fontSize: '0.9rem' }}>
           <thead>
             <tr style={{ borderBottom: '1px solid var(--border-color)', background: 'var(--surface-1)' }}>
-              <th style={{ padding: '16px 20px', fontWeight: 600, color: '#ffffff' }}>Timestamp</th>
-              <th style={{ padding: '16px 20px', fontWeight: 600, color: '#ffffff' }}>Action</th>
-              <th style={{ padding: '16px 20px', fontWeight: 600, color: '#ffffff' }}>User</th>
-              <th style={{ padding: '16px 20px', fontWeight: 600, color: '#ffffff' }}>IP Address</th>
-              <th style={{ padding: '16px 20px', fontWeight: 600, color: '#ffffff', textAlign: 'right' }}>Details</th>
+              <th style={{ padding: '16px 20px', fontWeight: 600, color: 'var(--text-primary)' }}>Timestamp</th>
+              <th style={{ padding: '16px 20px', fontWeight: 600, color: 'var(--text-primary)' }}>Action</th>
+              <th style={{ padding: '16px 20px', fontWeight: 600, color: 'var(--text-primary)' }}>User</th>
+              <th style={{ padding: '16px 20px', fontWeight: 600, color: 'var(--text-primary)' }}>IP Address</th>
+              <th style={{ padding: '16px 20px', fontWeight: 600, color: 'var(--text-primary)', textAlign: 'right' }}>Details</th>
             </tr>
           </thead>
           <tbody>
@@ -105,7 +105,7 @@ export default function SuperAdminAuditLogs() {
                       <td style={{ padding: '16px 20px' }}>
                         {log.user ? (
                           <div>
-                            <div style={{ fontWeight: 600, color: '#ffffff' }}>{log.user.name}</div>
+                            <div style={{ fontWeight: 600, color: 'var(--text-primary)' }}>{log.user.name}</div>
                             <div style={{ fontSize: '0.75rem', color: 'var(--text-secondary)' }}>{log.user.email}</div>
                           </div>
                         ) : (
