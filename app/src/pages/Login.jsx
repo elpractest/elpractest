@@ -43,8 +43,16 @@ export default function Login({ setUser }) {
 
       // Fetch current user details
       const userRes = await api.get('/api/me');
-      setUser(userRes.data.user || userRes.data);
-      navigate('/dashboard');
+      const u = userRes.data.user || userRes.data;
+      setUser(u);
+
+      if (u.roles?.includes('super-admin')) {
+        navigate('/super-admin/dashboard');
+      } else if (u.roles?.includes('admin')) {
+        navigate('/admin/dashboard');
+      } else {
+        navigate('/dashboard');
+      }
     } catch (err) {
       const status = err.response?.status;
       const data = err.response?.data;

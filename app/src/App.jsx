@@ -19,6 +19,7 @@ import TestResult from './pages/TestResult';
 
 // Admin screens
 import AdminDashboard from './pages/AdminDashboard';
+import SuperAdminDashboard from './pages/SuperAdminDashboard';
 import Admin2FASetup from './pages/Admin2FASetup';
 import Admin2FAVerify from './pages/Admin2FAVerify';
 
@@ -35,8 +36,10 @@ const StudentGuard = ({ user, loading, children }) => {
   if (!user) {
     return <Navigate to="/login" replace />;
   }
-  const isAdmin = user.roles?.includes('admin') || user.roles?.includes('super-admin');
-  if (isAdmin) {
+  if (user.roles?.includes('super-admin')) {
+    return <Navigate to="/super-admin/dashboard" replace />;
+  }
+  if (user.roles?.includes('admin')) {
     return <Navigate to="/admin/dashboard" replace />;
   }
   return children;
@@ -58,6 +61,25 @@ const AdminGuard = ({ user, loading, children }) => {
   const isAdmin = user.roles?.includes('admin') || user.roles?.includes('super-admin');
   if (!isAdmin) {
     return <Navigate to="/dashboard" replace />;
+  }
+  return children;
+};
+
+// Super Admin Guard Component
+const SuperAdminGuard = ({ user, loading, children }) => {
+  if (loading) {
+    return (
+      <div style={{ display: 'flex', flexDirection: 'column', gap: '18px', justifyContent: 'center', alignItems: 'center', height: '100vh' }}>
+        <div className="spinner" />
+        <div style={{ color: 'var(--text-secondary)', fontSize: '0.95rem', fontWeight: 600, letterSpacing: '0.05em' }}>LOADING SUPER ADMIN CONSOLE</div>
+      </div>
+    );
+  }
+  if (!user) {
+    return <Navigate to="/login" replace />;
+  }
+  if (!user.roles?.includes('super-admin')) {
+    return <Navigate to="/admin/dashboard" replace />;
   }
   return children;
 };
@@ -201,6 +223,13 @@ function AppContent({ user, setUser, loading }) {
           </AdminGuard>
         } />
 
+        {/* Super Admin Protected Routes */}
+        <Route path="/super-admin/dashboard" element={
+          <SuperAdminGuard user={user} loading={loading}>
+            <SuperAdminDashboard user={user} setUser={setUser} />
+          </SuperAdminGuard>
+        } />
+
         <Route path="/admin/2fa/setup" element={
           <AdminGuard user={user} loading={loading}>
             <Admin2FASetup setUser={setUser} />
@@ -216,7 +245,9 @@ function AppContent({ user, setUser, loading }) {
         {/* Catch-all redirect */}
         <Route path="*" element={
           user ? (
-            user.roles?.includes('admin') || user.roles?.includes('super-admin') ? (
+            user.roles?.includes('super-admin') ? (
+              <Navigate to="/super-admin/dashboard" replace />
+            ) : user.roles?.includes('admin') ? (
               <Navigate to="/admin/dashboard" replace />
             ) : (
               <Navigate to="/dashboard" replace />

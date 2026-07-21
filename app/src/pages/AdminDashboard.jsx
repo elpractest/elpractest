@@ -135,10 +135,10 @@ export default function AdminDashboard({ user, setUser }) {
       <aside style={{ width: '280px', background: 'var(--panel-bg-solid)', borderRight: '1px solid var(--border-color)', display: 'flex', flexDirection: 'column', flexShrink: 0 }}>
         
         {/* Sidebar Header Logo */}
-        <div style={{ padding: '24px', display: 'flex', alignItems: 'center', gap: '12px', borderBottom: '1px solid var(--border-color)' }}>
+        <div style={{ padding: '24px', display: 'flex', alignItems: 'center', justifyContent: 'space-between', borderBottom: '1px solid var(--border-color)' }}>
           <span style={{ fontSize: '1.4rem', fontWeight: 800, color: 'var(--accent-color)', letterSpacing: '1px' }}>PRACTEST</span>
-          <span style={{ fontSize: '0.8rem', color: 'var(--success)', background: 'var(--success-bg)', padding: '2px 6px', borderRadius: '4px', fontWeight: 'bold' }}>
-            {user?.roles?.includes('super-admin') ? 'Super Admin' : 'Admin'}
+          <span style={{ fontSize: '0.8rem', color: 'var(--success)', background: 'var(--success-bg)', padding: '2px 8px', borderRadius: '4px', fontWeight: 'bold' }}>
+            Admin Console
           </span>
         </div>
 
@@ -187,48 +187,27 @@ export default function AdminDashboard({ user, setUser }) {
           })}
 
           {user?.roles?.includes('super-admin') && (
-            <>
-              <div style={{ margin: '16px 0 8px 0', borderTop: '1px solid var(--border-color)', paddingTop: '16px', fontSize: '0.75rem', fontWeight: 'bold', color: 'var(--text-secondary)', textTransform: 'uppercase', letterSpacing: '1px', paddingLeft: '8px' }}>
-                Platform Control
-              </div>
-              {[
-                { id: 'settings', label: 'White-Label Settings', icon: '🎨' },
-                { id: 'onboarding', label: 'Onboarding & Support', icon: '🚀' },
-                { id: 'audit_logs', label: 'Audit Logs', icon: '📋' },
-              ].map((tab) => {
-                const isSelected = activeTab === tab.id;
-                return (
-                  <button
-                    key={tab.id}
-                    onClick={() => {
-                      setActiveTab(tab.id);
-                      setSelectedResultSessionId(null);
-                    }}
-                    style={{
-                      display: 'flex',
-                      alignItems: 'center',
-                      gap: '12px',
-                      width: '100%',
-                      padding: '12px 16px',
-                      background: isSelected ? 'var(--accent-color)' : 'transparent',
-                      border: 'none',
-                      borderRadius: '8px',
-                      color: isSelected ? '#ffffff' : 'var(--text-secondary)',
-                      fontSize: '0.95rem',
-                      fontWeight: 600,
-                      cursor: 'pointer',
-                      textAlign: 'left',
-                      transition: 'all 0.2s ease',
-                    }}
-                    onMouseOver={(e) => { if (!isSelected) e.currentTarget.style.color = 'var(--text-primary)'; }}
-                    onMouseOut={(e) => { if (!isSelected) e.currentTarget.style.color = 'var(--text-secondary)'; }}
-                  >
-                    <span style={{ fontSize: '1.2rem' }}>{tab.icon}</span>
-                    <span>{tab.label}</span>
-                  </button>
-                );
-              })}
-            </>
+            <div style={{ marginTop: '20px', paddingTop: '16px', borderTop: '1px solid var(--border-color)' }}>
+              <button
+                onClick={() => navigate('/super-admin/dashboard')}
+                style={{
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '12px',
+                  width: '100%',
+                  padding: '10px 16px',
+                  background: 'rgba(230, 57, 70, 0.12)',
+                  border: '1px solid rgba(230, 57, 70, 0.3)',
+                  borderRadius: '8px',
+                  color: '#e63946',
+                  fontSize: '0.88rem',
+                  fontWeight: 700,
+                  cursor: 'pointer',
+                }}
+              >
+                <span>👑 Super Admin Console</span>
+              </button>
+            </div>
           )}
         </nav>
 
