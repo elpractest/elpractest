@@ -2,10 +2,14 @@
     RewriteEngine On
     RewriteBase /
     
+    # Never rewrite ACME/AutoSSL domain-validation paths (else the SPA
+    # fallback shadows them and SSL issuance fails).
+    RewriteCond %{REQUEST_URI} !^/\.well-known/
+
     # Do not rewrite existing files or directories
     RewriteCond %{REQUEST_FILENAME} !-f
     RewriteCond %{REQUEST_FILENAME} !-d
-    
+
     # Route all SPA client-side paths to index.html
     RewriteRule ^ index.html [L]
 </IfModule>
