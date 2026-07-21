@@ -80,25 +80,19 @@ const faqSchema = JSON.stringify({
           <div class="red-circle-accent"></div>
           <img src="/images/hero-student.png" alt="Indian Student preparing for CBT exam" class="hero-student-img" />
           
-          <!-- Floating CBT simulator badge -->
-          <div class="sim glass-panel hero-sim-overlay">
-            <div class="sim-head">
-              <span class="sim-title">SSC CGL Mock 04 — Tier I</span>
-              <span class="sim-clock">00:47:1<span class="tick">2</span></span>
+          <!-- Floating compact CBT simulator badge -->
+          <div class="glass-panel hero-sim-overlay">
+            <div class="mini-badge-head">
+              <span class="mini-timer">⚡ 00:47:12</span>
             </div>
-            <div class="sim-tabs">
-              <span>Reasoning</span><span class="active">Quant</span><span>English</span>
-            </div>
-            <div class="sim-q">
-              <p class="sim-qno">Q.47 <span>+2.0 / −0.5</span></p>
-              <p class="sim-qtext">If 3x − 7 = 2x + 5, then x = ?</p>
-            </div>
+            <p class="mini-test-title">SSC CGL Tier I Mock</p>
+            <div class="mini-status-chip">CBT Live Pattern</div>
           </div>
 
-          <div class="rank-card glass-panel hero-rank-overlay">
+          <!-- Floating compact Percentile badge -->
+          <div class="glass-panel hero-rank-overlay">
             <span class="rank-label">TOP PERCENTILE</span>
             <span class="rank-value">99.4%</span>
-            <div class="rank-bar"><i style="width: 99.4%"></i></div>
             <span class="rank-sub">Rank 12 in Batch</span>
           </div>
         </div>
@@ -731,20 +725,73 @@ const faqSchema = JSON.stringify({
   }
   .hero-sim-overlay {
     position: absolute;
-    bottom: 24px;
-    left: -36px;
+    bottom: 28px;
+    left: -42px;
     z-index: 3;
-    max-width: 230px;
-    padding: 12px 16px;
+    width: 170px;
+    padding: 10px 14px;
     box-shadow: 0 16px 32px rgba(0,0,0,0.4);
-    border: 1px solid rgba(255,255,255,0.15);
+    border: 1px solid rgba(255,255,255,0.18);
+    backdrop-filter: blur(16px);
+    border-radius: 1rem;
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+  }
+  .mini-timer {
+    font-family: var(--font-mono);
+    font-size: 0.8rem;
+    font-weight: 700;
+    color: #fff;
+    background: rgba(99, 102, 241, 0.3);
+    padding: 2px 8px;
+    border-radius: 6px;
+    display: inline-block;
+  }
+  .mini-test-title {
+    font-size: 0.78rem;
+    font-weight: 700;
+    margin: 2px 0 0;
+    line-height: 1.2;
+    color: var(--text-primary);
+  }
+  .mini-status-chip {
+    font-size: 0.65rem;
+    font-weight: 600;
+    color: var(--accent);
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
   }
   .hero-rank-overlay {
     position: absolute;
-    top: 24px;
-    right: -24px;
+    top: 28px;
+    right: -36px;
     z-index: 3;
+    width: 145px;
+    padding: 12px 14px;
     box-shadow: 0 16px 32px rgba(0,0,0,0.4);
+    border: 1px solid rgba(255,255,255,0.18);
+    backdrop-filter: blur(16px);
+    border-radius: 1rem;
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+  }
+  .hero-rank-overlay .rank-label {
+    font-family: var(--font-mono);
+    font-size: 0.58rem;
+    letter-spacing: 0.1em;
+    color: var(--text-secondary);
+  }
+  .hero-rank-overlay .rank-value {
+    font-size: 1.4rem;
+    font-weight: 800;
+    color: var(--accent);
+    line-height: 1.1;
+  }
+  .hero-rank-overlay .rank-sub {
+    font-size: 0.68rem;
+    color: var(--text-secondary);
   }
 
   /* Aspirants Spotlight Section */
