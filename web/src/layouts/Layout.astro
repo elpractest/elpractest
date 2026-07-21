@@ -8,9 +8,9 @@ interface Props {
   description?: string;
 }
 
-const { 
-  title = 'Practest - Premium Mock Tests & E-Learning', 
-  description = 'Pass your competitive mock test series and video courses with our state-of-the-art CBT exam engine.' 
+const {
+  title = 'Practest — Mock Test Series & LMS for Govt Exams',
+  description = 'Exam-pattern CBT mock tests for SSC, Banking, Railways, UPSC & State PCS with server-timed sections, deep analytics and structured video courses.'
 } = Astro.props;
 
 const spaUrl = import.meta.env.PUBLIC_SPA_URL || 'http://localhost:3000';
@@ -28,7 +28,7 @@ const orgSchema = JSON.stringify({
 ---
 
 <!doctype html>
-<html lang="en">
+<html lang="en" data-theme="dark">
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
@@ -36,11 +36,24 @@ const orgSchema = JSON.stringify({
     <link rel="icon" href="/favicon.ico" />
     <link rel="canonical" href={canonicalUrl} />
     <meta name="generator" content={Astro.generator} />
-    
+
+    <!-- Theme boot: cookie (shared with the app subdomain) → localStorage → dark -->
+    <script is:inline>
+      (function () {
+        try {
+          var m = document.cookie.match(/(?:^|; )practest_theme=(light|dark)/);
+          var t = m ? m[1] : localStorage.getItem('practest-theme');
+          if (t === 'light' || t === 'dark') document.documentElement.dataset.theme = t;
+        } catch (e) { /* default dark stands */ }
+      })();
+    </script>
+
     <!-- Primary Meta Tags -->
     <title>{title}</title>
     <meta name="title" content={title} />
     <meta name="description" content={description} />
+    <meta name="theme-color" content="#070b16" media="(prefers-color-scheme: dark)" />
+    <meta name="theme-color" content="#f3f1ea" media="(prefers-color-scheme: light)" />
 
     <!-- Open Graph / Facebook -->
     <meta property="og:type" content="website" />
@@ -57,79 +70,119 @@ const orgSchema = JSON.stringify({
 
     <!-- Schema.org Organization -->
     <script type="application/ld+json" set:html={orgSchema} />
-    
+
+    <!-- Fonts: Space Grotesk (display) · Inter (UI) · JetBrains Mono (data) -->
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@500;700&family=Space+Grotesk:wght@500;600;700&display=swap" rel="stylesheet" />
   </head>
   <body>
     <Analytics />
     <ConsentBanner />
     <div class="layout-wrapper">
-      
-      <!-- Premium Sticky Glass Navbar -->
+
       <header class="navbar-header">
         <div class="navbar-container">
-          <a href="/" class="brand-logo">
-            <span class="logo-icon">⚡</span>
-            <span class="brand-name">Practest</span>
+          <a href="/" class="brand-logo" aria-label="Practest home">
+            <span class="logo-tile" aria-hidden="true">
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21.42 10.922a1 1 0 0 0-.019-1.838L12.83 5.18a2 2 0 0 0-1.66 0L2.6 9.08a1 1 0 0 0 0 1.832l8.57 3.908a2 2 0 0 0 1.66 0z"/><path d="M22 10v6"/><path d="M6 12.5V16a6 3 0 0 0 12 0v-3.5"/></svg>
+            </span>
+            <span class="brand-name">PRACTEST</span>
           </a>
-          
-          <nav class="navbar-links">
-            <a href="/">Home</a>
+
+          <nav class="navbar-links" aria-label="Main">
             <a href="/courses">Courses</a>
-            <a href="/about">About Us</a>
+            <a href="/about">About</a>
             <a href="/contact">Contact</a>
           </nav>
-          
+
           <div class="navbar-actions">
-            <a href={`${spaUrl}/login`} class="btn-primary" style={{ padding: '8px 18px', fontSize: '0.85rem' }}>
-              Student Portal
-            </a>
+            <button id="theme-toggle" class="theme-toggle-btn" type="button" aria-label="Switch between day and night mode" title="Day / night mode">
+              <svg class="icon-sun" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="4"/><path d="M12 2v2"/><path d="M12 20v2"/><path d="m4.93 4.93 1.41 1.41"/><path d="m17.66 17.66 1.41 1.41"/><path d="M2 12h2"/><path d="M20 12h2"/><path d="m6.34 17.66-1.41 1.41"/><path d="m19.07 4.93-1.41 1.41"/></svg>
+              <svg class="icon-moon" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3a6 6 0 0 0 9 9 9 9 0 1 1-9-9Z"/></svg>
+            </button>
+            <a href={`${spaUrl}/login`} class="btn-secondary nav-login">Login</a>
+            <a href={`${spaUrl}/register`} class="btn-primary nav-cta">Start free</a>
           </div>
         </div>
       </header>
 
-      <!-- Content Slot -->
       <main class="main-content">
         <slot />
       </main>
 
-      <!-- Footer -->
       <footer class="footer">
         <div class="footer-container">
           <div class="footer-info">
-            <div class="brand-logo" style={{ marginBottom: '16px' }}>
-              <span class="logo-icon">⚡</span>
-              <span class="brand-name">Practest</span>
-            </div>
-            <p style={{ color: 'var(--text-secondary)', fontSize: '0.9rem', maxWidth: '300px', margin: 0 }}>
-              Leading CBT exam series and structured learning resources engineered for excellence.
+            <a href="/" class="brand-logo" style="margin-bottom: 14px;">
+              <span class="logo-tile" aria-hidden="true">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21.42 10.922a1 1 0 0 0-.019-1.838L12.83 5.18a2 2 0 0 0-1.66 0L2.6 9.08a1 1 0 0 0 0 1.832l8.57 3.908a2 2 0 0 0 1.66 0z"/><path d="M22 10v6"/><path d="M6 12.5V16a6 3 0 0 0 12 0v-3.5"/></svg>
+              </span>
+              <span class="brand-name">PRACTEST</span>
+            </a>
+            <p class="footer-tag">
+              Exam-pattern CBT mocks, structured video courses and honest analytics — built for serious government-exam aspirants.
             </p>
+            <div class="omr-strip" aria-hidden="true">
+              <i></i><i class="filled"></i><i></i><i class="marker"></i><i></i>
+            </div>
           </div>
-          
+
           <div class="footer-links-group">
             <div class="footer-col">
-              <h4>Platform</h4>
-              <a href="/courses">All Courses</a>
-              <a href="/about">About Us</a>
-              <a href={`${spaUrl}/login`}>Practice Tests</a>
-              <a href={`${spaUrl}/register`}>Get Started</a>
+              <h4>Prepare</h4>
+              <a href="/courses">All courses</a>
+              <a href={`${spaUrl}/register`}>Create account</a>
+              <a href={`${spaUrl}/login`}>Student login</a>
             </div>
-            
             <div class="footer-col">
-              <h4>Support</h4>
-              <a href="/contact">Help & Contact</a>
-              <a href={`${spaUrl}/login`}>Student Dashboard</a>
+              <h4>Exams</h4>
+              <a href="/courses">SSC CGL</a>
+              <a href="/courses">Banking — SBI · IBPS</a>
+              <a href="/courses">Railways RRB</a>
+              <a href="/courses">UPSC & State PCS</a>
+            </div>
+            <div class="footer-col">
+              <h4>Company</h4>
+              <a href="/about">About us</a>
+              <a href="/contact">Contact</a>
             </div>
           </div>
         </div>
-        
+
         <div class="footer-bottom">
-          <p>© {new Date().getFullYear()} Practest. All rights reserved. Built for coaching institutes.</p>
+          <p>© {new Date().getFullYear()} Practest. All rights reserved. Built for coaching institutes and their students.</p>
         </div>
       </footer>
     </div>
+
+    <!-- Theme toggle + scroll reveal (progressive enhancement, ~20 lines) -->
+    <script is:inline>
+      (function () {
+        var btn = document.getElementById('theme-toggle');
+        if (btn) btn.addEventListener('click', function () {
+          var next = document.documentElement.dataset.theme === 'dark' ? 'light' : 'dark';
+          document.documentElement.dataset.theme = next;
+          try {
+            localStorage.setItem('practest-theme', next);
+            var host = location.hostname;
+            var domain = host.endsWith('pactest.live') ? ';domain=.pactest.live' : '';
+            document.cookie = 'practest_theme=' + next + ';path=/;max-age=31536000;SameSite=Lax' + domain;
+          } catch (e) { /* still applied for this page */ }
+        });
+
+        if ('IntersectionObserver' in window) {
+          var io = new IntersectionObserver(function (entries) {
+            entries.forEach(function (en) {
+              if (en.isIntersecting) { en.target.classList.add('in-view'); io.unobserve(en.target); }
+            });
+          }, { threshold: 0.12 });
+          document.querySelectorAll('.reveal').forEach(function (el) { io.observe(el); });
+        } else {
+          document.querySelectorAll('.reveal').forEach(function (el) { el.classList.add('in-view'); });
+        }
+      })();
+    </script>
   </body>
 </html>
 
@@ -146,62 +199,89 @@ const orgSchema = JSON.stringify({
     top: 0;
     z-index: 100;
     width: 100%;
-    background: rgba(11, 15, 25, 0.7);
-    backdrop-filter: blur(12px);
-    -webkit-backdrop-filter: blur(12px);
+    background: var(--panel-bg);
+    backdrop-filter: blur(14px) saturate(140%);
+    -webkit-backdrop-filter: blur(14px) saturate(140%);
     border-bottom: 1px solid var(--border-color);
+    transition: background-color 0.4s ease;
   }
 
   .navbar-container {
     max-width: 1200px;
     margin: 0 auto;
-    padding: 16px 24px;
+    padding: 13px 24px;
     display: flex;
     justify-content: space-between;
     align-items: center;
+    gap: 16px;
   }
 
   .brand-logo {
-    display: flex;
+    display: inline-flex;
     align-items: center;
-    gap: 8px;
-    font-weight: 800;
-    font-size: 1.25rem;
+    gap: 10px;
+  }
+
+  .logo-tile {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 32px;
+    height: 32px;
+    border-radius: 9px;
+    background: var(--grad-primary);
     color: #ffffff;
+    box-shadow: 0 6px 16px -6px var(--accent-glow);
   }
 
-  .logo-icon {
-    font-size: 1.4rem;
-    filter: drop-shadow(0 0 8px var(--accent-color));
+  .brand-name {
+    font-family: var(--font-display);
+    font-weight: 700;
+    font-size: 1.15rem;
+    letter-spacing: 0.03em;
+    color: var(--text-primary);
   }
 
-  .navbar-links {
-    display: flex;
-    gap: 32px;
-  }
+  .navbar-links { display: flex; gap: 28px; }
 
   .navbar-links a {
     color: var(--text-secondary);
-    font-weight: 500;
-    font-size: 0.95rem;
+    font-weight: 550;
+    font-size: 0.93rem;
     transition: color 0.2s ease;
   }
+  .navbar-links a:hover { color: var(--text-primary); }
 
-  .navbar-links a:hover {
-    color: #ffffff;
+  .navbar-actions { display: flex; align-items: center; gap: 10px; }
+
+  .theme-toggle-btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 38px;
+    height: 38px;
+    border-radius: 50%;
+    border: 1px solid var(--border-color);
+    background: var(--surface-1);
+    color: var(--text-primary);
+    cursor: pointer;
+    transition: transform 0.25s var(--ease-out), border-color 0.2s ease;
   }
+  .theme-toggle-btn:hover { transform: translateY(-1px) rotate(12deg); border-color: var(--accent-border); }
+  :global([data-theme='dark']) .icon-moon { display: none; }
+  :global([data-theme='light']) .icon-sun { display: none; }
 
-  .main-content {
-    flex-grow: 1;
-    width: 100%;
-  }
+  .nav-login { padding: 8px 16px; font-size: 0.85rem; }
+  .nav-cta { padding: 8px 18px; font-size: 0.85rem; }
 
-  /* Footer Styling */
+  .main-content { flex-grow: 1; width: 100%; }
+
   .footer {
-    background: #080b12;
+    background: var(--bg-soft);
     border-top: 1px solid var(--border-color);
-    padding-top: 60px;
-    padding-bottom: 30px;
+    padding-top: 56px;
+    padding-bottom: 28px;
+    transition: background-color 0.4s ease;
   }
 
   .footer-container {
@@ -214,23 +294,26 @@ const orgSchema = JSON.stringify({
     gap: 40px;
   }
 
-  .footer-links-group {
-    display: flex;
-    gap: 80px;
+  .footer-tag {
+    color: var(--text-secondary);
+    font-size: 0.9rem;
+    max-width: 320px;
+    margin: 0 0 18px 0;
+    line-height: 1.6;
   }
 
-  .footer-col {
-    display: flex;
-    flex-direction: column;
-    gap: 12px;
-  }
+  .footer-links-group { display: flex; gap: 64px; flex-wrap: wrap; }
+
+  .footer-col { display: flex; flex-direction: column; gap: 11px; }
 
   .footer-col h4 {
     margin: 0 0 6px 0;
-    font-size: 0.9rem;
+    font-family: var(--font-mono);
+    font-size: 0.75rem;
+    font-weight: 700;
     text-transform: uppercase;
-    letter-spacing: 0.05em;
-    color: #ffffff;
+    letter-spacing: 0.12em;
+    color: var(--marker);
   }
 
   .footer-col a {
@@ -238,18 +321,20 @@ const orgSchema = JSON.stringify({
     font-size: 0.9rem;
     transition: color 0.2s ease;
   }
-
-  .footer-col a:hover {
-    color: var(--accent-color);
-  }
+  .footer-col a:hover { color: var(--accent-color); }
 
   .footer-bottom {
     max-width: 1200px;
     margin: 40px auto 0 auto;
-    padding: 24px 24px 0 24px;
-    border-top: 1px solid rgba(255, 255, 255, 0.05);
+    padding: 22px 24px 0 24px;
+    border-top: 1px dashed var(--border-strong);
     text-align: center;
     color: var(--text-secondary);
-    font-size: 0.85rem;
+    font-size: 0.83rem;
+  }
+
+  @media (max-width: 760px) {
+    .navbar-links { display: none; }
+    .nav-login { display: none; }
   }
 </style>

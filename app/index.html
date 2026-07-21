@@ -7,11 +7,12 @@
     <title>Practest — Exam Prep</title>
     <meta name="theme-color" content="#070b16" media="(prefers-color-scheme: dark)" />
     <meta name="theme-color" content="#eef1fa" media="(prefers-color-scheme: light)" />
-    <!-- Theme boot: applies saved day/night choice before first paint (no flash) -->
+    <!-- Theme boot: cookie (shared with the public site) → localStorage → dark, before first paint -->
     <script>
       (function () {
         try {
-          var t = localStorage.getItem('practest-theme');
+          var m = document.cookie.match(/(?:^|; )practest_theme=(light|dark)/);
+          var t = m ? m[1] : localStorage.getItem('practest-theme');
           if (t === 'light' || t === 'dark') document.documentElement.dataset.theme = t;
         } catch (e) { /* private mode etc. — default dark stands */ }
       })();

@@ -3,265 +3,655 @@ import Layout from '../layouts/Layout.astro';
 import CourseCarousel from '../components/CourseCarousel.astro';
 
 const spaUrl = import.meta.env.PUBLIC_SPA_URL || 'http://localhost:3000';
+
+const examTracks = [
+  { code: 'SSC-CGL', title: 'SSC CGL & CHSL', subjects: 'Quant · Reasoning · English · GA', note: 'Tier I & Tier II patterns' },
+  { code: 'BANK-PO', title: 'Banking — SBI · IBPS', subjects: 'Quant · Reasoning · English', note: 'Prelims & Mains, sectional locks' },
+  { code: 'RRB-NTPC', title: 'Railways RRB', subjects: 'Maths · GI & Reasoning · GA', note: 'NTPC · Group D CBT patterns' },
+  { code: 'UPSC-CSE', title: 'UPSC Prelims', subjects: 'GS Paper I · CSAT', note: 'Negative-marking accurate' },
+  { code: 'ST-PCS', title: 'State PCS', subjects: 'GS · CSAT · State GK', note: 'State-wise patterns' },
+];
+
+const faqs = [
+  {
+    q: 'Is Practest free to start?',
+    a: 'Creating an account is free. Mock test batches unlock either with an activation code issued by your coaching institute or by paying online when enrolment is open. Free-preview lessons are available on enrolled courses.'
+  },
+  {
+    q: 'How do activation codes work?',
+    a: 'After registering and verifying your email and mobile number, request activation for your batch (or enter the 8-character code your institute gave you). The moment a code is redeemed, your course, mock tests and video lessons unlock instantly.'
+  },
+  {
+    q: 'Are the mock tests exam-pattern accurate?',
+    a: 'Yes — sections with their own time locks, the exact five-state question palette (answered, not answered, marked, answered & marked, not visited), negative marking, and a server-side timer that keeps counting even if your device clock is wrong.'
+  },
+  {
+    q: 'What happens if my internet drops mid-test?',
+    a: 'Every answer autosaves within seconds of selection. If your connection drops or the browser crashes, log back in and resume the attempt exactly where you left off — palette state, marked questions and the remaining time are all restored from the server.'
+  },
+  {
+    q: 'Can I prepare on my phone?',
+    a: 'Yes. Lessons, analytics and mock tests all work on mobile. For full-length mocks we recommend a laptop or desktop to mirror the real exam-hall experience, but the palette and timer stay fully usable on a phone.'
+  },
+];
+
+const faqSchema = JSON.stringify({
+  "@context": "https://schema.org",
+  "@type": "FAQPage",
+  "mainEntity": faqs.map(f => ({
+    "@type": "Question",
+    "name": f.q,
+    "acceptedAnswer": { "@type": "Answer", "text": f.a }
+  }))
+});
 ---
 
-<Layout title="Practest - State-of-the-Art Mock Test Series & LMS">
-  <!-- Hero Section -->
-  <section class="hero-section">
-    <div class="hero-container">
-      <div class="badge">🚀 Premium Learning Platform</div>
-      <h1 class="hero-title">
-        Ace Your Competitive Exams with <span class="text-gradient">Practest</span>
-      </h1>
-      <p class="hero-subtitle">
-        High-performance timed mock test series, detailed performance analytics, and structured LMS video courses. Crafted for serious students and top coaching institutes.
-      </p>
-      
-      <div class="hero-actions">
-        <a href="/courses" class="btn-primary">Browse Courses</a>
-        <a href={`${spaUrl}/register`} class="btn-secondary">Create Free Account</a>
+<Layout title="Practest — Exam-Pattern Mock Tests for SSC, Banking, RRB, UPSC & State PCS">
+  <script type="application/ld+json" set:html={faqSchema} />
+
+  <!-- ============ HERO ============ -->
+  <section class="hero">
+    <div class="hero-grid">
+      <div class="hero-copy">
+        <span class="section-label"><span class="idx">✳</span> Govt-exam preparation, done properly</span>
+        <h1>Practise like it's the <span class="marker-underline">real exam hall</span>.</h1>
+        <p class="hero-sub">
+          Server-timed CBT mocks with the exact palette, section locks and negative marking of
+          SSC, Banking, Railways, UPSC and State PCS papers — plus video courses and analytics
+          that tell you precisely where marks are leaking.
+        </p>
+        <div class="hero-actions">
+          <a href={`${spaUrl}/register`} class="btn-primary">Start preparing free</a>
+          <a href="/courses" class="btn-secondary">Browse courses</a>
+        </div>
+        <div class="hero-proof">
+          <span class="omr-strip" aria-hidden="true"><i class="filled"></i><i></i><i class="marker"></i><i></i><i class="filled"></i></span>
+          <span>Server-authoritative timer · Autosave every answer · Resume after any crash</span>
+        </div>
+      </div>
+
+      <!-- hand-built CBT simulator, not a stock illustration -->
+      <div class="hero-visual" aria-hidden="true">
+        <div class="sim glass-panel">
+          <div class="sim-head">
+            <span class="sim-title">SSC CGL Mock 04 — Tier I</span>
+            <span class="sim-clock">00:47:1<span class="tick">2</span></span>
+          </div>
+          <div class="sim-tabs">
+            <span>Reasoning</span><span class="active">Quant</span><span>English</span><span class="locked">GA 🔒</span>
+          </div>
+          <div class="sim-q">
+            <p class="sim-qno">Q.47 <span>+2.0 / −0.5</span></p>
+            <p class="sim-qtext">If 3x − 7 = 2x + 5, then the value of x is —</p>
+            <div class="sim-opts">
+              <span class="opt"><i>A</i> 10</span>
+              <span class="opt selected"><i>B</i> 12</span>
+              <span class="opt"><i>C</i> 15</span>
+              <span class="opt"><i>D</i> 17</span>
+            </div>
+          </div>
+          <div class="sim-palette">
+            <span class="pal green">41</span><span class="pal green">42</span><span class="pal red">43</span>
+            <span class="pal violet">44</span><span class="pal green">45</span><span class="pal violet-green">46</span>
+            <span class="pal gray">47</span><span class="pal gray">48</span><span class="pal gray">49</span><span class="pal gray">50</span>
+          </div>
+          <div class="sim-foot">
+            <span class="sim-btn ghost">Mark for Review</span>
+            <span class="sim-btn solid">Save &amp; Next</span>
+          </div>
+        </div>
+        <div class="rank-card glass-panel">
+          <span class="rank-label">YOUR PERCENTILE</span>
+          <span class="rank-value">94.2</span>
+          <div class="rank-bar"><i style="width: 94.2%"></i></div>
+          <span class="rank-sub">Rank 128 / 2,214 in batch</span>
+        </div>
       </div>
     </div>
   </section>
 
-  <!-- Carousel Section -->
-  <CourseCarousel />
-
-  <!-- Features Grid Section -->
-  <section class="features-section">
-    <div class="section-header">
-      <h2>Engineered for Success</h2>
-      <p>Everything you need to analyze your weaknesses and level up your scores.</p>
-    </div>
-    
-    <div class="features-grid">
-      <div class="glass-panel glass-panel-hover feature-card">
-        <div class="feature-icon">⏱️</div>
-        <h3>CBT timed exam engine</h3>
-        <p>Realistic mock test simulator with section locks, timed auto-submissions, and five-state question response palettes.</p>
-      </div>
-
-      <div class="glass-panel glass-panel-hover feature-card">
-        <div class="feature-icon">📊</div>
-        <h3>Deep performance analytics</h3>
-        <p>Instant scorecard breakdowns, accuracy tracking, sectional performance diagnostics, and batch-wide percentile rankings.</p>
-      </div>
-
-      <div class="glass-panel glass-panel-hover feature-card">
-        <div class="feature-icon">🎥</div>
-        <h3>Structured LMS curriculum</h3>
-        <p>Curriculum structured by modules and video lessons. Automatic watch progress logs with resume tracking.</p>
+  <!-- ============ EXAM TRACKS ============ -->
+  <section class="tracks reveal">
+    <div class="wrap">
+      <span class="section-label"><span class="idx">01</span> Exam categories</span>
+      <h2 class="sec-title">Pick your battlefield.</h2>
+      <div class="tracks-grid">
+        {examTracks.map((t) => (
+          <a href="/courses" class="ticket glass-panel glass-panel-hover">
+            <span class="ticket-stub">ADMIT</span>
+            <span class="ticket-body">
+              <span class="ticket-code">{t.code}</span>
+              <span class="ticket-title">{t.title}</span>
+              <span class="ticket-subjects">{t.subjects}</span>
+              <span class="ticket-note">{t.note}</span>
+              <span class="ticket-cta">View mock series →</span>
+            </span>
+          </a>
+        ))}
       </div>
     </div>
   </section>
 
-  <!-- Stats Banner -->
-  <section class="stats-section">
-    <div class="stats-container glass-panel">
-      <div class="stat-item">
-        <span class="stat-number">10k+</span>
-        <span class="stat-label">Active Students</span>
+  <!-- ============ LIVE COURSE CATALOG ============ -->
+  <section class="catalog reveal">
+    <div class="wrap">
+      <CourseCarousel />
+    </div>
+  </section>
+
+  <!-- ============ HOW IT WORKS ============ -->
+  <section class="steps reveal">
+    <div class="wrap">
+      <span class="section-label"><span class="idx">02</span> How it works</span>
+      <h2 class="sec-title">From sign-up to scorecard in three steps.</h2>
+      <ol class="steps-row">
+        <li>
+          <span class="stamp">1</span>
+          <h3>Register &amp; verify</h3>
+          <p>Create your free account, verify your email and mobile with an OTP — takes two minutes.</p>
+        </li>
+        <li>
+          <span class="stamp">2</span>
+          <h3>Activate your batch</h3>
+          <p>Enter the activation code from your institute, or pay online for instant access when enrolment is open.</p>
+        </li>
+        <li>
+          <span class="stamp">3</span>
+          <h3>Practise &amp; analyse</h3>
+          <p>Attempt timed mocks, watch structured lessons, and track accuracy, percentile and rank after every test.</p>
+        </li>
+      </ol>
+    </div>
+  </section>
+
+  <!-- ============ PRODUCT DEEP-DIVE ============ -->
+  <section class="deep reveal">
+    <div class="wrap">
+      <span class="section-label"><span class="idx">03</span> Built like the real thing</span>
+      <h2 class="sec-title">Every detail of the exam hall, replicated.</h2>
+
+      <div class="deep-row">
+        <div class="deep-copy">
+          <h3>The five-state palette, exactly as SSC &amp; IBPS render it</h3>
+          <p>
+            Answered, not answered, marked for review, answered &amp; marked, not visited — the same colours,
+            the same teardrop shape, the same section locks. When you sit the real CBT, nothing will surprise you.
+          </p>
+          <div class="legend">
+            <span><span class="pal green">1</span> Answered</span>
+            <span><span class="pal red">2</span> Not answered</span>
+            <span><span class="pal violet">3</span> Marked</span>
+            <span><span class="pal violet-green">4</span> Ans + marked</span>
+            <span><span class="pal gray">5</span> Not visited</span>
+          </div>
+        </div>
+        <div class="deep-visual glass-panel">
+          <p class="dv-title">SECTION TIMER · SERVER-SIDE</p>
+          <p class="dv-clock">00:12:0<span class="tick">4</span></p>
+          <p class="dv-note">Auto-submit fires on the server when time expires — even if your tab is closed.</p>
+        </div>
       </div>
-      <div class="stat-item">
-        <span class="stat-number">50k+</span>
-        <span class="stat-label">Mock Tests Taken</span>
+
+      <div class="deep-row rev">
+        <div class="deep-copy">
+          <h3>Analytics that name the problem, not just the score</h3>
+          <p>
+            Every submission is re-scored on the server from your raw answers. Accuracy, time-per-question,
+            subject and topic breakdowns, batch percentile and rank — recomputed, never estimated.
+          </p>
+        </div>
+        <div class="deep-visual glass-panel">
+          <p class="dv-title">SUBJECT ACCURACY · MOCK 04</p>
+          <div class="bars">
+            <div class="bar"><span>Quant</span><div class="bar-track"><i style="width: 82%"></i></div><b>82%</b></div>
+            <div class="bar"><span>Reasoning</span><div class="bar-track"><i style="width: 74%"></i></div><b>74%</b></div>
+            <div class="bar"><span>English</span><div class="bar-track"><i style="width: 91%"></i></div><b>91%</b></div>
+            <div class="bar weak"><span>GA</span><div class="bar-track"><i style="width: 48%"></i></div><b>48%</b></div>
+          </div>
+          <p class="dv-note">GA is leaking marks → the system says so, plainly.</p>
+        </div>
       </div>
-      <div class="stat-item">
-        <span class="stat-number">99.4%</span>
-        <span class="stat-label">System Uptime</span>
+
+      <div class="deep-row">
+        <div class="deep-copy">
+          <h3>Structured video courses with resume-anywhere progress</h3>
+          <p>
+            Modules and lessons in exam order, watched-seconds logged automatically. Close the tab mid-lecture
+            and the player reopens within a few seconds of where you stopped — on any device.
+          </p>
+        </div>
+        <div class="deep-visual glass-panel">
+          <p class="dv-title">MODULE 03 · ALGEBRA</p>
+          <div class="lessons">
+            <div class="lesson done"><i>✓</i><span>Linear equations — shortcuts</span><b>18:40</b></div>
+            <div class="lesson done"><i>✓</i><span>Quadratic identities drill</span><b>22:15</b></div>
+            <div class="lesson now"><i>▶</i><span>Ratio &amp; proportion masterclass</span><b>12:03 / 31:20</b></div>
+            <div class="lesson"><i>·</i><span>Mixture &amp; alligation</span><b>26:48</b></div>
+          </div>
+        </div>
       </div>
     </div>
   </section>
 
-  <!-- Call to Action -->
-  <section class="cta-section">
-    <div class="cta-card glass-panel">
-      <h2>Ready to Start Your Preparation?</h2>
-      <p>Sign up now to access mock examinations, syllabus outlines, and free video lessons.</p>
-      <a href={`${spaUrl}/register`} class="btn-primary" style="margin-top: 10px;">Get Started Instantly</a>
+  <!-- ============ PRODUCT FACTS ============ -->
+  <section class="facts reveal">
+    <div class="wrap facts-band glass-panel">
+      <div class="fact"><span class="fact-n">05</span><span class="fact-l">palette states, exam-exact</span></div>
+      <div class="fact"><span class="fact-n">±1s</span><span class="fact-l">server-timer accuracy</span></div>
+      <div class="fact"><span class="fact-n">06</span><span class="fact-l">exam categories covered</span></div>
+      <div class="fact"><span class="fact-n">100%</span><span class="fact-l">server-side scoring</span></div>
+    </div>
+  </section>
+
+  <!-- ============ ASPIRANT VOICES (placeholder) ============ -->
+  <section class="voices reveal">
+    <div class="wrap">
+      <span class="section-label"><span class="idx">04</span> Aspirant voices</span>
+      <h2 class="sec-title">Margin notes from the study table.</h2>
+      <div class="voices-grid">
+        <figure class="voice glass-panel">
+          <blockquote>“The palette behaves exactly like the real SSC CBT. My first actual exam felt like my 30th mock.”</blockquote>
+          <figcaption><b>Ananya S.</b> · SSC CGL aspirant</figcaption>
+        </figure>
+        <figure class="voice glass-panel">
+          <blockquote>“Percentile after every mock kept me honest. GA was my leak — the analytics said it before my teacher did.”</blockquote>
+          <figcaption><b>Rohit K.</b> · IBPS PO aspirant</figcaption>
+        </figure>
+        <figure class="voice glass-panel">
+          <blockquote>“Internet died mid-mock. Logged back in, timer and answers were all intact. That sold me.”</blockquote>
+          <figcaption><b>Meera D.</b> · RRB NTPC aspirant</figcaption>
+        </figure>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============ FAQ ============ -->
+  <section class="faq reveal">
+    <div class="wrap">
+      <span class="section-label"><span class="idx">05</span> Questions, answered</span>
+      <h2 class="sec-title">Before you ask.</h2>
+      <div class="faq-list">
+        {faqs.map((f) => (
+          <details class="faq-item glass-panel">
+            <summary>{f.q}</summary>
+            <p>{f.a}</p>
+          </details>
+        ))}
+      </div>
+    </div>
+  </section>
+
+  <!-- ============ FINAL CTA ============ -->
+  <section class="final reveal">
+    <div class="wrap final-band glass-panel">
+      <div class="final-copy">
+        <h2>Your seat in the exam hall starts here.</h2>
+        <p>Free account · verify in minutes · your institute's code unlocks everything.</p>
+      </div>
+      <div class="final-actions">
+        <a href={`${spaUrl}/register`} class="btn-primary">Create free account</a>
+        <a href="/courses" class="btn-secondary">See all courses</a>
+      </div>
     </div>
   </section>
 </Layout>
 
 <style>
-  /* Hero section styles */
-  .hero-section {
-    padding: 100px 24px;
-    background: radial-gradient(circle at 50% 30%, rgba(99, 102, 241, 0.15), transparent 60%);
-    text-align: center;
-  }
+  .wrap { max-width: 1200px; margin: 0 auto; padding: 0 24px; }
 
-  .hero-container {
-    max-width: 800px;
-    margin: 0 auto;
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    gap: 24px;
-  }
-
-  .badge {
-    padding: 6px 14px;
-    background: rgba(99, 102, 241, 0.15);
-    color: var(--accent-color);
-    border: 1px solid rgba(99, 102, 241, 0.3);
-    border-radius: 20px;
-    font-size: 0.85rem;
-    font-weight: 600;
-    letter-spacing: 0.05em;
-  }
-
-  .hero-title {
-    font-size: 3.5rem;
-    font-weight: 800;
-    line-height: 1.15;
-    margin: 0;
-    color: #ffffff;
-    letter-spacing: -0.02em;
-  }
-
-  .hero-subtitle {
-    font-size: 1.2rem;
-    color: var(--text-secondary);
-    line-height: 1.6;
-    margin: 0;
-    max-width: 650px;
-  }
-
-  .hero-actions {
-    display: flex;
-    gap: 16px;
-    margin-top: 12px;
-  }
-
-  /* Features section styles */
-  .features-section {
-    max-width: 1200px;
-    margin: 0 auto;
-    padding: 80px 24px;
-  }
-
-  .section-header {
-    text-align: center;
-    margin-bottom: 50px;
-  }
-
-  .section-header h2 {
-    font-size: 2.2rem;
-    font-weight: 800;
-    margin: 0 0 12px 0;
-    color: #ffffff;
-  }
-
-  .section-header p {
-    color: var(--text-secondary);
-    font-size: 1.05rem;
-    margin: 0;
-  }
-
-  .features-grid {
-    display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
-    gap: 30px;
-  }
-
-  .feature-card {
-    padding: 35px;
-    display: flex;
-    flex-direction: column;
-    gap: 16px;
-  }
-
-  .feature-icon {
-    font-size: 2rem;
-    margin-bottom: 4px;
-  }
-
-  .feature-card h3 {
-    margin: 0;
-    font-size: 1.25rem;
+  .sec-title {
+    font-size: clamp(1.7rem, 3.2vw, 2.4rem);
     font-weight: 700;
-    color: #ffffff;
+    margin: 14px 0 36px 0;
   }
 
-  .feature-card p {
-    margin: 0;
-    color: var(--text-secondary);
-    font-size: 0.95rem;
-    line-height: 1.6;
-  }
+  /* ---------- hero ---------- */
+  .hero { padding: 84px 0 40px; overflow: hidden; }
 
-  /* Stats Section */
-  .stats-section {
+  .hero-grid {
     max-width: 1200px;
     margin: 0 auto;
-    padding: 20px 24px 60px 24px;
-  }
-
-  .stats-container {
-    padding: 40px;
-    display: grid;
-    grid-template-columns: repeat(3, 1fr);
-    text-align: center;
-    gap: 20px;
-  }
-
-  .stat-item {
-    display: flex;
-    flex-direction: column;
-    gap: 8px;
-  }
-
-  .stat-number {
-    font-size: 2.5rem;
-    font-weight: 800;
-    color: #ffffff;
-  }
-
-  .stat-label {
-    color: var(--text-secondary);
-    font-size: 0.95rem;
-    font-weight: 500;
-  }
-
-  /* CTA Section */
-  .cta-section {
-    max-width: 1200px;
-    margin: 0 auto 100px auto;
     padding: 0 24px;
+    display: grid;
+    grid-template-columns: minmax(0, 1.05fr) minmax(0, 0.95fr);
+    gap: 56px;
+    align-items: center;
   }
 
-  .cta-card {
-    padding: 50px 24px;
-    text-align: center;
+  .hero-copy { display: flex; flex-direction: column; gap: 22px; align-items: flex-start; }
+
+  .hero h1 {
+    font-size: clamp(2.4rem, 5vw, 3.6rem);
+    font-weight: 700;
+    line-height: 1.08;
+    margin: 0;
+  }
+
+  .hero-sub {
+    font-size: 1.08rem;
+    color: var(--text-secondary);
+    line-height: 1.7;
+    margin: 0;
+    max-width: 560px;
+  }
+
+  .hero-actions { display: flex; gap: 14px; flex-wrap: wrap; }
+
+  .hero-proof {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    font-family: var(--font-mono);
+    font-size: 0.78rem;
+    color: var(--text-secondary);
+    border-top: 1px dashed var(--border-strong);
+    padding-top: 18px;
+    margin-top: 6px;
+  }
+
+  /* CBT simulator */
+  .hero-visual { position: relative; padding-bottom: 46px; }
+
+  .sim { padding: 22px; display: flex; flex-direction: column; gap: 16px; }
+
+  .sim-head { display: flex; justify-content: space-between; align-items: center; gap: 12px; }
+  .sim-title { font-family: var(--font-display); font-weight: 600; font-size: 0.95rem; }
+  .sim-clock {
+    font-family: var(--font-mono);
+    font-weight: 700;
+    font-size: 1rem;
+    letter-spacing: 0.06em;
+    padding: 5px 12px;
+    border-radius: 8px;
+    background: var(--surface-2);
+    border: 1px solid var(--border-color);
+    font-variant-numeric: tabular-nums;
+  }
+  .tick { animation: tick-pulse 1s step-end infinite; }
+
+  .sim-tabs { display: flex; gap: 8px; flex-wrap: wrap; }
+  .sim-tabs span {
+    font-size: 0.76rem;
+    font-weight: 650;
+    padding: 5px 12px;
+    border-radius: 999px;
+    background: var(--surface-1);
+    border: 1px solid var(--border-color);
+    color: var(--text-secondary);
+  }
+  .sim-tabs .active { background: var(--accent-soft); border-color: var(--accent-border); color: var(--accent-color); }
+  .sim-tabs .locked { opacity: 0.6; }
+
+  .sim-qno { font-family: var(--font-mono); font-size: 0.75rem; color: var(--text-secondary); margin: 0 0 6px; }
+  .sim-qno span { color: var(--marker); }
+  .sim-qtext { margin: 0 0 12px; font-weight: 600; font-size: 0.95rem; }
+
+  .sim-opts { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+  .opt {
+    display: flex; align-items: center; gap: 9px;
+    padding: 9px 12px;
+    border: 1px solid var(--border-color);
+    border-radius: 9px;
+    background: var(--surface-1);
+    font-size: 0.85rem;
+  }
+  .opt i {
+    font-style: normal;
+    width: 20px; height: 20px;
+    border-radius: 50%;
+    border: 2px solid var(--omr-empty);
+    display: inline-flex; align-items: center; justify-content: center;
+    font-size: 0.66rem; font-weight: 700;
+  }
+  .opt.selected { border-color: var(--accent-border); background: var(--accent-soft); }
+  .opt.selected i { background: var(--accent-color); border-color: var(--accent-color); color: #fff; }
+
+  .sim-palette { display: flex; gap: 7px; flex-wrap: wrap; padding-top: 4px; border-top: 1px dashed var(--border-strong); }
+
+  .sim-foot { display: flex; justify-content: flex-end; gap: 10px; }
+  .sim-btn { font-size: 0.78rem; font-weight: 650; padding: 8px 14px; border-radius: 8px; }
+  .sim-btn.ghost { border: 1px solid var(--border-strong); color: var(--text-secondary); }
+  .sim-btn.solid { background: var(--grad-primary); color: #fff; box-shadow: 0 6px 16px -6px var(--accent-glow); }
+
+  .rank-card {
+    position: absolute;
+    right: 6px;
+    bottom: 0;
+    width: 205px;
+    padding: 16px 18px;
     display: flex;
     flex-direction: column;
-    align-items: center;
-    gap: 16px;
-    background: linear-gradient(135deg, rgba(17, 25, 40, 0.9) 0%, rgba(99, 102, 241, 0.08) 100%);
+    gap: 7px;
+    transform: rotate(1.6deg);
+  }
+  .rank-label { font-family: var(--font-mono); font-size: 0.64rem; letter-spacing: 0.14em; color: var(--text-secondary); }
+  .rank-value { font-family: var(--font-mono); font-size: 1.9rem; font-weight: 700; color: var(--accent-color); line-height: 1; }
+  .rank-bar { height: 6px; border-radius: 99px; background: var(--surface-2); overflow: hidden; }
+  .rank-bar i { display: block; height: 100%; background: var(--grad-primary); border-radius: 99px; }
+  .rank-sub { font-size: 0.72rem; color: var(--text-secondary); }
+
+  /* ---------- exam tracks (hall tickets) ---------- */
+  .tracks { padding: 72px 0 20px; }
+
+  .tracks-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(216px, 1fr));
+    gap: 18px;
   }
 
-  .cta-card h2 {
-    font-size: 2rem;
-    font-weight: 800;
+  .ticket { display: flex; overflow: hidden; }
+
+  .ticket-stub {
+    writing-mode: vertical-rl;
+    transform: rotate(180deg);
+    font-family: var(--font-mono);
+    font-size: 0.62rem;
+    font-weight: 700;
+    letter-spacing: 0.3em;
+    color: var(--marker);
+    padding: 14px 7px;
+    border-left: 1px dashed var(--border-strong);
+    background: var(--marker-soft);
+    display: flex; align-items: center; justify-content: center;
+  }
+
+  .ticket-body { padding: 18px; display: flex; flex-direction: column; gap: 7px; flex: 1; }
+
+  .ticket-code {
+    align-self: flex-start;
+    font-family: var(--font-mono);
+    font-size: 0.68rem;
+    font-weight: 700;
+    letter-spacing: 0.1em;
+    color: var(--accent-color);
+    background: var(--accent-soft);
+    border: 1px solid var(--accent-border);
+    padding: 3px 9px;
+    border-radius: 6px;
+  }
+
+  .ticket-title { font-family: var(--font-display); font-weight: 650; font-size: 1.02rem; color: var(--text-primary); }
+  .ticket-subjects { font-size: 0.8rem; color: var(--text-secondary); }
+  .ticket-note { font-size: 0.74rem; color: var(--text-secondary); border-top: 1px dashed var(--border-strong); padding-top: 8px; margin-top: 3px; }
+  .ticket-cta { font-size: 0.8rem; font-weight: 650; color: var(--accent-color); margin-top: 4px; }
+
+  /* ---------- catalog ---------- */
+  .catalog { padding: 44px 0 8px; }
+
+  /* ---------- steps ---------- */
+  .steps { padding: 72px 0 24px; }
+
+  .steps-row {
+    list-style: none;
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+    gap: 30px;
+    padding: 0;
     margin: 0;
-    color: #ffffff;
+    counter-reset: step;
   }
 
-  .cta-card p {
-    color: var(--text-secondary);
+  .steps-row li { position: relative; padding-top: 6px; }
+
+  .stamp {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 46px; height: 46px;
+    border-radius: 50%;
+    border: 2px dashed var(--marker);
+    color: var(--marker);
+    font-family: var(--font-mono);
+    font-weight: 700;
     font-size: 1.05rem;
-    max-width: 550px;
-    margin: 0 0 10px 0;
+    transform: rotate(-6deg);
+    margin-bottom: 14px;
   }
 
-  @media (max-width: 768px) {
-    .hero-title {
-      font-size: 2.5rem;
-    }
-    .stats-container {
-      grid-template-columns: 1fr;
-      gap: 40px;
-    }
+  .steps-row h3 { margin: 0 0 8px; font-size: 1.12rem; font-weight: 650; }
+  .steps-row p { margin: 0; color: var(--text-secondary); font-size: 0.92rem; line-height: 1.65; }
+
+  /* ---------- deep dive ---------- */
+  .deep { padding: 72px 0 20px; }
+
+  .deep-row {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+    gap: 44px;
+    align-items: center;
+    padding: 34px 0;
+    border-top: 1px dashed var(--border-strong);
+  }
+  .deep-row:first-of-type { border-top: none; }
+  .deep-row.rev .deep-copy { order: 2; }
+  .deep-row.rev .deep-visual { order: 1; }
+
+  .deep-copy h3 { font-size: 1.35rem; font-weight: 650; margin: 0 0 12px; }
+  .deep-copy p { color: var(--text-secondary); line-height: 1.7; margin: 0 0 18px; font-size: 0.97rem; }
+
+  .legend { display: flex; flex-wrap: wrap; gap: 12px 18px; }
+  .legend > span { display: inline-flex; align-items: center; gap: 8px; font-size: 0.8rem; color: var(--text-secondary); }
+
+  .deep-visual { padding: 26px; }
+  .dv-title { font-family: var(--font-mono); font-size: 0.68rem; letter-spacing: 0.14em; color: var(--text-secondary); margin: 0 0 12px; }
+  .dv-clock { font-family: var(--font-mono); font-size: 2.4rem; font-weight: 700; margin: 0 0 10px; color: var(--accent-color); font-variant-numeric: tabular-nums; }
+  .dv-note { font-size: 0.82rem; color: var(--text-secondary); margin: 10px 0 0; }
+
+  .bars { display: flex; flex-direction: column; gap: 12px; }
+  .bar { display: grid; grid-template-columns: 86px 1fr 44px; align-items: center; gap: 12px; font-size: 0.83rem; }
+  .bar span { color: var(--text-secondary); }
+  .bar b { font-family: var(--font-mono); font-weight: 700; text-align: right; }
+  .bar-track { height: 9px; border-radius: 99px; background: var(--surface-2); overflow: hidden; }
+  .bar-track i { display: block; height: 100%; border-radius: 99px; background: var(--grad-primary); }
+  .bar.weak .bar-track i { background: var(--st-red); }
+  .bar.weak b { color: var(--st-red); }
+
+  .lessons { display: flex; flex-direction: column; }
+  .lesson {
+    display: grid;
+    grid-template-columns: 26px 1fr auto;
+    align-items: center;
+    gap: 10px;
+    padding: 11px 4px;
+    border-bottom: 1px dashed var(--border-color);
+    font-size: 0.87rem;
+  }
+  .lesson:last-child { border-bottom: none; }
+  .lesson i { font-style: normal; display: inline-flex; align-items: center; justify-content: center; width: 22px; height: 22px; border-radius: 50%; font-size: 0.7rem; }
+  .lesson.done i { background: var(--st-green); color: #fff; }
+  .lesson.now i { background: var(--accent-color); color: #fff; }
+  .lesson:not(.done):not(.now) i { border: 2px solid var(--omr-empty); color: var(--text-secondary); }
+  .lesson b { font-family: var(--font-mono); font-weight: 500; font-size: 0.72rem; color: var(--text-secondary); }
+  .lesson.now { background: var(--accent-soft); border-radius: 8px; padding-left: 8px; padding-right: 8px; }
+
+  /* ---------- facts band ---------- */
+  .facts { padding: 60px 0 16px; }
+
+  .facts-band {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(190px, 1fr));
+    gap: 24px;
+    padding: 34px 38px;
+  }
+  .fact { display: flex; flex-direction: column; gap: 4px; border-left: 2px solid var(--marker); padding-left: 16px; }
+  .fact-n { font-family: var(--font-mono); font-size: 1.9rem; font-weight: 700; color: var(--text-primary); font-variant-numeric: tabular-nums; }
+  .fact-l { font-size: 0.82rem; color: var(--text-secondary); }
+
+  /* ---------- voices ---------- */
+  .voices { padding: 72px 0 20px; }
+
+  .voices-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(270px, 1fr)); gap: 20px; }
+
+  .voice { margin: 0; padding: 24px; display: flex; flex-direction: column; gap: 14px; }
+  .voice blockquote {
+    margin: 0;
+    font-size: 0.95rem;
+    line-height: 1.7;
+    color: var(--text-primary);
+    border-left: 2px solid var(--marker);
+    padding-left: 14px;
+  }
+  .voice figcaption { font-size: 0.8rem; color: var(--text-secondary); }
+  .voice figcaption b { color: var(--text-primary); }
+
+  /* ---------- faq ---------- */
+  .faq { padding: 72px 0 20px; }
+
+  .faq-list { display: flex; flex-direction: column; gap: 12px; max-width: 820px; }
+
+  .faq-item { padding: 0; overflow: hidden; }
+  .faq-item summary {
+    list-style: none;
+    cursor: pointer;
+    padding: 18px 22px;
+    font-weight: 650;
+    font-size: 0.98rem;
+    font-family: var(--font-display);
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 14px;
+  }
+  .faq-item summary::-webkit-details-marker { display: none; }
+  .faq-item summary::after {
+    content: '+';
+    font-family: var(--font-mono);
+    font-size: 1.15rem;
+    color: var(--marker);
+    transition: transform 0.25s var(--ease-out);
+  }
+  .faq-item[open] summary::after { transform: rotate(45deg); }
+  .faq-item p {
+    margin: 0;
+    padding: 0 22px 20px;
+    color: var(--text-secondary);
+    font-size: 0.92rem;
+    line-height: 1.7;
+  }
+
+  /* ---------- final CTA ---------- */
+  .final { padding: 64px 0 96px; }
+
+  .final-band {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 28px;
+    flex-wrap: wrap;
+    padding: 42px 46px;
+    background-image: radial-gradient(circle at 88% 20%, var(--accent-soft), transparent 55%);
+  }
+  .final-copy h2 { margin: 0 0 8px; font-size: clamp(1.5rem, 2.6vw, 2rem); }
+  .final-copy p { margin: 0; color: var(--text-secondary); font-size: 0.95rem; }
+  .final-actions { display: flex; gap: 12px; flex-wrap: wrap; }
+
+  /* ---------- responsive ---------- */
+  @media (max-width: 920px) {
+    .hero-grid { grid-template-columns: 1fr; gap: 40px; }
+    .hero { padding-top: 56px; }
+    .deep-row { grid-template-columns: 1fr; gap: 24px; }
+    .deep-row.rev .deep-copy { order: 1; }
+    .deep-row.rev .deep-visual { order: 2; }
+    .rank-card { right: 0; }
   }
 </style>

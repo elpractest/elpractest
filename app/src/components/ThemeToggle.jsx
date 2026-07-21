@@ -16,6 +16,9 @@ export default function ThemeToggle() {
     document.documentElement.dataset.theme = next;
     try {
       localStorage.setItem('practest-theme', next);
+      // Cookie syncs the choice with the public site (subdomain-wide in prod)
+      const domain = location.hostname.endsWith('pactest.live') ? ';domain=.pactest.live' : '';
+      document.cookie = `practest_theme=${next};path=/;max-age=31536000;SameSite=Lax${domain}`;
     } catch (e) {
       // private mode — theme still applies for this session
     }
