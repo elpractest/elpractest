@@ -105,8 +105,8 @@ export default function SuperAdminOnboarding() {
     <div style={{ maxWidth: '1000px', margin: '0 auto' }}>
       
       <div style={{ marginBottom: '32px' }}>
-        <h1 style={{ fontSize: '2rem', fontWeight: 800, margin: '0 0 8px 0', background: 'linear-gradient(to right, #ffffff, var(--violet-text))', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent' }}>
-          Onboarding & Support Tooling
+        <h1 style={{ fontSize: '2rem', fontWeight: 800, margin: '0 0 8px 0', color: 'var(--text-primary)', fontFamily: 'var(--font-display)' }}>
+          Onboarding &amp; Support Tooling
         </h1>
         <p style={{ margin: 0, color: 'var(--text-secondary)' }}>
           Onboard the coaching institute's Admin owner or assist them with support tasks like password resets.
@@ -129,7 +129,7 @@ export default function SuperAdminOnboarding() {
         
         {/* Onboarding Form */}
         <div className="glass-panel" style={{ padding: '24px' }}>
-          <h2 style={{ fontSize: '1.2rem', fontWeight: 700, margin: '0 0 16px 0', color: '#ffffff' }}>Onboard Admin Account</h2>
+          <h2 style={{ fontSize: '1.2rem', fontWeight: 700, margin: '0 0 16px 0', color: 'var(--text-primary)' }}>Onboard Admin Account</h2>
           
           {adminExists ? (
             <div style={{ background: 'var(--accent-soft)', border: '1px solid var(--accent-soft)', padding: '16px', borderRadius: '8px', color: 'var(--text-secondary)', fontSize: '0.85rem', lineHeight: '1.5' }}>

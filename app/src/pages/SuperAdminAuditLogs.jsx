@@ -56,7 +56,7 @@ export default function SuperAdminAuditLogs() {
     <div style={{ maxWidth: '1000px', margin: '0 auto' }}>
       
       <div style={{ marginBottom: '32px' }}>
-        <h1 style={{ fontSize: '2rem', fontWeight: 800, margin: '0 0 8px 0', background: 'linear-gradient(to right, #ffffff, var(--violet-text))', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent' }}>
+        <h1 style={{ fontSize: '2rem', fontWeight: 800, margin: '0 0 8px 0', color: 'var(--text-primary)', fontFamily: 'var(--font-display)' }}>
           Platform Audit Logs
         </h1>
         <p style={{ margin: 0, color: 'var(--text-secondary)' }}>

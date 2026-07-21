@@ -91,8 +91,8 @@ export default function SuperAdminSettings() {
   return (
     <div style={{ maxWidth: '900px', margin: '0 auto' }}>
       <div style={{ marginBottom: '32px' }}>
-        <h1 style={{ fontSize: '2rem', fontWeight: 800, margin: '0 0 8px 0', background: 'linear-gradient(to right, #ffffff, var(--violet-text))', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent' }}>
-          White-Label & Platform Settings
+        <h1 style={{ fontSize: '2rem', fontWeight: 800, margin: '0 0 8px 0', color: 'var(--text-primary)', fontFamily: 'var(--font-display)' }}>
+          White-Label &amp; Platform Settings
         </h1>
         <p style={{ margin: 0, color: 'var(--text-secondary)' }}>
           Configure branding assets, feature toggles, SEO preferences, and analytics tracking for this tenant deployment.

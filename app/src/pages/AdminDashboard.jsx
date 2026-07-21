@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import api from '../api';
+import Icon from '../components/Icon';
 
 // Sub-components import
 import AdminCourses from './AdminCourses';
@@ -135,14 +136,24 @@ export default function AdminDashboard({ user, setUser }) {
       <aside style={{ width: '280px', background: 'var(--panel-bg-solid)', borderRight: '1px solid var(--border-color)', display: 'flex', flexDirection: 'column', flexShrink: 0 }}>
         
         {/* Sidebar Header Logo */}
-        <div style={{ padding: '24px', display: 'flex', alignItems: 'center', justifyContent: 'space-between', borderBottom: '1px solid var(--border-color)' }}>
-          <span style={{ fontSize: '1.4rem', fontWeight: 800, color: 'var(--accent-color)', letterSpacing: '1px' }}>PRACTEST</span>
+        <div style={{ padding: '20px 24px', display: 'flex', alignItems: 'center', justifyContent: 'space-between', borderBottom: '1px solid var(--border-color)' }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+            <span style={{ display: 'inline-flex', alignItems: 'center', justifyContent: 'center', width: '32px', height: '32px', borderRadius: '8px', background: 'var(--grad-primary)', color: '#ffffff' }}>
+              <Icon name="graduation-cap" size={17} />
+            </span>
+            <span style={{ display: 'inline-flex', flexDirection: 'column', gap: '1px', lineHeight: 1.02 }}>
+              <span style={{ fontFamily: 'var(--font-mono)', fontSize: '0.52rem', fontWeight: 700, letterSpacing: '0.14em', textTransform: 'uppercase', color: 'var(--warning)' }}>e-Learning</span>
+              <span className="text-gradient" style={{ fontSize: '1.1rem', fontWeight: 700, letterSpacing: '0.02em', fontFamily: 'var(--font-display)' }}>
+                Practest<sup style={{ fontSize: '0.5em', verticalAlign: 'super', WebkitTextFillColor: 'var(--text-secondary)', marginLeft: '1px' }}>®</sup>
+              </span>
+            </span>
+          </div>
           {user?.roles?.includes('super-admin') ? (
-            <span style={{ fontSize: '0.75rem', color: 'var(--accent-color)', background: 'rgba(99, 102, 241, 0.15)', padding: '2px 8px', borderRadius: '4px', fontWeight: 'bold' }}>
+            <span style={{ fontSize: '0.65rem', color: 'var(--accent-color)', background: 'rgba(99, 102, 241, 0.15)', padding: '3px 8px', borderRadius: '6px', fontWeight: 'bold' }}>
               Admin Mode
             </span>
           ) : (
-            <span style={{ fontSize: '0.75rem', color: 'var(--success)', background: 'var(--success-bg)', padding: '2px 8px', borderRadius: '4px', fontWeight: 'bold' }}>
+            <span style={{ fontSize: '0.65rem', color: 'var(--success)', background: 'var(--success-bg)', padding: '3px 8px', borderRadius: '6px', fontWeight: 'bold' }}>
               Admin Console
             </span>
           )}
