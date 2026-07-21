@@ -15,6 +15,7 @@ const {
 const year = new Date().getFullYear();
 
 const spaUrl = import.meta.env.PUBLIC_SPA_URL || 'http://localhost:3000';
+const googleSiteVerification = import.meta.env.PUBLIC_GOOGLE_SITE_VERIFICATION || '';
 const siteUrl = 'https://www.practest.live';
 const canonicalUrl = new URL(Astro.url.pathname, siteUrl).href;
 const orgSchema = JSON.stringify({
@@ -36,6 +37,7 @@ const orgSchema = JSON.stringify({
     <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
     <link rel="icon" href="/favicon.ico" />
     <link rel="canonical" href={canonicalUrl} />
+    {googleSiteVerification && <meta name="google-site-verification" content={googleSiteVerification} />}
     <meta name="generator" content={Astro.generator} />
 
     <!-- Theme boot: cookie (shared with the app subdomain) → localStorage → dark -->
