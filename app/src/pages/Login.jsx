@@ -70,7 +70,7 @@ export default function Login({ setUser }) {
     <div style={{ display: 'flex', flex: 1, justifyContent: 'center', alignItems: 'center', minHeight: '80vh', padding: '16px' }}>
       <div className="glass-panel" style={{ width: '100%', maxWidth: '420px', padding: '40px', display: 'flex', flexDirection: 'column', gap: '24px' }}>
         <div style={{ textAlign: 'center' }}>
-          <h2 style={{ margin: '0 0 8px 0', fontSize: '1.8rem', fontWeight: 800, color: 'var(--accent-color)' }}>Welcome to Practest</h2>
+          <h2 style={{ margin: '0 0 8px 0', fontSize: '1.8rem', fontWeight: 800, color: 'var(--accent-color)' }}>Welcome to e-Learning Practest</h2>
           <p style={{ margin: 0, color: 'var(--text-secondary)', fontSize: '0.9rem' }}>Log in to your govt exam test prep account</p>
         </div>
 

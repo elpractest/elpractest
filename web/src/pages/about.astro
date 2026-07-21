@@ -2,258 +2,203 @@
 import Layout from '../layouts/Layout.astro';
 
 const spaUrl = import.meta.env.PUBLIC_SPA_URL || 'http://localhost:3000';
+
+const pillars = [
+  { n: '01', h: 'Exact exam interface', p: 'Five-state question palette, marked-for-review tags and section switching engineered to match official vendor CBT software.' },
+  { n: '02', h: 'Percentile analytics', p: 'Instant rank and percentile computed across every batch test-taker, with subject and topic-wise breakdowns.' },
+  { n: '03', h: 'Structured video courses', p: 'Curated LMS modules with lessons in exam order and automatic per-student progress tracking.' },
+  { n: '04', h: 'Offline + online access', p: 'Seamless batch activation via institute codes and receipt verification, or online payment when enrolment is open.' },
+];
 ---
 
-<Layout 
-  title="About Us - Practest Computer Based Test Engine"
-  description="Learn about Practest, our mission to provide exam-pattern accurate computer-based test series for SSC, Banking, Railway, UPSC & State PCS exams."
+<Layout
+  title="About e-Learning Practest — A Vinstitution Brand"
+  description="e-Learning Practest is the exam-prep platform of Vinstitution, a segment of VPD Vastus Ventures Private Limited, founded by educator Mr. Virat Priyadarshan."
 >
-  <div class="about-container">
-    {/* Hero Section */}
-    <section class="about-hero">
-      <span class="badge">About Practest</span>
-      <h1>Empowering Aspirants with Exam-Accurate CBT Technology</h1>
-      <p class="hero-sub">
-        Designed from the ground up for serious Indian competitive exam preparation. We deliver precision timed test series, subject-wise analytics, and seamless learning resources.
+  <div class="about">
+    <!-- Hero -->
+    <section class="a-hero">
+      <span class="section-label"><span class="idx">✳</span> About us</span>
+      <h1>Exam-accurate practice, built by <span class="marker-underline">educators</span>.</h1>
+      <p class="a-sub">
+        <strong>e-Learning Practest<sup class="r">®</sup></strong> is the flagship computer-based-test platform
+        of <strong>Vinstitution</strong> — created to give every serious Indian competitive-exam aspirant the exact
+        environment they'll face on exam day, months before they walk into the hall.
       </p>
     </section>
 
-    {/* Mission & Vision Section */}
-    <section class="grid-section">
-      <div class="glass-card">
-        <div class="card-icon">🎯</div>
-        <h2>Our Mission</h2>
-        <p>
-          To make real-exam environment practice accessible to every competitive exam aspirant. We replicate exact CBT interface standards (SSC CGL, SBI PO, IBPS, RRB NTPC) so you walk into the exam hall with complete confidence.
-        </p>
-      </div>
-
-      <div class="glass-card">
-        <div class="card-icon">🚀</div>
-        <h2>Why Practest?</h2>
-        <p>
-          Unlike generic learning platforms, Practest focuses on true test engine fidelity: server-authoritative sectional timers, KaTeX LaTeX math rendered questions, instant autosave, and detailed post-test percentile analysis.
-        </p>
-      </div>
-    </section>
-
-    {/* Key Pillars / Trust Signals */}
-    <section class="trust-section">
-      <h2 class="section-title">Built for Indian One-Day & Civil Service Exams</h2>
-      
-      <div class="trust-grid">
-        <div class="trust-item">
-          <div class="trust-number">01</div>
-          <h3>Exact Exam Interface</h3>
-          <p>4-color question palette, marked-for-review tags, and section switching engineered to match official vendor software.</p>
-        </div>
-
-        <div class="trust-item">
-          <div class="trust-number">02</div>
-          <h3>Percentile Analytics</h3>
-          <p>Instant rank and percentile computed across all batch test takers with comprehensive subject and topic breakdowns.</p>
-        </div>
-
-        <div class="trust-item">
-          <div class="trust-number">03</div>
-          <h3>HD Video Lectures</h3>
-          <p>Curated LMS course modules with structured video lessons and automatic progress tracking per student.</p>
-        </div>
-
-        <div class="trust-item">
-          <div class="trust-number">04</div>
-          <h3>Offline + Online Support</h3>
-          <p>Seamless batch activation via registration codes and receipt verification for institute students.</p>
+    <!-- Founder -->
+    <section class="founder reveal">
+      <div class="founder-card glass-panel">
+        <div class="founder-badge">FOUNDER'S NOTE</div>
+        <blockquote>
+          “Aspirants don't lose marks because they don't know the syllabus — they lose them to an unfamiliar
+          interface, a mis-managed clock and untested exam temperament. We built e-Learning Practest so that the
+          mock feels indistinguishable from the real thing, and the analytics tell you the truth about where you stand.”
+        </blockquote>
+        <div class="founder-by">
+          <span class="founder-avatar" aria-hidden="true">VP</span>
+          <span>
+            <b>Mr. Virat Priyadarshan</b>
+            <em>Founder — Vinstitution · Visionary educator</em>
+          </span>
         </div>
       </div>
     </section>
 
-    {/* CTA Banner */}
-    <section class="cta-banner glass-card">
-      <h2>Ready to Boost Your Exam Score?</h2>
-      <p>Explore our active course batches or jump straight into the test engine portal.</p>
-      <div class="cta-buttons">
-        <a href="/courses" class="btn-primary">Browse Courses</a>
-        <a href={`${spaUrl}/login`} class="btn-secondary">Student Portal →</a>
+    <!-- Mission / Why -->
+    <section class="cols reveal">
+      <div class="col glass-panel">
+        <span class="col-label">Our mission</span>
+        <h2>Make real-exam practice accessible to every aspirant.</h2>
+        <p>
+          We replicate exact CBT interface standards — SSC CGL, SBI PO, IBPS, RRB NTPC and more — with
+          server-authoritative sectional timers, KaTeX-rendered quantitative questions, instant autosave and
+          rigorous post-test percentile analysis, so confidence is built on evidence, not hope.
+        </p>
+      </div>
+      <div class="col glass-panel">
+        <span class="col-label">Why e-Learning Practest</span>
+        <h2>Test-engine fidelity, not a generic LMS.</h2>
+        <p>
+          Unlike generic learning apps, every submission is re-scored on the server from raw answers — never a
+          client-side estimate. The timer is authoritative, autosave is relentless, and a dropped connection never
+          costs you an attempt. It behaves like the vendor software because that is the whole point.
+        </p>
+      </div>
+    </section>
+
+    <!-- Pillars -->
+    <section class="pillars reveal">
+      <span class="section-label"><span class="idx">01</span> What we stand for</span>
+      <h2 class="sec-h">Built for Indian one-day &amp; civil-service exams.</h2>
+      <div class="pillar-grid">
+        {pillars.map((x) => (
+          <div class="pillar glass-panel glass-panel-hover">
+            <span class="pillar-n">{x.n}</span>
+            <h3>{x.h}</h3>
+            <p>{x.p}</p>
+          </div>
+        ))}
+      </div>
+    </section>
+
+    <!-- Corporate -->
+    <section class="corp reveal">
+      <span class="section-label"><span class="idx">02</span> The company behind it</span>
+      <h2 class="sec-h">Structure &amp; credentials.</h2>
+      <div class="corp-flow">
+        <div class="corp-node glass-panel">
+          <span class="corp-tag">PARENT COMPANY</span>
+          <b>VPD Vastus Ventures Private Limited</b>
+          <em>Incorporated entity</em>
+        </div>
+        <span class="corp-arrow" aria-hidden="true">→</span>
+        <div class="corp-node glass-panel">
+          <span class="corp-tag">SEGMENT</span>
+          <b>Vinstitution</b>
+          <em>Education division</em>
+        </div>
+        <span class="corp-arrow" aria-hidden="true">→</span>
+        <div class="corp-node glass-panel accent">
+          <span class="corp-tag">BRAND / PRODUCT</span>
+          <b>e-Learning Practest<sup class="r">®</sup></b>
+          <em>CBT test-series platform</em>
+        </div>
+      </div>
+      <div class="corp-creds glass-panel">
+        <div><span>PAN</span><b>AAMCV2938B</b></div>
+        <div><span>GSTIN</span><b>07AAMCV2938B1ZA</b></div>
+        <div><span>Quality</span><b>ISO 9001:2015 Certified</b></div>
+      </div>
+    </section>
+
+    <!-- CTA -->
+    <section class="a-cta reveal">
+      <div class="a-cta-band glass-panel">
+        <div>
+          <h2>Ready to practise like it's the real exam?</h2>
+          <p>Explore our active batches, or jump straight into the test-engine portal.</p>
+        </div>
+        <div class="a-cta-actions">
+          <a href="/courses" class="btn-primary">Browse courses</a>
+          <a href={`${spaUrl}/login`} class="btn-secondary">Student portal →</a>
+        </div>
       </div>
     </section>
   </div>
 </Layout>
 
 <style>
-  .about-container {
-    max-width: 1100px;
-    margin: 0 auto;
-    padding: 60px 24px;
-    display: flex;
-    flex-direction: column;
-    gap: 60px;
-  }
+  .about { max-width: 1120px; margin: 0 auto; padding: 60px 24px 90px; display: flex; flex-direction: column; gap: 66px; }
+  .sec-h { font-size: clamp(1.6rem, 3vw, 2.2rem); font-weight: 700; margin: 14px 0 30px; }
+  .r { font-size: 0.55em; vertical-align: super; color: var(--text-secondary); }
 
-  .about-hero {
-    text-align: center;
-    max-width: 800px;
-    margin: 0 auto;
-  }
+  /* hero */
+  .a-hero { max-width: 820px; }
+  .a-hero h1 { font-size: clamp(2.1rem, 4.4vw, 3rem); font-weight: 700; line-height: 1.12; margin: 14px 0 18px; }
+  .a-sub { font-size: 1.08rem; color: var(--text-secondary); line-height: 1.75; margin: 0; }
+  .a-sub strong { color: var(--text-primary); font-weight: 650; }
 
-  .badge {
-    display: inline-block;
-    padding: 6px 14px;
-    background: rgba(99, 102, 241, 0.15);
-    color: var(--accent-color);
-    border: 1px solid rgba(99, 102, 241, 0.3);
-    border-radius: 20px;
-    font-size: 0.85rem;
-    font-weight: 700;
-    text-transform: uppercase;
-    margin-bottom: 16px;
+  /* founder */
+  .founder-card { padding: 34px 38px; display: flex; flex-direction: column; gap: 20px; position: relative; }
+  .founder-badge {
+    align-self: flex-start;
+    font-family: var(--font-mono); font-size: 0.68rem; font-weight: 700; letter-spacing: 0.16em;
+    color: var(--marker); background: var(--marker-soft); border: 1px solid var(--border-color);
+    padding: 4px 11px; border-radius: 6px;
   }
-
-  .about-hero h1 {
-    font-size: 2.5rem;
-    font-weight: 800;
-    margin: 0 0 16px 0;
-    line-height: 1.25;
-    background: linear-gradient(135deg, #ffffff 0%, #a5b4fc 100%);
-    -webkit-background-clip: text;
-    -webkit-text-fill-color: transparent;
+  .founder-card blockquote {
+    margin: 0; font-family: var(--font-display); font-size: clamp(1.1rem, 2.2vw, 1.4rem);
+    font-weight: 500; line-height: 1.55; letter-spacing: -0.01em;
   }
-
-  .hero-sub {
-    font-size: 1.1rem;
-    color: var(--text-secondary);
-    line-height: 1.6;
-    margin: 0;
+  .founder-by { display: flex; align-items: center; gap: 14px; border-top: 1px dashed var(--border-strong); padding-top: 18px; }
+  .founder-avatar {
+    display: inline-flex; align-items: center; justify-content: center; width: 48px; height: 48px; flex-shrink: 0;
+    border-radius: 12px; background: var(--grad-primary); color: #fff; font-family: var(--font-display);
+    font-weight: 700; font-size: 1.05rem; box-shadow: 0 8px 20px -6px var(--accent-glow);
   }
+  .founder-by b { display: block; font-size: 1rem; }
+  .founder-by em { display: block; font-style: normal; font-size: 0.85rem; color: var(--text-secondary); margin-top: 2px; }
 
-  .grid-section {
-    display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
-    gap: 24px;
+  /* cols */
+  .cols { display: grid; grid-template-columns: repeat(auto-fit, minmax(320px, 1fr)); gap: 22px; }
+  .col { padding: 32px; display: flex; flex-direction: column; gap: 12px; }
+  .col-label { font-family: var(--font-mono); font-size: 0.72rem; font-weight: 700; letter-spacing: 0.12em; text-transform: uppercase; color: var(--accent-color); }
+  .col h2 { font-size: 1.3rem; font-weight: 650; margin: 4px 0 4px; }
+  .col p { color: var(--text-secondary); line-height: 1.7; margin: 0; font-size: 0.96rem; }
+
+  /* pillars */
+  .pillar-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(230px, 1fr)); gap: 18px; }
+  .pillar { padding: 26px; display: flex; flex-direction: column; gap: 10px; }
+  .pillar-n { font-family: var(--font-mono); font-size: 1.4rem; font-weight: 700; color: var(--marker); }
+  .pillar h3 { font-size: 1.06rem; font-weight: 650; margin: 0; }
+  .pillar p { font-size: 0.9rem; color: var(--text-secondary); line-height: 1.6; margin: 0; }
+
+  /* corporate */
+  .corp-flow { display: flex; align-items: stretch; gap: 14px; flex-wrap: wrap; }
+  .corp-node { flex: 1 1 240px; padding: 22px; display: flex; flex-direction: column; gap: 5px; }
+  .corp-node.accent { border-color: var(--accent-border); background: linear-gradient(160deg, var(--panel-bg), var(--accent-soft)); }
+  .corp-tag { font-family: var(--font-mono); font-size: 0.64rem; font-weight: 700; letter-spacing: 0.14em; color: var(--text-secondary); }
+  .corp-node b { font-family: var(--font-display); font-size: 1.08rem; }
+  .corp-node em { font-style: normal; font-size: 0.82rem; color: var(--text-secondary); }
+  .corp-arrow { align-self: center; color: var(--marker); font-size: 1.4rem; font-weight: 700; }
+  .corp-creds { margin-top: 18px; display: flex; flex-wrap: wrap; gap: 14px 40px; padding: 22px 28px; }
+  .corp-creds > div { display: flex; flex-direction: column; gap: 3px; }
+  .corp-creds span { font-family: var(--font-mono); font-size: 0.66rem; letter-spacing: 0.12em; text-transform: uppercase; color: var(--text-secondary); }
+  .corp-creds b { font-family: var(--font-mono); font-size: 0.95rem; color: var(--text-primary); }
+
+  /* cta */
+  .a-cta-band {
+    display: flex; justify-content: space-between; align-items: center; gap: 26px; flex-wrap: wrap;
+    padding: 38px 42px; background-image: radial-gradient(circle at 90% 15%, var(--accent-soft), transparent 55%);
   }
+  .a-cta-band h2 { margin: 0 0 6px; font-size: clamp(1.4rem, 2.4vw, 1.9rem); }
+  .a-cta-band p { margin: 0; color: var(--text-secondary); }
+  .a-cta-actions { display: flex; gap: 12px; flex-wrap: wrap; }
 
-  .glass-card {
-    background: rgba(17, 25, 40, 0.75);
-    backdrop-filter: blur(16px);
-    border: 1px solid var(--border-color);
-    border-radius: 16px;
-    padding: 36px;
-  }
-
-  .card-icon {
-    font-size: 2.5rem;
-    margin-bottom: 16px;
-  }
-
-  .glass-card h2 {
-    font-size: 1.4rem;
-    font-weight: 700;
-    margin: 0 0 12px 0;
-  }
-
-  .glass-card p {
-    color: var(--text-secondary);
-    font-size: 0.98rem;
-    line-height: 1.6;
-    margin: 0;
-  }
-
-  .trust-section {
-    text-align: center;
-  }
-
-  .section-title {
-    font-size: 1.8rem;
-    font-weight: 800;
-    margin-bottom: 40px;
-  }
-
-  .trust-grid {
-    display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
-    gap: 24px;
-    text-align: left;
-  }
-
-  .trust-item {
-    background: var(--surface-1);
-    border: 1px solid var(--border-color);
-    border-radius: 12px;
-    padding: 28px;
-    display: flex;
-    flex-direction: column;
-    gap: 12px;
-  }
-
-  .trust-number {
-    font-size: 1.5rem;
-    font-weight: 800;
-    color: var(--accent-color);
-  }
-
-  .trust-item h3 {
-    font-size: 1.1rem;
-    font-weight: 700;
-    margin: 0;
-  }
-
-  .trust-item p {
-    font-size: 0.9rem;
-    color: var(--text-secondary);
-    line-height: 1.5;
-    margin: 0;
-  }
-
-  .cta-banner {
-    text-align: center;
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    gap: 16px;
-    background: linear-gradient(135deg, rgba(17, 25, 40, 0.9), rgba(99, 102, 241, 0.15));
-    border: 1px solid rgba(99, 102, 241, 0.3);
-  }
-
-  .cta-banner h2 {
-    margin: 0;
-    font-size: 1.8rem;
-  }
-
-  .cta-banner p {
-    margin: 0;
-    color: var(--text-secondary);
-  }
-
-  .cta-buttons {
-    display: flex;
-    gap: 16px;
-    margin-top: 8px;
-    flex-wrap: wrap;
-    justify-content: center;
-  }
-
-  .btn-primary {
-    display: inline-flex;
-    align-items: center;
-    padding: 12px 24px;
-    background-color: var(--accent-color);
-    color: var(--text-primary);
-    border-radius: 8px;
-    font-weight: 600;
-    text-decoration: none;
-    transition: background 0.2s ease;
-  }
-
-  .btn-secondary {
-    display: inline-flex;
-    align-items: center;
-    padding: 12px 24px;
-    background-color: transparent;
-    color: var(--text-primary);
-    border: 1px solid var(--border-color);
-    border-radius: 8px;
-    font-weight: 600;
-    text-decoration: none;
-    transition: background 0.2s ease;
+  @media (max-width: 620px) {
+    .corp-arrow { transform: rotate(90deg); align-self: center; }
+    .corp-flow { flex-direction: column; }
   }
 </style>

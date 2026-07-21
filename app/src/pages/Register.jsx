@@ -111,7 +111,7 @@ export default function Register() {
       <div className="glass-panel" style={{ width: '100%', maxWidth: '460px', padding: '40px', display: 'flex', flexDirection: 'column', gap: '20px' }}>
         <div style={{ textAlign: 'center' }}>
           <h2 style={{ margin: '0 0 8px 0', fontSize: '1.8rem', fontWeight: 800, color: 'var(--accent-color)' }}>Create Account</h2>
-          <p style={{ margin: 0, color: 'var(--text-secondary)', fontSize: '0.9rem' }}>Join Practest and start your exam preparation</p>
+          <p style={{ margin: 0, color: 'var(--text-secondary)', fontSize: '0.9rem' }}>Join e-Learning Practest and start your exam preparation</p>
         </div>
 
         {searchParams.get('error') === 'social_failed' && (

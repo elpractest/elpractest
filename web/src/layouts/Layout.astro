@@ -9,9 +9,10 @@ interface Props {
 }
 
 const {
-  title = 'Practest — Mock Test Series & LMS for Govt Exams',
-  description = 'Exam-pattern CBT mock tests for SSC, Banking, Railways, UPSC & State PCS with server-timed sections, deep analytics and structured video courses.'
+  title = 'e-Learning Practest — Mock Test Series & LMS for Govt Exams',
+  description = 'e-Learning Practest — exam-pattern CBT mock tests for SSC, Banking, Railways, UPSC & State PCS with server-timed sections, deep analytics and structured video courses. A Vinstitution brand.'
 } = Astro.props;
+const year = new Date().getFullYear();
 
 const spaUrl = import.meta.env.PUBLIC_SPA_URL || 'http://localhost:3000';
 const siteUrl = 'https://www.pactest.live';
@@ -83,11 +84,14 @@ const orgSchema = JSON.stringify({
 
       <header class="navbar-header">
         <div class="navbar-container">
-          <a href="/" class="brand-logo" aria-label="Practest home">
+          <a href="/" class="brand-logo" aria-label="e-Learning Practest home">
             <span class="logo-tile" aria-hidden="true">
               <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21.42 10.922a1 1 0 0 0-.019-1.838L12.83 5.18a2 2 0 0 0-1.66 0L2.6 9.08a1 1 0 0 0 0 1.832l8.57 3.908a2 2 0 0 0 1.66 0z"/><path d="M22 10v6"/><path d="M6 12.5V16a6 3 0 0 0 12 0v-3.5"/></svg>
             </span>
-            <span class="brand-name">PRACTEST</span>
+            <span class="brand-lockup">
+              <span class="brand-pre">e-Learning</span>
+              <span class="brand-name">Practest<sup class="brand-r">®</sup></span>
+            </span>
           </a>
 
           <nav class="navbar-links" aria-label="Main">
@@ -118,10 +122,15 @@ const orgSchema = JSON.stringify({
               <span class="logo-tile" aria-hidden="true">
                 <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21.42 10.922a1 1 0 0 0-.019-1.838L12.83 5.18a2 2 0 0 0-1.66 0L2.6 9.08a1 1 0 0 0 0 1.832l8.57 3.908a2 2 0 0 0 1.66 0z"/><path d="M22 10v6"/><path d="M6 12.5V16a6 3 0 0 0 12 0v-3.5"/></svg>
               </span>
-              <span class="brand-name">PRACTEST</span>
+              <span class="brand-lockup">
+              <span class="brand-pre">e-Learning</span>
+              <span class="brand-name">Practest<sup class="brand-r">®</sup></span>
+            </span>
             </a>
             <p class="footer-tag">
-              Exam-pattern CBT mocks, structured video courses and honest analytics — built for serious government-exam aspirants.
+              Exam-pattern CBT mocks, structured video courses and honest analytics —
+              the flagship exam-prep platform of <strong>Vinstitution</strong>, founded by
+              educator Mr. Virat Priyadarshan.
             </p>
             <div class="omr-strip" aria-hidden="true">
               <i></i><i class="filled"></i><i></i><i class="marker"></i><i></i>
@@ -147,11 +156,33 @@ const orgSchema = JSON.stringify({
               <a href="/about">About us</a>
               <a href="/contact">Contact</a>
             </div>
+            <div class="footer-col footer-office">
+              <h4>Registered Office</h4>
+              <address>
+                Vinstitution, 2nd Floor, Property No. 44,<br />
+                Regal Building, Connaught Place,<br />
+                New Delhi — 110090
+              </address>
+              <a href="tel:+919310959596">+91 93109 59596</a>
+            </div>
           </div>
         </div>
 
+        <div class="footer-corporate">
+          <p class="corp-parent">
+            <strong>e-Learning Practest<sup class="brand-r">®</sup></strong> is a brand of the
+            <strong>Vinstitution</strong> segment of
+            <strong>VPD Vastus Ventures Private Limited</strong>.
+          </p>
+          <p class="corp-creds">PAN: AAMCV2938B · GSTIN: 07AAMCV2938B1ZA · ISO 9001:2015 Certified</p>
+        </div>
+
         <div class="footer-bottom">
-          <p>© {new Date().getFullYear()} Practest. All rights reserved. Built for coaching institutes and their students.</p>
+          <p>
+            © {year} VPD Vastus Ventures Pvt. Ltd. All rights reserved. ·
+            Proudly powered by <strong class="pw">Vinstitution</strong> ·
+            Designed by <a href="https://vgraphics.in" target="_blank" rel="noopener">VGraphics.in</a>
+          </p>
         </div>
       </footer>
     </div>
@@ -234,12 +265,36 @@ const orgSchema = JSON.stringify({
     box-shadow: 0 6px 16px -6px var(--accent-glow);
   }
 
+  .brand-lockup {
+    display: inline-flex;
+    flex-direction: column;
+    gap: 1px;
+    line-height: 1.02;
+  }
+
+  .brand-pre {
+    font-family: var(--font-mono);
+    font-size: 0.58rem;
+    font-weight: 700;
+    letter-spacing: 0.16em;
+    text-transform: uppercase;
+    color: var(--marker);
+  }
+
   .brand-name {
     font-family: var(--font-display);
     font-weight: 700;
-    font-size: 1.15rem;
+    font-size: 1.12rem;
     letter-spacing: 0.03em;
     color: var(--text-primary);
+  }
+
+  .brand-r {
+    font-size: 0.5em;
+    font-weight: 600;
+    vertical-align: super;
+    color: var(--text-secondary);
+    margin-left: 1px;
   }
 
   .navbar-links { display: flex; gap: 28px; }
@@ -302,7 +357,7 @@ const orgSchema = JSON.stringify({
     line-height: 1.6;
   }
 
-  .footer-links-group { display: flex; gap: 64px; flex-wrap: wrap; }
+  .footer-links-group { display: flex; gap: 44px; flex-wrap: wrap; }
 
   .footer-col { display: flex; flex-direction: column; gap: 11px; }
 
@@ -323,15 +378,55 @@ const orgSchema = JSON.stringify({
   }
   .footer-col a:hover { color: var(--accent-color); }
 
-  .footer-bottom {
+  .footer-office address {
+    font-style: normal;
+    color: var(--text-secondary);
+    font-size: 0.86rem;
+    line-height: 1.65;
+  }
+  .footer-office a {
+    font-family: var(--font-mono);
+    font-size: 0.85rem;
+    color: var(--accent-color);
+    margin-top: 4px;
+  }
+
+  .footer-corporate {
     max-width: 1200px;
-    margin: 40px auto 0 auto;
+    margin: 44px auto 0 auto;
     padding: 22px 24px 0 24px;
     border-top: 1px dashed var(--border-strong);
     text-align: center;
-    color: var(--text-secondary);
-    font-size: 0.83rem;
+    display: flex;
+    flex-direction: column;
+    gap: 7px;
   }
+  .corp-parent {
+    margin: 0;
+    color: var(--text-secondary);
+    font-size: 0.88rem;
+    line-height: 1.6;
+  }
+  .corp-parent strong { color: var(--text-primary); font-weight: 650; }
+  .corp-parent .brand-r { font-size: 0.6em; }
+  .corp-creds {
+    margin: 0;
+    font-family: var(--font-mono);
+    font-size: 0.76rem;
+    letter-spacing: 0.03em;
+    color: var(--marker);
+  }
+
+  .footer-bottom {
+    max-width: 1200px;
+    margin: 18px auto 0 auto;
+    padding: 18px 24px 0 24px;
+    text-align: center;
+    color: var(--text-secondary);
+    font-size: 0.82rem;
+  }
+  .footer-bottom .pw { color: var(--text-primary); font-weight: 650; }
+  .footer-bottom a { color: var(--accent-color); font-weight: 600; }
 
   @media (max-width: 760px) {
     .navbar-links { display: none; }

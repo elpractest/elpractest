@@ -99,7 +99,12 @@ function AppContent({ user, setUser, loading }) {
               <span style={{ display: 'inline-flex', alignItems: 'center', justifyContent: 'center', width: '34px', height: '34px', borderRadius: '10px', background: 'var(--grad-primary)', color: '#ffffff', boxShadow: '0 6px 16px -6px var(--accent-glow)' }}>
                 <Icon name="graduation-cap" size={19} />
               </span>
-              <span className="text-gradient" style={{ fontSize: '1.3rem', fontWeight: 700, letterSpacing: '0.02em', fontFamily: 'var(--font-display)' }}>PRACTEST</span>
+              <span style={{ display: 'inline-flex', flexDirection: 'column', gap: '1px', lineHeight: 1.02 }}>
+                <span style={{ fontFamily: 'var(--font-mono)', fontSize: '0.56rem', fontWeight: 700, letterSpacing: '0.16em', textTransform: 'uppercase', color: 'var(--warning)' }}>e-Learning</span>
+                <span className="text-gradient" style={{ fontSize: '1.18rem', fontWeight: 700, letterSpacing: '0.02em', fontFamily: 'var(--font-display)' }}>
+                  Practest<sup style={{ fontSize: '0.5em', verticalAlign: 'super', WebkitTextFillColor: 'var(--text-secondary)', marginLeft: '1px' }}>®</sup>
+                </span>
+              </span>
             </Link>
             <span className="chip">STUDENT</span>
           </div>

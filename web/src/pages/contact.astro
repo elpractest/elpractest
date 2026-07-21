@@ -4,11 +4,15 @@ import Layout from '../layouts/Layout.astro';
 const apiUrl = import.meta.env.PUBLIC_API_URL || 'http://localhost:8000';
 ---
 
-<Layout title="Contact Us - Practest Support">
+<Layout
+  title="Contact — e-Learning Practest Support"
+  description="Contact e-Learning Practest, a Vinstitution brand. Registered office in Connaught Place, New Delhi. Questions about courses, mock schedules or batch activation — reach our support team."
+>
   <div class="contact-page-container">
     <div class="contact-header">
-      <h1>Get in Touch</h1>
-      <p>Have questions about courses, mock test schedules, or subscription activation? Contact our support team.</p>
+      <span class="section-label"><span class="idx">✳</span> Contact us</span>
+      <h1>Get in touch</h1>
+      <p>Questions about courses, mock-test schedules or batch activation? Reach the <strong>e-Learning Practest<sup class="r">®</sup></strong> support team — we're happy to help.</p>
     </div>
 
     <div class="contact-content-grid">
@@ -22,7 +26,7 @@ const apiUrl = import.meta.env.PUBLIC_API_URL || 'http://localhost:8000';
             <span class="info-icon">📧</span>
             <div>
               <span class="info-label">Email Support</span>
-              <span class="info-value" id="contact-email">support@practest.live</span>
+              <span class="info-value" id="contact-email">support@pactest.live</span>
             </div>
           </div>
 
@@ -30,17 +34,27 @@ const apiUrl = import.meta.env.PUBLIC_API_URL || 'http://localhost:8000';
             <span class="info-icon">📞</span>
             <div>
               <span class="info-label">Phone Support</span>
-              <span class="info-value" id="contact-phone">+91 98765 43210</span>
+              <a class="info-value" id="contact-phone" href="tel:+919310959596">+91 93109 59596</a>
             </div>
           </div>
 
           <div class="info-item">
             <span class="info-icon">🏢</span>
             <div>
-              <span class="info-label">Office Address</span>
-              <span class="info-value" id="contact-address">Practest HQ, New Delhi, India</span>
+              <span class="info-label">Registered Office</span>
+              <span class="info-value" id="contact-address">
+                Vinstitution, 2nd Floor, Property No. 44,<br />
+                Regal Building, Connaught Place,<br />
+                New Delhi — 110090
+              </span>
             </div>
           </div>
+        </div>
+
+        <div class="info-legal">
+          <p><strong>e-Learning Practest<sup class="r">®</sup></strong> — a brand of the Vinstitution segment of
+          VPD Vastus Ventures Private Limited.</p>
+          <p class="creds">PAN: AAMCV2938B · GSTIN: 07AAMCV2938B1ZA · ISO 9001:2015 Certified</p>
         </div>
       </div>
 
@@ -248,11 +262,29 @@ const apiUrl = import.meta.env.PUBLIC_API_URL || 'http://localhost:8000';
   }
 
   .info-value {
+    display: block;
     color: var(--text-primary);
     font-size: 0.95rem;
     font-weight: 500;
-    word-break: break-all;
+    line-height: 1.55;
   }
+  a.info-value { font-family: var(--font-mono); color: var(--accent-color); }
+
+  .info-legal {
+    border-top: 1px dashed var(--border-strong);
+    padding-top: 18px;
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+  }
+  .info-legal p { margin: 0; font-size: 0.82rem; color: var(--text-secondary); line-height: 1.6; }
+  .info-legal strong { color: var(--text-primary); font-weight: 650; }
+  .info-legal .creds { font-family: var(--font-mono); font-size: 0.73rem; color: var(--marker); }
+  .r { font-size: 0.55em; vertical-align: super; color: var(--text-secondary); }
+
+  .contact-header .section-label { margin-bottom: 14px; }
+  .contact-header h1 { margin-top: 6px; }
+  .contact-header strong { color: var(--text-primary); }
 
   .form-panel {
     padding: 35px;
