@@ -4,12 +4,26 @@ import CourseCarousel from '../components/CourseCarousel.astro';
 
 const spaUrl = import.meta.env.PUBLIC_SPA_URL || 'http://localhost:3000';
 
-const examTracks = [
-  { code: 'SSC-CGL', title: 'SSC CGL & CHSL', subjects: 'Quant · Reasoning · English · GA', note: 'Tier I & Tier II patterns' },
-  { code: 'BANK-PO', title: 'Banking — SBI · IBPS', subjects: 'Quant · Reasoning · English', note: 'Prelims & Mains, sectional locks' },
-  { code: 'RRB-NTPC', title: 'Railways RRB', subjects: 'Maths · GI & Reasoning · GA', note: 'NTPC · Group D CBT patterns' },
-  { code: 'UPSC-CSE', title: 'UPSC Prelims', subjects: 'GS Paper I · CSAT', note: 'Negative-marking accurate' },
-  { code: 'ST-PCS', title: 'State PCS', subjects: 'GS · CSAT · State GK', note: 'State-wise patterns' },
+const popularExams = [
+  { name: 'SSC CGL', type: 'SSC', count: '45 Mocks', icon: 'ssc', badge: 'Popular', color: '#e63946' },
+  { name: 'SBI PO', type: 'Banking', count: '38 Mocks', icon: 'sbi', badge: 'Trending', color: '#2a9d8f' },
+  { name: 'IBPS PO', type: 'Banking', count: '40 Mocks', icon: 'ibps', badge: 'Active', color: '#3a86ff' },
+  { name: 'RRB NTPC', type: 'Railways', count: '52 Mocks', icon: 'rrb', badge: 'Popular', color: '#f4a261' },
+  { name: 'UPSC Prelims', type: 'Civil Services', count: '28 Mocks', icon: 'upsc', badge: 'Flagship', color: '#e76f51' },
+  { name: 'LIC AAO', type: 'Insurance', count: '24 Mocks', icon: 'lic', badge: 'New', color: '#8338ec' },
+  { name: 'RBI Assistant', type: 'Banking', count: '30 Mocks', icon: 'rbi', badge: 'Active', color: '#2a9d8f' },
+  { name: 'SSC CHSL', type: 'SSC', count: '35 Mocks', icon: 'ssc', badge: 'Popular', color: '#e63946' },
+  { name: 'IBPS RRB Clerk', type: 'Banking', count: '36 Mocks', icon: 'ibps', badge: 'Active', color: '#3a86ff' },
+  { name: 'State PCS', type: 'State Govt', count: '65 Mocks', icon: 'state', badge: 'State Special', color: '#d4a373' },
+];
+
+const examCategoriesList = [
+  { id: 'ssc', title: 'SSC Exams', desc: 'SSC CGL, CHSL, CPO, MTS, Selection Post', count: '120+ Mocks', icon: 'ssc', tag: '31 Exams' },
+  { id: 'banking', title: 'Banking & Insurance Exams', desc: 'SBI PO, IBPS PO/Clerk, LIC AAO, RBI Assistant', count: '185+ Mocks', icon: 'sbi', tag: '80 Exams' },
+  { id: 'railways', title: 'Railways Exams', desc: 'RRB NTPC, Group D, ALP, Technician, JE', count: '95+ Mocks', icon: 'rrb', tag: '34 Exams' },
+  { id: 'civil', title: 'Civil Services & UPSC Exams', desc: 'UPSC IAS Prelims, CSAT, State PCS (UP, BPSC, MP)', count: '75+ Mocks', icon: 'upsc', tag: '28 Exams' },
+  { id: 'defense', title: 'Defence & Police Exams', desc: 'CDS, NDA, AFCAT, State Police SI & Constable', count: '60+ Mocks', icon: 'defense', tag: '75 Exams' },
+  { id: 'teaching', title: 'Teaching Exams', desc: 'CTET, STET, UPTET, KVS, NVS, NET GS', count: '50+ Mocks', icon: 'teaching', tag: '170 Exams' },
 ];
 
 const faqs = [
@@ -101,22 +115,103 @@ const faqSchema = JSON.stringify({
   </section>
 
 
-  <!-- ============ EXAM TRACKS ============ -->
+  <!-- ============ EXAM TRACKS & CATEGORIES (MOBILE-FIRST DESIGNS) ============ -->
   <section class="tracks reveal">
     <div class="wrap">
-      <span class="section-label"><span class="idx">01</span> Exam categories</span>
-      <h2 class="sec-title">Pick your battlefield.</h2>
-      <div class="tracks-grid">
-        {examTracks.map((t) => (
-          <a href="/courses" class="ticket glass-panel glass-panel-hover">
-            <span class="ticket-stub">ADMIT</span>
-            <span class="ticket-body">
-              <span class="ticket-code">{t.code}</span>
-              <span class="ticket-title">{t.title}</span>
-              <span class="ticket-subjects">{t.subjects}</span>
-              <span class="ticket-note">{t.note}</span>
-              <span class="ticket-cta">View mock series →</span>
-            </span>
+      <span class="section-label"><span class="idx">01</span> Exam Target Boards</span>
+      <h2 class="sec-title">Upcoming &amp; Popular Exam Series ⚡</h2>
+      
+      <!-- Popular Exams Touch Slider Grid -->
+      <div class="popular-exams-scroll">
+        {popularExams.map((e) => (
+          <a href="/courses" class="exam-micro-card glass-panel glass-panel-hover">
+            <div class="exam-icon-badge" style={`background: ${e.color}15; border-color: ${e.color}40;`}>
+              {e.icon === 'ssc' && (
+                <svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke={e.color} stroke-width="2"><path d="M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5"/></svg>
+              )}
+              {e.icon === 'sbi' && (
+                <svg viewBox="0 0 24 24" width="22" height="22" fill="#2a9d8f"><circle cx="12" cy="12" r="10"/><rect x="11" y="12" width="2" height="7" fill="#fff"/><circle cx="12" cy="10" r="2" fill="#fff"/></svg>
+              )}
+              {e.icon === 'ibps' && (
+                <svg viewBox="0 0 24 24" width="22" height="22" fill="#3a86ff"><rect x="3" y="3" width="18" height="18" rx="4"/><path d="M7 17V7h4a3 3 0 0 1 0 6H7m6 4l4-4" stroke="#fff" stroke-width="2"/></svg>
+              )}
+              {e.icon === 'rrb' && (
+                <svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke={e.color} stroke-width="2"><rect x="4" y="3" width="16" height="14" rx="3"/><path d="M4 11h16M8 17l-3 4M16 17l3 4M9 7h6"/></svg>
+              )}
+              {e.icon === 'upsc' && (
+                <svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke={e.color} stroke-width="2"><path d="M12 2l3 6 7 1-5 5 1 7-6-3-6 3 1-7-5-5 7-1z"/></svg>
+              )}
+              {e.icon === 'lic' && (
+                <svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke={e.color} stroke-width="2"><path d="M12 21a9 9 0 1 0 0-18 9 9 0 0 0 0 18zM12 8v4l3 3"/></svg>
+              )}
+              {e.icon === 'rbi' && (
+                <svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke={e.color} stroke-width="2"><circle cx="12" cy="12" r="9"/><path d="M12 7v10M9 10h6"/></svg>
+              )}
+              {e.icon === 'state' && (
+                <svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke={e.color} stroke-width="2"><path d="M3 21h18M5 21V7l7-4 7 4v14M9 10h2M13 10h2M9 14h2M13 14h2"/></svg>
+              )}
+            </div>
+            <div class="exam-micro-info">
+              <span class="exam-micro-name">{e.name}</span>
+              <span class="exam-micro-count">{e.count}</span>
+            </div>
+            <span class="exam-tag-pill" style={`color: ${e.color}; background: ${e.color}15;`}>{e.badge}</span>
+          </a>
+        ))}
+      </div>
+
+      <!-- Explore All Exam Categories List -->
+      <div class="category-explore-header">
+        <h3>690+ Exam Mocks &amp; Video Series</h3>
+        <p>Select your target board for exam-pattern timed CBT mocks, analytics and video lessons.</p>
+      </div>
+
+      <div class="category-list-rows">
+        {examCategoriesList.map((cat) => (
+          <a href="/courses" class="category-row-card glass-panel glass-panel-hover">
+            <div class="cat-row-icon">
+              {cat.icon === 'ssc' && (
+                <div class="cat-icon-box ssc-bg">
+                  <svg viewBox="0 0 24 24" width="26" height="26" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5"/></svg>
+                </div>
+              )}
+              {cat.icon === 'sbi' && (
+                <div class="cat-icon-box sbi-bg">
+                  <svg viewBox="0 0 24 24" width="26" height="26" fill="currentColor"><circle cx="12" cy="12" r="10"/><rect x="11" y="12" width="2" height="7" fill="#fff"/><circle cx="12" cy="10" r="2" fill="#fff"/></svg>
+                </div>
+              )}
+              {cat.icon === 'rrb' && (
+                <div class="cat-icon-box rrb-bg">
+                  <svg viewBox="0 0 24 24" width="26" height="26" fill="none" stroke="currentColor" stroke-width="2"><rect x="4" y="3" width="16" height="14" rx="3"/><path d="M4 11h16M8 17l-3 4M16 17l3 4M9 7h6"/></svg>
+                </div>
+              )}
+              {cat.icon === 'upsc' && (
+                <div class="cat-icon-box upsc-bg">
+                  <svg viewBox="0 0 24 24" width="26" height="26" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2l3 6 7 1-5 5 1 7-6-3-6 3 1-7-5-5 7-1z"/></svg>
+                </div>
+              )}
+              {cat.icon === 'defense' && (
+                <div class="cat-icon-box defense-bg">
+                  <svg viewBox="0 0 24 24" width="26" height="26" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
+                </div>
+              )}
+              {cat.icon === 'teaching' && (
+                <div class="cat-icon-box teaching-bg">
+                  <svg viewBox="0 0 24 24" width="26" height="26" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 10v6M2 10l10-5 10 5-10 5z"/><path d="M6 12v5c3 3 9 3 12 0v-5"/></svg>
+                </div>
+              )}
+            </div>
+            <div class="cat-row-info">
+              <div class="cat-row-title-wrap">
+                <h4>{cat.title}</h4>
+                <span class="cat-exam-count">{cat.tag}</span>
+              </div>
+              <p>{cat.desc}</p>
+            </div>
+            <div class="cat-row-action">
+              <span class="cat-mock-badge">{cat.count}</span>
+              <span class="chevron-arrow">›</span>
+            </div>
           </a>
         ))}
       </div>
@@ -875,13 +970,199 @@ const faqSchema = JSON.stringify({
   .badge-1 { top: 12px; left: 12px; }
   .badge-2 { bottom: 12px; right: 12px; }
 
+  /* ---------- Popular Exams & Exam Categories (Mobile-First Polish) ---------- */
+  .popular-exams-scroll {
+    display: flex;
+    gap: 14px;
+    overflow-x: auto;
+    padding: 8px 4px 18px;
+    scroll-snap-type: x mandatory;
+    -webkit-overflow-scrolling: touch;
+    margin-bottom: 40px;
+  }
+  .popular-exams-scroll::-webkit-scrollbar {
+    height: 4px;
+  }
+  .popular-exams-scroll::-webkit-scrollbar-thumb {
+    background: var(--accent);
+    border-radius: 99px;
+  }
+  .exam-micro-card {
+    flex: 0 0 200px;
+    scroll-snap-align: start;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 12px 14px;
+    border-radius: 1rem;
+    text-decoration: none;
+    color: inherit;
+    border: 1px solid var(--border-color);
+    transition: transform 0.2s var(--ease-out), box-shadow 0.2s var(--ease-out);
+  }
+  @media (min-width: 900px) {
+    .popular-exams-scroll {
+      display: grid;
+      grid-template-columns: repeat(5, 1fr);
+      overflow-x: visible;
+    }
+    .exam-micro-card {
+      flex: none;
+    }
+  }
+  .exam-icon-badge {
+    width: 38px;
+    height: 38px;
+    border-radius: 10px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+    border: 1px solid;
+  }
+  .exam-micro-info {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+    flex-grow: 1;
+    min-width: 0;
+  }
+  .exam-micro-name {
+    font-size: 0.9rem;
+    font-weight: 750;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    color: var(--text-primary);
+  }
+  .exam-micro-count {
+    font-size: 0.72rem;
+    color: var(--text-secondary);
+  }
+  .exam-tag-pill {
+    font-size: 0.62rem;
+    font-weight: 700;
+    padding: 2px 7px;
+    border-radius: 99px;
+    white-space: nowrap;
+  }
+
+  /* Category List Rows */
+  .category-explore-header {
+    margin-top: 20px;
+    margin-bottom: 20px;
+  }
+  .category-explore-header h3 {
+    font-size: 1.4rem;
+    font-weight: 750;
+    margin: 0 0 6px;
+  }
+  .category-explore-header p {
+    color: var(--text-secondary);
+    font-size: 0.95rem;
+    margin: 0;
+  }
+  .category-list-rows {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+  }
+  .category-row-card {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    padding: 16px 20px;
+    border-radius: 1.25rem;
+    text-decoration: none;
+    color: inherit;
+    border: 1px solid var(--border-color);
+    transition: transform 0.2s var(--ease-out), border-color 0.2s var(--ease-out);
+  }
+  .cat-icon-box {
+    width: 48px;
+    height: 48px;
+    border-radius: 14px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+  }
+  .ssc-bg { background: rgba(230, 57, 70, 0.15); color: #e63946; }
+  .sbi-bg { background: rgba(42, 157, 143, 0.15); color: #2a9d8f; }
+  .rrb-bg { background: rgba(244, 162, 97, 0.15); color: #f4a261; }
+  .upsc-bg { background: rgba(231, 111, 81, 0.15); color: #e76f51; }
+  .defense-bg { background: rgba(58, 134, 255, 0.15); color: #3a86ff; }
+  .teaching-bg { background: rgba(131, 56, 236, 0.15); color: #8338ec; }
+
+  .cat-row-info {
+    flex-grow: 1;
+    min-width: 0;
+  }
+  .cat-row-title-wrap {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin-bottom: 4px;
+  }
+  .cat-row-title-wrap h4 {
+    font-size: 1.05rem;
+    font-weight: 750;
+    margin: 0;
+    color: var(--text-primary);
+  }
+  .cat-exam-count {
+    font-size: 0.72rem;
+    font-weight: 650;
+    color: var(--accent);
+    background: rgba(99, 102, 241, 0.12);
+    padding: 2px 8px;
+    border-radius: 99px;
+  }
+  .cat-row-info p {
+    margin: 0;
+    font-size: 0.86rem;
+    color: var(--text-secondary);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+  .cat-row-action {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    flex-shrink: 0;
+  }
+  .cat-mock-badge {
+    font-size: 0.8rem;
+    font-weight: 700;
+    font-family: var(--font-mono);
+    color: var(--text-primary);
+    background: var(--surface-2);
+    padding: 6px 12px;
+    border-radius: 8px;
+    border: 1px solid var(--border-color);
+  }
+  .chevron-arrow {
+    font-size: 1.5rem;
+    color: var(--text-tertiary);
+    line-height: 1;
+    transition: transform 0.2s var(--ease-out), color 0.2s var(--ease-out);
+  }
+  .category-row-card:hover .chevron-arrow {
+    transform: translateX(4px);
+    color: var(--accent);
+  }
+
   /* ---------- responsive ---------- */
   @media (max-width: 920px) {
-    .hero-grid { grid-template-columns: 1fr; gap: 40px; }
-    .hero { padding-top: 56px; }
+    .hero-grid { grid-template-columns: 1fr; gap: 32px; }
+    .hero { padding-top: 36px; }
     .deep-row { grid-template-columns: 1fr; gap: 24px; }
     .deep-row.rev .deep-copy { order: 1; }
     .deep-row.rev .deep-visual { order: 2; }
-    .rank-card { right: 0; }
+    .hero-rank-overlay { right: 0; top: 12px; }
+    .hero-sim-overlay { left: 0; bottom: 12px; }
+    .cat-mock-badge { display: none; }
+    .category-row-card { padding: 14px 16px; }
   }
 </style>
