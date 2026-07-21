@@ -5,22 +5,22 @@ import CourseCarousel from '../components/CourseCarousel.astro';
 const spaUrl = import.meta.env.PUBLIC_SPA_URL || 'http://localhost:3000';
 
 const popularExams = [
-  { name: 'SSC CGL', type: 'SSC', count: '45 Mocks', icon: 'ssc', badge: 'Popular', color: '#e63946' },
-  { name: 'SBI PO', type: 'Banking', count: '38 Mocks', icon: 'sbi', badge: 'Trending', color: '#2a9d8f' },
-  { name: 'IBPS PO', type: 'Banking', count: '40 Mocks', icon: 'ibps', badge: 'Active', color: '#3a86ff' },
-  { name: 'RRB NTPC', type: 'Railways', count: '52 Mocks', icon: 'rrb', badge: 'Popular', color: '#f4a261' },
-  { name: 'UPSC Prelims', type: 'Civil Services', count: '28 Mocks', icon: 'upsc', badge: 'Flagship', color: '#e76f51' },
-  { name: 'LIC AAO', type: 'Insurance', count: '24 Mocks', icon: 'lic', badge: 'New', color: '#8338ec' },
-  { name: 'RBI Assistant', type: 'Banking', count: '30 Mocks', icon: 'rbi', badge: 'Active', color: '#2a9d8f' },
-  { name: 'SSC CHSL', type: 'SSC', count: '35 Mocks', icon: 'ssc', badge: 'Popular', color: '#e63946' },
-  { name: 'IBPS RRB Clerk', type: 'Banking', count: '36 Mocks', icon: 'ibps', badge: 'Active', color: '#3a86ff' },
-  { name: 'State PCS', type: 'State Govt', count: '65 Mocks', icon: 'state', badge: 'State Special', color: '#d4a373' },
+  { name: 'SSC CGL', type: 'SSC', count: '45 Mocks', logo: '/images/logos/ssc.png', badge: 'Popular', color: '#e63946' },
+  { name: 'SBI PO', type: 'Banking', count: '38 Mocks', logo: '/images/logos/sbi.png', badge: 'Trending', color: '#0072bc' },
+  { name: 'IBPS PO', type: 'Banking', count: '40 Mocks', logo: '/images/logos/ibps.png', badge: 'Active', color: '#1565c0' },
+  { name: 'RRB NTPC', type: 'Railways', count: '52 Mocks', logo: '/images/logos/rrb.png', badge: 'Popular', color: '#d32f2f' },
+  { name: 'UPSC Prelims', type: 'Civil Services', count: '28 Mocks', icon: 'upsc', badge: 'Flagship', color: '#b71c1c' },
+  { name: 'LIC AAO', type: 'Insurance', count: '24 Mocks', icon: 'lic', badge: 'New', color: '#fbc02d' },
+  { name: 'RBI Assistant', type: 'Banking', count: '30 Mocks', icon: 'rbi', badge: 'Active', color: '#1b5e20' },
+  { name: 'SSC CHSL', type: 'SSC', count: '35 Mocks', logo: '/images/logos/ssc.png', badge: 'Popular', color: '#e63946' },
+  { name: 'IBPS RRB Clerk', type: 'Banking', count: '36 Mocks', logo: '/images/logos/ibps.png', badge: 'Active', color: '#1565c0' },
+  { name: 'State PCS', type: 'State Govt', count: '65 Mocks', icon: 'state', badge: 'State Special', color: '#8d6e63' },
 ];
 
 const examCategoriesList = [
-  { id: 'ssc', title: 'SSC Exams', desc: 'SSC CGL, CHSL, CPO, MTS, Selection Post', count: '120+ Mocks', icon: 'ssc', tag: '31 Exams' },
-  { id: 'banking', title: 'Banking & Insurance Exams', desc: 'SBI PO, IBPS PO/Clerk, LIC AAO, RBI Assistant', count: '185+ Mocks', icon: 'sbi', tag: '80 Exams' },
-  { id: 'railways', title: 'Railways Exams', desc: 'RRB NTPC, Group D, ALP, Technician, JE', count: '95+ Mocks', icon: 'rrb', tag: '34 Exams' },
+  { id: 'ssc', title: 'SSC Exams', desc: 'SSC CGL, CHSL, CPO, MTS, Selection Post', count: '120+ Mocks', logo: '/images/logos/ssc.png', icon: 'ssc', tag: '31 Exams' },
+  { id: 'banking', title: 'Banking & Insurance Exams', desc: 'SBI PO, IBPS PO/Clerk, LIC AAO, RBI Assistant', count: '185+ Mocks', logo: '/images/logos/sbi.png', icon: 'sbi', tag: '80 Exams' },
+  { id: 'railways', title: 'Railways Exams', desc: 'RRB NTPC, Group D, ALP, Technician, JE', count: '95+ Mocks', logo: '/images/logos/rrb.png', icon: 'rrb', tag: '34 Exams' },
   { id: 'civil', title: 'Civil Services & UPSC Exams', desc: 'UPSC IAS Prelims, CSAT, State PCS (UP, BPSC, MP)', count: '75+ Mocks', icon: 'upsc', tag: '28 Exams' },
   { id: 'defense', title: 'Defence & Police Exams', desc: 'CDS, NDA, AFCAT, State Police SI & Constable', count: '60+ Mocks', icon: 'defense', tag: '75 Exams' },
   { id: 'teaching', title: 'Teaching Exams', desc: 'CTET, STET, UPTET, KVS, NVS, NET GS', count: '50+ Mocks', icon: 'teaching', tag: '170 Exams' },
@@ -126,29 +126,23 @@ const faqSchema = JSON.stringify({
         {popularExams.map((e) => (
           <a href="/courses" class="exam-micro-card glass-panel glass-panel-hover">
             <div class="exam-icon-badge" style={`background: ${e.color}15; border-color: ${e.color}40;`}>
-              {e.icon === 'ssc' && (
-                <svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke={e.color} stroke-width="2"><path d="M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5"/></svg>
-              )}
-              {e.icon === 'sbi' && (
-                <svg viewBox="0 0 24 24" width="22" height="22" fill="#2a9d8f"><circle cx="12" cy="12" r="10"/><rect x="11" y="12" width="2" height="7" fill="#fff"/><circle cx="12" cy="10" r="2" fill="#fff"/></svg>
-              )}
-              {e.icon === 'ibps' && (
-                <svg viewBox="0 0 24 24" width="22" height="22" fill="#3a86ff"><rect x="3" y="3" width="18" height="18" rx="4"/><path d="M7 17V7h4a3 3 0 0 1 0 6H7m6 4l4-4" stroke="#fff" stroke-width="2"/></svg>
-              )}
-              {e.icon === 'rrb' && (
-                <svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke={e.color} stroke-width="2"><rect x="4" y="3" width="16" height="14" rx="3"/><path d="M4 11h16M8 17l-3 4M16 17l3 4M9 7h6"/></svg>
-              )}
-              {e.icon === 'upsc' && (
-                <svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke={e.color} stroke-width="2"><path d="M12 2l3 6 7 1-5 5 1 7-6-3-6 3 1-7-5-5 7-1z"/></svg>
-              )}
-              {e.icon === 'lic' && (
-                <svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke={e.color} stroke-width="2"><path d="M12 21a9 9 0 1 0 0-18 9 9 0 0 0 0 18zM12 8v4l3 3"/></svg>
-              )}
-              {e.icon === 'rbi' && (
-                <svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke={e.color} stroke-width="2"><circle cx="12" cy="12" r="9"/><path d="M12 7v10M9 10h6"/></svg>
-              )}
-              {e.icon === 'state' && (
-                <svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke={e.color} stroke-width="2"><path d="M3 21h18M5 21V7l7-4 7 4v14M9 10h2M13 10h2M9 14h2M13 14h2"/></svg>
+              {e.logo ? (
+                <img src={e.logo} alt={e.name} class="exam-real-logo" />
+              ) : (
+                <div class="logo-fallback-badge">
+                  {e.icon === 'upsc' && (
+                    <svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke={e.color} stroke-width="2"><path d="M12 2l3 6 7 1-5 5 1 7-6-3-6 3 1-7-5-5 7-1z"/></svg>
+                  )}
+                  {e.icon === 'lic' && (
+                    <svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke={e.color} stroke-width="2"><path d="M12 21a9 9 0 1 0 0-18 9 9 0 0 0 0 18zM12 8v4l3 3"/></svg>
+                  )}
+                  {e.icon === 'rbi' && (
+                    <svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke={e.color} stroke-width="2"><circle cx="12" cy="12" r="9"/><path d="M12 7v10M9 10h6"/></svg>
+                  )}
+                  {e.icon === 'state' && (
+                    <svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke={e.color} stroke-width="2"><path d="M3 21h18M5 21V7l7-4 7 4v14M9 10h2M13 10h2M9 14h2M13 14h2"/></svg>
+                  )}
+                </div>
               )}
             </div>
             <div class="exam-micro-info">
@@ -170,34 +164,27 @@ const faqSchema = JSON.stringify({
         {examCategoriesList.map((cat) => (
           <a href="/courses" class="category-row-card glass-panel glass-panel-hover">
             <div class="cat-row-icon">
-              {cat.icon === 'ssc' && (
-                <div class="cat-icon-box ssc-bg">
-                  <svg viewBox="0 0 24 24" width="26" height="26" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5"/></svg>
+              {cat.logo ? (
+                <div class="cat-icon-box real-logo-box">
+                  <img src={cat.logo} alt={cat.title} class="cat-real-logo" />
                 </div>
-              )}
-              {cat.icon === 'sbi' && (
-                <div class="cat-icon-box sbi-bg">
-                  <svg viewBox="0 0 24 24" width="26" height="26" fill="currentColor"><circle cx="12" cy="12" r="10"/><rect x="11" y="12" width="2" height="7" fill="#fff"/><circle cx="12" cy="10" r="2" fill="#fff"/></svg>
-                </div>
-              )}
-              {cat.icon === 'rrb' && (
-                <div class="cat-icon-box rrb-bg">
-                  <svg viewBox="0 0 24 24" width="26" height="26" fill="none" stroke="currentColor" stroke-width="2"><rect x="4" y="3" width="16" height="14" rx="3"/><path d="M4 11h16M8 17l-3 4M16 17l3 4M9 7h6"/></svg>
-                </div>
-              )}
-              {cat.icon === 'upsc' && (
-                <div class="cat-icon-box upsc-bg">
-                  <svg viewBox="0 0 24 24" width="26" height="26" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2l3 6 7 1-5 5 1 7-6-3-6 3 1-7-5-5 7-1z"/></svg>
-                </div>
-              )}
-              {cat.icon === 'defense' && (
-                <div class="cat-icon-box defense-bg">
-                  <svg viewBox="0 0 24 24" width="26" height="26" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
-                </div>
-              )}
-              {cat.icon === 'teaching' && (
-                <div class="cat-icon-box teaching-bg">
-                  <svg viewBox="0 0 24 24" width="26" height="26" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 10v6M2 10l10-5 10 5-10 5z"/><path d="M6 12v5c3 3 9 3 12 0v-5"/></svg>
+              ) : (
+                <div class="cat-icon-box fallback-bg">
+                  {cat.icon === 'upsc' && (
+                    <div class="cat-icon-box upsc-bg">
+                      <svg viewBox="0 0 24 24" width="26" height="26" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2l3 6 7 1-5 5 1 7-6-3-6 3 1-7-5-5 7-1z"/></svg>
+                    </div>
+                  )}
+                  {cat.icon === 'defense' && (
+                    <div class="cat-icon-box defense-bg">
+                      <svg viewBox="0 0 24 24" width="26" height="26" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
+                    </div>
+                  )}
+                  {cat.icon === 'teaching' && (
+                    <div class="cat-icon-box teaching-bg">
+                      <svg viewBox="0 0 24 24" width="26" height="26" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 10v6M2 10l10-5 10 5-10 5z"/><path d="M6 12v5c3 3 9 3 12 0v-5"/></svg>
+                    </div>
+                  )}
                 </div>
               )}
             </div>
@@ -1093,6 +1080,24 @@ const faqSchema = JSON.stringify({
   .upsc-bg { background: rgba(231, 111, 81, 0.15); color: #e76f51; }
   .defense-bg { background: rgba(58, 134, 255, 0.15); color: #3a86ff; }
   .teaching-bg { background: rgba(131, 56, 236, 0.15); color: #8338ec; }
+
+  .exam-real-logo {
+    width: 26px;
+    height: 26px;
+    object-fit: contain;
+    border-radius: 4px;
+  }
+  .real-logo-box {
+    background: #ffffff;
+    border: 1px solid var(--border-color);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
+    padding: 6px;
+  }
+  .cat-real-logo {
+    width: 32px;
+    height: 32px;
+    object-fit: contain;
+  }
 
   .cat-row-info {
     flex-grow: 1;
