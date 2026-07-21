@@ -186,6 +186,24 @@ const orgSchema = JSON.stringify({
       </footer>
     </div>
 
+    <!-- Floating contact actions (real number: +91 93109 59596) -->
+    <div class="fab-stack" aria-label="Quick contact">
+      <a
+        class="fab fab-wa"
+        href="https://wa.me/919310959596?text=Hi%21%20I%27d%20like%20to%20know%20more%20about%20e-Learning%20Practest%20courses."
+        target="_blank"
+        rel="noopener"
+        aria-label="Chat with us on WhatsApp"
+      >
+        <svg class="fab-ico" viewBox="0 0 32 32" fill="currentColor" aria-hidden="true"><path d="M16.004 0h-.008C7.174 0 .002 7.173.002 16c0 3.5 1.128 6.742 3.046 9.377L1.05 31.02l5.83-1.863A15.9 15.9 0 0 0 16.004 32C24.83 32 32 24.826 32 16S24.83 0 16.004 0zm9.32 22.61c-.386 1.09-1.92 1.995-3.144 2.26-.836.178-1.928.32-5.604-1.204-4.703-1.95-7.73-6.73-7.966-7.04-.226-.31-1.9-2.53-1.9-4.827 0-2.296 1.206-3.425 1.634-3.89.386-.42.842-.51 1.122-.51.28 0 .56.003.804.015.258.013.604-.098.944.72.386.93 1.31 3.226 1.426 3.46.116.234.193.508.038.818-.155.31-.232.503-.464.775l-.696.815c-.232.23-.474.48-.204.94.27.46 1.2 1.98 2.576 3.206 1.77 1.578 3.263 2.066 3.723 2.298.46.232.73.194 1-.117.27-.31 1.15-1.343 1.458-1.804.31-.46.618-.386 1.043-.232.425.155 2.704 1.276 3.167 1.508.464.232.773.348.888.542.116.194.116 1.117-.27 2.206z"/></svg>
+        <span class="fab-label">WhatsApp</span>
+      </a>
+      <a class="fab fab-call" href="tel:+919310959596" aria-label="Call us now at +91 93109 59596">
+        <svg class="fab-ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 22 16.92z"/></svg>
+        <span class="fab-label">Call now</span>
+      </a>
+    </div>
+
     <!-- Theme toggle + scroll reveal (progressive enhancement, ~20 lines) -->
     <script is:inline>
       (function () {
@@ -426,6 +444,72 @@ const orgSchema = JSON.stringify({
   }
   .footer-bottom .pw { color: var(--text-primary); font-weight: 650; }
   .footer-bottom a { color: var(--accent-color); font-weight: 600; }
+
+  /* Floating contact FABs */
+  .fab-stack {
+    position: fixed;
+    right: 20px;
+    bottom: 20px;
+    z-index: 900;
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+    align-items: flex-end;
+  }
+
+  .fab {
+    display: inline-flex;
+    align-items: center;
+    gap: 10px;
+    height: 54px;
+    padding: 0 20px 0 16px;
+    border-radius: 999px;
+    color: #fff;
+    font-weight: 650;
+    font-size: 0.92rem;
+    white-space: nowrap;
+    box-shadow: 0 12px 28px -8px rgba(2, 6, 18, 0.5);
+    transition: transform 0.25s var(--ease-out), box-shadow 0.25s ease, filter 0.2s ease;
+    animation: fab-in 0.5s var(--ease-out) both;
+  }
+  .fab:hover { transform: translateY(-3px); filter: brightness(1.05); }
+  .fab:active { transform: translateY(0) scale(0.97); }
+
+  .fab-wa { background: #25d366; animation-delay: 0.05s; }
+  .fab-wa:hover { box-shadow: 0 16px 34px -8px rgba(37, 211, 102, 0.55); }
+  .fab-call { background: var(--grad-primary); animation-delay: 0.12s; }
+  .fab-call:hover { box-shadow: 0 16px 34px -8px var(--accent-glow); }
+
+  .fab-ico { width: 26px; height: 26px; flex-shrink: 0; }
+  .fab-call .fab-ico { width: 22px; height: 22px; }
+
+  /* gentle attention ring on the WhatsApp button */
+  .fab-wa::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    border-radius: inherit;
+    border: 2px solid #25d366;
+    animation: fab-ping 2.6s cubic-bezier(0, 0, 0.2, 1) infinite;
+    pointer-events: none;
+  }
+  .fab-wa { position: relative; }
+
+  @keyframes fab-in { from { opacity: 0; transform: translateY(16px) scale(0.9); } to { opacity: 1; transform: none; } }
+  @keyframes fab-ping { 0% { opacity: 0.6; transform: scale(1); } 70%, 100% { opacity: 0; transform: scale(1.35); } }
+
+  @media (prefers-reduced-motion: reduce) {
+    .fab { animation: none; }
+    .fab-wa::before { animation: none; display: none; }
+  }
+
+  @media (max-width: 600px) {
+    .fab-stack { right: 14px; bottom: 14px; gap: 10px; }
+    .fab { height: 50px; width: 50px; padding: 0; justify-content: center; }
+    .fab-label { display: none; }
+    .fab-ico { width: 24px; height: 24px; }
+    .fab-call .fab-ico { width: 21px; height: 21px; }
+  }
 
   @media (max-width: 760px) {
     .navbar-links { display: none; }
