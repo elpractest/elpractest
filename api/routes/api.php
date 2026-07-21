@@ -54,6 +54,10 @@ Route::post('/reset-password', [PasswordResetController::class, 'resetPassword']
 Route::get('/auth/{provider}/redirect', [SocialAuthController::class, 'redirect']);
 Route::get('/auth/{provider}/callback', [SocialAuthController::class, 'callback']);
 
+// Mobile app (Capacitor) — bearer-token login; same throttle as web login
+Route::post('/mobile/login', [\App\Http\Controllers\Auth\MobileAuthController::class, 'login'])
+    ->middleware('throttle:login');
+
 // Contact form — reCAPTCHA middleware
 Route::post('/contact', [ContactController::class, 'store'])
     ->middleware('recaptcha');
@@ -76,6 +80,7 @@ Route::middleware('auth:sanctum')->group(function () {
 
     // Auth management
     Route::post('/logout', [AuthController::class, 'logout']);
+    Route::post('/mobile/logout', [\App\Http\Controllers\Auth\MobileAuthController::class, 'logout']);
     Route::get('/me', [AuthController::class, 'me']);
 
     // Phone OTP — rate limited (3/10min per phone)

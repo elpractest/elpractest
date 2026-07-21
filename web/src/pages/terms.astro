@@ -1,0 +1,110 @@
+---
+import Layout from '../layouts/Layout.astro';
+---
+
+<Layout
+  title="Terms of Service — e-Learning Practest"
+  description="Terms of Service and conditions of use for e-Learning Practest (Vinstitution / VPD Vastus Ventures Pvt. Ltd.)."
+>
+  <section class="legal-hero">
+    <div class="legal-container">
+      <span class="badge">Legal & Compliance</span>
+      <h1>Terms of Service</h1>
+      <p class="subtitle">Last updated: July 2026</p>
+    </div>
+  </section>
+
+  <section class="legal-content">
+    <div class="legal-container card">
+      <h2>1. Acceptance of Terms</h2>
+      <p>
+        By accessing <code>practest.live</code>, logging in to <code>app.practest.live</code>, or enrolling in any test series 
+        or course offered by e-Learning Practest (a brand of Vinstitution / VPD Vastus Ventures Private Limited), you agree to be bound by these Terms of Service.
+      </p>
+
+      <h2>2. Account Security & Verification</h2>
+      <p>
+        Students must provide accurate email and phone contact details during account creation. Email verification and mobile OTP 
+        verification are mandatory for course activation. Accounts are strictly personal; sharing login credentials or simultaneous 
+        test session access from multiple devices is prohibited and may lead to account suspension.
+      </p>
+
+      <h2>3. Test Series Engine & Fair Usage</h2>
+      <ul>
+        <li>Test timers are server-authoritative and will automatically submit when duration expires.</li>
+        <li>Attempting to bypass CBT lockouts, manipulate client timing scripts, or scrape question bank content via automated tools is grounds for immediate termination of access without refund.</li>
+        <li>Questions and explanations provided in the test series are intellectual property protected by copyright laws.</li>
+      </ul>
+
+      <h2>4. Course Activations & Access Limits</h2>
+      <p>
+        Course enrollments activated via issued activation codes or approved payment proof grant non-transferable access 
+        for the validity period specified in the batch parameters.
+      </p>
+
+      <h2>5. Intellectual Property</h2>
+      <p>
+        All content, including question banks, test interface designs, video lesson content, branding assets, and software code, 
+        are owned by VPD Vastus Ventures Private Limited. Unapproved reproduction or redistribution is strictly prohibited.
+      </p>
+
+      <h2>6. Governing Law</h2>
+      <p>
+        These Terms shall be governed by and construed in accordance with the laws of India. Any disputes arising out of or in connection with these Terms shall be subject to the exclusive jurisdiction of the courts located in New Delhi, India.
+      </p>
+    </div>
+  </section>
+</Layout>
+
+<style>
+  .legal-hero {
+    padding: 4rem 1.5rem 2rem;
+    text-align: center;
+    background: radial-gradient(circle at top, rgba(99, 102, 241, 0.15), transparent 70%);
+  }
+  .legal-container {
+    max-width: 900px;
+    margin: 0 auto;
+    text-align: left;
+  }
+  .badge {
+    display: inline-block;
+    padding: 0.25rem 0.75rem;
+    background: rgba(99, 102, 241, 0.1);
+    color: var(--accent);
+    border-radius: 999px;
+    font-size: 0.875rem;
+    font-weight: 600;
+    margin-bottom: 1rem;
+  }
+  .subtitle {
+    color: var(--text-muted);
+    font-size: 0.95rem;
+  }
+  .legal-content {
+    padding: 2rem 1.5rem 5rem;
+  }
+  .card {
+    background: var(--panel-bg);
+    border: 1px solid var(--border-color);
+    border-radius: 1rem;
+    padding: 2.5rem;
+    line-height: 1.7;
+  }
+  h2 {
+    font-size: 1.35rem;
+    margin-top: 2rem;
+    margin-bottom: 0.75rem;
+    color: var(--text-primary);
+  }
+  h2:first-of-type {
+    margin-top: 0;
+  }
+  ul {
+    padding-left: 1.5rem;
+    margin-bottom: 1.5rem;
+  }
+  li {
+    margin-bottom: 0.5rem;
+  }
+</style>

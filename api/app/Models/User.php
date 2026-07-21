@@ -8,11 +8,12 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
+use Laravel\Sanctum\HasApiTokens;
 use Spatie\Permission\Traits\HasRoles;
 
 class User extends Authenticatable implements MustVerifyEmail
 {
-    use HasFactory, Notifiable;
+    use HasApiTokens, HasFactory, Notifiable;
     use HasRoles {
         assignRole as traitAssignRole;
         syncRoles as traitSyncRoles;

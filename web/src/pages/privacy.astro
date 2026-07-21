@@ -1,0 +1,128 @@
+---
+import Layout from '../layouts/Layout.astro';
+---
+
+<Layout
+  title="Privacy Policy — e-Learning Practest"
+  description="Privacy Policy and data protection practices for e-Learning Practest (a brand of Vinstitution / VPD Vastus Ventures Pvt. Ltd.)."
+>
+  <section class="legal-hero">
+    <div class="legal-container">
+      <span class="badge">Legal & Compliance</span>
+      <h1>Privacy Policy</h1>
+      <p class="subtitle">Last updated: July 2026</p>
+    </div>
+  </section>
+
+  <section class="legal-content">
+    <div class="legal-container card">
+      <h2>1. Introduction</h2>
+      <p>
+        e-Learning Practest ("we", "our", "us") is a brand of Vinstitution, a segment of VPD Vastus Ventures Private Limited. 
+        We are committed to protecting the privacy of our students, users, and visitors. This Privacy Policy explains how we collect, 
+        use, disclose, and safeguard your information when you visit our website <code>practest.live</code> or use our application <code>app.practest.live</code>.
+      </p>
+
+      <h2>2. Information We Collect</h2>
+      <ul>
+        <li><strong>Personal Information:</strong> Full name, email address, phone number, and password credentials provided during registration.</li>
+        <li><strong>Verification Data:</strong> Mobile OTP verification status and email verification timestamps.</li>
+        <li><strong>Academic Data:</strong> Course enrollments, lesson video watching progress, test session attempts, answers submitted, scores, time per question, and percentiles.</li>
+        <li><strong>Payment & Transaction Data:</strong> Offline activation proof uploads or payment transaction references.</li>
+      </ul>
+
+      <h2>3. How We Use Your Information</h2>
+      <ul>
+        <li>To provide, operate, and maintain our online test series engine and LMS features.</li>
+        <li>To compute accurate test analytics, rank scores, and subject performance reports.</li>
+        <li>To verify student identities and prevent unauthorized access or account sharing.</li>
+        <li>To send important course updates, score reports, and account notifications.</li>
+      </ul>
+
+      <h2>4. Data Sharing & Security</h2>
+      <p>
+        We do not sell, trade, or rent your personal information to third parties. We store data securely in production 
+        databases with strict access controls. Third-party integrations (such as Google OAuth, MSG91 SMS, and Cloudflare CDN) receive 
+        only the minimum required tokens/data to perform their respective services.
+      </p>
+
+      <h2>5. Cookies & Tracking</h2>
+      <p>
+        We use essential cookies to maintain user authentication sessions (Sanctum SPA cookies) and store theme preferences. 
+        Where consented via our Consent Manager, standard analytical pixels (GA4, GTM, Meta Pixel) track anonymized conversion events.
+      </p>
+
+      <h2>6. Contact Us</h2>
+      <p>
+        If you have any questions or grievances regarding this Privacy Policy, please contact our Grievance Officer at:
+      </p>
+      <address>
+        <strong>VPD Vastus Ventures Private Limited (Vinstitution Segment)</strong><br />
+        2nd Floor, Property No. 44, Regal Building, Connaught Place, New Delhi — 110090<br />
+        Email: <a href="mailto:support@practest.live">support@practest.live</a><br />
+        Phone: <a href="tel:+919310959596">+91 93109 59596</a>
+      </address>
+    </div>
+  </section>
+</Layout>
+
+<style>
+  .legal-hero {
+    padding: 4rem 1.5rem 2rem;
+    text-align: center;
+    background: radial-gradient(circle at top, rgba(99, 102, 241, 0.15), transparent 70%);
+  }
+  .legal-container {
+    max-width: 900px;
+    margin: 0 auto;
+    text-align: left;
+  }
+  .badge {
+    display: inline-block;
+    padding: 0.25rem 0.75rem;
+    background: rgba(99, 102, 241, 0.1);
+    color: var(--accent);
+    border-radius: 999px;
+    font-size: 0.875rem;
+    font-weight: 600;
+    margin-bottom: 1rem;
+  }
+  .subtitle {
+    color: var(--text-muted);
+    font-size: 0.95rem;
+  }
+  .legal-content {
+    padding: 2rem 1.5rem 5rem;
+  }
+  .card {
+    background: var(--panel-bg);
+    border: 1px solid var(--border-color);
+    border-radius: 1rem;
+    padding: 2.5rem;
+    line-height: 1.7;
+  }
+  h2 {
+    font-size: 1.35rem;
+    margin-top: 2rem;
+    margin-bottom: 0.75rem;
+    color: var(--text-primary);
+  }
+  h2:first-of-type {
+    margin-top: 0;
+  }
+  ul {
+    padding-left: 1.5rem;
+    margin-bottom: 1.5rem;
+  }
+  li {
+    margin-bottom: 0.5rem;
+  }
+  address {
+    font-style: normal;
+    background: rgba(255, 255, 255, 0.03);
+    padding: 1rem 1.25rem;
+    border-radius: 0.5rem;
+    border-left: 3px solid var(--accent);
+    margin-top: 1rem;
+  }
+</style>

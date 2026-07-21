@@ -22,11 +22,12 @@ This document provides a comprehensive reference of all environment variables ac
 | `SESSION_DOMAIN` | Cookie domain | `.practest.live` | `.practest.live` | Preceded with `.` for root & subdomains |
 | `SANCTUM_STATEFUL_DOMAINS` | SPA domains allowed stateful cookies | `app.practest.live,localhost:3000` | `app.practest.live` | Sanctum CSRF protection |
 | `CORS_ALLOWED_ORIGINS` | Allowed CORS origins | `http://localhost:3000` | `https://app.practest.live,https://practest.live,https://www.practest.live` | Required for Astro contact form & public course fetch |
-| `MAIL_MAILER` | Mail driver | `log` | `smtp` | Mailtrap / Brevo / SES / cPanel Webmail |
-| `MAIL_HOST` | SMTP server host | `127.0.0.1` | `smtp.brevo.com` | Mail Provider |
-| `MAIL_PORT` | SMTP server port | `2525` | `587` | Mail Provider |
-| `MAIL_USERNAME` | SMTP account user | `null` | `account@provider.com` | Mail Provider |
-| `MAIL_PASSWORD` | SMTP account pass | `null` | `smtp-secret-key` | Mail Provider |
+| `MAIL_MAILER` | Mail driver | `log` | `smtp` | cPanel Webmail / SMTP |
+| `MAIL_SCHEME` | Transport encryption scheme | `null` | `smtps` | `smtps` for SSL port 465 |
+| `MAIL_HOST` | SMTP server host | `127.0.0.1` | `sgp.centreserver.com` | cPanel Mail Server |
+| `MAIL_PORT` | SMTP server port | `2525` | `465` | SSL Port 465 |
+| `MAIL_USERNAME` | SMTP account user | `null` | `noreply@practest.live` | cPanel Email Account |
+| `MAIL_PASSWORD` | SMTP account pass | `null` | `(cpanel_email_password)` | Set in cPanel Email Accounts |
 | `MAIL_FROM_ADDRESS` | Sender email address | `"noreply@practest.live"` | `"noreply@practest.live"` | Domain MX/SPF/DKIM verified |
 | `GOOGLE_CLIENT_ID` | OAuth Client ID | `""` | `xyz.apps.googleusercontent.com` | Google Cloud Console |
 | `GOOGLE_CLIENT_SECRET` | OAuth Secret | `""` | `GOCSPX-secret` | Google Cloud Console |
