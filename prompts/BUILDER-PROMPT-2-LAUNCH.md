@@ -82,8 +82,8 @@ If any doc contradicts the code, trust the code, fix the doc, note it in the com
     remote URL + auth), then push all commits and verify the remote history matches local.
 
 2.2 Produce production builds and verify them locally before any upload:
-    `app/` with `VITE_API_URL=https://api.pactest.live` (`app/.env.production` already exists),
-    `web/` with `PUBLIC_API_URL=https://api.pactest.live`, `PUBLIC_SPA_URL=https://app.pactest.live`.
+    `app/` with `VITE_API_URL=https://api.practest.live` (`app/.env.production` already exists),
+    `web/` with `PUBLIC_API_URL=https://api.practest.live`, `PUBLIC_SPA_URL=https://app.practest.live`.
     Record the exact commands in `docs/DEPLOYMENT.md` if they differ from what's written.
 
 ## PART 3 — Phase F: cPanel deployment (INTERACTIVE COPILOT — do NOT attempt autonomously)
@@ -103,15 +103,15 @@ Then walk `docs/DEPLOYMENT.md` step by step. Operating rules for this part:
   `.env` or the provider dashboard. You verify behavior (email arrives, OTP arrives, webhook 200s),
   never the values.
 - Non-negotiables to check off explicitly: `APP_DEBUG=false` + `APP_ENV=production` + cached config;
-  `SESSION_DOMAIN=.pactest.live`, `SESSION_SECURE_COOKIE=true`, `SANCTUM_STATEFUL_DOMAINS=app.pactest.live`;
-  `CORS_ALLOWED_ORIGINS` includes `https://pactest.live` AND `https://www.pactest.live` AND
-  `https://app.pactest.live` (the Astro contact form + course fetch call the API from the root domain);
-  `FRONTEND_URL=https://app.pactest.live`; `migrate --force` + SuperAdminSeeder (`SUPER_ADMIN_*` env,
+  `SESSION_DOMAIN=.practest.live`, `SESSION_SECURE_COOKIE=true`, `SANCTUM_STATEFUL_DOMAINS=app.practest.live`;
+  `CORS_ALLOWED_ORIGINS` includes `https://practest.live` AND `https://www.practest.live` AND
+  `https://app.practest.live` (the Astro contact form + course fetch call the API from the root domain);
+  `FRONTEND_URL=https://app.practest.live`; `migrate --force` + SuperAdminSeeder (`SUPER_ADMIN_*` env,
   never dev seeders); BOTH cron entries (`schedule:run` every minute AND
   `queue:work --stop-when-empty --max-time=55` every minute — analytics is queued; without the queue
   cron students never get results); Cloudflare SSL Full (strict), cache bypass on `api.*`,
-  WAF/Bot-Fight exemption for `/api/webhooks/razorpay`; OAuth redirect URIs on `api.pactest.live` in
-  Google+Meta consoles; reCAPTCHA v3 keys registered for `pactest.live` AND `app.pactest.live`;
+  WAF/Bot-Fight exemption for `/api/webhooks/razorpay`; OAuth redirect URIs on `api.practest.live` in
+  Google+Meta consoles; reCAPTCHA v3 keys registered for `practest.live` AND `app.practest.live`;
   `robots.txt` on `app.` disallowing everything; Imunify360/ModSecurity watched for false positives on
   JSON POSTs (CSV import, answer autosave) — whitelist specific rule IDs only; JetBackup covering DB +
   `storage/` daily.

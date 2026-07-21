@@ -38,7 +38,7 @@ working parts, do not invent scope.
    including the two small ADDITIVE endpoints §17.5 authorizes (`GET /student/activation-requests`,
    `GET /student/results`), each with feature tests. Verify the full no-payment business loop
    (§17.5 acceptance). Commit.
-4. **Phase C** (§17.6) — Astro About page, fix the domain typo to `pactest.live`, SEO/schema/CWV
+4. **Phase C** (§17.6) — Astro About page, fix the domain typo to `practest.live`, SEO/schema/CWV
    pass, `web/.env.example`. Commit.
 5. **Phase D** (§17.7) — cross-origin dress rehearsal (no vite proxy), failure-mode checks, and
    write `docs/QA-SCRIPT.md`. Commit.

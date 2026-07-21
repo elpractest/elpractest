@@ -10,11 +10,11 @@ Configure the following subdomains in cPanel under **Domains**:
 
 | Subdomain | Public Root Directory | Description |
 |---|---|---|
-| `pactest.live` / `www.pactest.live` | `public_html/` | Astro static public site (`web/dist` artifacts) |
-| `app.pactest.live` | `subdomains/app/` | React SPA (`app/dist` artifacts) |
-| `api.pactest.live` | `subdomains/api/public/` | Laravel API (`api/public/`) |
+| `practest.live` / `www.practest.live` | `public_html/` | Astro static public site (`web/dist` artifacts) |
+| `app.practest.live` | `subdomains/app/` | React SPA (`app/dist` artifacts) |
+| `api.practest.live` | `subdomains/api/public/` | Laravel API (`api/public/`) |
 
-> ⚠️ **Directory Isolation Rule**: The Laravel backend folder (`api/`) must be uploaded **outside public_html** (e.g. at `/home/username/practest-api/`). Point `api.pactest.live` document root directly to `/home/username/practest-api/public/`.
+> ⚠️ **Directory Isolation Rule**: The Laravel backend folder (`api/`) must be uploaded **outside public_html** (e.g. at `/home/username/practest-api/`). Point `api.practest.live` document root directly to `/home/username/practest-api/public/`.
 
 ---
 
@@ -25,11 +25,11 @@ Configure the following subdomains in cPanel under **Domains**:
 3. Set production values in `.env`:
    - `APP_ENV=production`
    - `APP_DEBUG=false`
-   - `APP_URL=https://api.pactest.live`
-   - `FRONTEND_URL=https://app.pactest.live`
-   - `SESSION_DOMAIN=.pactest.live`
-   - `SANCTUM_STATEFUL_DOMAINS=app.pactest.live`
-   - `CORS_ALLOWED_ORIGINS=https://app.pactest.live,https://pactest.live,https://www.pactest.live`
+   - `APP_URL=https://api.practest.live`
+   - `FRONTEND_URL=https://app.practest.live`
+   - `SESSION_DOMAIN=.practest.live`
+   - `SANCTUM_STATEFUL_DOMAINS=app.practest.live`
+   - `CORS_ALLOWED_ORIGINS=https://app.practest.live,https://practest.live,https://www.practest.live`
    - `DB_CONNECTION=mysql`
    - `DB_HOST=127.0.0.1`
    - `DB_DATABASE=username_practest`
@@ -56,20 +56,20 @@ Configure the following subdomains in cPanel under **Domains**:
    ```
 4. Copy `deploy/.htaccess-api` to `api/public/.htaccess`.
 
-### React SPA (`app.pactest.live`)
+### React SPA (`app.practest.live`)
 1. On local dev machine, build SPA with production environment:
    ```bash
    cd app
-   VITE_API_URL=https://api.pactest.live npm run build
+   VITE_API_URL=https://api.practest.live npm run build
    ```
 2. Upload contents of `app/dist/` to `subdomains/app/`.
 3. Copy `deploy/.htaccess-app` to `subdomains/app/.htaccess`.
 
-### Astro Static Site (`pactest.live`)
+### Astro Static Site (`practest.live`)
 1. On local dev machine, build Astro static site:
    ```bash
    cd web
-   PUBLIC_API_URL=https://api.pactest.live PUBLIC_SPA_URL=https://app.pactest.live npm run build
+   PUBLIC_API_URL=https://api.practest.live PUBLIC_SPA_URL=https://app.practest.live npm run build
    ```
 2. Upload contents of `web/dist/` to `public_html/`.
 3. Copy `deploy/.htaccess-web` to `public_html/.htaccess`.
@@ -96,7 +96,7 @@ Add the following **two cron entries** under cPanel **Cron Jobs**:
 
 ## 5. Cloudflare & SSL Configuration
 
-1. In Cloudflare DNS: set A records for `pactest.live`, `www`, `app`, `api` (Proxied 🟧).
+1. In Cloudflare DNS: set A records for `practest.live`, `www`, `app`, `api` (Proxied 🟧).
 2. Set SSL/TLS encryption mode to **Full (strict)**.
-3. Page Rule / Cache Rule: Set **Bypass Cache** for `api.pactest.live/*`.
+3. Page Rule / Cache Rule: Set **Bypass Cache** for `api.practest.live/*`.
 4. Exempt `/api/webhooks/razorpay` from WAF bot challenges if Razorpay payments are turned ON.

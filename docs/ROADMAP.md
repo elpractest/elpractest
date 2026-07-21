@@ -3,7 +3,7 @@
 > ⚠️ **Superseded (2026-07-20): the canonical plan now lives in `CLAUDE.md` §17**, which also contains verified API contracts, known bugs with prescribed fixes, and builder guardrails. Where the two disagree, §17 wins — it corrects two errors in this file: there is **no** `GET /api/student/results` endpoint (results history needs a new one), and student-facing batch data comes from `GET /api/courses/public` (the per-course batch route is admin-only). This file is kept for long-form phase D–G detail.
 
 > Status date: 2026-07-20. Backend test suite: **92 passed / 386 assertions**.
-> This document continues the original build phases (1–7 in `CLAUDE.md` §15). Phases 1–3 and 6 are complete; this roadmap covers everything between "now" and "end users on pactest.live".
+> This document continues the original build phases (1–7 in `CLAUDE.md` §15). Phases 1–3 and 6 are complete; this roadmap covers everything between "now" and "end users on practest.live".
 
 ---
 
@@ -27,7 +27,7 @@
 - **Student LMS UI** — no course outline, lesson video player, or watch-progress posting.
 - **Student results history + profile** — only per-session result page exists; `GET /results` is unused.
 - **Astro About page** (required by brief §5).
-- **Domain inconsistency** — brief and API env say `pactest.live`; `web/astro.config.mjs` says `www.practest.live`. One is a typo; must be resolved before the SEO pass.
+- **Domain — RESOLVED 2026-07-21**: canonical is `practest.live` (the `pactest.live` misspelling was a typo, swept out of code/config/docs). See `CLAUDE.md` §17.3 item 6.
 - **Zero git commits** — repo is `git init`-ed but empty; nothing exists to push/deploy.
 - **`deploy/` and `docs/` empty** — no `.htaccess` templates, deploy scripts, or env documentation. No `web/.env.example` (Astro needs `PUBLIC_API_URL`, `PUBLIC_SPA_URL`, `PUBLIC_GTM_ID`).
 - **Production wiring** — cPanel subdomains, MySQL, cron for scheduler + queue worker, Cloudflare SSL/cache, live keys for OAuth/MSG91/reCAPTCHA/Razorpay/mail.
@@ -93,7 +93,7 @@
 
 | Task | Detail |
 |---|---|
-| C1 | **Resolve the domain typo first** — `pactest.live` (brief, API env) vs `www.practest.live` (`astro.config.mjs`). Fix `site:`, `SESSION_DOMAIN`, `SANCTUM_STATEFUL_DOMAINS`, OAuth redirect URIs, robots/sitemap references to the chosen one. Everything in Phases F–G depends on this being right. |
+| C1 | **Domain resolved (2026-07-21) → `practest.live`.** All `site:`, `SESSION_DOMAIN`, `SANCTUM_STATEFUL_DOMAINS`, CORS, OAuth redirect URIs and robots/sitemap references were swept to `practest.live`. Remaining task: confirm the registered Cloudflare domain matches before Phase F. |
 | C2 | About page (`web/src/pages/about.astro`) — mission, story, trust signals; reuse `Layout.astro` |
 | C3 | SEO audit of every page — unique title + meta description, OG/Twitter tags, canonical URLs, `Organization` schema sitewide, `Course` schema on detail pages, `FAQPage` where FAQs render |
 | C4 | Core Web Vitals — image optimization (course banners via `astro:assets`), font loading, verify zero unneeded client JS; target LCP < 2.5s / CLS < 0.1 |
@@ -152,13 +152,13 @@
 | Task | Detail |
 |---|---|
 | F1 | Create subdomains + docroots: root/`www` → `web/dist`; `app.` → SPA `dist`; `api.` → Laravel `public/` (Laravel app dir itself outside any docroot) |
-| F2 | MySQL 8 database + user; production `.env`: `APP_ENV=production`, `APP_DEBUG=false`, `APP_KEY` generated, DB creds, `SESSION_DOMAIN=.pactest.live`, `SANCTUM_STATEFUL_DOMAINS=app.pactest.live`, `CORS_ALLOWED_ORIGINS=https://app.pactest.live,https://pactest.live,https://www.pactest.live` (Astro contact form + course fetch call the API from the root domain too) |
+| F2 | MySQL 8 database + user; production `.env`: `APP_ENV=production`, `APP_DEBUG=false`, `APP_KEY` generated, DB creds, `SESSION_DOMAIN=.practest.live`, `SANCTUM_STATEFUL_DOMAINS=app.practest.live`, `CORS_ALLOWED_ORIGINS=https://app.practest.live,https://practest.live,https://www.practest.live` (Astro contact form + course fetch call the API from the root domain too) |
 | F3 | `php artisan migrate --force`; seed roles + Super-Admin via `SUPER_ADMIN_EMAIL`/`SUPER_ADMIN_PASSWORD` (`thevinstitution@gmail.com` per brief); **never** run dev seeders in prod |
 | F4 | **Two cron entries** — scheduler: `* * * * * php artisan schedule:run` (drives `test:auto-submit`); queue: `* * * * * php artisan queue:work --stop-when-empty --max-time=55` (analytics is a queued job — without this cron, students never receive results) |
 | F5 | Cloudflare — DNS records for `app.` and `api.` (proxied), SSL **Full (strict)** with AutoSSL or an origin cert on cPanel, cache rules: cache-everything on the static site, **bypass cache** on `api.*`, page rule so `/webhooks/razorpay` is never challenged by WAF/Bot Fight |
-| F6 | Live third-party config — Google + Facebook OAuth apps (prod redirect URIs on `api.pactest.live`), MSG91 live key + DLT-approved template, reCAPTCHA v3 keys for the prod domains, SMTP (cPanel mail or a transactional provider — decide; see Open decisions), Razorpay live keys + webhook URL + webhook secret |
+| F6 | Live third-party config — Google + Facebook OAuth apps (prod redirect URIs on `api.practest.live`), MSG91 live key + DLT-approved template, reCAPTCHA v3 keys for the prod domains, SMTP (cPanel mail or a transactional provider — decide; see Open decisions), Razorpay live keys + webhook URL + webhook secret |
 | F7 | Imunify360/ModSecurity — watch for false positives on JSON POSTs (question CSV import and answer autosave are the likely victims); whitelist specific rules rather than disabling; confirm JetBackup covers DB + `storage/` daily |
-| F8 | Frontends built with prod env (`PUBLIC_API_URL=https://api.pactest.live`, `VITE_API_URL` likewise) and deployed to their docroots; `robots.txt` on `app.` disallowing everything |
+| F8 | Frontends built with prod env (`PUBLIC_API_URL=https://api.practest.live`, `VITE_API_URL` likewise) and deployed to their docroots; `robots.txt` on `app.` disallowing everything |
 
 **Acceptance criteria:** all three hosts serve over HTTPS with valid certs; `php artisan about` shows production config cached; a test email and a test OTP actually arrive; queue cron visibly processes a dispatched job.
 
@@ -186,7 +186,7 @@
 
 ## Open decisions (answer before the relevant phase)
 
-1. **Domain: `pactest.live` or `practest.live`?** (blocks C1/F) — brief says `pactest.live` is already on Cloudflare; the Astro config disagrees.
+1. **Domain — RESOLVED 2026-07-21 → `practest.live`.** (Confirm the Cloudflare-registered domain matches before Phase F.)
 2. **Transactional email provider** (blocks F6) — cPanel SMTP is fine to start but risks spam-foldering; Brevo/SES free tiers are the usual upgrade.
 3. **OTP provider confirmed as MSG91?** (blocks F6) — DLT template approval has lead time in India; start it early.
 4. **Launch with payment gateway ON or OFF?** (G-phase toggle) — default per brief is OFF (activation codes only).

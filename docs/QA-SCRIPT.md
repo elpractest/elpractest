@@ -22,7 +22,7 @@ Execute all steps in order on local dev or staging/production environments.
 - [ ] **1.3 Course Detail Page (`/courses/[slug]`)**: Verify syllabus outline, FAQ accordion, CTA "Login to Request Activation", and check HTML source for `Course` & `FAQPage` schema.org JSON-LD tags.
 - [ ] **1.4 About Us Page (`/about`)**: Verify mission, vision, trust signals, and navigation links.
 - [ ] **1.5 Contact Us Page (`/contact`)**: Submit name, email, phone, message. Verify successful submission message and DB record in `contact_messages`.
-- [ ] **1.6 SEO & Sitemap**: Verify `<link rel="canonical">` points to `https://www.pactest.live/page`, and `https://www.pactest.live/sitemap-index.xml` is accessible.
+- [ ] **1.6 SEO & Sitemap**: Verify `<link rel="canonical">` points to `https://www.practest.live/page`, and `https://www.practest.live/sitemap-index.xml` is accessible.
 
 ---
 

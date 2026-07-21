@@ -15,7 +15,7 @@ const {
 const year = new Date().getFullYear();
 
 const spaUrl = import.meta.env.PUBLIC_SPA_URL || 'http://localhost:3000';
-const siteUrl = 'https://www.pactest.live';
+const siteUrl = 'https://www.practest.live';
 const canonicalUrl = new URL(Astro.url.pathname, siteUrl).href;
 const orgSchema = JSON.stringify({
   "@context": "https://schema.org",
@@ -129,8 +129,7 @@ const orgSchema = JSON.stringify({
             </a>
             <p class="footer-tag">
               Exam-pattern CBT mocks, structured video courses and honest analytics —
-              the flagship exam-prep platform of <strong>Vinstitution</strong>, founded by
-              educator Mr. Virat Priyadarshan.
+              the flagship exam-prep platform of <strong>Vinstitution</strong>.
             </p>
             <div class="omr-strip" aria-hidden="true">
               <i></i><i class="filled"></i><i></i><i class="marker"></i><i></i>
@@ -197,7 +196,7 @@ const orgSchema = JSON.stringify({
           try {
             localStorage.setItem('practest-theme', next);
             var host = location.hostname;
-            var domain = host.endsWith('pactest.live') ? ';domain=.pactest.live' : '';
+            var domain = host.endsWith('practest.live') ? ';domain=.practest.live' : '';
             document.cookie = 'practest_theme=' + next + ';path=/;max-age=31536000;SameSite=Lax' + domain;
           } catch (e) { /* still applied for this page */ }
         });

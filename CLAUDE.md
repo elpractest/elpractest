@@ -7,7 +7,7 @@
 ## 1. Project identity
 
 - **App name**: e-Learning Practest
-- **Primary domain**: `pactest.live` (already added to Cloudflare, DNS proxied)
+- **Primary domain**: `practest.live` (already added to Cloudflare, DNS proxied)
 - **Hosting**: cPanel (confirmed available: SSH/Terminal, Git Version Control, MultiPHP Manager with PHP 8.3, Cron Jobs, Node.js App via Passenger, JetBackup, Imunify360/ModSecurity)
 - **Product type**: a **website**, not a web-app — public marketing/SEO pages must be static HTML; only the logged-in area behaves like an app
 - **Audience**: aspirants preparing for Indian one-day and banking/government exams — SSC CGL, SBI PO, SBI Clerk, IBPS/RRB, UPSC, State PCS
@@ -25,13 +25,13 @@ Do not deviate from this split without flagging it first:
 4. **Database** — MySQL 8.
 5. No persistent Node.js server required in production. The Node.js App feature in cPanel exists as a fallback option only — do not depend on it unless explicitly told to.
 
-### Subdomain layout (all on `pactest.live`, via Cloudflare)
+### Subdomain layout (all on `practest.live`, via Cloudflare)
 
 | Subdomain | Serves |
 |---|---|
-| `pactest.live` / `www.pactest.live` | Astro static public site |
-| `app.pactest.live` | React SPA (dashboards) |
-| `api.pactest.live` | Laravel API |
+| `practest.live` / `www.practest.live` | Astro static public site |
+| `app.practest.live` | React SPA (dashboards) |
+| `api.practest.live` | Laravel API |
 
 ---
 
@@ -92,7 +92,7 @@ All pages: proper `<title>`/meta description per page, Open Graph tags, canonica
 - **Google reCAPTCHA v3** on register and contact forms
 - RBAC via `spatie/laravel-permission`
 - **Mandatory TOTP 2FA** for Super-Admin and Admin roles (via `pragmarx/google2fa-laravel`)
-- Auth transport: Sanctum SPA mode (cookie-based since `app.` and `api.` share the root domain `pactest.live`)
+- Auth transport: Sanctum SPA mode (cookie-based since `app.` and `api.` share the root domain `practest.live`)
 
 ---
 
@@ -172,7 +172,7 @@ After submission, a **queued job** computes analytics using **only** the raw `te
 - Open Graph + Twitter Card tags
 - `schema.org` structured data: `Course` on course-detail pages, `Organization` sitewide, `FAQPage` where relevant
 - Auto-generated `sitemap.xml` (`@astrojs/sitemap`), submitted to Google Search Console
-- `robots.txt` explicitly disallows `/app/*` and `api.pactest.live`
+- `robots.txt` explicitly disallows `/app/*` and `api.practest.live`
 - Target Core Web Vitals: LCP < 2.5s, CLS < 0.1
 
 ---
@@ -381,7 +381,7 @@ Each fix below is deliberately narrow. Anything wider needs a flagged decision f
 3. **Email-verification link strands the user on raw JSON.** The default `VerifyEmail` notification signs a URL to the API route, which returns JSON in the browser tab. Fix: `VerifyEmail::createUrlUsing` → `config('app.frontend_url')."/verify-email?id={id}&hash={hash}"`; the new SPA page calls `GET /api/email/verify/{id}/{hash}` via XHR and renders success/failure + "Continue to login". (The API route does its own sha1 check and ignores signature/expiry — keep that behavior, don't add `signed` middleware now.)
 4. **Social callback returns JSON to a full-page browser redirect** (`SocialAuthController::callback`) — after `Auth::login` the user is stranded on `api.…/callback` JSON. Fix: on success `return redirect(config('app.frontend_url').'/dashboard');`, on failure `redirect(config('app.frontend_url').'/login?error=social_failed')`. Update the existing social-auth feature test to expect redirects.
 5. **Brief §6 says OTP verification is required before an activation request is accepted — the server doesn't enforce it.** Add to `StoreActivationRequest::authorize()` (or controller): reject when `$this->user()->phone_verified_at === null` with 403 `{message: 'Please verify your phone number first.', phone_verified: false}` + test. The Phase B UI gates on the same flag client-side.
-6. **Domain typo:** `web/astro.config.mjs` says `site: 'https://www.practest.live'` — everything else (brief §1, `api/.env.example` session/Sanctum domains, `app/.env.production`) says **`pactest.live`**. Canonical = **`pactest.live`**. Fix the Astro config during Phase C; if the user ever says otherwise, `practest.live` requires changing session domain, Sanctum stateful domains, CORS, OAuth redirect URIs, and robots/sitemap references together.
+6. **Domain — RESOLVED 2026-07-21:** canonical domain is **`practest.live`** (matches the brand "e-Learning Practest" and the original Astro config). The misspelling `pactest.live` was a persistent typo that had propagated into env/config/docs; it was swept to `practest.live` everywhere on 2026-07-21. **Do not reintroduce `pactest`.** Any remaining occurrence is a bug. (Note: the seeded dev test accounts `*@pactest.test` were intentionally left as-is — they are `.test` fixtures tied to existing DB rows, not the brand domain.)
 
 ## 17.4 Phase A — Student onboarding UI (SPA) + fixes above
 
@@ -419,7 +419,7 @@ Also: add `VITE_RECAPTCHA_SITE_KEY=` to `app/.env.example`; keep the vite dev pr
 
 ## 17.6 Phase C — Astro public site completion + SEO
 
-1. Fix the domain (bug #6) — `site: 'https://www.pactest.live'`; verify robots.txt/sitemap output.
+1. Fix the domain (bug #6) — `site: 'https://www.practest.live'`; verify robots.txt/sitemap output.
 2. `web/src/pages/about.astro` — mission/story/trust signals per §5, reusing `Layout.astro`.
 3. SEO audit every page: unique title+description, OG/Twitter, canonical, `Organization` sitewide + `Course` on detail + `FAQPage` where FAQs render.
 4. CWV: `astro:assets` for images, font strategy, zero stray client JS; LCP < 2.5s / CLS < 0.1.
@@ -427,7 +427,7 @@ Also: add `VITE_RECAPTCHA_SITE_KEY=` to `app/.env.example`; keep the vite dev pr
 6. Create `web/.env.example`: `PUBLIC_API_URL`, `PUBLIC_SPA_URL`, `PUBLIC_GTM_ID`.
 7. Document (in `docs/DEPLOYMENT.md`): course pages are **build-time rendered** — adding/editing courses requires an Astro rebuild.
 
-**Acceptance:** `npm run build` clean; sitemap lists all pages on `pactest.live`; Lighthouse SEO ≥ 95 on Landing + one course page.
+**Acceptance:** `npm run build` clean; sitemap lists all pages on `practest.live`; Lighthouse SEO ≥ 95 on Landing + one course page.
 
 ## 17.7 Phase D — Integration hardening & scripted QA
 
@@ -450,11 +450,11 @@ Also: add `VITE_RECAPTCHA_SITE_KEY=` to `app/.env.example`; keep the vite dev pr
 ## 17.9 Phase F — cPanel production deployment (runbook skeleton)
 
 1. Subdomains/docroots: root+`www` → Astro `dist`; `app.` → SPA `dist`; `api.` → Laravel `public/` (app dir outside any docroot).
-2. MySQL 8 DB + user. Production `.env`: `APP_ENV=production`, `APP_DEBUG=false`, fresh `APP_KEY`, DB creds, `SESSION_DOMAIN=.pactest.live`, `SESSION_SECURE_COOKIE=true`, `SANCTUM_STATEFUL_DOMAINS=app.pactest.live`, **`CORS_ALLOWED_ORIGINS=https://app.pactest.live,https://pactest.live,https://www.pactest.live`** (the Astro contact form + course fetch call the API from the root domain — forgetting those origins breaks the public site), `FRONTEND_URL=https://app.pactest.live`, mail/MSG91/reCAPTCHA/Razorpay live values.
+2. MySQL 8 DB + user. Production `.env`: `APP_ENV=production`, `APP_DEBUG=false`, fresh `APP_KEY`, DB creds, `SESSION_DOMAIN=.practest.live`, `SESSION_SECURE_COOKIE=true`, `SANCTUM_STATEFUL_DOMAINS=app.practest.live`, **`CORS_ALLOWED_ORIGINS=https://app.practest.live,https://practest.live,https://www.practest.live`** (the Astro contact form + course fetch call the API from the root domain — forgetting those origins breaks the public site), `FRONTEND_URL=https://app.practest.live`, mail/MSG91/reCAPTCHA/Razorpay live values.
 3. `php artisan migrate --force`; seed roles + Super-Admin via `SUPER_ADMIN_*` (per §"Read this first": `thevinstitution@gmail.com`). Never dev seeders in prod.
 4. **Two cron entries** (both required): `* * * * * php artisan schedule:run` (auto-submit) and `* * * * * php artisan queue:work --stop-when-empty --max-time=55` — **analytics is a queued job; without the queue cron students never get results**.
 5. Cloudflare: DNS for `app.`/`api.` proxied, SSL **Full (strict)**, cache-everything on the static site, **bypass cache on `api.*`**, exempt `/api/webhooks/razorpay` from WAF/Bot-Fight challenges.
-6. Third-party prod config: OAuth redirect URIs `https://api.pactest.live/api/auth/{provider}/callback` in Google/Facebook consoles; MSG91 live key + DLT-approved template (start DLT approval early — it has lead time); reCAPTCHA v3 keys registered for `pactest.live` **and** `app.pactest.live`; SMTP decision (cPanel mail vs Brevo/SES); Razorpay live keys + webhook `https://api.pactest.live/api/webhooks/razorpay` + `RAZORPAY_WEBHOOK_SECRET`.
+6. Third-party prod config: OAuth redirect URIs `https://api.practest.live/api/auth/{provider}/callback` in Google/Facebook consoles; MSG91 live key + DLT-approved template (start DLT approval early — it has lead time); reCAPTCHA v3 keys registered for `practest.live` **and** `app.practest.live`; SMTP decision (cPanel mail vs Brevo/SES); Razorpay live keys + webhook `https://api.practest.live/api/webhooks/razorpay` + `RAZORPAY_WEBHOOK_SECRET`.
 7. Imunify360/ModSecurity: watch for false positives on JSON POSTs (CSV import, answer autosave); whitelist specific rule IDs, don't disable. JetBackup covers DB + `storage/` daily.
 8. `robots.txt` on `app.` disallows everything.
 
@@ -472,7 +472,7 @@ Also: add `VITE_RECAPTCHA_SITE_KEY=` to `app/.env.example`; keep the vite dev pr
 
 ## 17.11 Decisions
 
-**Resolved:** canonical domain = `pactest.live` (brief §1 + Cloudflare + API env agree; Astro config is the typo). First commit exists (`596bc12`); repo has no remote yet — pushing to a private GitHub repo is part of E.
+**Resolved:** canonical domain = `practest.live` (user-confirmed 2026-07-21; matches the brand name and the original Astro config). The earlier `pactest.live` spelling was a typo, now swept out of code/config/docs. **Verify the domain actually registered on Cloudflare / used for OAuth redirect URIs, MSG91, and the mail sender is `practest.live` before Phase F.** First commit exists (`596bc12`); repo has no remote yet — pushing to a private GitHub repo is part of E.
 **Open (ask the user, don't guess):** transactional email provider (F.6); MSG91 confirmed + DLT template kickoff (F.6); launch with payments ON or OFF (default OFF per §7); optional SPA visual polish pass (slot between D and F if wanted — the current dark-glass styling is functional but was never design-reviewed).
 
 ## 17.12 Definition of done (applies to every phase)
