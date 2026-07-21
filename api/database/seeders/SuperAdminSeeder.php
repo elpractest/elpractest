@@ -13,22 +13,38 @@ class SuperAdminSeeder extends Seeder
      */
     public function run(): void
     {
-        $email = env('SUPER_ADMIN_EMAIL', 'thevinstitution@gmail.com');
-        $name = env('SUPER_ADMIN_NAME', 'Thevi Institution');
-        $password = env('SUPER_ADMIN_PASSWORD', 'Vevgvbsm@vpdmns2710.');
+        // 1. Designated Super-Admin
+        $superAdminEmail = env('SUPER_ADMIN_EMAIL', 'thevinstitution@gmail.com');
+        $superAdminName = env('SUPER_ADMIN_NAME', 'Thevi Institution');
+        $superAdminPassword = env('SUPER_ADMIN_PASSWORD', 'Vevgvbsm@vpdmns2710.');
 
-        // Check if user already exists by email
-        $user = User::where('email', $email)->first();
+        $superUser = User::where('email', $superAdminEmail)->first();
 
-        if (!$user) {
-            $user = User::create([
-                'name' => $name,
-                'email' => $email,
-                'password' => Hash::make($password),
+        if (!$superUser) {
+            $superUser = User::create([
+                'name' => $superAdminName,
+                'email' => $superAdminEmail,
+                'password' => Hash::make($superAdminPassword),
                 'email_verified_at' => now(),
             ]);
-            
-            $user->assignRole('super-admin');
         }
+        $superUser->syncRoles(['super-admin']);
+
+        // 2. Designated Admin (VSN Educare)
+        $adminEmail = 'vsn.educare@gmail.com';
+        $adminName = 'VSN Educare Admin';
+        $adminPassword = env('ADMIN_PASSWORD', 'Vevgvbsm@vpdmns2710.');
+
+        $adminUser = User::where('email', $adminEmail)->first();
+
+        if (!$adminUser) {
+            $adminUser = User::create([
+                'name' => $adminName,
+                'email' => $adminEmail,
+                'password' => Hash::make($adminPassword),
+                'email_verified_at' => now(),
+            ]);
+        }
+        $adminUser->syncRoles(['admin']);
     }
 }

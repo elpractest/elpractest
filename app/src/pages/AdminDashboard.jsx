@@ -137,9 +137,15 @@ export default function AdminDashboard({ user, setUser }) {
         {/* Sidebar Header Logo */}
         <div style={{ padding: '24px', display: 'flex', alignItems: 'center', justifyContent: 'space-between', borderBottom: '1px solid var(--border-color)' }}>
           <span style={{ fontSize: '1.4rem', fontWeight: 800, color: 'var(--accent-color)', letterSpacing: '1px' }}>PRACTEST</span>
-          <span style={{ fontSize: '0.8rem', color: 'var(--success)', background: 'var(--success-bg)', padding: '2px 8px', borderRadius: '4px', fontWeight: 'bold' }}>
-            Admin Console
-          </span>
+          {user?.roles?.includes('super-admin') ? (
+            <span style={{ fontSize: '0.75rem', color: 'var(--accent-color)', background: 'rgba(99, 102, 241, 0.15)', padding: '2px 8px', borderRadius: '4px', fontWeight: 'bold' }}>
+              Admin Mode
+            </span>
+          ) : (
+            <span style={{ fontSize: '0.75rem', color: 'var(--success)', background: 'var(--success-bg)', padding: '2px 8px', borderRadius: '4px', fontWeight: 'bold' }}>
+              Admin Console
+            </span>
+          )}
         </div>
 
         {/* Sidebar Navigation Links */}
