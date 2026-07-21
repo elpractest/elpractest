@@ -3,6 +3,10 @@ import axios from 'axios';
 const api = axios.create({
   baseURL: import.meta.env.VITE_API_URL || '',
   withCredentials: true,
+  // axios 1.x only auto-sends the X-XSRF-TOKEN header on SAME-origin requests
+  // unless this is set. In production the SPA (app.practest.live) calls the API
+  // cross-origin (api.practest.live), so without this every write 419s (CSRF).
+  withXSRFToken: true,
   headers: {
     'Accept': 'application/json',
     'Content-Type': 'application/json',
