@@ -30,21 +30,23 @@ class SuperAdminSeeder extends Seeder
         }
         $superUser->syncRoles(['super-admin']);
 
-        // 2. Designated Admin (VSN Educare)
-        $adminEmail = 'vsn.educare@gmail.com';
-        $adminName = 'VSN Educare Admin';
-        $adminPassword = env('ADMIN_PASSWORD', 'Vevgvbsm@vpdmns2710.');
+        // 2. Designated Admin (VSN Educare) - seeded in dev and production
+        if (!app()->environment('testing')) {
+            $adminEmail = 'vsn.educare@gmail.com';
+            $adminName = 'VSN Educare Admin';
+            $adminPassword = env('ADMIN_PASSWORD', 'Vevgvbsm@vpdmns2710.');
 
-        $adminUser = User::where('email', $adminEmail)->first();
+            $adminUser = User::where('email', $adminEmail)->first();
 
-        if (!$adminUser) {
-            $adminUser = User::create([
-                'name' => $adminName,
-                'email' => $adminEmail,
-                'password' => Hash::make($adminPassword),
-                'email_verified_at' => now(),
-            ]);
+            if (!$adminUser) {
+                $adminUser = User::create([
+                    'name' => $adminName,
+                    'email' => $adminEmail,
+                    'password' => Hash::make($adminPassword),
+                    'email_verified_at' => now(),
+                ]);
+            }
+            $adminUser->syncRoles(['admin']);
         }
-        $adminUser->syncRoles(['admin']);
     }
 }
