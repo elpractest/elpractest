@@ -148,6 +148,17 @@ Route::middleware('auth:sanctum')->group(function () {
         Route::get('activation-codes', [ActivationCodeController::class, 'index']);
         Route::post('activation-codes', [ActivationCodeController::class, 'store']);
 
+        // Test Series & Builders
+        Route::apiResource('test-series', \App\Http\Controllers\Admin\TestSeriesController::class);
+        Route::post('test-series/{series}/publish', [\App\Http\Controllers\Admin\TestSeriesController::class, 'publish']);
+        Route::post('test-series/{series}/unpublish', [\App\Http\Controllers\Admin\TestSeriesController::class, 'unpublish']);
+        Route::put('test-series/{series}/tests', [\App\Http\Controllers\Admin\TestSeriesController::class, 'syncTests']);
+
+        // Assignments
+        Route::post('assignments', [\App\Http\Controllers\Admin\AssignmentController::class, 'store']);
+        Route::get('batches/{batch}/assignments', [\App\Http\Controllers\Admin\AssignmentController::class, 'batchAssignments']);
+        Route::delete('assignments/{assignment}', [\App\Http\Controllers\Admin\AssignmentController::class, 'destroy']);
+
         // Payments
         Route::get('payments', [\App\Http\Controllers\Admin\PaymentHistoryController::class, 'index']);
 
@@ -198,6 +209,11 @@ Route::middleware('auth:sanctum')->group(function () {
 
         // Test results history
         Route::get('results', [TestTakingController::class, 'resultsHistory']);
+
+        // Test Series & Study Path
+        Route::get('test-series', [\App\Http\Controllers\Student\StudentTestSeriesController::class, 'index']);
+        Route::get('test-series/{series}', [\App\Http\Controllers\Student\StudentTestSeriesController::class, 'show']);
+        Route::get('test-series/{series}/leaderboard', [\App\Http\Controllers\Student\StudentTestSeriesController::class, 'leaderboard']);
 
         // LMS Viewer
         Route::get('courses', [LmsController::class, 'myCourses']);

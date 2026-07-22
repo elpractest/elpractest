@@ -16,6 +16,8 @@ import ResultsHistory from './pages/ResultsHistory';
 import Dashboard from './pages/Dashboard';
 import TestTaking from './pages/TestTaking';
 import TestResult from './pages/TestResult';
+import StudentTestSeries from './pages/StudentTestSeries';
+import TestSeriesDetail from './pages/TestSeriesDetail';
 
 // Admin screens
 import AdminDashboard from './pages/AdminDashboard';
@@ -213,6 +215,18 @@ function AppContent({ user, setUser, loading }) {
         <Route path="/tests/:session/result" element={
           <StudentGuard user={user} loading={loading}>
             <TestResult />
+          </StudentGuard>
+        } />
+
+        <Route path="/student/test-series" element={
+          <StudentGuard user={user} loading={loading}>
+            <StudentTestSeries />
+          </StudentGuard>
+        } />
+
+        <Route path="/student/test-series/:id" element={
+          <StudentGuard user={user} loading={loading}>
+            <TestSeriesDetail />
           </StudentGuard>
         } />
 

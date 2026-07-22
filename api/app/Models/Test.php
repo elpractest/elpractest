@@ -12,6 +12,10 @@ class Test extends Model
         'title',
         'course_id',
         'batch_id',
+        'test_series_id',
+        'series_sort_order',
+        'category',
+        'is_free',
         'type',
         'duration_seconds',
         'max_attempts',
@@ -28,6 +32,8 @@ class Test extends Model
         return [
             'total_marks' => 'decimal:2',
             'max_attempts' => 'integer',
+            'series_sort_order' => 'integer',
+            'is_free' => 'boolean',
             'is_published' => 'boolean',
             'available_from' => 'datetime',
             'available_until' => 'datetime',
@@ -35,6 +41,16 @@ class Test extends Model
     }
 
     // ── Relationships ──────────────────────────────────────────────
+
+    public function testSeries(): BelongsTo
+    {
+        return $this->belongsTo(TestSeries::class, 'test_series_id');
+    }
+
+    public function assignments(): \Illuminate\Database\Eloquent\Relations\MorphMany
+    {
+        return $this->morphMany(Assignment::class, 'assignable');
+    }
 
     public function course(): BelongsTo
     {

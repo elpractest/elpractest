@@ -7,6 +7,7 @@ import Icon from '../components/Icon';
 import AdminCourses from './AdminCourses';
 import AdminQuestions from './AdminQuestions';
 import AdminTests from './AdminTests';
+import AdminTestSeries from './AdminTestSeries';
 import AdminEnrollments from './AdminEnrollments';
 import AdminActivations from './AdminActivations';
 import AdminActivationCodes from './AdminActivationCodes';
@@ -93,6 +94,8 @@ export default function AdminDashboard({ user, setUser }) {
         );
       case 'tests':
         return <AdminTests />;
+      case 'test_series':
+        return <AdminTestSeries />;
       case 'enrollments':
         return <AdminEnrollments />;
       case 'activations':
@@ -165,6 +168,7 @@ export default function AdminDashboard({ user, setUser }) {
             { id: 'courses', label: 'Courses & Syllabus', icon: '📚' },
             { id: 'questions', label: 'Question Bank', icon: '📝' },
             { id: 'tests', label: 'Tests Manager', icon: '🏆' },
+            { id: 'test_series', label: 'Test Series Builder', icon: '🎯' },
             { id: 'enrollments', label: 'Batches & Enrollments', icon: '👥' },
             { id: 'activations', label: 'Activation Requests', icon: '⏳' },
             { id: 'codes', label: 'Activation Codes', icon: '🔑' },
