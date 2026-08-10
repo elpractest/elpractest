@@ -152,8 +152,8 @@ export default function AdminDashboard({ user, setUser }) {
             </span>
           </div>
           {user?.roles?.includes('super-admin') ? (
-            <span style={{ fontSize: '0.65rem', color: 'var(--accent-color)', background: 'rgba(99, 102, 241, 0.15)', padding: '3px 8px', borderRadius: '6px', fontWeight: 'bold' }}>
-              Admin Mode
+            <span style={{ fontSize: '0.65rem', color: '#ffffff', background: 'var(--grad-primary)', padding: '3px 8px', borderRadius: '6px', fontWeight: 'bold', letterSpacing: '0.05em' }}>
+              SUPER ADMIN
             </span>
           ) : (
             <span style={{ fontSize: '0.65rem', color: 'var(--success)', background: 'var(--success-bg)', padding: '3px 8px', borderRadius: '6px', fontWeight: 'bold' }}>
@@ -209,25 +209,44 @@ export default function AdminDashboard({ user, setUser }) {
 
           {user?.roles?.includes('super-admin') && (
             <div style={{ marginTop: '20px', paddingTop: '16px', borderTop: '1px solid var(--border-color)' }}>
-              <button
-                onClick={() => navigate('/super-admin/dashboard')}
-                style={{
-                  display: 'flex',
-                  alignItems: 'center',
-                  gap: '12px',
-                  width: '100%',
-                  padding: '10px 16px',
-                  background: 'rgba(230, 57, 70, 0.12)',
-                  border: '1px solid rgba(230, 57, 70, 0.3)',
-                  borderRadius: '8px',
-                  color: '#e63946',
-                  fontSize: '0.88rem',
-                  fontWeight: 700,
-                  cursor: 'pointer',
-                }}
-              >
-                <span>👑 Super Admin Console</span>
-              </button>
+              <div style={{ fontSize: '0.72rem', fontWeight: 'bold', color: 'var(--text-secondary)', textTransform: 'uppercase', letterSpacing: '1px', paddingLeft: '8px', marginBottom: '8px' }}>
+                👑 Platform Governance
+              </div>
+              {[
+                { id: 'settings', label: 'White-Label Settings', icon: '🎨' },
+                { id: 'onboarding', label: 'Admin Accounts & Onboarding', icon: '🚀' },
+                { id: 'audit_logs', label: 'System Audit Logs', icon: '📋' },
+              ].map((tab) => {
+                const isSelected = activeTab === tab.id;
+                return (
+                  <button
+                    key={tab.id}
+                    onClick={() => { setActiveTab(tab.id); setSelectedResultSessionId(null); }}
+                    style={{
+                      display: 'flex',
+                      alignItems: 'center',
+                      gap: '12px',
+                      width: '100%',
+                      padding: '12px 16px',
+                      marginBottom: '8px',
+                      background: isSelected ? 'var(--accent-color)' : 'transparent',
+                      border: 'none',
+                      borderRadius: '8px',
+                      color: isSelected ? '#ffffff' : 'var(--text-secondary)',
+                      fontSize: '0.95rem',
+                      fontWeight: 600,
+                      cursor: 'pointer',
+                      textAlign: 'left',
+                      transition: 'all 0.2s ease',
+                    }}
+                    onMouseOver={(e) => { if (!isSelected) e.currentTarget.style.color = 'var(--text-primary)'; }}
+                    onMouseOut={(e) => { if (!isSelected) e.currentTarget.style.color = 'var(--text-secondary)'; }}
+                  >
+                    <span style={{ fontSize: '1.2rem' }}>{tab.icon}</span>
+                    <span>{tab.label}</span>
+                  </button>
+                );
+              })}
             </div>
           )}
         </nav>

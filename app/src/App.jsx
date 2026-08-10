@@ -38,10 +38,9 @@ const StudentGuard = ({ user, loading, children }) => {
   if (!user) {
     return <Navigate to="/login" replace />;
   }
-  if (user.roles?.includes('super-admin')) {
-    return <Navigate to="/super-admin/dashboard" replace />;
-  }
-  if (user.roles?.includes('admin')) {
+  if (user.roles?.includes('super-admin') || user.roles?.includes('admin')) {
+    // Super-admin is a superset: both roles land on the unified admin dashboard
+    // (super-admin additionally sees the Platform Governance tabs there).
     return <Navigate to="/admin/dashboard" replace />;
   }
   return children;
@@ -237,12 +236,10 @@ function AppContent({ user, setUser, loading }) {
           </AdminGuard>
         } />
 
-        {/* Super Admin Protected Routes */}
-        <Route path="/super-admin/dashboard" element={
-          <SuperAdminGuard user={user} loading={loading}>
-            <SuperAdminDashboard user={user} setUser={setUser} />
-          </SuperAdminGuard>
-        } />
+        {/* Super-admin is now a superset of admin: the unified /admin/dashboard
+            shows the Platform Governance tabs to super-admins. Keep this path as a
+            redirect so any old links/bookmarks still work. */}
+        <Route path="/super-admin/dashboard" element={<Navigate to="/admin/dashboard" replace />} />
 
         <Route path="/admin/2fa/setup" element={
           <AdminGuard user={user} loading={loading}>
@@ -259,9 +256,7 @@ function AppContent({ user, setUser, loading }) {
         {/* Catch-all redirect */}
         <Route path="*" element={
           user ? (
-            user.roles?.includes('super-admin') ? (
-              <Navigate to="/super-admin/dashboard" replace />
-            ) : user.roles?.includes('admin') ? (
+            user.roles?.includes('super-admin') || user.roles?.includes('admin') ? (
               <Navigate to="/admin/dashboard" replace />
             ) : (
               <Navigate to="/dashboard" replace />
