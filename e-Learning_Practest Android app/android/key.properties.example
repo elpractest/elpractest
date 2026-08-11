@@ -1,0 +1,19 @@
+# Copy to android/key.properties and fill in. NEVER commit the real file or the
+# .jks — android/.gitignore excludes both.
+#
+# Create the upload keystore once (JDK is at
+# "C:\Program Files\Microsoft\jdk-21.0.10.7-hotspot\bin\keytool.exe"), and keep
+# the .jks plus these passwords in your password manager. If you lose the upload
+# key you cannot publish an update to the same listing without asking Google to
+# reset it.
+#
+#   keytool -genkey -v -keystore practest-upload.jks -storetype JKS \
+#     -keyalg RSA -keysize 2048 -validity 10000 -alias practest-upload
+#
+# Store the .jks OUTSIDE this repo (e.g. C:\Users\thevi\keys\practest-upload.jks)
+# and point storeFile at it with an absolute path, forward slashes.
+
+storeFile=C:/Users/thevi/keys/practest-upload.jks
+storePassword=
+keyAlias=practest-upload
+keyPassword=
