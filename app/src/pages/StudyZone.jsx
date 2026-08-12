@@ -1,0 +1,59 @@
+import React from 'react';
+import { useNavigate } from 'react-router-dom';
+import { useTranslation } from 'react-i18next';
+import Icon from '../components/Icon';
+import { useTheme } from '../lib/theme';
+
+/**
+ * Study zone hub — stat header + tile grid. Tiles that map to a real
+ * route navigate there; the rest are clearly-marked TODO stubs (no
+ * backend exists for notes / PYQ bank / bookmarks / downloads yet).
+ */
+export default function StudyZone() {
+  const navigate = useNavigate();
+  const { tint } = useTheme();
+  const { t } = useTranslation();
+
+  const tiles = [
+    { label: t('study.attempts'), sub: t('study.attemptsSub'), hue: 'gold', icon: 'edit', to: '/results' },
+    { label: t('study.analytics'), sub: t('study.analyticsSub'), hue: 'green', icon: 'chart', to: '/results' },
+    { label: t('study.testSeries'), sub: t('study.testSeriesSub'), hue: 'blue', icon: 'target', to: '/student/test-series' },
+    { label: t('study.notes'), sub: t('common.comingSoon'), hue: 'violet', icon: 'file', todo: true },
+    { label: t('study.pyq'), sub: t('common.comingSoon'), hue: 'sky', icon: 'book-open', todo: true },
+    { label: t('study.bookmarks'), sub: t('common.comingSoon'), hue: 'red', icon: 'bookmark', todo: true },
+  ];
+
+  return (
+    <div style={{ padding: '18px 18px 8px', animation: 'fade-in .35s ease both' }}>
+      <h1 style={{ margin: '0 0 4px', font: '800 24px var(--font-display)', color: 'var(--tx)', letterSpacing: '-.02em' }}>{t('study.title')}</h1>
+      <p style={{ margin: '0 0 18px', font: '500 13px var(--font-body)', color: 'var(--muted)' }}>{t('study.subtitle')}</p>
+
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(160px, 1fr))', gap: '12px' }}>
+        {tiles.map((t) => {
+          const tc = tint(t.hue);
+          return (
+            <button
+              key={t.label}
+              onClick={() => (t.todo ? null : navigate(t.to))}
+              className="glass-panel"
+              style={{
+                textAlign: 'left', cursor: t.todo ? 'default' : 'pointer', padding: '16px',
+                borderRadius: '18px', display: 'flex', flexDirection: 'column', gap: '11px',
+                opacity: t.todo ? 0.72 : 1,
+              }}
+              disabled={t.todo}
+            >
+              <span className="tile" style={{ width: '42px', height: '42px', background: tc.bg, color: tc.c }}>
+                <Icon name={t.icon} size={20} />
+              </span>
+              <span>
+                <span style={{ display: 'block', font: '700 14px var(--font-body)', color: 'var(--tx)' }}>{t.label}</span>
+                <span style={{ display: 'block', font: '600 11px var(--font-body)', color: 'var(--muted)', marginTop: '2px' }}>{t.sub}</span>
+              </span>
+            </button>
+          );
+        })}
+      </div>
+    </div>
+  );
+}

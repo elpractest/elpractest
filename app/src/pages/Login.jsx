@@ -1,8 +1,13 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate, Link, useSearchParams } from 'react-router-dom';
+import { useTranslation } from 'react-i18next';
 import api from '../api';
+import logoMark from '../assets/logo-mark.png';
 
 export default function Login({ setUser }) {
+  const { t, i18n } = useTranslation();
+  const isHindi = i18n.language.startsWith('hi');
+  const toggleLang = () => i18n.changeLanguage(isHindi ? 'en' : 'hi');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
@@ -75,11 +80,22 @@ export default function Login({ setUser }) {
   };
 
   return (
-    <div style={{ display: 'flex', flex: 1, justifyContent: 'center', alignItems: 'center', minHeight: '80vh', padding: '16px' }}>
+    <div style={{ display: 'flex', flex: 1, justifyContent: 'center', alignItems: 'center', minHeight: '80vh', padding: '16px', position: 'relative' }}>
+      {/* language pill — usable before sign-in, persisted */}
+      <button className="lang-pill" onClick={toggleLang} aria-label="Toggle language" title="Language" style={{ position: 'fixed', top: '18px', right: '18px', zIndex: 2000 }}>
+        <span className={!isHindi ? 'on' : ''}>EN</span>
+        <span className={`hi ${isHindi ? 'on' : ''}`}>हिं</span>
+      </button>
+
       <div className="glass-panel" style={{ width: '100%', maxWidth: '420px', padding: '40px', display: 'flex', flexDirection: 'column', gap: '24px' }}>
-        <div style={{ textAlign: 'center' }}>
-          <h2 style={{ margin: '0 0 8px 0', fontSize: '1.8rem', fontWeight: 800, color: 'var(--accent-color)' }}>Welcome to e-Learning Practest</h2>
-          <p style={{ margin: 0, color: 'var(--text-secondary)', fontSize: '0.9rem' }}>Log in to your govt exam test prep account</p>
+        <div style={{ textAlign: 'center', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '16px' }}>
+          <span className="brand-mark" style={{ width: '58px', height: '58px', borderRadius: '16px' }}>
+            <img src={logoMark} alt="Practest" style={{ width: '44px', height: '44px', objectFit: 'contain' }} />
+          </span>
+          <div>
+            <h2 style={{ margin: '0 0 6px 0', fontSize: '1.75rem', fontWeight: 800, fontFamily: 'var(--font-display)', color: 'var(--tx)', letterSpacing: '-0.02em' }}>{t('login.welcome')}</h2>
+            <p style={{ margin: 0, color: 'var(--muted)', fontSize: '0.9rem' }}>{t('login.subtitle')}</p>
+          </div>
         </div>
 
         {error && (
@@ -100,7 +116,7 @@ export default function Login({ setUser }) {
             </div>
             <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
               <div style={{ flex: 1, height: '1px', background: 'var(--border-color)' }} />
-              <span style={{ color: 'var(--text-secondary)', fontSize: '0.8rem' }}>or sign in with email</span>
+              <span style={{ color: 'var(--text-secondary)', fontSize: '0.8rem' }}>{t('login.orEmail')}</span>
               <div style={{ flex: 1, height: '1px', background: 'var(--border-color)' }} />
             </div>
           </>
@@ -108,11 +124,11 @@ export default function Login({ setUser }) {
 
         <form onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
           <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
-            <label style={{ fontSize: '0.85rem', fontWeight: 600, color: 'var(--text-secondary)' }}>Email Address</label>
+            <label style={{ fontSize: '0.85rem', fontWeight: 600, color: 'var(--text-secondary)' }}>{t('login.email')}</label>
             <input
               type="email"
               className="form-input"
-              placeholder="e.g. student@example.com"
+              placeholder={t('login.emailPlaceholder')}
               value={email}
               onChange={(e) => setEmail(e.target.value)}
               required
@@ -122,9 +138,9 @@ export default function Login({ setUser }) {
 
           <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-              <label style={{ fontSize: '0.85rem', fontWeight: 600, color: 'var(--text-secondary)' }}>Password</label>
+              <label style={{ fontSize: '0.85rem', fontWeight: 600, color: 'var(--text-secondary)' }}>{t('login.password')}</label>
               <Link to="/forgot-password" style={{ fontSize: '0.8rem', color: 'var(--accent-color)', textDecoration: 'none' }}>
-                Forgot password?
+                {t('login.forgot')}
               </Link>
             </div>
             <input
@@ -144,13 +160,13 @@ export default function Login({ setUser }) {
             style={{ width: '100%', marginTop: '8px' }}
             disabled={submitting}
           >
-            {submitting ? 'Authenticating...' : 'Sign In'}
+            {submitting ? t('login.signingIn') : t('login.signIn')}
           </button>
         </form>
 
         <div style={{ textAlign: 'center', fontSize: '0.85rem', color: 'var(--text-secondary)' }}>
-          Don't have an account?{' '}
-          <Link to="/register" style={{ color: 'var(--accent-color)', textDecoration: 'none', fontWeight: 600 }}>Create Account</Link>
+          {t('login.noAccount')}{' '}
+          <Link to="/register" style={{ color: 'var(--accent-color)', textDecoration: 'none', fontWeight: 600 }}>{t('login.create')}</Link>
         </div>
       </div>
     </div>

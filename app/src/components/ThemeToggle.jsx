@@ -1,40 +1,25 @@
-import React, { useState } from 'react';
+import React from 'react';
 import Icon from './Icon';
+import { useTheme } from '../lib/theme';
 
 /**
- * Floating day/night toggle, rendered once in App.jsx so it exists on
- * every page. Persists to localStorage; the boot script in index.html
- * re-applies the choice before first paint on the next visit.
+ * Floating day/night toggle. Rendered on surfaces that have no branded
+ * header (auth pages, admin) — inside the student shell the header owns
+ * the toggle. Backed by the shared theme store so every toggle stays in
+ * sync; the boot script in index.html re-applies the choice on next load.
  */
 export default function ThemeToggle() {
-  const [theme, setTheme] = useState(
-    () => document.documentElement.dataset.theme === 'light' ? 'light' : 'dark'
-  );
-
-  const toggle = () => {
-    const next = theme === 'dark' ? 'light' : 'dark';
-    document.documentElement.dataset.theme = next;
-    try {
-      localStorage.setItem('practest-theme', next);
-      // Cookie syncs the choice with the public site (subdomain-wide in prod)
-      const domain = location.hostname.endsWith('practest.live') ? ';domain=.practest.live' : '';
-      document.cookie = `practest_theme=${next};path=/;max-age=31536000;SameSite=Lax${domain}`;
-    } catch (e) {
-      // private mode — theme still applies for this session
-    }
-    setTheme(next);
-  };
-
-  const goingTo = theme === 'dark' ? 'day' : 'night';
+  const { isDark, toggleTheme } = useTheme();
+  const goingTo = isDark ? 'day' : 'night';
   return (
     <button
       type="button"
       className="theme-toggle"
-      onClick={toggle}
+      onClick={toggleTheme}
       aria-label={`Switch to ${goingTo} mode`}
       title={`Switch to ${goingTo} mode`}
     >
-      <Icon name={theme === 'dark' ? 'sun' : 'moon'} size={21} />
+      <Icon name={isDark ? 'sun' : 'moon'} size={21} />
     </button>
   );
 }

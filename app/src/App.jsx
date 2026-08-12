@@ -1,8 +1,8 @@
 import React, { useState, useEffect } from 'react';
-import { BrowserRouter, Routes, Route, Navigate, useNavigate, Link } from 'react-router-dom';
+import { BrowserRouter, Routes, Route, Navigate, useNavigate } from 'react-router-dom';
 import api, { setOn2FARequired } from './api';
 import ThemeToggle from './components/ThemeToggle';
-import Icon from './components/Icon';
+import StudentShell from './components/StudentShell';
 import Login from './pages/Login';
 import Register from './pages/Register';
 import VerifyEmailNotice from './pages/VerifyEmailNotice';
@@ -18,6 +18,12 @@ import TestTaking from './pages/TestTaking';
 import TestResult from './pages/TestResult';
 import StudentTestSeries from './pages/StudentTestSeries';
 import TestSeriesDetail from './pages/TestSeriesDetail';
+import StudyZone from './pages/StudyZone';
+import Store from './pages/Store';
+import Profile from './pages/Profile';
+import Vajini from './pages/Vajini';
+import Notifications from './pages/Notifications';
+import SearchPage from './pages/SearchPage';
 
 // Admin screens
 import AdminDashboard from './pages/AdminDashboard';
@@ -112,47 +118,14 @@ function AppContent({ user, setUser, loading }) {
 
   const isStudent = user && !user.roles?.includes('admin') && !user.roles?.includes('super-admin');
 
+  // Wrap a student page in the branded shell (header + bottom-tab/sidebar nav).
+  const shell = (node) => <StudentShell user={user}>{node}</StudentShell>;
+
   return (
     <>
-      <ThemeToggle />
-      {isStudent && (
-        <header className="glass-panel" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '10px', padding: '14px 22px', margin: '16px', position: 'sticky', top: '12px', zIndex: 100 }}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
-            <Link to="/dashboard" style={{ display: 'inline-flex', alignItems: 'center', gap: '12px', textDecoration: 'none' }}>
-              <span style={{ display: 'inline-flex', alignItems: 'center', justifyContent: 'center', width: '34px', height: '34px', borderRadius: '10px', background: 'var(--grad-primary)', color: '#ffffff', boxShadow: '0 6px 16px -6px var(--accent-glow)' }}>
-                <Icon name="graduation-cap" size={19} />
-              </span>
-              <span style={{ display: 'inline-flex', flexDirection: 'column', gap: '1px', lineHeight: 1.02 }}>
-                <span style={{ fontFamily: 'var(--font-mono)', fontSize: '0.56rem', fontWeight: 700, letterSpacing: '0.16em', textTransform: 'uppercase', color: 'var(--warning)' }}>e-Learning</span>
-                <span className="text-gradient" style={{ fontSize: '1.18rem', fontWeight: 700, letterSpacing: '0.02em', fontFamily: 'var(--font-display)' }}>
-                  Practest<sup style={{ fontSize: '0.5em', verticalAlign: 'super', WebkitTextFillColor: 'var(--text-secondary)', marginLeft: '1px' }}>®</sup>
-                </span>
-              </span>
-            </Link>
-            <span className="chip">STUDENT</span>
-          </div>
-          <div style={{ display: 'flex', alignItems: 'center', gap: '14px' }}>
-            <span style={{ display: 'inline-flex', alignItems: 'center', gap: '8px', fontSize: '0.92rem', fontWeight: 600, color: 'var(--text-secondary)' }}>
-              <Icon name="user" size={16} /> {user.name}
-            </span>
-            <button onClick={handleLogout} className="btn-secondary" style={{ padding: '8px 16px', fontSize: '0.88rem' }}>
-              <Icon name="log-out" size={16} /> Logout
-            </button>
-          </div>
-        </header>
-      )}
-
-      {/* Non-blocking banner nudge if student phone is unverified */}
-      {isStudent && !user.phone_verified && (
-        <div style={{ margin: '0 16px 16px 16px', padding: '12px 20px', background: 'var(--warning-bg)', border: '1px solid var(--warning-border)', borderRadius: 'var(--radius-sm)', display: 'flex', flexWrap: 'wrap', gap: '10px', justifyContent: 'space-between', alignItems: 'center', color: 'var(--warning-text)', fontSize: '0.88rem' }}>
-          <span style={{ display: 'inline-flex', alignItems: 'center', gap: '9px' }}>
-            <Icon name="alert" size={17} /> Your phone number is unverified. Mobile OTP verification is required to request course activation.
-          </span>
-          <Link to="/verify-otp" className="btn-primary" style={{ padding: '7px 14px', fontSize: '0.8rem', textDecoration: 'none' }}>
-            Verify Phone Now
-          </Link>
-        </div>
-      )}
+      {/* Floating theme toggle only where there is no branded header
+          (auth + admin surfaces); inside the student shell the header owns it. */}
+      {!isStudent && <ThemeToggle />}
 
       <Routes>
         {/* Public Auth & Onboarding Routes */}
@@ -174,37 +147,56 @@ function AppContent({ user, setUser, loading }) {
         <Route path="/forgot-password" element={<ForgotPassword />} />
         <Route path="/reset-password" element={<ResetPassword />} />
 
-        {/* Student Protected Routes */}
+        {/* Student Protected Routes — wrapped in the branded shell */}
         <Route path="/dashboard" element={
           <StudentGuard user={user} loading={loading}>
-            <Dashboard user={user} />
+            {shell(<Dashboard user={user} />)}
+          </StudentGuard>
+        } />
+
+        <Route path="/study" element={
+          <StudentGuard user={user} loading={loading}>
+            {shell(<StudyZone />)}
+          </StudentGuard>
+        } />
+
+        <Route path="/store" element={
+          <StudentGuard user={user} loading={loading}>
+            {shell(<Store />)}
+          </StudentGuard>
+        } />
+
+        <Route path="/profile" element={
+          <StudentGuard user={user} loading={loading}>
+            {shell(<Profile user={user} onLogout={handleLogout} />)}
           </StudentGuard>
         } />
 
         <Route path="/courses/:courseId/outline" element={
           <StudentGuard user={user} loading={loading}>
-            <CourseOutline />
+            {shell(<CourseOutline />)}
           </StudentGuard>
         } />
 
         <Route path="/lessons/:lessonId" element={
           <StudentGuard user={user} loading={loading}>
-            <LessonPlayer />
+            {shell(<LessonPlayer />)}
           </StudentGuard>
         } />
 
         <Route path="/results" element={
           <StudentGuard user={user} loading={loading}>
-            <ResultsHistory />
+            {shell(<ResultsHistory />)}
           </StudentGuard>
         } />
 
         <Route path="/verify-otp" element={
           <StudentGuard user={user} loading={loading}>
-            <VerifyOtp setUser={setUser} />
+            {shell(<VerifyOtp setUser={setUser} />)}
           </StudentGuard>
         } />
-        
+
+        {/* Immersive full-bleed surfaces (no shell) */}
         <Route path="/tests/:session" element={
           <StudentGuard user={user} loading={loading}>
             <TestTaking />
@@ -213,19 +205,37 @@ function AppContent({ user, setUser, loading }) {
 
         <Route path="/tests/:session/result" element={
           <StudentGuard user={user} loading={loading}>
-            <TestResult />
+            {shell(<TestResult />)}
+          </StudentGuard>
+        } />
+
+        <Route path="/vajini" element={
+          <StudentGuard user={user} loading={loading}>
+            <Vajini />
+          </StudentGuard>
+        } />
+
+        <Route path="/notifications" element={
+          <StudentGuard user={user} loading={loading}>
+            <Notifications />
+          </StudentGuard>
+        } />
+
+        <Route path="/search" element={
+          <StudentGuard user={user} loading={loading}>
+            <SearchPage />
           </StudentGuard>
         } />
 
         <Route path="/student/test-series" element={
           <StudentGuard user={user} loading={loading}>
-            <StudentTestSeries />
+            {shell(<StudentTestSeries />)}
           </StudentGuard>
         } />
 
         <Route path="/student/test-series/:id" element={
           <StudentGuard user={user} loading={loading}>
-            <TestSeriesDetail />
+            {shell(<TestSeriesDetail />)}
           </StudentGuard>
         } />
 

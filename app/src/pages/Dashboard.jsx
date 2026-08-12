@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import api from '../api';
 import Icon from '../components/Icon';
+import BannerCarousel from '../components/BannerCarousel';
 import StudentCheckout from './StudentCheckout';
 import ActivationModal from './ActivationModal';
 
@@ -159,6 +160,9 @@ export default function Dashboard({ user }) {
           </Link>
         </div>
       </div>
+
+      {/* Super-admin-managed promo banners (Phase 4). Renders nothing if none. */}
+      <BannerCarousel />
 
       {error && (
         <div style={{ background: 'var(--danger-bg)', border: '1px solid var(--danger-border)', padding: '12px 16px', borderRadius: '8px', color: 'var(--danger-text)', fontSize: '0.85rem' }}>

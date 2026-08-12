@@ -16,6 +16,7 @@ import AdminResultDetail from './AdminResultDetail';
 import SuperAdminSettings from './SuperAdminSettings';
 import SuperAdminOnboarding from './SuperAdminOnboarding';
 import SuperAdminAuditLogs from './SuperAdminAuditLogs';
+import SuperAdminBanners from './SuperAdminBanners';
 
 export default function AdminDashboard({ user, setUser }) {
   const [activeTab, setActiveTab] = useState('courses');
@@ -123,6 +124,8 @@ export default function AdminDashboard({ user, setUser }) {
         );
       case 'settings':
         return <SuperAdminSettings />;
+      case 'banners':
+        return <SuperAdminBanners />;
       case 'onboarding':
         return <SuperAdminOnboarding />;
       case 'audit_logs':
@@ -214,6 +217,7 @@ export default function AdminDashboard({ user, setUser }) {
               </div>
               {[
                 { id: 'settings', label: 'White-Label Settings', icon: '🎨' },
+                { id: 'banners', label: 'Home Banners', icon: '🖼️' },
                 { id: 'onboarding', label: 'Admin Accounts & Onboarding', icon: '🚀' },
                 { id: 'audit_logs', label: 'System Audit Logs', icon: '📋' },
               ].map((tab) => {
