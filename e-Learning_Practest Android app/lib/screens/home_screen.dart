@@ -5,6 +5,7 @@ import '../api_client.dart';
 import '../boards.dart';
 import '../build_config.dart';
 import '../models.dart';
+import '../promo_banner_carousel.dart';
 import '../resume_memory.dart';
 import '../routes.dart';
 import '../scaffold.dart';
@@ -38,6 +39,7 @@ class _HomeScreenState extends State<HomeScreen> {
   HomeSummary _summary = const HomeSummary();
   List<ActivationRequest> _activationRequests = [];
   List<TestSummary> _tests = [];
+  List<PromoBanner> _banners = [];
   bool _loading = true;
   String _error = '';
   String? _boardFilter;
@@ -59,7 +61,21 @@ class _HomeScreenState extends State<HomeScreen> {
       _fetchTests(),
       _fetchActivationRequests(),
       _fetchSettings(),
+      _fetchBanners(),
     ]);
+  }
+
+  /// Super-admin-managed Home promo banners (Phase 4/6). A 404 or any error is
+  /// swallowed — banners are decorative, never load-bearing, so a stale or
+  /// undeployed endpoint must not touch the rest of Home.
+  Future<void> _fetchBanners() async {
+    try {
+      final data = await ApiClient.instance.get('/banners/public');
+      final list = extractList(data)
+          .map((b) => PromoBanner.fromJson(b as Map<String, dynamic>))
+          .toList();
+      if (mounted) setState(() => _banners = list);
+    } catch (_) {}
   }
 
   /// One request for the whole screen, with a documented fallback.
@@ -338,6 +354,10 @@ class _HomeScreenState extends State<HomeScreen> {
                   : ListView(
                       padding: const EdgeInsets.fromLTRB(16, 16, 16, 28),
                       children: [
+                        if (_banners.isNotEmpty) ...[
+                          PromoBannerCarousel(banners: _banners, colors: c),
+                          const SizedBox(height: 22),
+                        ],
                         if (_error.isNotEmpty) ...[
                           ErrorBanner(_error),
                           const SizedBox(height: 16),

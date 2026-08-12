@@ -1133,3 +1133,39 @@ class HomeSummary {
         windowDays: asInt(json['window_days']) ?? 7,
       );
 }
+
+/// A super-admin-managed Home promo banner (mirrors the web `BannerCarousel`).
+/// Named `PromoBanner` to avoid colliding with Flutter's own `Banner` widget.
+/// Shape comes from `GET /api/banners/public`.
+class PromoBanner {
+  const PromoBanner({
+    required this.id,
+    this.title,
+    this.subtitle,
+    this.kicker,
+    this.ctaLabel,
+    this.ctaUrl,
+    this.imageUrl,
+    this.examCategory,
+  });
+
+  final int id;
+  final String? title;
+  final String? subtitle;
+  final String? kicker;
+  final String? ctaLabel;
+  final String? ctaUrl;
+  final String? imageUrl;
+  final String? examCategory;
+
+  factory PromoBanner.fromJson(Map<String, dynamic> json) => PromoBanner(
+        id: json['id'] is int ? json['id'] : int.tryParse('${json['id']}') ?? 0,
+        title: json['title'],
+        subtitle: json['subtitle'],
+        kicker: json['kicker'],
+        ctaLabel: json['cta_label'],
+        ctaUrl: json['cta_url'],
+        imageUrl: json['image_url'],
+        examCategory: json['exam_category'],
+      );
+}
