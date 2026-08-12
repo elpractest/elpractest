@@ -195,6 +195,11 @@ Route::middleware('auth:sanctum')->group(function () {
 
     Route::middleware('role:student')->prefix('student')->group(function () {
 
+        // Everything the Home tab draws, in one round trip. Additive: the app
+        // treats a 404 here as "this API has not been deployed yet" and falls
+        // back to the older endpoints, so the two can ship independently.
+        Route::get('home-summary', [\App\Http\Controllers\Student\StudentHomeController::class, 'summary']);
+
         // Test taking
         Route::get('tests', [TestTakingController::class, 'availableTests']);
         Route::post('tests/{test}/start', [TestTakingController::class, 'start']);
