@@ -1,0 +1,985 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<meta name="color-scheme" content="light dark" />
+<title>Practest Android — UI/UX Report</title>
+<style>
+  /* minimal reset — mirrors the artifact runtime so this file renders identically offline */
+  *, *::before, *::after { box-sizing: border-box; }
+  html { -webkit-text-size-adjust: 100%; }
+  body { margin: 0; }
+  img, svg { max-width: 100%; height: auto; }
+  /* standalone theme switch: the report CSS already handles :root[data-theme] */
+  #tt {
+    position: fixed; right: 18px; bottom: 18px; z-index: 999;
+    width: 44px; height: 44px; border-radius: 50%;
+    display: inline-flex; align-items: center; justify-content: center;
+    background: var(--panel); color: var(--ink);
+    border: 1px solid var(--rule); cursor: pointer;
+    box-shadow: 0 10px 26px -10px rgba(0,0,0,.45);
+    font-size: 17px; line-height: 1; padding: 0;
+  }
+  #tt:hover { transform: translateY(-2px); }
+  @media print { #tt { display: none; } }
+</style>
+</head>
+<body><style>
+  :root {
+    --ground:      #070B16;
+    --panel:       #0E1526;
+    --panel-2:     #131C33;
+    --rule:        rgba(148,163,255,.16);
+    --rule-strong: rgba(148,163,255,.32);
+    --ink:         #EEF1FB;
+    --ink-dim:     #98A4C8;
+    --accent:      #8B93FF;
+    --gold:        #F59E0B;
+    --green:       #10B981;
+    --violet:      #8B5CF6;
+    --red:         #E5484D;
+    --swatch-ring: rgba(255,255,255,.14);
+
+    --display: "Segoe UI Variable Display", "Segoe UI", -apple-system, system-ui, sans-serif;
+    --body:    system-ui, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+    --mono:    ui-monospace, "Cascadia Mono", "Cascadia Code", Consolas, "SF Mono", monospace;
+
+    --measure: 68ch;
+    --shell:   1080px;
+  }
+
+  @media (prefers-color-scheme: light) {
+    :root {
+      --ground:      #EEF1FA;
+      --panel:       #FFFFFF;
+      --panel-2:     #F5F7FE;
+      --rule:        rgba(38,50,105,.14);
+      --rule-strong: rgba(38,50,105,.28);
+      --ink:         #171F3D;
+      --ink-dim:     #59639B;
+      --accent:      #4F46E5;
+      --gold:        #B45309;
+      --green:       #0B9E6D;
+      --violet:      #7C3AED;
+      --red:         #D92D33;
+      --swatch-ring: rgba(23,31,61,.16);
+    }
+  }
+
+  :root[data-theme="dark"] {
+    --ground:#070B16; --panel:#0E1526; --panel-2:#131C33;
+    --rule:rgba(148,163,255,.16); --rule-strong:rgba(148,163,255,.32);
+    --ink:#EEF1FB; --ink-dim:#98A4C8; --accent:#8B93FF; --gold:#F59E0B;
+    --green:#10B981; --violet:#8B5CF6; --red:#E5484D;
+    --swatch-ring:rgba(255,255,255,.14);
+  }
+  :root[data-theme="light"] {
+    --ground:#EEF1FA; --panel:#FFFFFF; --panel-2:#F5F7FE;
+    --rule:rgba(38,50,105,.14); --rule-strong:rgba(38,50,105,.28);
+    --ink:#171F3D; --ink-dim:#59639B; --accent:#4F46E5; --gold:#B45309;
+    --green:#0B9E6D; --violet:#7C3AED; --red:#D92D33;
+    --swatch-ring:rgba(23,31,61,.16);
+  }
+
+  body {
+    background: var(--ground);
+    color: var(--ink);
+    font-family: var(--body);
+    font-size: 16px;
+    line-height: 1.65;
+    -webkit-font-smoothing: antialiased;
+  }
+
+  .shell {
+    max-width: var(--shell);
+    margin: 0 auto;
+    padding: 56px 24px 96px;
+    display: flex;
+    flex-direction: column;
+    gap: 56px;
+  }
+
+  /* ---------- type ---------- */
+  h1, h2, h3, h4 { font-family: var(--display); text-wrap: balance; margin: 0; }
+  h1 { font-size: clamp(2rem, 5vw, 3rem); font-weight: 800; letter-spacing: -.03em; line-height: 1.08; }
+  h2 { font-size: clamp(1.35rem, 3vw, 1.8rem); font-weight: 800; letter-spacing: -.02em; }
+  h3 { font-size: 1.08rem; font-weight: 700; letter-spacing: -.01em; }
+  h4 { font-size: .92rem; font-weight: 700; letter-spacing: -.005em; }
+  p  { margin: 0; max-width: var(--measure); }
+  ul, ol { margin: 0; padding-left: 1.15rem; max-width: var(--measure); }
+  li { margin-bottom: .35rem; }
+  a { color: var(--accent); }
+  code, .mono { font-family: var(--mono); font-size: .86em; }
+  strong { font-weight: 650; }
+
+  .eyebrow {
+    font-family: var(--body);
+    font-size: .68rem;
+    font-weight: 700;
+    letter-spacing: .18em;
+    text-transform: uppercase;
+    color: var(--gold);
+  }
+  .dim { color: var(--ink-dim); }
+  .lede { font-size: 1.06rem; color: var(--ink-dim); max-width: 62ch; }
+
+  section { display: flex; flex-direction: column; gap: 20px; }
+  .sec-head { display: flex; flex-direction: column; gap: 6px; }
+
+  hr { border: 0; border-top: 1px solid var(--rule); margin: 0; }
+
+  /* ---------- surfaces ---------- */
+  .panel {
+    background: var(--panel);
+    border: 1px solid var(--rule);
+    border-radius: 16px;
+    padding: 22px;
+  }
+  .grid { display: grid; gap: 14px; }
+  .g2 { grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); }
+  .g3 { grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); }
+
+  /* ---------- the palette-square motif ----------
+     Borrowed from the product's most distinctive artifact: the CBT question
+     palette, where each question is a coloured square. Colour chips and screen
+     markers reuse that square so the report reads in the product's own idiom. */
+  .sq {
+    width: 34px; height: 34px;
+    border-radius: 7px;
+    border: 1px solid var(--swatch-ring);
+    flex: none;
+  }
+  .sq-lg { width: 52px; height: 52px; border-radius: 9px; }
+
+  .swatches { display: grid; gap: 10px; grid-template-columns: repeat(auto-fill, minmax(212px, 1fr)); }
+  .swatch { display: flex; gap: 11px; align-items: center; }
+  .swatch .meta { display: flex; flex-direction: column; gap: 1px; min-width: 0; }
+  .swatch .name { font-size: .82rem; font-weight: 650; }
+  .swatch .hex  { font-family: var(--mono); font-size: .74rem; color: var(--ink-dim); }
+
+  /* ---------- tables ---------- */
+  .scroll { overflow-x: auto; border: 1px solid var(--rule); border-radius: 14px; }
+  table { border-collapse: collapse; width: 100%; font-size: .875rem; }
+  th, td { text-align: left; padding: 10px 14px; border-bottom: 1px solid var(--rule); vertical-align: top; }
+  thead th {
+    background: var(--panel-2);
+    font-family: var(--body);
+    font-size: .68rem;
+    letter-spacing: .12em;
+    text-transform: uppercase;
+    color: var(--ink-dim);
+    font-weight: 700;
+    white-space: nowrap;
+  }
+  tbody tr:last-child td { border-bottom: 0; }
+  td.num { font-family: var(--mono); font-variant-numeric: tabular-nums; white-space: nowrap; }
+  td.path { font-family: var(--mono); font-size: .8rem; color: var(--ink-dim); }
+
+  /* ---------- nav tree ---------- */
+  .tree { display: flex; flex-direction: column; gap: 8px; font-size: .9rem; }
+  .node {
+    display: flex; gap: 12px; align-items: flex-start;
+    padding: 11px 14px;
+    background: var(--panel);
+    border: 1px solid var(--rule);
+    border-radius: 12px;
+  }
+  .node .body { display: flex; flex-direction: column; gap: 3px; min-width: 0; }
+  .node .title { font-weight: 650; }
+  .node .note { font-size: .8rem; color: var(--ink-dim); }
+  .depth-1 { margin-left: 0; }
+  .depth-2 { margin-left: 26px; border-left-color: var(--rule-strong); }
+  .depth-3 { margin-left: 52px; }
+  .depth-4 { margin-left: 78px; }
+  .rail { position: relative; padding-left: 0; }
+
+  .tag {
+    display: inline-flex; align-items: center;
+    font-family: var(--mono);
+    font-size: .68rem; letter-spacing: .04em;
+    padding: 2px 7px; border-radius: 999px;
+    border: 1px solid currentColor;
+    white-space: nowrap;
+  }
+  .t-root  { color: var(--accent); }
+  .t-push  { color: var(--ink-dim); }
+  .t-sheet { color: var(--violet); }
+  .t-dialog{ color: var(--gold); }
+  .t-swap  { color: var(--green); }
+  .t-off   { color: var(--red); }
+
+  .callout {
+    border-left: 3px solid var(--gold);
+    background: var(--panel);
+    border-radius: 0 12px 12px 0;
+    padding: 16px 18px;
+    display: flex; flex-direction: column; gap: 8px;
+  }
+  .callout.warn { border-left-color: var(--red); }
+  .callout h4 { font-size: .9rem; }
+
+  .kv { display: grid; grid-template-columns: max-content 1fr; gap: 6px 18px; font-size: .875rem; }
+  .kv dt { color: var(--ink-dim); }
+  .kv dd { margin: 0; font-family: var(--mono); font-size: .82rem; }
+
+  :focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; border-radius: 4px; }
+
+  @media (max-width: 620px) {
+    .depth-2 { margin-left: 12px; }
+    .depth-3 { margin-left: 24px; }
+    .depth-4 { margin-left: 36px; }
+    .shell { padding: 36px 16px 72px; gap: 44px; }
+  }
+</style>
+
+<div class="shell">
+
+  <header class="sec-head">
+    <span class="eyebrow">e-Learning Practest · Android (Flutter)</span>
+    <h1>UI/UX report: every screen, token and route</h1>
+    <p class="lede">
+      A complete read of the student Android client as it stands in source on 12 August 2026 —
+      launch sequence and its timings, the full screen inventory, both colour themes token by
+      token, the type scale, the component library, and the navigation graph.
+    </p>
+  </header>
+
+  <div class="callout warn">
+    <h4>How this was produced, and what it does not prove</h4>
+    <p>
+      Everything below is read from the Dart source and is exact — colours, sizes, durations and
+      routes are quoted from the files, not estimated. It is <strong>not</strong> a visual sign-off:
+      screenshots on the emulator come back as a black frame regardless of renderer, so no screen in
+      this report has been reviewed with human eyes on a device. Treat it as a specification of what
+      the code will draw, and budget a real device pass before release.
+    </p>
+  </div>
+
+  <!-- ============================================ LAUNCH -->
+  <section>
+    <div class="sec-head">
+      <span class="eyebrow">01 · Launch</span>
+      <h2>The launch sequence, to the millisecond</h2>
+      <p class="dim">Three distinct things happen before a student sees anything they can tap. Two of
+      them are ours; the first belongs to Android.</p>
+    </div>
+
+    <div class="grid g3">
+      <div class="panel">
+        <h3>Android system splash</h3>
+        <p class="note dim" style="font-size:.86rem">
+          Drawn by the OS from <code>LaunchTheme</code> until Flutter's first frame. Shows the
+          launcher icon centred on the window background — white in light mode, dark in
+          <code>values-night</code>. Duration is not ours to set; it is however long the engine takes
+          to start.
+        </p>
+      </div>
+      <div class="panel">
+        <h3>Flutter splash <span class="dim mono" style="font-size:.78rem">2600 ms</span></h3>
+        <p class="note dim" style="font-size:.86rem">
+          <code>splash_screen.dart</code>. One <code>AnimationController</code> drives every element
+          through <code>Interval</code>s, so the whole sequence stays in lockstep and retiming is a
+          single edit.
+        </p>
+      </div>
+      <div class="panel">
+        <h3>Handoff <span class="dim mono" style="font-size:.78rem">420 ms</span></h3>
+        <p class="note dim" style="font-size:.86rem">
+          An <code>AnimatedSwitcher</code> cross-fades to the intro or the dashboard. The aurora
+          backdrop is shared by both, so only the content changes — it reads as one continuous
+          screen, not a cut.
+        </p>
+      </div>
+    </div>
+
+    <div class="scroll">
+      <table>
+        <thead>
+          <tr><th>Element</th><th>Interval</th><th>Wall clock</th><th>Curve</th><th>What it does</th></tr>
+        </thead>
+        <tbody>
+          <tr><td>Logo mark — fade</td><td class="num">0.00 – 0.28</td><td class="num">0 – 728 ms</td><td class="mono">easeOut</td><td>Opacity 0 → 1</td></tr>
+          <tr><td>Logo mark — scale</td><td class="num">0.00 – 0.42</td><td class="num">0 – 1092 ms</td><td class="mono">easeOutBack</td><td>0.78 → 1.0, with a small overshoot so the mark <em>arrives</em> rather than merely appears</td></tr>
+          <tr><td>Halo bloom</td><td class="num">loop</td><td class="num">1800 ms, reversing</td><td class="mono">linear</td><td>Radial accent glow breathing between 0.86 and 1.0 scale/alpha, independent of the entrance so it keeps moving for the whole splash</td></tr>
+          <tr><td>Ring sweep</td><td class="num">0.10 – 0.72</td><td class="num">260 – 1872 ms</td><td class="mono">easeInOutCubic</td><td>A 2.6 px arc draws clockwise from 12 o'clock over a 1.6 px static track, filled with a sweep gradient from transparent to solid accent</td></tr>
+          <tr><td>Wordmark — fade</td><td class="num">0.34 – 0.60</td><td class="num">884 – 1560 ms</td><td class="mono">easeOut</td><td>“E-LEARNING / Practest” lockup appears</td></tr>
+          <tr><td>Wordmark — rise</td><td class="num">0.34 – 0.62</td><td class="num">884 – 1612 ms</td><td class="mono">easeOutCubic</td><td>Translates 14 px up into place</td></tr>
+          <tr><td>Tagline</td><td class="num">0.52 – 0.78</td><td class="num">1352 – 2028 ms</td><td class="mono">easeOut</td><td>“Practice like it is exam day”</td></tr>
+          <tr><td>Handoff fires</td><td class="num">1.00</td><td class="num">2600 ms</td><td class="mono">—</td><td>Controller completes → <code>onDone</code> → cross-fade begins</td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <div class="grid g2">
+      <div class="panel">
+        <h4>Mark size is device-aware</h4>
+        <p class="dim" style="font-size:.88rem;margin-top:6px">
+          132 dp on phones, 190 dp when the window's shortest side is ≥ 600 dp. The halo box is
+          1.9× the mark; the ring is 1.52×.
+        </p>
+      </div>
+      <div class="panel">
+        <h4>Reduced motion is honoured</h4>
+        <p class="dim" style="font-size:.88rem;margin-top:6px">
+          If the platform's “remove animations” setting is on, the whole sequence collapses to
+          <strong>900 ms</strong> and the halo does not loop. The brand still appears — it just
+          doesn't move.
+        </p>
+      </div>
+    </div>
+
+    <div class="callout">
+      <h4>The splash is not a loading screen, deliberately</h4>
+      <p>
+        <code>Session.init()</code> — token restore and the <code>/me</code> call — finishes in
+        <code>main()</code> before <code>runApp</code>, so the auth state is already known when the
+        splash starts. The splash is gated on nothing and awaits nothing, which means it cannot
+        become a place the app hangs. The cost is that a returning student watches 2.6 s of
+        animation before their dashboard; if that proves too long in use, the single constant
+        <code>_full</code> is the only thing to change.
+      </p>
+    </div>
+  </section>
+
+  <!-- ============================================ NAV -->
+  <section>
+    <div class="sec-head">
+      <span class="eyebrow">02 · Structure</span>
+      <h2>Navigation graph</h2>
+      <p class="dim">There is no named-route table and no bottom navigation bar. Everything is
+      imperative <code>Navigator</code> pushes from one root gate, with two modal bottom sheets and
+      one confirm dialog.</p>
+    </div>
+
+    <div class="tree">
+      <div class="node depth-1">
+        <span class="tag t-root">ROOT</span>
+        <div class="body">
+          <span class="title">RootGate</span>
+          <span class="note">The single <code>home:</code> route. Plays the splash once, then switches on auth state. Everything else sits above it.</span>
+        </div>
+      </div>
+
+      <div class="node depth-2">
+        <span class="tag t-swap">SWAP</span>
+        <div class="body">
+          <span class="title">IntroScreen — unauthenticated</span>
+          <span class="note">Also shown for the transient <code>loading</code> state. This is the logged-out home page.</span>
+        </div>
+      </div>
+
+      <div class="node depth-3">
+        <span class="tag t-push">PUSH</span>
+        <div class="body">
+          <span class="title">LoginScreen</span>
+          <span class="note">On success, unwinds to root so the dashboard is not hidden underneath a live login form.</span>
+        </div>
+      </div>
+      <div class="node depth-4">
+        <span class="tag t-push">PUSH</span>
+        <div class="body">
+          <span class="title">ForgotPasswordScreen → ResetPasswordScreen</span>
+          <span class="note">Both offer “Back to Login”, which unwinds to root and re-pushes login.</span>
+        </div>
+      </div>
+      <div class="node depth-4">
+        <span class="tag t-push">PUSH</span>
+        <div class="body">
+          <span class="title">VerifyEmailNoticeScreen · VerifyEmailScreen</span>
+          <span class="note">Reached from the login form when the API answers 403 “verify your email”, or from an app link carrying <code>id</code> + <code>hash</code>.</span>
+        </div>
+      </div>
+      <div class="node depth-3">
+        <span class="tag t-push">PUSH</span>
+        <div class="body">
+          <span class="title">RegisterScreen</span>
+          <span class="note">Reachable from the intro directly and from the login form. Does not auto-login — it ends on a “check your email” success state.</span>
+        </div>
+      </div>
+
+      <div class="node depth-2">
+        <span class="tag t-swap">SWAP</span>
+        <div class="body">
+          <span class="title">DashboardScreen — authenticated</span>
+          <span class="note">The student home. Pull-to-refresh; two icon buttons in its header are the only way to reach results and test series.</span>
+        </div>
+      </div>
+
+      <div class="node depth-3">
+        <span class="tag t-push">PUSH</span>
+        <div class="body">
+          <span class="title">CourseOutlineScreen</span>
+          <span class="note">From a course card's primary button.</span>
+        </div>
+      </div>
+      <div class="node depth-4">
+        <span class="tag t-push">PUSH</span>
+        <div class="body">
+          <span class="title">LessonPlayerScreen</span>
+          <span class="note">YouTube IFrame player. On pop, the outline refetches so progress updates.</span>
+        </div>
+      </div>
+      <div class="node depth-3">
+        <span class="tag t-push">PUSH</span>
+        <div class="body">
+          <span class="title">TestSeriesListScreen</span>
+          <span class="note">Header icon <span class="mono">route</span>.</span>
+        </div>
+      </div>
+      <div class="node depth-4">
+        <span class="tag t-push">PUSH</span>
+        <div class="body">
+          <span class="title">TestSeriesDetailScreen</span>
+          <span class="note">Tabbed study path.</span>
+        </div>
+      </div>
+      <div class="node depth-3">
+        <span class="tag t-push">PUSH</span>
+        <div class="body">
+          <span class="title">TestTakingScreen</span>
+          <span class="note">Entered from a course's test list <em>or</em> from a series test. The one screen with no theme toggle and no back-out that isn't a submit.</span>
+        </div>
+      </div>
+      <div class="node depth-4">
+        <span class="tag t-sheet">SHEET</span>
+        <div class="body">
+          <span class="title">Question navigator (palette)</span>
+          <span class="note">Modal bottom sheet, max 85% of screen height.</span>
+        </div>
+      </div>
+      <div class="node depth-4">
+        <span class="tag t-dialog">DIALOG</span>
+        <div class="body">
+          <span class="title">Confirm submission</span>
+          <span class="note">Destructive confirm; the affirmative button is filled in the danger colour.</span>
+        </div>
+      </div>
+      <div class="node depth-4">
+        <span class="tag t-swap">REPLACE</span>
+        <div class="body">
+          <span class="title">TestResultScreen</span>
+          <span class="note"><code>pushReplacement</code> — submitting removes the test from the stack, so back cannot return to a submitted paper.</span>
+        </div>
+      </div>
+      <div class="node depth-3">
+        <span class="tag t-push">PUSH</span>
+        <div class="body">
+          <span class="title">ResultsHistoryScreen → TestResultScreen</span>
+          <span class="note">Header icon <span class="mono">bar_chart</span>. Past attempts, each opening the same result screen.</span>
+        </div>
+      </div>
+      <div class="node depth-3">
+        <span class="tag t-sheet">SHEET</span>
+        <div class="body">
+          <span class="title">Activation sheet</span>
+          <span class="note">Two tabs: request batch activation (with payment proof upload) and redeem an 8-character code.</span>
+        </div>
+      </div>
+      <div class="node depth-3">
+        <span class="tag t-off">DISABLED</span>
+        <div class="body">
+          <span class="title">Student checkout (Razorpay)</span>
+          <span class="note">Compiled out of Play builds by <code>enableInAppPurchase</code>. Unreachable unless built with <code>--dart-define=ENABLE_IN_APP_PURCHASE=true</code>.</span>
+        </div>
+      </div>
+    </div>
+
+    <div class="callout">
+      <h4>Two structural weaknesses worth naming</h4>
+      <ul>
+        <li><strong>Test series and results are hidden behind unlabelled icons.</strong> They are two
+          of the product's strongest features and neither has a label, a tab, or a card on the
+          dashboard — only a 24 dp glyph in the header. A student who does not tap them will never
+          find the study path.</li>
+        <li><strong>There is no persistent navigation.</strong> Every route below the dashboard is a
+          push, so returning always means walking back. No bottom bar, no drawer, no home affordance
+          from three levels deep.</li>
+      </ul>
+    </div>
+  </section>
+
+  <!-- ============================================ SCREENS -->
+  <section>
+    <div class="sec-head">
+      <span class="eyebrow">03 · Inventory</span>
+      <h2>Screen by screen</h2>
+      <p class="dim">Sixteen screens plus two sheets and one dialog. Every one sits on the shared
+      <code>AppScaffold</code>: aurora backdrop, transparent Material, and a floating theme toggle
+      unless suppressed.</p>
+    </div>
+
+    <h3>Before sign-in</h3>
+    <div class="scroll">
+      <table>
+        <thead><tr><th>Screen</th><th>File</th><th>Composition</th><th>API</th></tr></thead>
+        <tbody>
+          <tr>
+            <td><strong>Splash</strong></td>
+            <td class="path">splash_screen.dart</td>
+            <td>Centred column: haloed logo mark with sweeping ring, wordmark lockup, tagline. No controls, no toggle.</td>
+            <td class="path">—</td>
+          </tr>
+          <tr>
+            <td><strong>Intro</strong> <span class="dim">(logged-out home)</span></td>
+            <td class="path">intro_screen.dart</td>
+            <td>Hero (mark + wordmark + 26/34 px headline + supporting paragraph), six feature cards, then the two calls to action and a one-line note that access is opened by the institute.</td>
+            <td class="path">—</td>
+          </tr>
+          <tr>
+            <td><strong>Login</strong></td>
+            <td class="path">auth/login_screen.dart</td>
+            <td>Single 420 px glass card. Back chip, brand lockup, welcome copy, optional Google/Facebook row with an “or sign in with email” divider, email + password fields, right-aligned “Forgot password?”, full-width gradient submit, footer link to register.</td>
+            <td class="path">/settings/public · /mobile/login</td>
+          </tr>
+          <tr>
+            <td><strong>Register</strong></td>
+            <td class="path">auth/register_screen.dart</td>
+            <td>460 px card. Name, email, optional phone, password, confirm password. Client-side password-match check before submit. Success replaces the form with a “verify your email” panel.</td>
+            <td class="path">/settings/public · /register</td>
+          </tr>
+          <tr>
+            <td><strong>Forgot password</strong></td>
+            <td class="path">auth/forgot_password_screen.dart</td>
+            <td>Email field → “Send Reset Link”, then a success panel. Secondary links to register and back to login.</td>
+            <td class="path">/forgot-password</td>
+          </tr>
+          <tr>
+            <td><strong>Reset password</strong></td>
+            <td class="path">auth/reset_password_screen.dart</td>
+            <td>Token + email carried in, new password and confirmation, success panel with “Continue to Login”.</td>
+            <td class="path">/reset-password</td>
+          </tr>
+          <tr>
+            <td><strong>Verify email — notice</strong></td>
+            <td class="path">auth/verify_email_notice_screen.dart</td>
+            <td>Resend control with a visible cooldown counter on the button label.</td>
+            <td class="path">/email/resend</td>
+          </tr>
+          <tr>
+            <td><strong>Verify email — result</strong></td>
+            <td class="path">auth/verify_email_screen.dart</td>
+            <td>Three states: verifying, success, error. Success offers “Continue to Login”; error offers resend.</td>
+            <td class="path">/email/verify/{id}/{hash}</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+
+    <h3 style="margin-top:14px">After sign-in</h3>
+    <div class="scroll">
+      <table>
+        <thead><tr><th>Screen</th><th>File</th><th>Composition</th><th>API</th></tr></thead>
+        <tbody>
+          <tr>
+            <td><strong>Dashboard</strong></td>
+            <td class="path">dashboard_screen.dart</td>
+            <td>
+              <code>AppHeader</code> + scrolling list with pull-to-refresh. In order: title block
+              (“Student Dashboard”) with the results and series icon buttons; error banner if any;
+              activation-request status panel with per-request chips; “Enrolled Courses” with an
+              <em>Activate</em> secondary button; course cards; and — only after a course is tapped —
+              an “Available Tests for <span class="dim">[course]</span>” section.
+            </td>
+            <td class="path">/settings/public · /student/courses · /student/activation-requests · /student/tests · /student/tests/{id}/start</td>
+          </tr>
+          <tr>
+            <td><strong>Course outline</strong></td>
+            <td class="path">course_outline_screen.dart</td>
+            <td>Progress header (x of y lessons, 12 px progress bar, percent, and a “Continue Watching: [lesson]” button that becomes “Review Lesson” when done), then modules, each a heading over tappable lesson rows. Completed rows switch to a green border and a filled check.</td>
+            <td class="path">/student/courses/{id}/outline</td>
+          </tr>
+          <tr>
+            <td><strong>Lesson player</strong></td>
+            <td class="path">lesson_player_screen.dart</td>
+            <td>Embedded YouTube player, duration, and a live “Your progress” percentage. Locked lessons render a dedicated padlock state with “Back to Outline”.</td>
+            <td class="path">/student/lessons/{id}</td>
+          </tr>
+          <tr>
+            <td><strong>Test series list</strong></td>
+            <td class="path">test_series_screen.dart</td>
+            <td>Cards showing title, exam-category chip, description, “n of m tests attempted”, a progress bar, a percentage in accent, and an “Open series →” affordance. Completed series get a green COMPLETED chip. Empty state is a violet medallion with an explanation that the institute assigns series.</td>
+            <td class="path">/student/test-series</td>
+          </tr>
+          <tr>
+            <td><strong>Test series detail</strong></td>
+            <td class="path">test_series_screen.dart</td>
+            <td>Summary panel (title, description, test count, a “NEXT: TEST #n” chip) above a scrollable <code>TabBar</code> — Full Mocks, Sectionals, Previous Year, plus any other category the API returns, title-cased. Each tab lists test cards with status chip, duration, marks, achieved score, and either “View Result” or a start button.</td>
+            <td class="path">/student/test-series/{id}</td>
+          </tr>
+          <tr>
+            <td><strong>Test taking</strong></td>
+            <td class="path">test_taking_screen.dart</td>
+            <td>
+              Three fixed regions. <em>Top bar</em>: submit-and-exit arrow, test title, active section,
+              and one or two tabular-figure clocks. <em>Body</em>: question card with marks/negative
+              marks, subject · topic · difficulty line, LaTeX-capable question text and options as
+              26 dp lettered circles. <em>Bottom bar</em>: Mark for Review / Clear Response / Palette,
+              then a full-width Save &amp; Next — which becomes Submit Section on the last question of
+              a sectionally-timed section.
+            </td>
+            <td class="path">/student/tests/sessions/{id} · …/palette · …/answers/{q} · …/answers/{q}/review · …/advance-section · …/submit</td>
+          </tr>
+          <tr>
+            <td><strong>Question navigator</strong> <span class="dim">(sheet)</span></td>
+            <td class="path">test_taking_screen.dart</td>
+            <td>Per-section grids of numbered status squares, a legend, and a Submit Test button. Sections the student is not yet authorised for cannot be jumped into when sectional timing is on.</td>
+            <td class="path">—</td>
+          </tr>
+          <tr>
+            <td><strong>Result</strong></td>
+            <td class="path">test_result_screen.dart</td>
+            <td>A RESULT chip, then a score card with the score set in 34 px gradient-filled numerals and three tiles (Accuracy, Percentile, Rank — em-dash when the API omits them), a correct/incorrect/unanswered/time row, and a question-by-question review list with your answer, the correct answer and the explanation.</td>
+            <td class="path">/student/tests/sessions/{id}/result</td>
+          </tr>
+          <tr>
+            <td><strong>Results history</strong></td>
+            <td class="path">results_history_screen.dart</td>
+            <td>Past attempts, each row opening the result screen.</td>
+            <td class="path">/student/results</td>
+          </tr>
+          <tr>
+            <td><strong>Activation</strong> <span class="dim">(sheet)</span></td>
+            <td class="path">activation_modal.dart</td>
+            <td>Drag handle, two tab buttons, close icon. <em>Request</em>: course-batch dropdown, payment reference field, file picker for proof (JPG/PNG/PDF ≤ 4 MB) that switches its icon and border once a file is chosen. <em>Redeem</em>: 8-character code, validated for length before the request, with a success banner held for 1.5 s before the sheet closes and the dashboard refetches.</td>
+            <td class="path">/courses/public · /student/activation-requests · /student/activation-codes/redeem</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  </section>
+
+  <!-- ============================================ COLOUR -->
+  <section>
+    <div class="sec-head">
+      <span class="eyebrow">04 · Colour</span>
+      <h2>Two complete themes</h2>
+      <p class="dim">
+        Ported one-to-one from the web SPA's <code>index.css</code>. Every colour in the app resolves
+        through <code>useColors(context)</code>, which reads the active brightness — there are no
+        hard-coded colours in the screens except the CBT statuses below.
+      </p>
+    </div>
+
+    <div class="callout warn">
+      <h4>The toggle was inverted until this week</h4>
+      <p>
+        <code>MaterialApp</code>'s <code>theme</code> slot is the <em>light</em> one and
+        <code>darkTheme</code> the dark one; the two palettes were crossed, so “dark mode” resolved
+        to the light palette and the sun/moon toggle did the opposite of what it promised. Because
+        the controller defaults to dark, a fresh install opened <em>light</em>. Now fixed — which
+        also means every screen renders differently from how it did before, and none has been
+        reviewed in the dark palette it was designed for.
+      </p>
+    </div>
+
+    <h3>Dark theme</h3>
+    <div class="panel">
+      <div class="swatches">
+        <div class="swatch"><div class="sq" style="background:#070B16"></div><div class="meta"><span class="name">Background</span><span class="hex">#070B16</span></div></div>
+        <div class="swatch"><div class="sq" style="background:#0E1526"></div><div class="meta"><span class="name">Panel (solid)</span><span class="hex">#0E1526</span></div></div>
+        <div class="swatch"><div class="sq" style="background:rgba(15,22,41,.6)"></div><div class="meta"><span class="name">Panel (glass)</span><span class="hex">#0F1629 @ 60%</span></div></div>
+        <div class="swatch"><div class="sq" style="background:#EEF1FB"></div><div class="meta"><span class="name">Text primary</span><span class="hex">#EEF1FB</span></div></div>
+        <div class="swatch"><div class="sq" style="background:#98A4C8"></div><div class="meta"><span class="name">Text secondary</span><span class="hex">#98A4C8</span></div></div>
+        <div class="swatch"><div class="sq" style="background:#8B93FF"></div><div class="meta"><span class="name">Accent</span><span class="hex">#8B93FF</span></div></div>
+        <div class="swatch"><div class="sq" style="background:#A5ABFF"></div><div class="meta"><span class="name">Accent hover</span><span class="hex">#A5ABFF</span></div></div>
+        <div class="swatch"><div class="sq" style="background:rgba(148,163,255,.14)"></div><div class="meta"><span class="name">Border</span><span class="hex">#94A3FF @ 14%</span></div></div>
+        <div class="swatch"><div class="sq" style="background:rgba(148,163,255,.30)"></div><div class="meta"><span class="name">Border strong</span><span class="hex">#94A3FF @ 30%</span></div></div>
+        <div class="swatch"><div class="sq" style="background:#10B981"></div><div class="meta"><span class="name">Success</span><span class="hex">#10B981</span></div></div>
+        <div class="swatch"><div class="sq" style="background:#3DDBA9"></div><div class="meta"><span class="name">Success text</span><span class="hex">#3DDBA9</span></div></div>
+        <div class="swatch"><div class="sq" style="background:#F59E0B"></div><div class="meta"><span class="name">Warning</span><span class="hex">#F59E0B</span></div></div>
+        <div class="swatch"><div class="sq" style="background:#FCD34D"></div><div class="meta"><span class="name">Warning text</span><span class="hex">#FCD34D</span></div></div>
+        <div class="swatch"><div class="sq" style="background:#E5484D"></div><div class="meta"><span class="name">Danger</span><span class="hex">#E5484D</span></div></div>
+        <div class="swatch"><div class="sq" style="background:#FB8F92"></div><div class="meta"><span class="name">Danger text</span><span class="hex">#FB8F92</span></div></div>
+        <div class="swatch"><div class="sq" style="background:#8B5CF6"></div><div class="meta"><span class="name">Violet</span><span class="hex">#8B5CF6</span></div></div>
+        <div class="swatch"><div class="sq" style="background:#B5A8FF"></div><div class="meta"><span class="name">Violet text</span><span class="hex">#B5A8FF</span></div></div>
+      </div>
+    </div>
+
+    <h3>Light theme</h3>
+    <div class="panel">
+      <div class="swatches">
+        <div class="swatch"><div class="sq" style="background:#EEF1FA"></div><div class="meta"><span class="name">Background</span><span class="hex">#EEF1FA</span></div></div>
+        <div class="swatch"><div class="sq" style="background:#FFFFFF"></div><div class="meta"><span class="name">Panel (solid)</span><span class="hex">#FFFFFF</span></div></div>
+        <div class="swatch"><div class="sq" style="background:rgba(255,255,255,.66)"></div><div class="meta"><span class="name">Panel (glass)</span><span class="hex">#FFFFFF @ 66%</span></div></div>
+        <div class="swatch"><div class="sq" style="background:#171F3D"></div><div class="meta"><span class="name">Text primary</span><span class="hex">#171F3D</span></div></div>
+        <div class="swatch"><div class="sq" style="background:#59639B"></div><div class="meta"><span class="name">Text secondary</span><span class="hex">#59639B</span></div></div>
+        <div class="swatch"><div class="sq" style="background:#4F46E5"></div><div class="meta"><span class="name">Accent</span><span class="hex">#4F46E5</span></div></div>
+        <div class="swatch"><div class="sq" style="background:#4338CA"></div><div class="meta"><span class="name">Accent hover</span><span class="hex">#4338CA</span></div></div>
+        <div class="swatch"><div class="sq" style="background:rgba(38,50,105,.12)"></div><div class="meta"><span class="name">Border</span><span class="hex">#263269 @ 12%</span></div></div>
+        <div class="swatch"><div class="sq" style="background:rgba(38,50,105,.26)"></div><div class="meta"><span class="name">Border strong</span><span class="hex">#263269 @ 26%</span></div></div>
+        <div class="swatch"><div class="sq" style="background:#0B9E6D"></div><div class="meta"><span class="name">Success</span><span class="hex">#0B9E6D</span></div></div>
+        <div class="swatch"><div class="sq" style="background:#087450"></div><div class="meta"><span class="name">Success text</span><span class="hex">#087450</span></div></div>
+        <div class="swatch"><div class="sq" style="background:#D97706"></div><div class="meta"><span class="name">Warning</span><span class="hex">#D97706</span></div></div>
+        <div class="swatch"><div class="sq" style="background:#A35505"></div><div class="meta"><span class="name">Warning text</span><span class="hex">#A35505</span></div></div>
+        <div class="swatch"><div class="sq" style="background:#D92D33"></div><div class="meta"><span class="name">Danger</span><span class="hex">#D92D33</span></div></div>
+        <div class="swatch"><div class="sq" style="background:#C81E24"></div><div class="meta"><span class="name">Danger text</span><span class="hex">#C81E24</span></div></div>
+        <div class="swatch"><div class="sq" style="background:#7C3AED"></div><div class="meta"><span class="name">Violet</span><span class="hex">#7C3AED</span></div></div>
+        <div class="swatch"><div class="sq" style="background:#6D28D9"></div><div class="meta"><span class="name">Violet text</span><span class="hex">#6D28D9</span></div></div>
+      </div>
+    </div>
+
+    <h3>Gradients</h3>
+    <div class="grid g2">
+      <div class="panel">
+        <h4>Primary — buttons, logo tiles, header badge</h4>
+        <div style="height:44px;border-radius:9px;margin:12px 0 8px;background:linear-gradient(135deg,#6366F1,#8B5CF6,#A855F7);border:1px solid var(--swatch-ring)"></div>
+        <p class="mono dim" style="font-size:.78rem">dark · #6366F1 → #8B5CF6 → #A855F7 · topLeft→bottomRight</p>
+        <div style="height:44px;border-radius:9px;margin:12px 0 8px;background:linear-gradient(135deg,#4F46E5,#7C3AED,#9333EA);border:1px solid var(--swatch-ring)"></div>
+        <p class="mono dim" style="font-size:.78rem">light · #4F46E5 → #7C3AED → #9333EA</p>
+      </div>
+      <div class="panel">
+        <h4>Text — wordmark, score numerals</h4>
+        <div style="height:44px;border-radius:9px;margin:12px 0 8px;background:linear-gradient(90deg,#A5B4FC,#8B93FF,#67E8F9);border:1px solid var(--swatch-ring)"></div>
+        <p class="mono dim" style="font-size:.78rem">dark · #A5B4FC → #8B93FF → #67E8F9 · left→right</p>
+        <div style="height:44px;border-radius:9px;margin:12px 0 8px;background:linear-gradient(90deg,#4F46E5,#7C3AED,#0891B2);border:1px solid var(--swatch-ring)"></div>
+        <p class="mono dim" style="font-size:.78rem">light · #4F46E5 → #7C3AED → #0891B2</p>
+      </div>
+    </div>
+
+    <h3>CBT question palette — identical in both themes</h3>
+    <div class="panel">
+      <p style="margin-bottom:14px">
+        These are the only colours in the app that do not change with the theme, and the source calls
+        them out as the most safety-critical in the product: a student reads their answer state off
+        these squares under time pressure, so the meaning cannot shift between day and night.
+      </p>
+      <div class="swatches">
+        <div class="swatch"><div class="sq-lg sq" style="background:#64748B"></div><div class="meta"><span class="name">Not visited</span><span class="hex">#64748B</span></div></div>
+        <div class="swatch"><div class="sq-lg sq" style="background:#E5484D"></div><div class="meta"><span class="name">Not answered</span><span class="hex">#E5484D</span></div></div>
+        <div class="swatch"><div class="sq-lg sq" style="background:#0EA371"></div><div class="meta"><span class="name">Answered</span><span class="hex">#0EA371</span></div></div>
+        <div class="swatch"><div class="sq-lg sq" style="background:#8B5CF6"></div><div class="meta"><span class="name">Marked for review</span><span class="hex">#8B5CF6</span></div></div>
+        <div class="swatch"><div class="sq-lg sq" style="background:#8B5CF6;border:2px solid #34D399"></div><div class="meta"><span class="name">Answered &amp; marked</span><span class="hex">#8B5CF6 / #34D399</span></div></div>
+      </div>
+      <p class="dim" style="margin-top:14px;font-size:.88rem">
+        Label colour is white on all five. Note that <em>answered</em> here is <code>#0EA371</code> —
+        a slightly deeper green than the theme's success token, so the two are not interchangeable.
+      </p>
+    </div>
+  </section>
+
+  <!-- ============================================ TYPE -->
+  <section>
+    <div class="sec-head">
+      <span class="eyebrow">05 · Type</span>
+      <h2>Typography</h2>
+      <p class="dim">
+        No custom font is bundled. Everything renders in the platform default — Roboto on Android —
+        which is the single largest gap between this app and the web SPA, where the identity is
+        carried by Space Grotesk, Inter and JetBrains Mono. The hierarchy is instead built entirely
+        from weight, size and tracking.
+      </p>
+    </div>
+
+    <div class="scroll">
+      <table>
+        <thead><tr><th>Role</th><th>Size</th><th>Weight</th><th>Tracking</th><th>Where</th></tr></thead>
+        <tbody>
+          <tr><td>Wordmark (large)</td><td class="num">38</td><td class="num">800</td><td class="num">−0.5</td><td>Splash, tablet intro hero — gradient-filled</td></tr>
+          <tr><td>Score numerals</td><td class="num">34</td><td class="num">900</td><td class="num">+0.3</td><td>Result score card — gradient-filled</td></tr>
+          <tr><td>Hero headline</td><td class="num">34 / 26</td><td class="num">800</td><td class="num">−0.6</td><td>Intro — tablet / phone</td></tr>
+          <tr><td>Screen title</td><td class="num">24</td><td class="num">800</td><td class="num">—</td><td>“Student Dashboard”</td></tr>
+          <tr><td>Course title</td><td class="num">21</td><td class="num">800</td><td class="num">—</td><td>Course outline header</td></tr>
+          <tr><td>Section heading</td><td class="num">20</td><td class="num">800</td><td class="num">—</td><td>“Enrolled Courses”, “Test Series”, “Available Tests for …”</td></tr>
+          <tr><td>Wordmark (small)</td><td class="num">20</td><td class="num">800</td><td class="num">—</td><td>Login card, phone intro</td></tr>
+          <tr><td>Card title</td><td class="num">17 – 16.5</td><td class="num">700</td><td class="num">—</td><td>Course, series and test cards; app header wordmark is 17/700</td></tr>
+          <tr><td>Question text</td><td class="num">16</td><td class="num">400</td><td class="num">line-height 1.6</td><td>Test taking — LaTeX-aware</td></tr>
+          <tr><td>Option text</td><td class="num">14.5</td><td class="num">400</td><td class="num">line-height 1.5</td><td>Test taking</td></tr>
+          <tr><td>Body</td><td class="num">13 – 13.5</td><td class="num">400</td><td class="num">line-height 1.45 – 1.6</td><td>Descriptions, helper copy</td></tr>
+          <tr><td>Meta / captions</td><td class="num">11.5 – 12.5</td><td class="num">400 – 600</td><td class="num">—</td><td>Durations, marks, statuses, refs</td></tr>
+          <tr><td>Clock</td><td class="num">15</td><td class="num">800</td><td class="num">tabular figures</td><td>Test taking — the one place digits are locked to a monospaced advance so the countdown doesn't jitter</td></tr>
+          <tr><td>Brand eyebrow</td><td class="num">11 / 9</td><td class="num">700</td><td class="num">3.4 / 1.8</td><td>“E-LEARNING”, in the warning gold</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </section>
+
+  <!-- ============================================ COMPONENTS -->
+  <section>
+    <div class="sec-head">
+      <span class="eyebrow">06 · Components</span>
+      <h2>The shared library</h2>
+      <p class="dim">Fourteen widgets in <code>widgets.dart</code> and <code>scaffold.dart</code> do
+      almost all the work. Radii are fixed at three steps: 10 (small), 14 (medium), 20 (large).</p>
+    </div>
+
+    <div class="grid g2">
+      <div class="panel">
+        <h4>GlassPanel</h4>
+        <p class="dim" style="font-size:.88rem;margin-top:6px">
+          The card everything sits in. 20 px radius by default, 1 px border, translucent panel fill,
+          and a single deep shadow — <span class="mono">0 20px 50px −12px rgba(2,6,18,.5)</span>.
+          Optionally tappable, which several cards use instead of a button.
+        </p>
+      </div>
+      <div class="panel">
+        <h4>GradientButton</h4>
+        <p class="dim" style="font-size:.88rem;margin-top:6px">
+          Primary action. Primary gradient, 10 px radius, 24×13 padding, 15 px semibold label, and an
+          accent-coloured glow — <span class="mono">0 8px 22px −6px</span> — that is dropped entirely
+          when disabled. Swaps its label for an 18 px spinner while loading.
+        </p>
+      </div>
+      <div class="panel">
+        <h4>SecondaryButton</h4>
+        <p class="dim" style="font-size:.88rem;margin-top:6px">
+          Bordered, filled with the faintest surface tint, same radius and metrics. Drops to 40 %
+          fill opacity when disabled.
+        </p>
+      </div>
+      <div class="panel">
+        <h4>AppHeader</h4>
+        <p class="dim" style="font-size:.88rem;margin-top:6px">
+          The frosted bar on every signed-in screen: 34 px gradient tile with a mortarboard glyph,
+          the eyebrow + wordmark lockup, an optional trailing slot, the user's name truncated at
+          110 px, and a Logout chip. Sub-screens reuse it with the name slot repurposed as a page
+          title and logout hidden — economical, but it means the header lies about what that text is.
+        </p>
+      </div>
+      <div class="panel">
+        <h4>StatusChip · MedallionIcon · ProgressBar</h4>
+        <p class="dim" style="font-size:.88rem;margin-top:6px">
+          A pill with optional icon tinted by semantic colour; a rounded-square icon badge at 18 px
+          radius with a 12 % tint fill; and a rounded progress bar, 10 px tall by default and 12 px
+          in the course header.
+        </p>
+      </div>
+      <div class="panel">
+        <h4>MathText</h4>
+        <p class="dim" style="font-size:.88rem;margin-top:6px">
+          The most specialised piece. Splits <span class="mono">$$…$$</span> block and
+          <span class="mono">$…$</span> inline maths, and additionally sniffs undelimited LaTeX so
+          question banks that forget the delimiters still render. Six of the seven unit tests in the
+          project cover this.
+        </p>
+      </div>
+    </div>
+
+    <div class="panel">
+      <h4>AuroraBackground</h4>
+      <p class="dim" style="font-size:.88rem;margin-top:6px">
+        The app's signature: three blurred radial orbs — indigo top-right, purple beside it, cyan
+        bottom-left — each drifting <span class="mono">(0,0) → (−24,+20)</span> px and breathing
+        1.00 → 1.12 scale over a 26-second reversing loop. It renders on every screen including the
+        test engine, and it never stops. Two consequences: it is a permanent, if small, background
+        GPU cost, and it makes <code>pumpAndSettle</code> unusable in widget tests because the tree
+        never reaches a settled state.
+      </p>
+    </div>
+  </section>
+
+  <!-- ============================================ RESPONSIVE + MOTION -->
+  <section>
+    <div class="sec-head">
+      <span class="eyebrow">07 · Adaptation</span>
+      <h2>Responsive behaviour and motion</h2>
+    </div>
+
+    <div class="grid g2">
+      <div class="panel">
+        <h4>Breakpoints</h4>
+        <dl class="kv" style="margin-top:10px">
+          <dt>Tablet threshold</dt><dd>shortestSide ≥ 600 dp</dd>
+          <dt>Two-column intro</dt><dd>tablet AND width ≥ 840 dp</dd>
+          <dt>Content cap — phone</dt><dd>480 dp</dd>
+          <dt>Content cap — tablet</dt><dd>620 dp</dd>
+          <dt>Content cap — two-col</dt><dd>1080 dp</dd>
+          <dt>Login / register card</dt><dd>420 / 460 dp</dd>
+        </dl>
+        <p class="dim" style="font-size:.86rem;margin-top:12px">
+          Keying off the <em>shortest</em> side rather than width is deliberate: a phone in landscape
+          keeps the phone layout, and a tablet in portrait keeps the tablet one.
+        </p>
+      </div>
+      <div class="panel">
+        <h4>Intro entrance — 900 ms, staggered</h4>
+        <dl class="kv" style="margin-top:10px">
+          <dt>Hero</dt><dd>0 – 405 ms</dd>
+          <dt>Feature 1</dt><dd>90 – 495 ms</dd>
+          <dt>Feature 2</dt><dd>153 – 558 ms</dd>
+          <dt>Feature 3</dt><dd>216 – 621 ms</dd>
+          <dt>Feature 4</dt><dd>279 – 684 ms</dd>
+          <dt>Feature 5</dt><dd>342 – 747 ms</dd>
+          <dt>Feature 6</dt><dd>405 – 810 ms</dd>
+          <dt>Calls to action</dt><dd>495 – 900 ms</dd>
+        </dl>
+        <p class="dim" style="font-size:.86rem;margin-top:12px">
+          Each element fades in while rising 18 px on an easeOutCubic. Collapses to a single frame
+          when the platform asks for reduced motion.
+        </p>
+      </div>
+    </div>
+
+    <div class="panel">
+      <h4>Everything else that moves</h4>
+      <ul style="margin-top:8px;font-size:.9rem" class="dim">
+        <li>Splash → content cross-fade: <span class="mono">420 ms</span>.</li>
+        <li>Route transitions: stock <code>MaterialPageRoute</code> — the platform's own push animation, nothing custom.</li>
+        <li>Option select, chip and card taps: Material ink with <code>InkSparkle</code> as the splash factory.</li>
+        <li>Answer saves are debounced at <span class="mono">300 ms</span> so rapid option taps don't stack requests.</li>
+        <li>The activation success banner is held for <span class="mono">1500 ms</span> before the sheet closes.</li>
+      </ul>
+    </div>
+  </section>
+
+  <!-- ============================================ FINDINGS -->
+  <section>
+    <div class="sec-head">
+      <span class="eyebrow">08 · Assessment</span>
+      <h2>What is strong, and what I would fix</h2>
+    </div>
+
+    <div class="grid g2">
+      <div class="panel">
+        <h3 style="color:var(--green)">Holds up well</h3>
+        <ul style="font-size:.9rem;margin-top:10px">
+          <li><strong>The test engine.</strong> Fixed top and bottom bars with a scrolling question body is the right shape for a timed exam — the clock and the primary action never move.</li>
+          <li><strong>The CBT palette is theme-locked.</strong> Someone thought carefully about the one place where a colour changing meaning would actually cost a student marks.</li>
+          <li><strong>Tabular figures on the countdown.</strong> A small detail that stops the timer twitching every second.</li>
+          <li><strong>Empty states are written, not defaulted.</strong> “When your institute assigns a test series to your batch, it will appear here” explains the system, rather than saying “no data”.</li>
+          <li><strong>One token system, no stray colours.</strong> Every screen resolves through <code>useColors</code>.</li>
+        </ul>
+      </div>
+      <div class="panel">
+        <h3 style="color:var(--gold)">Would fix, in this order</h3>
+        <ol style="font-size:.9rem;margin-top:10px">
+          <li><strong>Surface test series and results properly.</strong> Two unlabelled header icons are hiding the study path and every past score. A bottom navigation bar with Home / Series / Results is the obvious answer.</li>
+          <li><strong>Bundle the brand fonts.</strong> Roboto everywhere is why the app looks less considered than the website that shares its palette.</li>
+          <li><strong>Stop overloading <code>AppHeader</code>'s name slot as a page title.</strong> Give it a real title property.</li>
+          <li><strong>“View Tests” is a hidden mode switch.</strong> Tapping it appends a section far below the fold with no scroll and no visible change near the button — it looks like nothing happened.</li>
+          <li><strong>Consider pausing the aurora during a test.</strong> Ambient motion behind a timed exam is a small but constant distraction, and a free battery saving.</li>
+        </ol>
+      </div>
+    </div>
+
+    <div class="callout warn">
+      <h4>Still unverified before release</h4>
+      <ul style="font-size:.9rem">
+        <li>No screen has been seen on a real device or emulator — captures return black.</li>
+        <li>The tablet two-column intro has never been rendered; the only AVD available is a phone.</li>
+        <li>Nothing has been exercised against the production API — the machine's VPN egress is blocked by the host's bot protection.</li>
+        <li>The dark palette is newly correct as of this week, so every screen's dark rendering is effectively brand new and unreviewed.</li>
+      </ul>
+    </div>
+  </section>
+
+</div>
+
+<button id="tt" type="button" aria-label="Switch between light and dark">&#9681;</button>
+<script>
+(function () {
+  var root = document.documentElement, btn = document.getElementById('tt');
+  var saved = null;
+  try { saved = localStorage.getItem('practest-report-theme'); } catch (e) {}
+  if (saved === 'light' || saved === 'dark') root.dataset.theme = saved;
+  btn.addEventListener('click', function () {
+    var current = root.dataset.theme
+      || (window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light');
+    var next = current === 'dark' ? 'light' : 'dark';
+    root.dataset.theme = next;
+    try { localStorage.setItem('practest-report-theme', next); } catch (e) {}
+  });
+})();
+</script>
+</body>
+</html>

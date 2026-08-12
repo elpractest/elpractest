@@ -1,0 +1,657 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<meta name="color-scheme" content="light dark" />
+<title>Practest Web — Site &amp; App UI/UX Report</title>
+<style>
+  /* minimal reset — mirrors the artifact runtime so this file renders identically offline */
+  *, *::before, *::after { box-sizing: border-box; }
+  html { -webkit-text-size-adjust: 100%; }
+  body { margin: 0; }
+  img, svg { max-width: 100%; height: auto; }
+  /* standalone theme switch: the report CSS already handles :root[data-theme] */
+  #tt {
+    position: fixed; right: 18px; bottom: 18px; z-index: 999;
+    width: 44px; height: 44px; border-radius: 50%;
+    display: inline-flex; align-items: center; justify-content: center;
+    background: var(--panel); color: var(--ink);
+    border: 1px solid var(--rule); cursor: pointer;
+    box-shadow: 0 10px 26px -10px rgba(0,0,0,.45);
+    font-size: 17px; line-height: 1; padding: 0;
+  }
+  #tt:hover { transform: translateY(-2px); }
+  @media print { #tt { display: none; } }
+</style>
+</head>
+<body><style>
+  :root {
+    /* Light = the public site's own "exam paper ivory" world */
+    --ground:   #f3f1ea;
+    --ground-2: #ebe8df;
+    --panel:    #fffdf8;
+    --ink:      #1b2148;
+    --ink-dim:  #5b628f;
+    --rule:     rgba(43,46,96,.16);
+    --rule-2:   rgba(43,46,96,.30);
+    --accent:   #4338ca;
+    --marker:   #d97706;
+    --green:    #0b9e6d;
+    --red:      #c81e24;
+    --violet:   #6d28d9;
+    --ring:     rgba(43,46,96,.20);
+
+    --display: "Segoe UI Variable Display", "Segoe UI", -apple-system, system-ui, sans-serif;
+    --body:    system-ui, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+    --mono:    ui-monospace, "Cascadia Mono", "Cascadia Code", Consolas, "SF Mono", monospace;
+
+    --measure: 68ch;
+  }
+
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --ground:   #070b16;
+      --ground-2: #0a1020;
+      --panel:    #0e1526;
+      --ink:      #eef1fb;
+      --ink-dim:  #98a4c8;
+      --rule:     rgba(148,163,255,.16);
+      --rule-2:   rgba(148,163,255,.32);
+      --accent:   #8b93ff;
+      --marker:   #f59e0b;
+      --green:    #3ddba9;
+      --red:      #fb8f92;
+      --violet:   #b5a8ff;
+      --ring:     rgba(255,255,255,.14);
+    }
+  }
+  :root[data-theme="dark"] {
+    --ground:#070b16; --ground-2:#0a1020; --panel:#0e1526;
+    --ink:#eef1fb; --ink-dim:#98a4c8;
+    --rule:rgba(148,163,255,.16); --rule-2:rgba(148,163,255,.32);
+    --accent:#8b93ff; --marker:#f59e0b; --green:#3ddba9; --red:#fb8f92; --violet:#b5a8ff;
+    --ring:rgba(255,255,255,.14);
+  }
+  :root[data-theme="light"] {
+    --ground:#f3f1ea; --ground-2:#ebe8df; --panel:#fffdf8;
+    --ink:#1b2148; --ink-dim:#5b628f;
+    --rule:rgba(43,46,96,.16); --rule-2:rgba(43,46,96,.30);
+    --accent:#4338ca; --marker:#d97706; --green:#0b9e6d; --red:#c81e24; --violet:#6d28d9;
+    --ring:rgba(43,46,96,.20);
+  }
+
+  body {
+    background: var(--ground);
+    color: var(--ink);
+    font-family: var(--body);
+    font-size: 16px;
+    line-height: 1.65;
+    position: relative;
+    -webkit-font-smoothing: antialiased;
+  }
+  /* The site's own ruled-paper device, at a whisper. */
+  body::before {
+    content: "";
+    position: fixed;
+    inset: 0;
+    z-index: -1;
+    pointer-events: none;
+    opacity: .5;
+    background-image: repeating-linear-gradient(
+      to bottom, transparent 0, transparent 47px, var(--rule) 47px, var(--rule) 48px);
+  }
+
+  .shell {
+    max-width: 1080px;
+    margin: 0 auto;
+    padding: 56px 24px 96px;
+    display: flex;
+    flex-direction: column;
+    gap: 54px;
+  }
+
+  h1,h2,h3,h4 { font-family: var(--display); margin: 0; text-wrap: balance; }
+  h1 { font-size: clamp(2rem,5vw,2.9rem); font-weight: 800; letter-spacing:-.03em; line-height:1.08; }
+  h2 { font-size: clamp(1.35rem,3vw,1.75rem); font-weight: 800; letter-spacing:-.02em; }
+  h3 { font-size: 1.06rem; font-weight: 700; letter-spacing:-.01em; }
+  h4 { font-size: .9rem; font-weight: 700; }
+  p { margin: 0; max-width: var(--measure); }
+  ul,ol { margin:0; padding-left:1.15rem; max-width: var(--measure); }
+  li { margin-bottom:.35rem; }
+  code,.mono { font-family: var(--mono); font-size:.86em; }
+  a { color: var(--accent); }
+
+  .eyebrow {
+    display:inline-flex; align-items:baseline; gap:10px;
+    font-family: var(--mono); font-size:.7rem; font-weight:700;
+    letter-spacing:.16em; text-transform:uppercase; color: var(--accent);
+  }
+  .eyebrow .idx { color: var(--marker); }
+  .dim { color: var(--ink-dim); }
+  .lede { font-size:1.05rem; color: var(--ink-dim); max-width:62ch; }
+
+  section { display:flex; flex-direction:column; gap:20px; }
+  .sec-head { display:flex; flex-direction:column; gap:6px; }
+
+  .panel {
+    background: var(--panel);
+    border: 1px solid var(--rule);
+    border-radius: 16px;
+    padding: 22px;
+  }
+  .grid { display:grid; gap:14px; }
+  .g2 { grid-template-columns: repeat(auto-fit,minmax(300px,1fr)); }
+  .g3 { grid-template-columns: repeat(auto-fit,minmax(215px,1fr)); }
+
+  /* OMR bubbles — the site's brand motif, used here to encode real state:
+     filled = shipped and correct, half = partial, empty = missing. */
+  .omr { width:14px; height:14px; border-radius:50%; border:2px solid var(--rule-2); flex:none; margin-top:5px; }
+  .omr.full { background: var(--accent); border-color: var(--accent); }
+  .omr.half { background: linear-gradient(90deg, var(--marker) 50%, transparent 50%); border-color: var(--marker); }
+  .omr.none { background: transparent; }
+  .omr-list { list-style:none; padding:0; display:flex; flex-direction:column; gap:11px; max-width:var(--measure); }
+  .omr-list li { display:flex; gap:12px; margin:0; font-size:.92rem; }
+
+  .swatches { display:grid; gap:10px; grid-template-columns:repeat(auto-fill,minmax(205px,1fr)); }
+  .swatch { display:flex; gap:11px; align-items:center; }
+  .sq { width:34px; height:34px; border-radius:7px; border:1px solid var(--ring); flex:none; }
+  .swatch .meta { display:flex; flex-direction:column; gap:1px; min-width:0; }
+  .swatch .name { font-size:.81rem; font-weight:650; }
+  .swatch .hex { font-family:var(--mono); font-size:.73rem; color:var(--ink-dim); }
+
+  .scroll { overflow-x:auto; border:1px solid var(--rule); border-radius:14px; }
+  table { border-collapse:collapse; width:100%; font-size:.87rem; }
+  th,td { text-align:left; padding:10px 14px; border-bottom:1px solid var(--rule); vertical-align:top; }
+  thead th {
+    background: var(--ground-2);
+    font-family: var(--mono); font-size:.67rem; letter-spacing:.1em;
+    text-transform:uppercase; color:var(--ink-dim); font-weight:700; white-space:nowrap;
+  }
+  tbody tr:last-child td { border-bottom:0; }
+  td.path { font-family:var(--mono); font-size:.79rem; color:var(--ink-dim); white-space:nowrap; }
+  td.num { font-family:var(--mono); font-variant-numeric:tabular-nums; white-space:nowrap; }
+
+  .callout {
+    border-left:3px solid var(--marker);
+    background: var(--panel);
+    border-radius:0 12px 12px 0;
+    padding:16px 18px;
+    display:flex; flex-direction:column; gap:8px;
+  }
+  .callout.bad { border-left-color: var(--red); }
+  .callout.good { border-left-color: var(--green); }
+
+  .tag {
+    display:inline-flex; align-items:center;
+    font-family:var(--mono); font-size:.67rem; letter-spacing:.04em;
+    padding:2px 7px; border-radius:999px; border:1px solid currentColor; white-space:nowrap;
+  }
+  .t-pub { color: var(--green); }
+  .t-stu { color: var(--accent); }
+  .t-adm { color: var(--marker); }
+  .t-sa  { color: var(--violet); }
+  .t-dead{ color: var(--red); }
+
+  .band { display:flex; flex-wrap:wrap; gap:10px; }
+
+  :focus-visible { outline:2px solid var(--accent); outline-offset:2px; border-radius:4px; }
+
+  @media (max-width:620px) { .shell { padding:36px 16px 72px; gap:42px; } }
+</style>
+
+<div class="shell">
+
+  <header class="sec-head">
+    <span class="eyebrow"><span class="idx">✳</span> practest.live · app.practest.live</span>
+    <h1>UI/UX report: the public site and the web app</h1>
+    <p class="lede">
+      A full read of both web products as they stand in source on 12 August 2026 — design tokens,
+      every page and route, the role model, the admin console, navigation, and where the two
+      diverge from each other and from the Android client.
+    </p>
+  </header>
+
+  <div class="callout">
+    <h4>Method</h4>
+    <p>
+      Read from source: <code>web/</code> (Astro static site) and <code>app/</code> (React + Vite
+      SPA). Colours, sizes, breakpoints and routes are quoted, not estimated. Nothing here was
+      checked in a live browser, so rendering bugs that only appear at runtime would not show up —
+      but the layout facts below are structural and hold regardless.
+    </p>
+  </div>
+
+  <!-- ══════════════════════════ PART ONE ══════════════════════════ -->
+  <section>
+    <div class="sec-head">
+      <span class="eyebrow"><span class="idx">01</span> The public site</span>
+      <h2>practest.live — “the examination paper, reimagined”</h2>
+      <p class="dim">Astro, statically exported, near-zero client JS. Eight pages, one layout, one
+      stylesheet. The identity is committed and unusually specific for a product site.</p>
+    </div>
+
+    <div class="grid g3">
+      <div class="panel">
+        <h4>Ruled paper</h4>
+        <p class="dim" style="font-size:.87rem;margin-top:6px">
+          A fixed <code>repeating-linear-gradient</code> on <code>body::before</code> draws a
+          48 px ruled line across every page at 14 % opacity. Costs nothing, and it is the single
+          device that makes the site feel like stationery rather than SaaS.
+        </p>
+      </div>
+      <div class="panel">
+        <h4>OMR bubbles</h4>
+        <p class="dim" style="font-size:.87rem;margin-top:6px">
+          13 px circles, some filled with the accent, one with the saffron marker. Used in the hero
+          proof line and the footer. A brand mark drawn in CSS, not an image.
+        </p>
+      </div>
+      <div class="panel">
+        <h4>Marker-pen underline</h4>
+        <p class="dim" style="font-size:.87rem;margin-top:6px">
+          <code>.marker-underline</code> lays a skewed saffron highlight behind one word per
+          headline — “real exam hall”, “educators”. Restrained: one word, once per page.
+        </p>
+      </div>
+    </div>
+
+    <h3>Palette — day is a warm ivory, not the app's blue</h3>
+    <div class="panel">
+      <div class="swatches">
+        <div class="swatch"><div class="sq" style="background:#f3f1ea"></div><div class="meta"><span class="name">Paper (day)</span><span class="hex">#f3f1ea</span></div></div>
+        <div class="swatch"><div class="sq" style="background:#ebe8df"></div><div class="meta"><span class="name">Paper soft</span><span class="hex">#ebe8df</span></div></div>
+        <div class="swatch"><div class="sq" style="background:#fffdf8"></div><div class="meta"><span class="name">Panel (day)</span><span class="hex">#fffdf8</span></div></div>
+        <div class="swatch"><div class="sq" style="background:#1b2148"></div><div class="meta"><span class="name">Exam ink</span><span class="hex">#1b2148</span></div></div>
+        <div class="swatch"><div class="sq" style="background:#5b628f"></div><div class="meta"><span class="name">Ink dim</span><span class="hex">#5b628f</span></div></div>
+        <div class="swatch"><div class="sq" style="background:#4338ca"></div><div class="meta"><span class="name">Accent (day)</span><span class="hex">#4338ca</span></div></div>
+        <div class="swatch"><div class="sq" style="background:#d97706"></div><div class="meta"><span class="name">Marker (day)</span><span class="hex">#d97706</span></div></div>
+        <div class="swatch"><div class="sq" style="background:#070b16"></div><div class="meta"><span class="name">Night ground</span><span class="hex">#070b16</span></div></div>
+        <div class="swatch"><div class="sq" style="background:#0a1020"></div><div class="meta"><span class="name">Night soft</span><span class="hex">#0a1020</span></div></div>
+        <div class="swatch"><div class="sq" style="background:#eef1fb"></div><div class="meta"><span class="name">Night ink</span><span class="hex">#eef1fb</span></div></div>
+        <div class="swatch"><div class="sq" style="background:#8b93ff"></div><div class="meta"><span class="name">Accent (night)</span><span class="hex">#8b93ff</span></div></div>
+        <div class="swatch"><div class="sq" style="background:#f59e0b"></div><div class="meta"><span class="name">Marker (night)</span><span class="hex">#f59e0b</span></div></div>
+      </div>
+      <p class="dim" style="margin-top:14px;font-size:.88rem">
+        Radii 10 / 14 / 20. One easing curve throughout: <code>cubic-bezier(.22,1,.36,1)</code>.
+        Panels are <code>backdrop-filter: blur(18px) saturate(140%)</code> over a 60–78 % fill.
+      </p>
+    </div>
+
+    <h3>Pages</h3>
+    <div class="scroll">
+      <table>
+        <thead><tr><th>Route</th><th>Sections</th><th>Notable</th></tr></thead>
+        <tbody>
+          <tr>
+            <td class="path">/</td>
+            <td>Hero · <span class="mono">01</span> Exam target boards · Live course catalogue · <span class="mono">02</span> How it works · <span class="mono">03</span> Built like the real thing · Aspirants spotlight · Product facts · <span class="mono">04</span> Aspirant voices · <span class="mono">05</span> FAQ · Final CTA</td>
+            <td>The numbered eyebrows are a real sequence, not decoration. Hero carries a student photo with two floating glass overlays — a live-looking CBT timer badge and a “TOP PERCENTILE 99.4%” card. FAQ emits <code>FAQPage</code> schema.</td>
+          </tr>
+          <tr><td class="path">/courses</td><td>Catalogue grid</td><td>Fetches the live course list; cards escape HTML on insert.</td></tr>
+          <tr><td class="path">/courses/[slug]</td><td>Course detail</td><td>Syllabus, inclusions, FAQ accordion, <code>Course</code> structured data.</td></tr>
+          <tr><td class="path">/about</td><td>Hero · founder · two mission columns · <span class="mono">01</span> pillars · <span class="mono">02</span> company &amp; credentials · CTA</td><td>Carries the corporate identity: VPD Vastus Ventures → Vinstitution → the brand.</td></tr>
+          <tr><td class="path">/contact</td><td>Form + details</td><td>Name, email, phone (optional), message. Posts to the API; reCAPTCHA v3 on the server side.</td></tr>
+          <tr><td class="path">/privacy · /terms · /refund-policy</td><td>Long-form copy</td><td>Present and linked from the footer. The privacy policy predates the Android app and does not mention it.</td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <h3>Chrome — header, footer, floating actions</h3>
+    <div class="grid g2">
+      <div class="panel">
+        <h4>Sticky glass header</h4>
+        <p class="dim" style="font-size:.88rem;margin-top:6px">
+          1200 px container. Brand lockup (32 px gradient tile + saffron “e-Learning” mono eyebrow +
+          “Practest®”), three nav links, a 38 px circular theme toggle that rotates 12° on hover,
+          then <em>Login</em> (secondary) and <em>Start free</em> (primary) pointing at the SPA.
+        </p>
+      </div>
+      <div class="panel">
+        <h4>Footer</h4>
+        <p class="dim" style="font-size:.88rem;margin-top:6px">
+          Four columns — Prepare, Exams, Company, Registered Office with a real address and phone —
+          over a dashed rule carrying the parent-company line, PAN, GSTIN and ISO certification.
+          Column headings are saffron mono at 0.75 rem.
+        </p>
+      </div>
+      <div class="panel">
+        <h4>Two floating action buttons</h4>
+        <p class="dim" style="font-size:.88rem;margin-top:6px">
+          WhatsApp (<code>#25d366</code>) and Call, pinned bottom-right, 54 px pills that collapse to
+          50 px circles under 600 px. The WhatsApp button carries a 2.6 s pulsing ring, suppressed
+          under reduced motion.
+        </p>
+      </div>
+      <div class="panel">
+        <h4>Theme boot</h4>
+        <p class="dim" style="font-size:.88rem;margin-top:6px">
+          An inline script reads the <code>practest_theme</code> cookie (scoped to
+          <code>.practest.live</code>), falls back to <code>localStorage</code>, then to dark — before
+          first paint, so there is no flash. Toggling writes the cookie back, which is how the site
+          and the app stay in sync across subdomains.
+        </p>
+      </div>
+    </div>
+
+    <div class="callout bad">
+      <h4>The header navigation disappears on phones with nothing to replace it</h4>
+      <p>
+        At <code>max-width: 760px</code> the stylesheet sets <code>.navbar-links { display:none }</code>
+        and <code>.nav-login { display:none }</code>. There is no hamburger, no drawer, no
+        <code>&lt;details&gt;</code> fallback. On a phone the header is reduced to the logo, the theme
+        toggle and <em>Start free</em> — <strong>Courses, About, Contact and Login are all
+        unreachable from the top of the page.</strong> The footer still carries them, so navigation
+        technically survives, but only by scrolling to the very bottom of a long marketing page.
+        For an audience that is overwhelmingly mobile, this is the most costly defect on the site.
+      </p>
+    </div>
+
+    <div class="callout bad">
+      <h4>The numbers on the landing page are hardcoded, and the testimonials are invented</h4>
+      <p>
+        “690+ Exam Mocks”, “15,000+ Aspirants”, “15k+ Active Students”, “98.4% Exam Accuracy”,
+        “120+ Mocks”, “45 Mocks”, “31 Exams” — all literal strings in
+        <code>index.astro</code>, none derived from the database. The three quotes attributed to
+        “Ananya S.”, “Rohit K.” and “Meera D.” sit under a section the source itself comments as
+        <code>ASPIRANT VOICES (placeholder)</code>. Two of the four “product facts” are honest claims
+        about the engine; the audience-size figures are not. This is live, indexed, and running as
+        ad landing copy — decide deliberately whether to source these from real counts or remove
+        them.
+      </p>
+    </div>
+
+    <div class="callout good">
+      <h4>What the site does properly</h4>
+      <ul class="omr-list" style="margin-top:4px">
+        <li><span class="omr full"></span><span>Canonical URLs, per-page title/description, Open Graph and Twitter cards, <code>Organization</code> and <code>FAQPage</code> schema.</span></li>
+        <li><span class="omr full"></span><span><code>theme-color</code> declared per colour scheme — the browser chrome matches the page in both themes.</span></li>
+        <li><span class="omr full"></span><span>Analytics gated behind a consent banner; nothing loads until the cookie is set.</span></li>
+        <li><span class="omr full"></span><span>Scroll reveals via <code>IntersectionObserver</code> with a no-JS fallback that just shows everything, and a <code>prefers-reduced-motion</code> block that disables them outright.</span></li>
+        <li><span class="omr full"></span><span>Visible focus rings, semantic <code>&lt;details&gt;</code> for the FAQ, real <code>&lt;address&gt;</code> markup.</span></li>
+      </ul>
+    </div>
+  </section>
+
+  <!-- ══════════════════════════ PART TWO ══════════════════════════ -->
+  <section>
+    <div class="sec-head">
+      <span class="eyebrow"><span class="idx">02</span> The web app</span>
+      <h2>app.practest.live — one SPA, three roles</h2>
+      <p class="dim">React 18 + Vite, React Router, cookie-session auth via Sanctum. 31 page
+      components. Shares the SPA half of the design system with the Android client — same tokens,
+      same CBT palette, same glass.</p>
+    </div>
+
+    <h3>Routes and guards</h3>
+    <div class="scroll">
+      <table>
+        <thead><tr><th>Route</th><th>Access</th><th>Screen</th></tr></thead>
+        <tbody>
+          <tr><td class="path">/login</td><td><span class="tag t-pub">PUBLIC</span></td><td>420 px glass card. Redirects a signed-in user to their role's home.</td></tr>
+          <tr><td class="path">/register</td><td><span class="tag t-pub">PUBLIC</span></td><td>Registration, then the verify-email notice.</td></tr>
+          <tr><td class="path">/verify-email-notice</td><td><span class="tag t-pub">PUBLIC</span></td><td>Resend with cooldown.</td></tr>
+          <tr><td class="path">/verify-email</td><td><span class="tag t-pub">PUBLIC</span></td><td>Landing for the emailed link.</td></tr>
+          <tr><td class="path">/forgot-password</td><td><span class="tag t-pub">PUBLIC</span></td><td>Email → reset link.</td></tr>
+          <tr><td class="path">/reset-password</td><td><span class="tag t-pub">PUBLIC</span></td><td>Token + new password.</td></tr>
+          <tr><td class="path">/dashboard</td><td><span class="tag t-stu">STUDENT</span></td><td>Student home.</td></tr>
+          <tr><td class="path">/courses/:courseId/outline</td><td><span class="tag t-stu">STUDENT</span></td><td>Modules and lessons, 1000 px column.</td></tr>
+          <tr><td class="path">/lessons/:lessonId</td><td><span class="tag t-stu">STUDENT</span></td><td>Player, 1100 px column.</td></tr>
+          <tr><td class="path">/results</td><td><span class="tag t-stu">STUDENT</span></td><td>Past attempts.</td></tr>
+          <tr><td class="path">/verify-otp</td><td><span class="tag t-stu">STUDENT</span></td><td>Phone OTP. Reached from the persistent warning banner.</td></tr>
+          <tr><td class="path">/tests/:session</td><td><span class="tag t-stu">STUDENT</span></td><td>The CBT engine.</td></tr>
+          <tr><td class="path">/tests/:session/result</td><td><span class="tag t-stu">STUDENT</span></td><td>Scorecard and question review.</td></tr>
+          <tr><td class="path">/student/test-series</td><td><span class="tag t-stu">STUDENT</span></td><td>Assigned series.</td></tr>
+          <tr><td class="path">/student/test-series/:id</td><td><span class="tag t-stu">STUDENT</span></td><td>Study path with category tabs and a batch leaderboard.</td></tr>
+          <tr><td class="path">/admin/dashboard</td><td><span class="tag t-adm">ADMIN</span> <span class="tag t-sa">SUPER</span></td><td>The whole console — 11 panels behind this one URL.</td></tr>
+          <tr><td class="path">/admin/2fa/setup</td><td><span class="tag t-adm">ADMIN</span></td><td>Mandatory TOTP enrolment. QR + verification code.</td></tr>
+          <tr><td class="path">/admin/2fa/verify</td><td><span class="tag t-adm">ADMIN</span></td><td>Per-session TOTP challenge, driven by a 403 interceptor.</td></tr>
+          <tr><td class="path">/super-admin/dashboard</td><td><span class="tag t-dead">REDIRECT</span></td><td>Kept only so old bookmarks resolve; sends you to <code>/admin/dashboard</code>.</td></tr>
+          <tr><td class="path">*</td><td>—</td><td>Catch-all → role home, or <code>/login</code>.</td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <div class="callout">
+      <h4>Super-admin is a superset, not a separate console</h4>
+      <p>
+        Both admin roles land on the same <code>/admin/dashboard</code>; super-admins additionally
+        see a “👑 Platform Governance” group in the sidebar with White-Label Settings, Admin Accounts
+        &amp; Onboarding, and System Audit Logs. The consequence is that
+        <code>SuperAdminGuard</code> and <code>SuperAdminDashboard.jsx</code> are now dead —
+        the guard is defined and never used, the dashboard imported and never rendered.
+      </p>
+    </div>
+
+    <h3>The student surface</h3>
+    <div class="grid g2">
+      <div class="panel">
+        <h4>Persistent header</h4>
+        <p class="dim" style="font-size:.88rem;margin-top:6px">
+          A sticky glass bar at <code>top:12px</code> shown only to students: brand lockup linking
+          home, a <span class="mono">STUDENT</span> chip, the user's name, and Logout. Admins get no
+          such bar — their identity lives in the sidebar footer instead.
+        </p>
+      </div>
+      <div class="panel">
+        <h4>Unverified-phone banner</h4>
+        <p class="dim" style="font-size:.88rem;margin-top:6px">
+          A non-blocking amber strip under the header whenever <code>phone_verified</code> is false,
+          with a <em>Verify Phone Now</em> button. Correct choice — it nags without gating, which
+          matters because OTP delivery is still pending a DLT template.
+        </p>
+      </div>
+      <div class="panel">
+        <h4>Dashboard</h4>
+        <p class="dim" style="font-size:.88rem;margin-top:6px">
+          2 rem “Student Dashboard” heading, then two prominent buttons — <em>Request Activation /
+          Redeem Code</em> and <em>Results History</em> — then activation-request status, enrolled
+          course cards, an optional purchase section, and the test list for the selected course.
+          Note the contrast with Android, where the same two destinations are bare icons.
+        </p>
+      </div>
+      <div class="panel">
+        <h4>Test series</h4>
+        <p class="dim" style="font-size:.88rem;margin-top:6px">
+          Reached at <code>/student/test-series</code> — a real URL, but with no link to it from the
+          dashboard body or the header. Today it is effectively reachable only by typing the address
+          or following an assignment link.
+        </p>
+      </div>
+    </div>
+
+    <h3>The CBT engine — a desktop layout</h3>
+    <div class="panel">
+      <p>
+        The exam screen is a fixed two-column workspace: a <code>calc(100vh - 100px)</code> container
+        with <code>overflow: hidden</code>, a glass sub-header carrying the test title, the active
+        section chip and one or two <code>header-clock</code> readouts in JetBrains Mono with
+        tabular figures, then a flexible question pane beside a <strong>fixed 320 px</strong> palette
+        rail.
+      </p>
+      <p style="margin-top:10px">
+        The rail holds the section selector — with locked sections greyed to 40 % opacity and a
+        “Locked” pill — above a five-across grid of teardrop palette buttons
+        (<code>border-radius: 50% 50% 0 50%</code>, the same shape SSC and IBPS render), and a legend
+        of five 16 px squares. Options are <code>.mcq-option</code> rows that shift 3 px right on
+        hover and take a gradient badge plus a double ring when selected.
+      </p>
+    </div>
+
+    <h3>The admin console</h3>
+    <div class="panel">
+      <p style="margin-bottom:12px">
+        A 280 px solid sidebar beside a scrolling main pane. Eight core panels for every admin, three
+        more for super-admins. Panel choice is React state, not a route.
+      </p>
+      <div class="band">
+        <span class="tag t-adm">📚 Courses &amp; Syllabus</span>
+        <span class="tag t-adm">📝 Question Bank</span>
+        <span class="tag t-adm">🏆 Tests Manager</span>
+        <span class="tag t-adm">🎯 Test Series Builder</span>
+        <span class="tag t-adm">👥 Batches &amp; Enrollments</span>
+        <span class="tag t-adm">⏳ Activation Requests</span>
+        <span class="tag t-adm">🔑 Activation Codes</span>
+        <span class="tag t-adm">📊 Results Dashboard</span>
+        <span class="tag t-sa">🎨 White-Label Settings</span>
+        <span class="tag t-sa">🚀 Admin Accounts &amp; Onboarding</span>
+        <span class="tag t-sa">📋 System Audit Logs</span>
+      </div>
+      <p class="dim" style="font-size:.88rem;margin-top:14px">
+        One genuinely good touch: a global CSV-import status bar that polls every 2 s and stays
+        visible across panel switches, colour-coded pending / success / partial-failure with a
+        “View Details” jump. Background work that reports itself is rarer than it should be.
+      </p>
+    </div>
+
+    <div class="callout bad">
+      <h4>The app has no responsive design at all</h4>
+      <p>
+        There is exactly <strong>one</strong> <code>@media</code> query in the entire SPA, and it is
+        <code>prefers-reduced-motion</code>. Every layout is inline styles; what adaptivity exists
+        comes from <code>auto-fit / minmax</code> grids and <code>flexWrap</code>, which rescues card
+        lists but cannot rescue fixed widths. Two places break hard on a phone:
+      </p>
+      <ul>
+        <li><strong>The admin sidebar</strong> is <code>width:280px; flexShrink:0</code>. On a 360 px
+          screen it consumes 78 % of the viewport and cannot be collapsed.</li>
+        <li><strong>The CBT screen</strong> puts a fixed 320 px palette rail next to the question
+          pane inside an <code>overflow:hidden</code> box. At 360 px the question area is left with
+          roughly 20 px. The exam is unusable on a phone.</li>
+      </ul>
+      <p style="margin-top:6px">
+        That last point matters more than it looks: the site's own FAQ tells students
+        <em>“the palette and timer stay fully usable on a phone.”</em> The marketing copy and the
+        code disagree, and the copy is the one students will act on.
+      </p>
+    </div>
+
+    <div class="callout bad">
+      <h4>A one-word bug on a screen every admin must pass through</h4>
+      <p>
+        <code>Admin2FASetup.jsx</code> line 51 sets <code>flexDirection: 'col'</code>. That is not a
+        valid CSS value — React writes it, the browser discards it, and the container falls back to
+        <code>row</code>. The mandatory 2FA enrolment card therefore lays its heading, QR block and
+        form out <em>horizontally</em> inside a 500 px box. <code>'column'</code> is the fix.
+      </p>
+    </div>
+
+    <div class="callout">
+      <h4>Smaller things worth knowing</h4>
+      <ul class="omr-list" style="margin-top:4px">
+        <li><span class="omr none"></span><span><strong>Eleven admin panels share one URL.</strong> No deep links, no browser back between panels, and a refresh always returns to Courses. Sharing “look at this result” with a colleague is impossible.</span></li>
+        <li><span class="omr half"></span><span><strong>Two icon systems.</strong> The app ships a 25-glyph inline SVG <code>Icon</code> component, but the admin sidebar uses emoji — which render as full-colour, differently on every OS, and ignore the theme.</span></li>
+        <li><span class="omr none"></span><span><strong>Razorpay's <code>checkout.js</code> loads on every route</strong>, including the login page, regardless of whether the payment gateway is switched on. It is a third-party script on 100 % of page views for a feature that is off by default.</span></li>
+        <li><span class="omr half"></span><span><strong>Modals are fixed multi-column grids.</strong> The Tests Manager editor is <code>1.2fr 1fr 1fr</code> at 90 vh; the Question editor <code>1fr 1fr</code>. Neither reflows.</span></li>
+        <li><span class="omr full"></span><span><strong>Loading states are considered</strong> — a shared <code>.spinner</code>, a shimmering <code>.skeleton</code>, and role-specific copy: “LOADING PRACTEST”, “LOADING PRACTEST ADMIN”, “LOADING SUPER ADMIN CONSOLE”.</span></li>
+        <li><span class="omr full"></span><span><strong>Panels stagger in.</strong> <code>.glass-panel</code> animates <code>rise-in</code> over 0.5 s, with 50 ms delays applied to the 2nd–6th sibling so a grid assembles rather than snapping.</span></li>
+      </ul>
+    </div>
+  </section>
+
+  <!-- ══════════════════════════ PART THREE ══════════════════════════ -->
+  <section>
+    <div class="sec-head">
+      <span class="eyebrow"><span class="idx">03</span> Across the three products</span>
+      <h2>What is shared, and where it has drifted</h2>
+    </div>
+
+    <div class="scroll">
+      <table>
+        <thead><tr><th>Token</th><th>Public site</th><th>Web app</th><th>Android</th></tr></thead>
+        <tbody>
+          <tr><td>Night ground</td><td class="num">#070b16</td><td class="num">#070b16</td><td class="num">#070B16</td></tr>
+          <tr><td>Night accent</td><td class="num">#8b93ff</td><td class="num">#8b93ff</td><td class="num">#8B93FF</td></tr>
+          <tr><td><strong>Day ground</strong></td><td class="num" style="color:var(--marker)">#f3f1ea</td><td class="num">#eef1fa</td><td class="num">#EEF1FA</td></tr>
+          <tr><td><strong>Day accent</strong></td><td class="num" style="color:var(--marker)">#4338ca</td><td class="num">#4f46e5</td><td class="num">#4F46E5</td></tr>
+          <tr><td><strong>Day ink</strong></td><td class="num" style="color:var(--marker)">#1b2148</td><td class="num">#171f3d</td><td class="num">#171F3D</td></tr>
+          <tr><td>CBT palette (all 5)</td><td class="num">identical</td><td class="num">identical</td><td class="num">identical</td></tr>
+          <tr><td>Radii</td><td class="num">10 / 14 / 20</td><td class="num">10 / 14 / 20</td><td class="num">10 / 14 / 20</td></tr>
+          <tr><td>Display / body / data type</td><td class="num">Space Grotesk · Inter · JetBrains Mono</td><td class="num">Space Grotesk · Inter · JetBrains Mono</td><td class="num" style="color:var(--red)">platform default only</td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <div class="grid g2">
+      <div class="panel">
+        <h4>Night is genuinely one product</h4>
+        <p class="dim" style="font-size:.88rem;margin-top:6px">
+          Ground, panel, border, ink, accent and gradients match to the hex across all three. A
+          student crossing from the site to the app in dark mode sees one continuous surface.
+        </p>
+      </div>
+      <div class="panel">
+        <h4>Day is three-quarters of one product</h4>
+        <p class="dim" style="font-size:.88rem;margin-top:6px">
+          The site's warm ivory is a deliberate, good choice — it <em>is</em> the exam-paper idea.
+          But nothing carries it across the subdomain: click Login and the ground turns cool blue and
+          the accent shifts indigo. Either carry the ivory into the app's day theme, or accept the
+          break and make it feel intentional at the boundary.
+        </p>
+      </div>
+      <div class="panel">
+        <h4>The theme follows the student</h4>
+        <p class="dim" style="font-size:.88rem;margin-top:6px">
+          Both webs read and write <code>practest_theme</code> on <code>.practest.live</code> before
+          first paint, so the choice persists across subdomains with no flash. Android is the
+          exception — its preference is local to the device and does not participate.
+        </p>
+      </div>
+      <div class="panel">
+        <h4>Typography is where Android falls behind</h4>
+        <p class="dim" style="font-size:.88rem;margin-top:6px">
+          Both webs load the same three families from Google Fonts. The Flutter app bundles none and
+          renders in Roboto, which is why it reads as a plainer product than the site that shares its
+          palette exactly.
+        </p>
+      </div>
+    </div>
+  </section>
+
+  <!-- ══════════════════════════ PART FOUR ══════════════════════════ -->
+  <section>
+    <div class="sec-head">
+      <span class="eyebrow"><span class="idx">04</span> Priorities</span>
+      <h2>What I would fix, in order</h2>
+      <p class="dim">Ranked by how many students hit it and how wrong the result is — not by effort.</p>
+    </div>
+
+    <div class="scroll">
+      <table>
+        <thead><tr><th>#</th><th>Fix</th><th>Where</th><th>Why it ranks here</th></tr></thead>
+        <tbody>
+          <tr><td class="num">1</td><td>Make the CBT screen work on a phone</td><td class="path">app · TestTaking.jsx</td><td>The exam is the product. Below ~900 px it is unusable, and the site actively promises otherwise. Collapse the 320 px rail into a sheet or a drawer under a breakpoint.</td></tr>
+          <tr><td class="num">2</td><td>Give the site a mobile menu</td><td class="path">web · Layout.astro</td><td>Four navigation targets currently vanish on the devices most of the audience uses.</td></tr>
+          <tr><td class="num">3</td><td>Fix <code>flexDirection:'col'</code></td><td class="path">app · Admin2FASetup.jsx:51</td><td>One word, and every administrator meets it during a mandatory step.</td></tr>
+          <tr><td class="num">4</td><td>Decide about the invented numbers and testimonials</td><td class="path">web · index.astro</td><td>Live, indexed, used in paid campaigns. Source them or cut them.</td></tr>
+          <tr><td class="num">5</td><td>Make the admin console responsive</td><td class="path">app · AdminDashboard.jsx</td><td>A 280 px immovable sidebar makes phone administration impossible — which matters for institute owners approving activations on the move.</td></tr>
+          <tr><td class="num">6</td><td>Give admin panels real routes</td><td class="path">app · AdminDashboard.jsx</td><td>Deep links, working browser back, and a refresh that stays put.</td></tr>
+          <tr><td class="num">7</td><td>Link test series from the student dashboard</td><td class="path">app · Dashboard.jsx</td><td>A shipped feature with a working URL and no way in.</td></tr>
+          <tr><td class="num">8</td><td>Load Razorpay only when checkout opens</td><td class="path">app · index.html</td><td>Removes a third-party script from every page view of a product whose payments are off.</td></tr>
+          <tr><td class="num">9</td><td>Replace the sidebar emoji with the SVG icon set</td><td class="path">app · AdminDashboard.jsx</td><td>Consistency, theming, and identical rendering across platforms.</td></tr>
+          <tr><td class="num">10</td><td>Delete the dead super-admin console</td><td class="path">app · SuperAdminDashboard.jsx</td><td>An unused guard and page that will eventually be edited by mistake.</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </section>
+
+</div>
+
+<button id="tt" type="button" aria-label="Switch between light and dark">&#9681;</button>
+<script>
+(function () {
+  var root = document.documentElement, btn = document.getElementById('tt');
+  var saved = null;
+  try { saved = localStorage.getItem('practest-report-theme'); } catch (e) {}
+  if (saved === 'light' || saved === 'dark') root.dataset.theme = saved;
+  btn.addEventListener('click', function () {
+    var current = root.dataset.theme
+      || (window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light');
+    var next = current === 'dark' ? 'light' : 'dark';
+    root.dataset.theme = next;
+    try { localStorage.setItem('practest-report-theme', next); } catch (e) {}
+  });
+})();
+</script>
+</body>
+</html>
