@@ -149,10 +149,7 @@ class _LessonPlayerScreenState extends State<LessonPlayerScreen> {
     return AppScaffold(
       child: Column(
         children: [
-          AppHeader(
-            userName: 'Lesson Player',
-            onLogout: () {},
-          ),
+          const AppHeader(title: 'Lesson', showBack: true),
           Expanded(
             child: _loading
                 ? const LoadingView(message: 'Loading lesson...')
@@ -171,7 +168,7 @@ class _LessonPlayerScreenState extends State<LessonPlayerScreen> {
     return Center(
       child: Padding(
         padding: const EdgeInsets.all(24),
-        child: GlassPanel(
+        child: SurfacePanel(
           padding: const EdgeInsets.all(28),
           child: Column(
             mainAxisSize: MainAxisSize.min,
@@ -187,7 +184,7 @@ class _LessonPlayerScreenState extends State<LessonPlayerScreen> {
                 style: TextStyle(fontSize: 13.5, color: c.textSecondary, height: 1.5),
               ),
               const SizedBox(height: 20),
-              GradientButton(
+              PrimaryButton(
                 label: 'Back to Outline',
                 onPressed: () => Navigator.of(context).pop(),
               ),
@@ -202,7 +199,7 @@ class _LessonPlayerScreenState extends State<LessonPlayerScreen> {
     return Center(
       child: Padding(
         padding: const EdgeInsets.all(24),
-        child: GlassPanel(
+        child: SurfacePanel(
           padding: const EdgeInsets.all(28),
           child: Column(
             mainAxisSize: MainAxisSize.min,
@@ -213,7 +210,7 @@ class _LessonPlayerScreenState extends State<LessonPlayerScreen> {
                   textAlign: TextAlign.center,
                   style: TextStyle(fontSize: 13.5, color: c.textSecondary, height: 1.5)),
               const SizedBox(height: 18),
-              GradientButton(
+              PrimaryButton(
                 label: 'Go Back',
                 onPressed: () => Navigator.of(context).pop(),
               ),
@@ -247,7 +244,7 @@ class _LessonPlayerScreenState extends State<LessonPlayerScreen> {
           ),
         ),
         const SizedBox(height: 16),
-        GlassPanel(
+        SurfacePanel(
           padding: const EdgeInsets.all(20),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
@@ -280,7 +277,7 @@ class _LessonPlayerScreenState extends State<LessonPlayerScreen> {
                   Text('Your progress', style: TextStyle(fontSize: 13, color: c.textSecondary)),
                   const Spacer(),
                   Text('$pct%',
-                      style: TextStyle(fontSize: 13, fontWeight: FontWeight.w700, color: c.accent)),
+                      style: TextStyle(fontSize: 13, fontWeight: FontWeight.w700, color: c.brandBright)),
                 ],
               ),
               const SizedBox(height: 8),

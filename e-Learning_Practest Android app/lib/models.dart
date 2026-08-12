@@ -374,6 +374,64 @@ class PaletteItem {
       );
 }
 
+/// One row of the analytics job's per-subject or per-topic breakdown.
+///
+/// Already computed and stored server-side at submit, which is what lets the
+/// result screen show accuracy and speed together per section without a second
+/// request or a second definition of "accuracy".
+class BreakdownRow {
+  const BreakdownRow({
+    this.correct = 0,
+    this.incorrect = 0,
+    this.unanswered = 0,
+    this.score = 0,
+    this.maxScore = 0,
+    this.timeSpent = 0,
+  });
+
+  final int correct;
+  final int incorrect;
+  final int unanswered;
+  final num score;
+  final num maxScore;
+  final int timeSpent;
+
+  int get attempted => correct + incorrect;
+  int get questions => correct + incorrect + unanswered;
+
+  /// Null rather than zero when nothing was attempted: not attempting a
+  /// section is not the same as getting it all wrong, and the difference is
+  /// the whole point of showing it.
+  double? get accuracy => attempted == 0 ? null : (correct / attempted) * 100;
+
+  /// Seconds per attempted question, for the speed footnote that sits beside
+  /// accuracy — that pair is what actually diagnoses an aspirant.
+  double? get secondsPerQuestion =>
+      attempted == 0 ? null : timeSpent / attempted;
+
+  factory BreakdownRow.fromJson(Map<String, dynamic> json) => BreakdownRow(
+        correct: asInt(json['correct']) ?? 0,
+        incorrect: asInt(json['incorrect']) ?? 0,
+        unanswered: asInt(json['unanswered']) ?? 0,
+        score: asNum(json['score']) ?? 0,
+        maxScore: asNum(json['max_score']) ?? 0,
+        timeSpent: asInt(json['time_spent']) ?? 0,
+      );
+
+  static Map<String, BreakdownRow> mapFrom(dynamic raw) {
+    if (raw is! Map) return const {};
+    final out = <String, BreakdownRow>{};
+    raw.forEach((key, value) {
+      if (value is Map<String, dynamic>) {
+        out['$key'] = BreakdownRow.fromJson(value);
+      } else if (value is Map) {
+        out['$key'] = BreakdownRow.fromJson(Map<String, dynamic>.from(value));
+      }
+    });
+    return out;
+  }
+}
+
 class Analytic {
   const Analytic({
     this.totalScore,
@@ -383,6 +441,8 @@ class Analytic {
     this.incorrectCount,
     this.unansweredCount,
     this.totalTimeSeconds,
+    this.subjectBreakdown = const {},
+    this.topicBreakdown = const {},
   });
 
   final num? totalScore;
@@ -392,6 +452,10 @@ class Analytic {
   final int? incorrectCount;
   final int? unansweredCount;
   final num? totalTimeSeconds;
+
+  /// Keyed by subject — what the result screen calls a section.
+  final Map<String, BreakdownRow> subjectBreakdown;
+  final Map<String, BreakdownRow> topicBreakdown;
 
   factory Analytic.fromJson(Map<String, dynamic>? json) {
     if (json == null) return const Analytic();
@@ -403,6 +467,8 @@ class Analytic {
       incorrectCount: asInt(json['incorrect_count']),
       unansweredCount: asInt(json['unanswered_count']),
       totalTimeSeconds: asInt(json['total_time_seconds']),
+      subjectBreakdown: BreakdownRow.mapFrom(json['subject_breakdown']),
+      topicBreakdown: BreakdownRow.mapFrom(json['topic_breakdown']),
     );
   }
 }
@@ -851,4 +917,219 @@ class PublicSettings {
       accentColor: json['accent_color']?.toString(),
     );
   }
+}
+
+// ── Home summary ────────────────────────────────────────────────────────────
+// Everything the Home tab draws, from `GET /student/home-summary`. Modelled as
+// one payload rather than five because the screen's governing rule is that
+// every figure on it comes from one source and one window — which is only
+// enforceable if they arrive together.
+
+/// The unfinished paper. Absent when there is nothing to resume, which is a
+/// state the screen has a real design for rather than an empty card.
+class ActiveSession {
+  const ActiveSession({
+    required this.id,
+    this.testId,
+    this.testTitle,
+    this.category,
+    this.timeRemainingSeconds,
+    this.sectionTimeRemainingSeconds,
+    this.currentSectionIndex = 0,
+    this.sectionCount = 0,
+    this.sectionTitle,
+    this.answeredCount = 0,
+    this.questionCount = 0,
+  });
+
+  final int id;
+  final int? testId;
+  final String? testTitle;
+  final String? category;
+  final int? timeRemainingSeconds;
+  final int? sectionTimeRemainingSeconds;
+  final int currentSectionIndex;
+  final int sectionCount;
+  final String? sectionTitle;
+  final int answeredCount;
+  final int questionCount;
+
+  int get progressPercent =>
+      questionCount == 0 ? 0 : ((answeredCount / questionCount) * 100).round();
+
+  factory ActiveSession.fromJson(Map<String, dynamic> json) => ActiveSession(
+        id: asInt(json['id']) ?? 0,
+        testId: asInt(json['test_id']),
+        testTitle: json['test_title'],
+        category: json['category'],
+        timeRemainingSeconds: asInt(json['time_remaining_seconds']),
+        sectionTimeRemainingSeconds: asInt(json['section_time_remaining_seconds']),
+        currentSectionIndex: asInt(json['current_section_index']) ?? 0,
+        sectionCount: asInt(json['section_count']) ?? 0,
+        sectionTitle: json['section_title'],
+        answeredCount: asInt(json['answered_count']) ?? 0,
+        questionCount: asInt(json['question_count']) ?? 0,
+      );
+}
+
+/// The stat trio's source. [accuracy] is null when nothing was attempted in
+/// the window — which the tile renders as an em dash, never as 0%.
+class WeekStats {
+  const WeekStats({this.tests = 0, this.accuracy, this.timeSeconds = 0});
+
+  final int tests;
+  final num? accuracy;
+  final int timeSeconds;
+
+  bool get isEmpty => tests == 0;
+
+  factory WeekStats.fromJson(Map<String, dynamic>? json) {
+    if (json == null) return const WeekStats();
+    return WeekStats(
+      tests: asInt(json['tests']) ?? 0,
+      accuracy: asNum(json['accuracy']),
+      timeSeconds: asInt(json['time_seconds']) ?? 0,
+    );
+  }
+}
+
+/// The opinion: one topic, its accuracy, and what that costs against the
+/// student's own average over the same window.
+class WeakestTopic {
+  const WeakestTopic({
+    required this.topic,
+    required this.accuracy,
+    required this.averageAccuracy,
+    required this.questionCount,
+    required this.timeSeconds,
+  });
+
+  final String topic;
+  final num accuracy;
+  final num averageAccuracy;
+  final int questionCount;
+  final int timeSeconds;
+
+  factory WeakestTopic.fromJson(Map<String, dynamic> json) => WeakestTopic(
+        topic: '${json['topic'] ?? ''}',
+        accuracy: asNum(json['accuracy']) ?? 0,
+        averageAccuracy: asNum(json['average_accuracy']) ?? 0,
+        questionCount: asInt(json['question_count']) ?? 0,
+        timeSeconds: asInt(json['time_seconds']) ?? 0,
+      );
+}
+
+/// An enrolled course with the lesson progress its card draws.
+class CourseProgress {
+  const CourseProgress({
+    required this.id,
+    this.title,
+    this.examCategory,
+    this.mode,
+    this.shortDescription,
+    this.thumbnailUrl,
+    this.lessonsTotal = 0,
+    this.lessonsCompleted = 0,
+    this.progressPercent = 0,
+  });
+
+  final int id;
+  final String? title;
+  final String? examCategory;
+  final String? mode;
+  final String? shortDescription;
+  final String? thumbnailUrl;
+  final int lessonsTotal;
+  final int lessonsCompleted;
+  final int progressPercent;
+
+  factory CourseProgress.fromJson(Map<String, dynamic> json) => CourseProgress(
+        id: asInt(json['id']) ?? 0,
+        title: json['title'],
+        examCategory: json['exam_category'],
+        mode: json['mode'],
+        shortDescription: json['short_description'],
+        thumbnailUrl: json['thumbnail_url'],
+        lessonsTotal: asInt(json['lessons_total']) ?? 0,
+        lessonsCompleted: asInt(json['lessons_completed']) ?? 0,
+        progressPercent: asInt(json['progress_percent']) ?? 0,
+      );
+
+  /// The older `/student/courses` shape, so Home still renders a catalogue
+  /// against an API that predates the summary endpoint — without progress,
+  /// which is then simply not drawn rather than drawn as zero.
+  factory CourseProgress.fromEnrolled(EnrolledCourse c) => CourseProgress(
+        id: c.id,
+        title: c.title,
+        examCategory: c.examCategory,
+        mode: c.mode,
+        shortDescription: c.shortDescription ?? c.description,
+        thumbnailUrl: c.thumbnailUrl,
+        lessonsTotal: 0,
+      );
+}
+
+/// The nearest expiry across active enrollments. Orange, because access
+/// running out is a deadline and not a study action.
+class Entitlement {
+  const Entitlement({this.batchName, this.expiresAt, required this.daysRemaining});
+
+  final String? batchName;
+  final String? expiresAt;
+  final int daysRemaining;
+
+  factory Entitlement.fromJson(Map<String, dynamic> json) => Entitlement(
+        batchName: json['batch_name'],
+        expiresAt: json['expires_at']?.toString(),
+        daysRemaining: asInt(json['days_remaining']) ?? 0,
+      );
+}
+
+class HomeSummary {
+  const HomeSummary({
+    this.activeSession,
+    this.week = const WeekStats(),
+    this.weakestTopic,
+    this.courses = const [],
+    this.entitlement,
+    this.boardCategories = const [],
+    this.windowDays = 7,
+    this.degraded = false,
+  });
+
+  final ActiveSession? activeSession;
+  final WeekStats week;
+  final WeakestTopic? weakestTopic;
+  final List<CourseProgress> courses;
+  final Entitlement? entitlement;
+  final List<String> boardCategories;
+  final int windowDays;
+
+  /// True when this was assembled from the older endpoints because the summary
+  /// route was not there. The screen drops the blocks it cannot honestly fill
+  /// rather than filling them with guesses.
+  final bool degraded;
+
+  factory HomeSummary.fromJson(Map<String, dynamic> json) => HomeSummary(
+        activeSession: json['active_session'] is Map
+            ? ActiveSession.fromJson(json['active_session'] as Map<String, dynamic>)
+            : null,
+        week: WeekStats.fromJson(json['week'] as Map<String, dynamic>?),
+        weakestTopic: json['weakest_topic'] is Map
+            ? WeakestTopic.fromJson(json['weakest_topic'] as Map<String, dynamic>)
+            : null,
+        courses: (json['courses'] as List?)
+                ?.map((c) => CourseProgress.fromJson(c as Map<String, dynamic>))
+                .toList() ??
+            const [],
+        entitlement: json['entitlement'] is Map
+            ? Entitlement.fromJson(json['entitlement'] as Map<String, dynamic>)
+            : null,
+        boardCategories: (json['board_categories'] as List?)
+                ?.map((e) => '$e')
+                .where((e) => e.isNotEmpty)
+                .toList() ??
+            const [],
+        windowDays: asInt(json['window_days']) ?? 7,
+      );
 }

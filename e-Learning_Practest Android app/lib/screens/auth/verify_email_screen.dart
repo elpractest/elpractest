@@ -71,7 +71,7 @@ class _VerifyEmailScreenState extends State<VerifyEmailScreen> {
           padding: const EdgeInsets.all(16),
           child: ConstrainedBox(
             constraints: const BoxConstraints(maxWidth: 460),
-            child: GlassPanel(
+            child: SurfacePanel(
               padding: const EdgeInsets.all(40),
               child: Column(
                 children: [
@@ -95,7 +95,7 @@ class _VerifyEmailScreenState extends State<VerifyEmailScreen> {
                     style: TextStyle(
                       fontSize: 24,
                       fontWeight: FontWeight.w800,
-                      color: _status == _VerifyStatus.error ? c.dangerText : c.accent,
+                      color: _status == _VerifyStatus.error ? c.dangerText : c.brandBright,
                     ),
                   ),
                   const SizedBox(height: 12),
@@ -107,7 +107,7 @@ class _VerifyEmailScreenState extends State<VerifyEmailScreen> {
                     ),
                     const SizedBox(height: 24),
                     if (_status == _VerifyStatus.success)
-                      GradientButton(
+                      PrimaryButton(
                         label: 'Continue to Login',
                         fullWidth: true,
                         onPressed: () => returnToLogin(context),
@@ -123,7 +123,7 @@ class _VerifyEmailScreenState extends State<VerifyEmailScreen> {
                       const SizedBox(height: 12),
                       TextButton(
                         onPressed: () => returnToLogin(context),
-                        child: Text('← Back to Login', style: TextStyle(color: c.accent)),
+                        child: Text('← Back to Login', style: TextStyle(color: c.brandBright)),
                       ),
                     ],
                   ],

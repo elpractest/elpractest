@@ -92,7 +92,7 @@ class _LoginScreenState extends State<LoginScreen> {
           padding: const EdgeInsets.all(16),
           child: ConstrainedBox(
             constraints: const BoxConstraints(maxWidth: 420),
-            child: GlassPanel(
+            child: SurfacePanel(
               padding: const EdgeInsets.all(32),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -100,40 +100,18 @@ class _LoginScreenState extends State<LoginScreen> {
                   const BackChip(),
                   Column(
                     children: [
-                      Row(
-                        mainAxisAlignment: MainAxisAlignment.center,
-                        children: [
-                          Container(
-                            width: 40,
-                            height: 40,
-                            decoration: BoxDecoration(
-                              gradient: AppTheme.primaryGradient(c),
-                              borderRadius: BorderRadius.circular(12),
-                            ),
-                            child: const Icon(Icons.school, color: Colors.white, size: 22),
-                          ),
-                          const SizedBox(width: 12),
-                          Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              Text('E-LEARNING',
-                                  style: TextStyle(color: c.warning, fontSize: 9, fontWeight: FontWeight.w700, letterSpacing: 1.8)),
-                              ShaderMask(
-                                shaderCallback: (r) => AppTheme.textGradient(c).createShader(r),
-                                child: const Text('Practest',
-                                    style: TextStyle(fontSize: 20, fontWeight: FontWeight.w800, color: Colors.white)),
-                              ),
-                            ],
-                          ),
-                        ],
-                      ),
+                      // The real mark, at full colour. The gradient mortarboard
+                      // tile it replaces was a placeholder for artwork that has
+                      // existed all along.
+                      const BrandLockup(width: 200),
                       const SizedBox(height: 20),
-                      Text('Welcome to e-Learning Practest',
-                          style: TextStyle(fontSize: 18, fontWeight: FontWeight.w800, color: c.accent)),
+                      Text('Welcome back',
+                          style: AppText.screenTitle
+                              .copyWith(fontSize: 20, color: c.textPrimary)),
                       const SizedBox(height: 6),
                       Text(
                         'Sign in to continue your exam preparation',
-                        style: TextStyle(fontSize: 13, color: c.textSecondary),
+                        style: AppText.body.copyWith(color: c.textSecondary),
                       ),
                     ],
                   ),
@@ -235,11 +213,11 @@ class _LoginScreenState extends State<LoginScreen> {
                                 : () => Navigator.of(context).push(MaterialPageRoute(
                                       builder: (_) => const ForgotPasswordScreen(),
                                     )),
-                            child: Text('Forgot password?', style: TextStyle(fontSize: 13, color: c.accent)),
+                            child: Text('Forgot password?', style: TextStyle(fontSize: 13, color: c.brandBright)),
                           ),
                         ),
                         const SizedBox(height: 12),
-                        GradientButton(
+                        PrimaryButton(
                           label: _submitting ? 'Authenticating...' : 'Sign In',
                           fullWidth: true,
                           loading: _submitting,
@@ -258,7 +236,7 @@ class _LoginScreenState extends State<LoginScreen> {
                         onPressed: () => Navigator.of(context).push(MaterialPageRoute(
                           builder: (_) => const RegisterScreen(),
                         )),
-                        child: Text('Create Account', style: TextStyle(fontWeight: FontWeight.w700, color: c.accent)),
+                        child: Text('Create Account', style: TextStyle(fontWeight: FontWeight.w700, color: c.brandBright)),
                       ),
                     ],
                   ),

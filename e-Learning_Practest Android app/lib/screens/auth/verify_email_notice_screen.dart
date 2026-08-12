@@ -82,14 +82,14 @@ class _VerifyEmailNoticeScreenState extends State<VerifyEmailNoticeScreen> {
           padding: const EdgeInsets.all(16),
           child: ConstrainedBox(
             constraints: const BoxConstraints(maxWidth: 460),
-            child: GlassPanel(
+            child: SurfacePanel(
               padding: const EdgeInsets.all(40),
               child: Column(
                 children: [
                   const MedallionIcon(icon: Icons.mark_email_read_outlined, size: 34),
                   const SizedBox(height: 16),
                   Text('Check Your Inbox',
-                      style: TextStyle(fontSize: 24, fontWeight: FontWeight.w800, color: c.accent)),
+                      style: TextStyle(fontSize: 24, fontWeight: FontWeight.w800, color: c.brandBright)),
                   const SizedBox(height: 12),
                   Text(
                     widget.email != null && widget.email!.isNotEmpty
@@ -117,7 +117,7 @@ class _VerifyEmailNoticeScreenState extends State<VerifyEmailNoticeScreen> {
                   const SizedBox(height: 16),
                   TextButton(
                     onPressed: () => returnToLogin(context),
-                    child: Text('Back to Login', style: TextStyle(color: c.accent, fontWeight: FontWeight.w600)),
+                    child: Text('Back to Login', style: TextStyle(color: c.brandBright, fontWeight: FontWeight.w600)),
                   ),
                 ],
               ),

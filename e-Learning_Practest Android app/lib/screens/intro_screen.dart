@@ -1,10 +1,9 @@
 import 'package:flutter/material.dart';
 
+import '../routes.dart';
 import '../scaffold.dart';
 import '../theme.dart';
 import '../widgets.dart';
-import 'auth/login_screen.dart';
-import 'auth/register_screen.dart';
 
 /// The logged-out landing screen.
 ///
@@ -54,13 +53,9 @@ class _IntroScreenState extends State<IntroScreen>
     super.dispose();
   }
 
-  void _goToLogin() => Navigator.of(context).push(
-        MaterialPageRoute(builder: (_) => const LoginScreen()),
-      );
+  void _goToLogin() => Navigator.of(context).pushNamed(Routes.login);
 
-  void _goToRegister() => Navigator.of(context).push(
-        MaterialPageRoute(builder: (_) => const RegisterScreen()),
-      );
+  void _goToRegister() => Navigator.of(context).pushNamed(Routes.register);
 
   @override
   Widget build(BuildContext context) {
@@ -228,32 +223,17 @@ class _Hero extends StatelessWidget {
       crossAxisAlignment:
           left ? CrossAxisAlignment.start : CrossAxisAlignment.center,
       children: [
-        Row(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Image.asset(
-              'assets/logo.png',
-              width: isTablet ? 62 : 50,
-              height: isTablet ? 62 : 50,
-              fit: BoxFit.contain,
-              filterQuality: FilterQuality.medium,
-            ),
-            const SizedBox(width: 12),
-            BrandWordmark(
-              size: isTablet ? BrandWordmarkSize.large : BrandWordmarkSize.small,
-              align: CrossAxisAlignment.start,
-            ),
-          ],
-        ),
-        SizedBox(height: isTablet ? 26 : 20),
+        // The lockup, not a wordmark next to a picture of one: this is the
+        // widest surface in the app and the only one with room to draw the
+        // mark at full size.
+        BrandLockup(width: isTablet ? 300 : 232),
+        SizedBox(height: isTablet ? 28 : 22),
         Text(
           'Your exam, rehearsed\nbefore exam day',
           textAlign: align,
-          style: TextStyle(
+          style: AppText.screenTitle.copyWith(
             fontSize: isTablet ? 34 : 26,
             height: 1.22,
-            fontWeight: FontWeight.w800,
-            letterSpacing: -0.6,
             color: c.textPrimary,
           ),
         ),
@@ -263,7 +243,7 @@ class _Hero extends StatelessWidget {
           'RRB, UPSC and State PCS — on a test screen that behaves like the '
           'real one, with analytics that tell you what to fix next.',
           textAlign: align,
-          style: TextStyle(
+          style: AppText.body.copyWith(
             fontSize: isTablet ? 15.5 : 14,
             height: 1.6,
             color: c.textSecondary,
@@ -288,9 +268,9 @@ class _Feature {
 enum _Tint { accent, success, warning, violet }
 
 Color _resolve(_Tint t, AppColors c) => switch (t) {
-      _Tint.accent => c.accent,
+      _Tint.accent => c.brandBright,
       _Tint.success => c.success,
-      _Tint.warning => c.warning,
+      _Tint.warning => c.orange,
       _Tint.violet => c.violet,
     };
 
@@ -349,7 +329,7 @@ class _FeatureCard extends StatelessWidget {
   Widget build(BuildContext context) {
     final c = useColors(context);
     final tint = _resolve(feature.tint, c);
-    return GlassPanel(
+    return SurfacePanel(
       padding: EdgeInsets.all(compact ? 14 : 18),
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -403,7 +383,7 @@ class _CallToAction extends StatelessWidget {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
-        GradientButton(
+        PrimaryButton(
           label: 'Create free account',
           icon: Icons.arrow_forward,
           fullWidth: true,

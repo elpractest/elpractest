@@ -44,6 +44,8 @@ dependencies:
   youtube_player_flutter: ^10.0.1
   url_launcher: ^6.3.2
   file_picker: ^8.1.2
+  share_plus: ^12.0.2
+  path_provider: ^2.1.6
 
 dev_dependencies:
   flutter_test:
@@ -68,34 +70,57 @@ flutter:
   uses-material-design: true
 
   assets:
-    # Transparent, single-colour build of the brand mark, keyed out of the
-    # white-background logo.png at the project root (which remains the source
-    # for the launcher icon). The transparency is what lets the splash tint and
-    # glow it against the aurora instead of sitting on a white square.
-    - assets/logo.png
+    # Brand, derived from the master artwork. `practest-logo` is the full-colour
+    # lockup for light surfaces; `practest-logo-knockout` is the dark-header
+    # variant (wordmark #F4F6F7, swoosh #F07830) that exists so the transparent
+    # mark is never plated onto a white box just to survive a dark screen. The
+    # mark alone is resolution-aware because it is drawn small, in the header.
+    - assets/brand/practest-logo.png
+    - assets/brand/practest-logo-knockout.png
+    - assets/brand/practest-mark.png
+    - assets/brand/2.0x/practest-mark.png
+    - assets/brand/3.0x/practest-mark.png
 
-  # An image asset can refer to one or more resolution-specific "variants", see
-  # https://flutter.dev/to/resolution-aware-images
+    # Exam board marks, keyed by ExamBoard.key. Ships empty on purpose — the
+    # marks are protected and adding them is a legal decision, not a design
+    # one. Every surface that draws a board falls back to its initials, so the
+    # folder being empty changes nothing but the artwork. See its README.
+    - assets/boards/
 
-  # For details regarding adding assets from package dependencies, see
-  # https://flutter.dev/to/asset-from-package
-
-  # To add custom fonts to your application, add a fonts section here,
-  # in this "flutter" section. Each entry in this list should have a
-  # "family" key with the font family name, and a "fonts" key with a
-  # list giving the asset and other descriptors for the font. For
-  # example:
-  # fonts:
-  #   - family: Schyler
-  #     fonts:
-  #       - asset: fonts/Schyler-Regular.ttf
-  #       - asset: fonts/Schyler-Italic.ttf
-  #         style: italic
-  #   - family: Trajan Pro
-  #     fonts:
-  #       - asset: fonts/TrajanPro.ttf
-  #       - asset: fonts/TrajanPro_Bold.ttf
-  #         weight: 700
-  #
-  # For details regarding fonts from package dependencies,
-  # see https://flutter.dev/to/font-from-package
+  # Bundled, not inherited. Falling through to Roboto was the largest single
+  # gap between this app and the web SPA that shares its palette. Each file is
+  # one baked instance of the upstream variable font (Flutter resolves `weight`
+  # per file, so pointing several weights at one variable file would silently
+  # render the default instance for all of them), subset to Latin + the symbol
+  # ranges the product actually uses — ₹ included.
+  fonts:
+    # Display: screen titles and the score figure.
+    - family: SpaceGrotesk
+      fonts:
+        - asset: assets/fonts/SpaceGrotesk-Medium.ttf
+          weight: 500
+        - asset: assets/fonts/SpaceGrotesk-Bold.ttf
+          weight: 700
+    # Interface: everything the student reads.
+    - family: Inter
+      fonts:
+        - asset: assets/fonts/Inter-Regular.ttf
+          weight: 400
+        - asset: assets/fonts/Inter-Medium.ttf
+          weight: 500
+        - asset: assets/fonts/Inter-SemiBold.ttf
+          weight: 600
+        - asset: assets/fonts/Inter-Bold.ttf
+          weight: 700
+        - asset: assets/fonts/Inter-ExtraBold.ttf
+          weight: 800
+    # Figures: clocks and any number that must not reflow as it counts.
+    # Monospaced by construction, so it needs no `tnum` feature.
+    - family: JetBrainsMono
+      fonts:
+        - asset: assets/fonts/JetBrainsMono-Regular.ttf
+          weight: 400
+        - asset: assets/fonts/JetBrainsMono-Bold.ttf
+          weight: 700
+        - asset: assets/fonts/JetBrainsMono-ExtraBold.ttf
+          weight: 800

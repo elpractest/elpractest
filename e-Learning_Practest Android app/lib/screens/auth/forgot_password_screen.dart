@@ -58,14 +58,14 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> {
             padding: const EdgeInsets.all(16),
             child: ConstrainedBox(
               constraints: const BoxConstraints(maxWidth: 460),
-              child: GlassPanel(
+              child: SurfacePanel(
                 padding: const EdgeInsets.all(40),
                 child: Column(
                   children: [
                     const MedallionIcon(icon: Icons.mail_outline, size: 34),
                     const SizedBox(height: 16),
                     Text('Reset Link Sent',
-                        style: TextStyle(fontSize: 24, fontWeight: FontWeight.w800, color: c.accent)),
+                        style: TextStyle(fontSize: 24, fontWeight: FontWeight.w800, color: c.brandBright)),
                     const SizedBox(height: 12),
                     Text(
                       'If an account exists for ${_email.text.trim()}, we have emailed a password reset link. Please check your inbox (and spam folder).',
@@ -73,7 +73,7 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> {
                       style: TextStyle(fontSize: 14, color: c.textSecondary, height: 1.6),
                     ),
                     const SizedBox(height: 24),
-                    GradientButton(
+                    PrimaryButton(
                       label: 'Back to Login',
                       fullWidth: true,
                       onPressed: () => returnToLogin(context),
@@ -93,7 +93,7 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> {
           padding: const EdgeInsets.all(16),
           child: ConstrainedBox(
             constraints: const BoxConstraints(maxWidth: 460),
-            child: GlassPanel(
+            child: SurfacePanel(
               padding: const EdgeInsets.all(32),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -101,7 +101,7 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> {
                   Column(
                     children: [
                       Text('Forgot Password',
-                          style: TextStyle(fontSize: 24, fontWeight: FontWeight.w800, color: c.accent)),
+                          style: TextStyle(fontSize: 24, fontWeight: FontWeight.w800, color: c.brandBright)),
                       const SizedBox(height: 8),
                       Text(
                         'Enter the email address linked to your account and we will send you a reset link.',
@@ -126,7 +126,7 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> {
                     onSubmitted: (_) => _submit(),
                   ),
                   const SizedBox(height: 20),
-                  GradientButton(
+                  PrimaryButton(
                     label: _submitting ? 'Sending...' : 'Send Reset Link',
                     fullWidth: true,
                     loading: _submitting,
@@ -141,7 +141,7 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> {
                             ),
                     child: Text(
                       "Don't have an account yet? Register",
-                      style: TextStyle(color: c.accent, fontWeight: FontWeight.w600),
+                      style: TextStyle(color: c.brandBright, fontWeight: FontWeight.w600),
                     ),
                   ),
                   const SizedBox(height: 4),
@@ -153,7 +153,7 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> {
                         onPressed: _submitting
                             ? null
                             : () => returnToLogin(context),
-                        child: Text('Sign In', style: TextStyle(fontWeight: FontWeight.w700, color: c.accent)),
+                        child: Text('Sign In', style: TextStyle(fontWeight: FontWeight.w700, color: c.brandBright)),
                       ),
                     ],
                   ),

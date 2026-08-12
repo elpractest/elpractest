@@ -1,11 +1,12 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
+import 'routes.dart';
 import 'scaffold.dart';
-import 'screens/dashboard_screen.dart';
 import 'screens/intro_screen.dart';
 import 'screens/splash_screen.dart';
 import 'session.dart';
+import 'shell.dart';
 import 'theme.dart';
 
 class PractestApp extends StatelessWidget {
@@ -20,17 +21,16 @@ class PractestApp extends StatelessWidget {
       ],
       child: Consumer<ThemeController>(
         builder: (context, theme, _) {
-          final dark = AppTheme.build(AppThemeMode.dark);
-          final light = AppTheme.build(AppThemeMode.light);
           return MaterialApp(
             title: 'Practest',
             debugShowCheckedModeBanner: false,
             // `theme` is Flutter's LIGHT slot and `darkTheme` its dark one.
-            // These were crossed, so ThemeMode.dark resolved to the light
+            // These were crossed once, so ThemeMode.dark resolved to the light
             // palette and the toggle did the opposite of what its icon said.
-            theme: light,
-            darkTheme: dark,
+            theme: AppTheme.build(AppThemeMode.light),
+            darkTheme: AppTheme.build(AppThemeMode.dark),
             themeMode: theme.isDark ? ThemeMode.dark : ThemeMode.light,
+            onGenerateRoute: Routes.onGenerateRoute,
             home: const RootGate(),
           );
         },
@@ -40,7 +40,7 @@ class PractestApp extends StatelessWidget {
 }
 
 /// Decides what the app shows at the root: the launch animation first, then
-/// either the logged-out intro or the dashboard.
+/// either the logged-out intro or the four-tab shell.
 ///
 /// The splash is not a loading spinner — `Session.init()` has already finished
 /// by the time `runApp` is called, so the auth status is known immediately. The
@@ -67,17 +67,14 @@ class _RootGateState extends State<RootGate> {
     }
 
     final session = context.watch<Session>();
-    // Cross-fade rather than cut: the aurora backdrop is shared, so only the
-    // content changes and the transition reads as one continuous screen.
     return AnimatedSwitcher(
-      duration: const Duration(milliseconds: 420),
+      duration: AppTheme.routeDuration,
       child: switch (session.status) {
         // Only reachable if a token refresh is in flight; the intro is the
         // honest thing to show while that resolves.
         AuthStatus.loading => const IntroScreen(key: ValueKey('intro')),
         AuthStatus.unauthenticated => const IntroScreen(key: ValueKey('intro')),
-        AuthStatus.authenticated =>
-          const DashboardScreen(key: ValueKey('dashboard')),
+        AuthStatus.authenticated => const HomeShell(key: ValueKey('shell')),
       },
     );
   }

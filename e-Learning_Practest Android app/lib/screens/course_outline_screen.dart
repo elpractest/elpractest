@@ -68,10 +68,7 @@ class _CourseOutlineScreenState extends State<CourseOutlineScreen> {
     return AppScaffold(
       child: Column(
         children: [
-          AppHeader(
-            userName: 'Course Outline',
-            onLogout: () {},
-          ),
+          const AppHeader(title: 'Course outline', showBack: true),
           Expanded(
             child: _loading
                 ? const LoadingView(message: 'Loading course content...')
@@ -94,17 +91,17 @@ class _CourseOutlineScreenState extends State<CourseOutlineScreen> {
     return Center(
       child: Padding(
         padding: const EdgeInsets.all(24),
-        child: GlassPanel(
+        child: SurfacePanel(
           padding: const EdgeInsets.all(28),
           child: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
-              Icon(Icons.lock_outline, size: 36, color: c.warning),
+              Icon(Icons.lock_outline, size: 36, color: c.orange),
               const SizedBox(height: 12),
               Text(_error, textAlign: TextAlign.center,
                   style: TextStyle(fontSize: 13.5, color: c.textSecondary, height: 1.5)),
               const SizedBox(height: 18),
-              GradientButton(
+              PrimaryButton(
                 label: 'Go Back',
                 onPressed: () => Navigator.of(context).pop(),
               ),
@@ -121,7 +118,7 @@ class _CourseOutlineScreenState extends State<CourseOutlineScreen> {
 
     final widgets = <Widget>[];
 
-    widgets.add(GlassPanel(
+    widgets.add(SurfacePanel(
       padding: const EdgeInsets.all(20),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -135,10 +132,10 @@ class _CourseOutlineScreenState extends State<CourseOutlineScreen> {
           ProgressBar(percent: data.percentComplete, height: 12),
           const SizedBox(height: 12),
           Text('${data.percentComplete}% complete',
-              style: TextStyle(fontSize: 13, fontWeight: FontWeight.w700, color: c.accent)),
+              style: TextStyle(fontSize: 13, fontWeight: FontWeight.w700, color: c.brandBright)),
           const SizedBox(height: 16),
           if (data.nextLesson != null)
-            GradientButton(
+            PrimaryButton(
               label: data.nextLesson!.progress?.isCompleted == true
                   ? 'Review Lesson'
                   : 'Continue Watching: ${data.nextLesson!.title ?? 'Next lesson'}',
@@ -183,7 +180,7 @@ class _CourseOutlineScreenState extends State<CourseOutlineScreen> {
       child: Container(
         padding: const EdgeInsets.all(14),
         decoration: BoxDecoration(
-          color: c.surface1,
+          color: c.sunken,
           borderRadius: BorderRadius.circular(12),
           border: Border.all(color: completed ? c.successBorder : c.border),
         ),
@@ -191,7 +188,7 @@ class _CourseOutlineScreenState extends State<CourseOutlineScreen> {
           children: [
             Icon(
               completed ? Icons.check_circle : Icons.play_circle_outline,
-              color: completed ? c.success : c.accent,
+              color: completed ? c.success : c.brandBright,
               size: 22,
             ),
             const SizedBox(width: 12),
@@ -214,7 +211,7 @@ class _CourseOutlineScreenState extends State<CourseOutlineScreen> {
                       if (progress != null && progress.watchedSeconds > 0) ...[
                         const SizedBox(width: 8),
                         Text('${progress.watchedSeconds}s watched',
-                            style: TextStyle(fontSize: 12, color: c.accent)),
+                            style: TextStyle(fontSize: 12, color: c.brandBright)),
                       ],
                     ],
                   ),

@@ -1,11 +1,13 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_math_fork/flutter_math.dart';
 
+import 'boards.dart';
 import 'theme.dart';
 
 AppColors useColors(BuildContext context) {
-  final theme = Theme.of(context).brightness;
-  return theme == Brightness.dark ? AppColors.dark : AppColors.light;
+  return Theme.of(context).brightness == Brightness.dark
+      ? AppColors.dark
+      : AppColors.light;
 }
 
 /// Back affordance for screens that are pushed on top of the intro (login,
@@ -25,10 +27,7 @@ class BackChip extends StatelessWidget {
       child: TextButton.icon(
         onPressed: () => Navigator.of(context).maybePop(),
         icon: Icon(Icons.arrow_back, size: 18, color: c.textSecondary),
-        label: Text(
-          label,
-          style: TextStyle(fontSize: 13.5, color: c.textSecondary),
-        ),
+        label: Text(label, style: AppText.body.copyWith(color: c.textSecondary)),
         style: TextButton.styleFrom(
           padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
           minimumSize: Size.zero,
@@ -39,52 +38,71 @@ class BackChip extends StatelessWidget {
   }
 }
 
-enum BrandWordmarkSize { small, large }
+/// The mark on its own — mortarboard and laptop, no wordmark.
+///
+/// Full colour in both themes: the artwork's near-white screen carries the
+/// silhouette against the teal-black ground, so it needs no plate behind it.
+/// Plating a transparent mark onto a white box to survive a dark screen is the
+/// one thing the brand rules forbid.
+class BrandMark extends StatelessWidget {
+  const BrandMark({super.key, this.size = 26});
 
-/// The `E-LEARNING` / `Practest` lockup, so the splash, intro and auth screens
-/// cannot drift apart. Gradient fill matches the SPA's `--grad-text`.
+  final double size;
+
+  @override
+  Widget build(BuildContext context) {
+    return Image.asset(
+      'assets/brand/practest-mark.png',
+      width: size,
+      height: size,
+      fit: BoxFit.contain,
+      filterQuality: FilterQuality.medium,
+    );
+  }
+}
+
+/// The full lockup. Switches to the knockout variant on dark, where the
+/// wordmark is set in #F4F6F7 and the swoosh in #F07830.
+class BrandLockup extends StatelessWidget {
+  const BrandLockup({super.key, this.width = 220});
+
+  final double width;
+
+  @override
+  Widget build(BuildContext context) {
+    final dark = Theme.of(context).brightness == Brightness.dark;
+    return Image.asset(
+      dark
+          ? 'assets/brand/practest-logo-knockout.png'
+          : 'assets/brand/practest-logo.png',
+      width: width,
+      fit: BoxFit.contain,
+      filterQuality: FilterQuality.medium,
+    );
+  }
+}
+
+/// The wordmark set in type, for the places the lockup is too wide to hold its
+/// minimum cap height — chiefly the header, beside the mark.
 class BrandWordmark extends StatelessWidget {
-  const BrandWordmark({
-    super.key,
-    this.size = BrandWordmarkSize.small,
-    this.align = CrossAxisAlignment.center,
-  });
+  const BrandWordmark({super.key, this.fontSize = 17, this.color});
 
-  final BrandWordmarkSize size;
-  final CrossAxisAlignment align;
+  final double fontSize;
+  final Color? color;
 
   @override
   Widget build(BuildContext context) {
     final c = useColors(context);
-    final large = size == BrandWordmarkSize.large;
-    return Column(
-      mainAxisSize: MainAxisSize.min,
-      crossAxisAlignment: align,
-      children: [
-        Text(
-          'E-LEARNING',
-          style: TextStyle(
-            color: c.warning,
-            fontSize: large ? 11 : 9,
-            fontWeight: FontWeight.w700,
-            letterSpacing: large ? 3.4 : 1.8,
-          ),
-        ),
-        SizedBox(height: large ? 4 : 1),
-        ShaderMask(
-          shaderCallback: (r) => AppTheme.textGradient(c).createShader(r),
-          child: Text(
-            'Practest',
-            style: TextStyle(
-              fontSize: large ? 38 : 20,
-              fontWeight: FontWeight.w800,
-              letterSpacing: -0.5,
-              // ShaderMask multiplies against this, so it must stay opaque white.
-              color: Colors.white,
-            ),
-          ),
-        ),
-      ],
+    return Text(
+      'Practest',
+      style: TextStyle(
+        fontFamily: AppFont.display,
+        fontSize: fontSize,
+        fontWeight: FontWeight.w700,
+        letterSpacing: -0.2,
+        height: 1,
+        color: color ?? c.textPrimary,
+      ),
     );
   }
 }
@@ -93,6 +111,9 @@ class BrandWordmark extends StatelessWidget {
 /// `$$...$$` block math, `$...$` inline math, everything else plain text.
 /// Additionally, undelimited LaTeX (e.g. `\int \sin^2(x) \cos(x) dx`) is
 /// auto-detected so question banks that omit `$...$` still render correctly.
+///
+/// Carried over from the previous design untouched. Do not refactor during a
+/// reskin — the sniffing rules are tuned against the live question bank.
 class MathText extends StatelessWidget {
   const MathText(this.text, {super.key, this.style, this.displayStyle});
 
@@ -251,8 +272,14 @@ class MathText extends StatelessWidget {
   }
 }
 
-class GlassPanel extends StatelessWidget {
-  const GlassPanel({
+/// The one card in the system.
+///
+/// Solid, never translucent. On light it carries a single soft ambient shadow
+/// and no border; on dark it carries a hairline and a one-step surface lift and
+/// no shadow. Passing [borderColor] opts into a visible border — used by the
+/// resume card, which is the only bordered card on Home.
+class SurfacePanel extends StatelessWidget {
+  const SurfacePanel({
     super.key,
     required this.child,
     this.padding,
@@ -261,7 +288,7 @@ class GlassPanel extends StatelessWidget {
     this.onTap,
     this.color,
     this.borderColor,
-    this.borderRadius = AppTheme.radiusLg,
+    this.borderRadius = AppTheme.radiusMd,
   });
 
   final Widget child;
@@ -276,34 +303,42 @@ class GlassPanel extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final c = useColors(context);
+    final hasBorder = borderColor != null || c.isDark;
     final panel = Container(
       width: width,
-      padding: padding ?? const EdgeInsets.all(20),
+      padding: padding ?? const EdgeInsets.all(16),
       margin: margin,
       decoration: BoxDecoration(
-        color: color ?? c.panelBg,
+        color: color ?? c.panel,
         borderRadius: BorderRadius.circular(borderRadius),
-        border: Border.all(color: borderColor ?? c.border),
-        boxShadow: [
-          const BoxShadow(color: Color(0x80020612), blurRadius: 50, offset: Offset(0, 20), spreadRadius: -12),
-        ],
+        border: hasBorder ? Border.all(color: borderColor ?? c.border) : null,
+        // Never a border and a shadow together.
+        boxShadow: hasBorder ? const [] : AppTheme.ambient(c),
       ),
       child: child,
     );
     if (onTap == null) return panel;
-    return GestureDetector(onTap: onTap, child: panel);
+    return Material(
+      color: Colors.transparent,
+      child: InkWell(
+        onTap: onTap,
+        borderRadius: BorderRadius.circular(borderRadius),
+        child: panel,
+      ),
+    );
   }
 }
 
-class GradientButton extends StatelessWidget {
-  const GradientButton({
+/// A study action. Solid brand teal, no gradient, no glow.
+class PrimaryButton extends StatelessWidget {
+  const PrimaryButton({
     super.key,
     required this.label,
     this.onPressed,
     this.icon,
     this.fullWidth = false,
-    this.padding = const EdgeInsets.symmetric(horizontal: 24, vertical: 13),
-    this.fontSize = 15,
+    this.padding = const EdgeInsets.symmetric(horizontal: 22, vertical: 13),
+    this.fontSize = 14.5,
     this.background,
     this.foreground,
     this.loading = false,
@@ -323,51 +358,43 @@ class GradientButton extends StatelessWidget {
   Widget build(BuildContext context) {
     final c = useColors(context);
     final enabled = onPressed != null && !loading;
+    final bg = background ?? c.brand;
+    final fg = foreground ?? c.onBrand;
     return Material(
       color: Colors.transparent,
       child: Ink(
         decoration: BoxDecoration(
-          gradient: background == null
-              ? AppTheme.primaryGradient(c)
-              : LinearGradient(colors: [background!, background!]),
+          color: enabled ? bg : bg.withValues(alpha: 0.45),
           borderRadius: BorderRadius.circular(AppTheme.radiusSm),
-          boxShadow: enabled
-              ? [BoxShadow(color: c.accentGlow, blurRadius: 22, offset: const Offset(0, 8), spreadRadius: -6)]
-              : const [],
         ),
         child: InkWell(
           borderRadius: BorderRadius.circular(AppTheme.radiusSm),
           onTap: enabled ? onPressed : null,
           child: Container(
             padding: padding,
-            constraints: fullWidth ? const BoxConstraints(minWidth: double.infinity) : null,
+            constraints: fullWidth
+                ? const BoxConstraints(minWidth: double.infinity, minHeight: 48)
+                : const BoxConstraints(minHeight: 44),
             alignment: Alignment.center,
             child: loading
                 ? SizedBox(
                     width: 18,
                     height: 18,
-                    child: CircularProgressIndicator(
-                      strokeWidth: 2.5,
-                      color: foreground ?? c.accentContrast,
-                    ),
+                    child: CircularProgressIndicator(strokeWidth: 2.5, color: fg),
                   )
                 : Row(
                     mainAxisSize: fullWidth ? MainAxisSize.max : MainAxisSize.min,
                     mainAxisAlignment: MainAxisAlignment.center,
                     children: [
                       if (icon != null) ...[
-                        Icon(icon, size: 18, color: foreground ?? c.accentContrast),
+                        Icon(icon, size: 18, color: fg),
                         const SizedBox(width: 8),
                       ],
                       Flexible(
                         child: Text(
                           label,
-                          style: TextStyle(
-                            color: foreground ?? c.accentContrast,
-                            fontWeight: FontWeight.w600,
-                            fontSize: fontSize,
-                            letterSpacing: 0.01,
-                          ),
+                          textAlign: TextAlign.center,
+                          style: AppText.button.copyWith(color: fg, fontSize: fontSize),
                         ),
                       ),
                     ],
@@ -386,8 +413,8 @@ class SecondaryButton extends StatelessWidget {
     this.onPressed,
     this.icon,
     this.fullWidth = false,
-    this.padding = const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
-    this.fontSize = 15,
+    this.padding = const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
+    this.fontSize = 14,
     this.borderColor,
     this.foreground,
     this.loading = false,
@@ -407,6 +434,7 @@ class SecondaryButton extends StatelessWidget {
   Widget build(BuildContext context) {
     final c = useColors(context);
     final enabled = onPressed != null && !loading;
+    final fg = foreground ?? c.textPrimary;
     return Material(
       color: Colors.transparent,
       child: InkWell(
@@ -414,36 +442,37 @@ class SecondaryButton extends StatelessWidget {
         onTap: enabled ? onPressed : null,
         child: Ink(
           decoration: BoxDecoration(
-            color: enabled ? c.surface1 : c.surface1.withOpacity(0.4),
             borderRadius: BorderRadius.circular(AppTheme.radiusSm),
-            border: Border.all(color: borderColor ?? c.border),
+            border: Border.all(color: borderColor ?? c.borderStrong),
           ),
           child: Container(
             padding: padding,
-            constraints: fullWidth ? const BoxConstraints(minWidth: double.infinity) : null,
+            constraints: fullWidth
+                ? const BoxConstraints(minWidth: double.infinity, minHeight: 44)
+                : const BoxConstraints(minHeight: 44),
             alignment: Alignment.center,
             child: loading
                 ? SizedBox(
                     width: 18,
                     height: 18,
-                    child: CircularProgressIndicator(strokeWidth: 2.5, color: c.accent),
+                    child: CircularProgressIndicator(strokeWidth: 2.5, color: c.brand),
                   )
                 : Row(
                     mainAxisSize: fullWidth ? MainAxisSize.max : MainAxisSize.min,
                     mainAxisAlignment: MainAxisAlignment.center,
                     children: [
                       if (icon != null) ...[
-                        Icon(icon, size: 18, color: foreground ?? c.textPrimary),
+                        Icon(icon, size: 18, color: fg),
                         const SizedBox(width: 8),
                       ],
                       Flexible(
                         child: Text(
                           label,
-                          style: TextStyle(
-                            color: foreground ?? c.textPrimary,
-                            fontWeight: FontWeight.w600,
-                            fontSize: fontSize,
-                          ),
+                          textAlign: TextAlign.center,
+                          style: AppText.button.copyWith(
+                              color: fg,
+                              fontSize: fontSize,
+                              fontWeight: FontWeight.w600),
                         ),
                       ),
                     ],
@@ -465,16 +494,13 @@ class ErrorBanner extends StatelessWidget {
     final c = useColors(context);
     return Container(
       width: double.infinity,
-      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
       decoration: BoxDecoration(
         color: c.dangerBg,
         border: Border.all(color: c.dangerBorder),
-        borderRadius: BorderRadius.circular(8),
+        borderRadius: BorderRadius.circular(AppTheme.radiusSm),
       ),
-      child: Text(
-        message,
-        style: TextStyle(color: c.dangerText, fontSize: 13.5, height: 1.4),
-      ),
+      child: Text(message, style: AppText.body.copyWith(color: c.dangerText)),
     );
   }
 }
@@ -489,20 +515,19 @@ class SuccessBanner extends StatelessWidget {
     final c = useColors(context);
     return Container(
       width: double.infinity,
-      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
       decoration: BoxDecoration(
         color: c.successBg,
         border: Border.all(color: c.successBorder),
-        borderRadius: BorderRadius.circular(8),
+        borderRadius: BorderRadius.circular(AppTheme.radiusSm),
       ),
-      child: Text(
-        message,
-        style: TextStyle(color: c.successText, fontSize: 13.5, height: 1.4),
-      ),
+      child: Text(message, style: AppText.body.copyWith(color: c.successText)),
     );
   }
 }
 
+/// A pill. Chips and filters only — a status that needs to be *read* uses
+/// [TrailingBadge], whose fill carries meaning.
 class StatusChip extends StatelessWidget {
   const StatusChip(this.label, {super.key, this.color, this.icon});
 
@@ -513,27 +538,54 @@ class StatusChip extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final c = useColors(context);
-    final fg = color ?? c.accent;
-    final bgColor = color != null ? color!.withOpacity(0.14) : c.accentSoft;
+    final fg = color ?? c.brandBright;
     return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
       decoration: BoxDecoration(
-        color: bgColor,
-        borderRadius: BorderRadius.circular(999),
-        border: Border.all(color: color ?? c.accentBorder),
+        color: fg.withValues(alpha: 0.12),
+        borderRadius: BorderRadius.circular(AppTheme.radiusPill),
+        border: Border.all(color: fg.withValues(alpha: 0.45)),
       ),
       child: Row(
         mainAxisSize: MainAxisSize.min,
         children: [
           if (icon != null) ...[
             Icon(icon, size: 12, color: fg),
-            const SizedBox(width: 4),
+            const SizedBox(width: 5),
           ],
-          Text(
-            label,
-            style: TextStyle(color: fg, fontSize: 11.5, fontWeight: FontWeight.w700, letterSpacing: 0.6),
-          ),
+          Text(label, style: AppText.labelSm.copyWith(color: fg)),
         ],
+      ),
+    );
+  }
+}
+
+/// The trailing slot of a row, and the one convention that makes a list of
+/// them readable without reading: **outlined means a state you own, filled
+/// means one you don't**. "96 days" is outlined; "REDEEM" is filled.
+class TrailingBadge extends StatelessWidget {
+  const TrailingBadge(this.label, {super.key, required this.color, this.filled = false});
+
+  final String label;
+  final Color color;
+  final bool filled;
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 9, vertical: 6),
+      decoration: BoxDecoration(
+        color: filled ? color : Colors.transparent,
+        borderRadius: BorderRadius.circular(6),
+        border: filled ? null : Border.all(color: color.withValues(alpha: 0.55)),
+      ),
+      child: Text(
+        label,
+        style: AppText.labelSm.copyWith(
+          color: filled ? Colors.white : color,
+          letterSpacing: filled ? 0.55 : 0,
+          fontWeight: filled ? FontWeight.w700 : FontWeight.w600,
+        ),
       ),
     );
   }
@@ -588,10 +640,7 @@ class AppTextField extends StatelessWidget {
         return Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Text(
-              label,
-              style: TextStyle(fontSize: 13, fontWeight: FontWeight.w600, color: c.textSecondary),
-            ),
+            Text(label, style: AppText.captionStrong.copyWith(color: c.textSecondary)),
             const SizedBox(height: 6),
             TextField(
               controller: controller,
@@ -603,6 +652,7 @@ class AppTextField extends StatelessWidget {
               textInputAction: textInputAction,
               textAlign: textAlign ?? TextAlign.start,
               autocorrect: autocorrect,
+              style: AppText.body.copyWith(color: c.textPrimary, fontSize: 15),
               onChanged: (v) {
                 field.didChange(v);
                 onChanged?.call(v);
@@ -611,9 +661,10 @@ class AppTextField extends StatelessWidget {
               decoration: InputDecoration(
                 counterText: '',
                 hintText: hint,
-                prefixIcon: prefixIcon != null ? Icon(prefixIcon, size: 18, color: c.textSecondary) : null,
+                prefixIcon:
+                    prefixIcon != null ? Icon(prefixIcon, size: 18, color: c.textSecondary) : null,
                 errorText: hasError ? field.errorText : errorText,
-                errorStyle: TextStyle(color: c.dangerText, fontSize: 12),
+                errorStyle: AppText.caption.copyWith(color: c.dangerText),
               ),
             ),
           ],
@@ -633,22 +684,19 @@ class LoadingView extends StatelessWidget {
   Widget build(BuildContext context) {
     final c = useColors(context);
     return SizedBox(
-      height: height ?? 200,
+      height: height ?? 180,
       child: Center(
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            const SizedBox(
-              width: 34,
-              height: 34,
-              child: CircularProgressIndicator(strokeWidth: 3),
+            SizedBox(
+              width: 30,
+              height: 30,
+              child: CircularProgressIndicator(strokeWidth: 2.6, color: c.brand),
             ),
             if (message != null) ...[
-              const SizedBox(height: 16),
-              Text(
-                message!,
-                style: TextStyle(color: c.textSecondary, fontSize: 13, letterSpacing: 0.5),
-              ),
+              const SizedBox(height: 14),
+              Text(message!, style: AppText.caption.copyWith(color: c.textSecondary)),
             ],
           ],
         ),
@@ -657,118 +705,254 @@ class LoadingView extends StatelessWidget {
   }
 }
 
-/// The frosted "glass" panel header shown on all authenticated screens.
+/// The header on every authenticated screen.
+///
+/// The 34dp gradient mortarboard tile it used to open with is retired — the
+/// product owns a real mark with a real mortarboard in it. [title] is a real
+/// property now: the slot beside the mark used to be hardcoded to the brand
+/// name regardless of what screen it sat on.
+///
+/// Board marks never appear here. They stay subordinate to the product's own.
 class AppHeader extends StatelessWidget {
   const AppHeader({
     super.key,
-    required this.userName,
-    required this.onLogout,
+    this.title,
+    this.subtitle,
+    this.userName,
+    this.onLogout,
     this.trailing,
-    this.showLogout = true,
+    this.showBack = false,
   });
 
-  final String userName;
-  final VoidCallback onLogout;
+  /// When null the header shows the brand lockup — correct for a tab root.
+  /// When set it shows the screen's own name, which is correct everywhere else.
+  final String? title;
+  final String? subtitle;
+  final String? userName;
+  final VoidCallback? onLogout;
   final Widget? trailing;
-  final bool showLogout;
+  final bool showBack;
 
   @override
   Widget build(BuildContext context) {
     final c = useColors(context);
-    return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
-      child: GlassPanel(
-        padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 12),
-        borderRadius: AppTheme.radiusMd,
-        child: Row(
-          children: [
-            Container(
-              width: 34,
-              height: 34,
-              decoration: BoxDecoration(
-                gradient: AppTheme.primaryGradient(c),
-                borderRadius: BorderRadius.circular(10),
-                boxShadow: [BoxShadow(color: c.accentGlow, blurRadius: 16, offset: const Offset(0, 6), spreadRadius: -6)],
-              ),
-              child: const Icon(Icons.school, size: 19, color: Colors.white),
+    return Container(
+      padding: const EdgeInsets.fromLTRB(16, 10, 12, 12),
+      decoration: BoxDecoration(
+        color: c.bg,
+        border: Border(bottom: BorderSide(color: c.border)),
+      ),
+      child: Row(
+        children: [
+          if (showBack) ...[
+            _IconTap(
+              icon: Icons.arrow_back,
+              tooltip: 'Back',
+              color: c.textPrimary,
+              onTap: () => Navigator.of(context).maybePop(),
             ),
+            const SizedBox(width: 6),
+          ] else ...[
+            const BrandMark(size: 26),
             const SizedBox(width: 10),
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    'e-LEARNING',
-                    style: TextStyle(
-                      color: c.warning,
-                      fontSize: 9,
-                      fontWeight: FontWeight.w700,
-                      letterSpacing: 1.8,
-                    ),
-                  ),
-                  ShaderMask(
-                    shaderCallback: (r) => AppTheme.textGradient(c).createShader(r),
-                    child: Text(
-                      'Practest',
-                      style: const TextStyle(
-                        fontSize: 17,
-                        fontWeight: FontWeight.w700,
-                        color: Colors.white,
-                        letterSpacing: 0.4,
+          ],
+          Expanded(
+            child: title == null
+                ? const BrandWordmark()
+                : Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Text(
+                        title!,
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                        style: AppText.cardTitle.copyWith(color: c.textPrimary),
                       ),
-                    ),
+                      if (subtitle != null) ...[
+                        const SizedBox(height: 3),
+                        Text(
+                          subtitle!,
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                          style: AppText.caption.copyWith(color: c.textSecondary),
+                        ),
+                      ],
+                    ],
                   ),
-                ],
-              ),
-            ),
-            if (trailing != null) trailing!,
-            if (trailing != null) const SizedBox(width: 10),
-            Icon(Icons.person, size: 15, color: c.textSecondary),
-            const SizedBox(width: 5),
+          ),
+          if (trailing != null) ...[const SizedBox(width: 8), trailing!],
+          if (userName != null) ...[
+            const SizedBox(width: 8),
             ConstrainedBox(
               constraints: const BoxConstraints(maxWidth: 110),
               child: Text(
-                userName,
+                userName!,
                 overflow: TextOverflow.ellipsis,
-                style: TextStyle(fontSize: 12.5, fontWeight: FontWeight.w600, color: c.textSecondary),
+                style: AppText.caption.copyWith(color: c.textSecondary),
               ),
             ),
-            const SizedBox(width: 8),
-            if (showLogout)
-              InkWell(
-                onTap: onLogout,
-                borderRadius: BorderRadius.circular(8),
-                child: Ink(
-                  padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 7),
-                  decoration: BoxDecoration(
-                    color: c.surface1,
-                    borderRadius: BorderRadius.circular(8),
-                    border: Border.all(color: c.border),
-                  ),
-                  child: Row(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      Icon(Icons.logout, size: 13, color: c.textPrimary),
-                      const SizedBox(width: 5),
-                      Text('Logout', style: TextStyle(fontSize: 12, fontWeight: FontWeight.w600, color: c.textPrimary)),
-                    ],
-                  ),
-                ),
-              ),
           ],
+          if (onLogout != null) ...[
+            const SizedBox(width: 4),
+            _IconTap(
+              icon: Icons.logout,
+              tooltip: 'Log out',
+              color: c.textSecondary,
+              onTap: onLogout!,
+            ),
+          ],
+        ],
+      ),
+    );
+  }
+}
+
+class _IconTap extends StatelessWidget {
+  const _IconTap({
+    required this.icon,
+    required this.onTap,
+    required this.color,
+    required this.tooltip,
+  });
+
+  final IconData icon;
+  final VoidCallback onTap;
+  final Color color;
+  final String tooltip;
+
+  @override
+  Widget build(BuildContext context) {
+    return Tooltip(
+      message: tooltip,
+      child: InkWell(
+        onTap: onTap,
+        borderRadius: BorderRadius.circular(AppTheme.radiusPill),
+        child: SizedBox(
+          width: 40,
+          height: 40,
+          child: Icon(icon, size: 20, color: color),
         ),
       ),
     );
   }
 }
 
+/// Section heading: a 3px accent rule and a 15px semibold word.
+///
+/// This replaces the all-caps eyebrow at roughly a third of its vertical cost,
+/// which is what buys the resume card its place above the fold.
+class SectionHeading extends StatelessWidget {
+  const SectionHeading(this.label, {super.key, this.accent, this.trailing});
+
+  final String label;
+  final Color? accent;
+  final Widget? trailing;
+
+  @override
+  Widget build(BuildContext context) {
+    final c = useColors(context);
+    return Row(
+      children: [
+        Container(
+          width: 3,
+          height: 15,
+          decoration: BoxDecoration(
+            color: accent ?? c.brand,
+            borderRadius: BorderRadius.circular(2),
+          ),
+        ),
+        const SizedBox(width: 9),
+        Expanded(child: Text(label, style: AppText.heading.copyWith(color: c.textPrimary))),
+        if (trailing != null) trailing!,
+      ],
+    );
+  }
+}
+
+/// One figure and its caption. Each tile in a trio takes its own hue so the
+/// three read as three facts rather than as a table.
+class StatTile extends StatelessWidget {
+  const StatTile({
+    super.key,
+    required this.value,
+    required this.caption,
+    required this.color,
+    this.onTap,
+    this.compact = false,
+  });
+
+  final String value;
+  final String caption;
+  final Color color;
+  final VoidCallback? onTap;
+  final bool compact;
+
+  @override
+  Widget build(BuildContext context) {
+    final c = useColors(context);
+    return SurfacePanel(
+      onTap: onTap,
+      padding: EdgeInsets.symmetric(horizontal: 10, vertical: compact ? 12 : 14),
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        crossAxisAlignment: compact ? CrossAxisAlignment.start : CrossAxisAlignment.center,
+        children: [
+          FittedBox(
+            fit: BoxFit.scaleDown,
+            child: Text(
+              value,
+              style: (compact ? AppText.figureSm : AppText.figure).copyWith(color: color),
+            ),
+          ),
+          const SizedBox(height: 7),
+          Text(
+            caption,
+            textAlign: compact ? TextAlign.start : TextAlign.center,
+            style: AppText.caption.copyWith(color: c.textSecondary, fontSize: compact ? 11 : 11.5),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+/// Solid brand fill. The gradient is gone.
+class ProgressBar extends StatelessWidget {
+  const ProgressBar({super.key, required this.percent, this.height = 8, this.color});
+
+  final int percent;
+  final double height;
+  final Color? color;
+
+  @override
+  Widget build(BuildContext context) {
+    final c = useColors(context);
+    return ClipRRect(
+      borderRadius: BorderRadius.circular(AppTheme.radiusPill),
+      child: Container(
+        height: height,
+        color: c.isDark ? const Color(0x24DFE8EA) : const Color(0x1F304860),
+        child: FractionallySizedBox(
+          alignment: Alignment.centerLeft,
+          widthFactor: (percent.clamp(0, 100)) / 100,
+          child: Container(color: color ?? c.brand),
+        ),
+      ),
+    );
+  }
+}
+
+/// A soft-tinted icon plate. Still used by empty states and the intro, where
+/// there is no board and no photograph — but no longer on test rows, where a
+/// board chip carries information this cannot.
 class MedallionIcon extends StatelessWidget {
   const MedallionIcon({
     super.key,
     required this.icon,
     this.color,
-    this.size = 30,
-    this.padding = 15,
+    this.size = 26,
+    this.padding = 14,
   });
 
   final IconData icon;
@@ -779,44 +963,278 @@ class MedallionIcon extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final c = useColors(context);
-    final fg = color ?? c.accent;
+    final fg = color ?? c.brand;
     return Container(
       padding: EdgeInsets.all(padding),
       decoration: BoxDecoration(
-        color: color != null ? color!.withOpacity(0.12) : c.accentSoft,
-        borderRadius: BorderRadius.circular(18),
-        border: Border.all(color: color ?? c.accentBorder),
+        color: fg.withValues(alpha: 0.12),
+        borderRadius: BorderRadius.circular(AppTheme.radiusMd),
       ),
       child: Icon(icon, size: size, color: fg),
     );
   }
 }
 
-class ProgressBar extends StatelessWidget {
-  const ProgressBar({super.key, required this.percent, this.height = 10});
+/// An empty state is an explanation, not a shrug. Carried over as a pattern
+/// from the previous design, which the audit rated as holding up.
+class EmptyState extends StatelessWidget {
+  const EmptyState({
+    super.key,
+    required this.icon,
+    required this.message,
+    this.action,
+    this.title,
+  });
 
-  final int percent;
-  final double height;
+  final IconData icon;
+  final String message;
+  final String? title;
+  final Widget? action;
 
   @override
   Widget build(BuildContext context) {
     final c = useColors(context);
-    return ClipRRect(
-      borderRadius: BorderRadius.circular(999),
+    return SurfacePanel(
+      padding: const EdgeInsets.symmetric(horizontal: 22, vertical: 26),
+      child: Column(
+        children: [
+          Icon(icon, size: 30, color: c.textMuted),
+          const SizedBox(height: 12),
+          if (title != null) ...[
+            Text(title!, textAlign: TextAlign.center, style: AppText.cardTitleSm.copyWith(color: c.textPrimary)),
+            const SizedBox(height: 6),
+          ],
+          Text(
+            message,
+            textAlign: TextAlign.center,
+            style: AppText.body.copyWith(color: c.textSecondary),
+          ),
+          if (action != null) ...[const SizedBox(height: 16), action!],
+        ],
+      ),
+    );
+  }
+}
+
+/// The 52px row that Profile is built from: icon, label, trailing slot. One
+/// geometry carries an entitlement countdown, an activation prompt and an
+/// inline setting without any of them needing a screen of their own.
+class SettingRow extends StatelessWidget {
+  const SettingRow({
+    super.key,
+    required this.icon,
+    required this.label,
+    this.trailing,
+    this.onTap,
+    this.iconColor,
+  });
+
+  final IconData icon;
+  final String label;
+  final Widget? trailing;
+  final VoidCallback? onTap;
+  final Color? iconColor;
+
+  @override
+  Widget build(BuildContext context) {
+    final c = useColors(context);
+    return InkWell(
+      onTap: onTap,
       child: Container(
-        height: height,
-        decoration: BoxDecoration(color: c.surface2, borderRadius: BorderRadius.circular(999)),
-        child: FractionallySizedBox(
-          alignment: Alignment.centerLeft,
-          widthFactor: (percent.clamp(0, 100)) / 100,
-          child: Container(
-            decoration: BoxDecoration(
-              gradient: AppTheme.primaryGradient(c),
-              borderRadius: BorderRadius.circular(999),
+        constraints: const BoxConstraints(minHeight: 52),
+        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+        child: Row(
+          children: [
+            Icon(icon, size: 21, color: iconColor ?? c.textSecondary),
+            const SizedBox(width: 16),
+            Expanded(
+              child: Text(
+                label,
+                style: AppText.body.copyWith(color: c.textPrimary, fontSize: 15),
+              ),
+            ),
+            if (trailing != null) trailing!,
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+/// A board mark on a paper-white card.
+///
+/// The card is the unit, not the logo — that is what stops a wide bank lockup
+/// and a square commission emblem from looking like a mistake. It stays
+/// paper-white in dark as well as light: board marks are full-colour on white
+/// by design, and inverting or tinting them is both ugly and legally worse.
+///
+/// When the licensed artwork is not present the tile sets the board's initials
+/// instead. It never shows a broken image box, and it never invents a mark.
+class BoardTile extends StatelessWidget {
+  const BoardTile({
+    super.key,
+    required this.board,
+    this.onTap,
+    this.selected = false,
+  });
+
+  final ExamBoard board;
+  final VoidCallback? onTap;
+  final bool selected;
+
+  @override
+  Widget build(BuildContext context) {
+    final c = useColors(context);
+    return Semantics(
+      button: onTap != null,
+      selected: selected,
+      label: board.label,
+      child: InkWell(
+        onTap: onTap,
+        borderRadius: BorderRadius.circular(AppTheme.radiusSm),
+        child: Container(
+          constraints: const BoxConstraints(minWidth: 48, minHeight: 48),
+          padding: const EdgeInsets.all(9),
+          decoration: BoxDecoration(
+            color: const Color(0xFFF4F6F7),
+            borderRadius: BorderRadius.circular(AppTheme.radiusSm),
+            border: selected ? Border.all(color: c.brand, width: 2) : null,
+          ),
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              // 76% of the tile's inner box, vertically centred.
+              Expanded(
+                flex: 76,
+                child: BoardArtwork(board: board, dense: false),
+              ),
+              const SizedBox(height: 6),
+              Text(
+                board.label,
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+                // Always present: several board marks are unreadable at tile
+                // size, and a mark nobody can read is not a label.
+                style: const TextStyle(
+                  fontFamily: AppFont.ui,
+                  fontSize: 9.5,
+                  fontWeight: FontWeight.w600,
+                  height: 1,
+                  color: Color(0xFF1F3A44),
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+/// The 34dp version that sits at a test row's leading edge, telling the student
+/// which exam the row belongs to before they read a word of it.
+class BoardChip extends StatelessWidget {
+  const BoardChip({super.key, required this.board, this.size = 34});
+
+  final ExamBoard board;
+  final double size;
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      width: size,
+      height: size,
+      padding: const EdgeInsets.all(4),
+      decoration: BoxDecoration(
+        color: const Color(0xFFF4F6F7),
+        borderRadius: BorderRadius.circular(8),
+      ),
+      child: BoardArtwork(board: board, dense: true),
+    );
+  }
+}
+
+/// The mark itself, or its initials when the licensed file is not bundled.
+class BoardArtwork extends StatelessWidget {
+  const BoardArtwork({super.key, required this.board, required this.dense});
+
+  final ExamBoard board;
+  final bool dense;
+
+  @override
+  Widget build(BuildContext context) {
+    return Image.asset(
+      board.assetPath,
+      fit: BoxFit.contain,
+      filterQuality: FilterQuality.medium,
+      errorBuilder: (context, _, __) => Center(
+        child: FittedBox(
+          fit: BoxFit.scaleDown,
+          child: Text(
+            board.initials,
+            style: TextStyle(
+              fontFamily: AppFont.display,
+              fontSize: dense ? 13 : 17,
+              fontWeight: FontWeight.w700,
+              height: 1,
+              letterSpacing: -0.3,
+              color: const Color(0xFF187890),
             ),
           ),
         ),
       ),
+    );
+  }
+}
+
+/// A 16:9 cover at the head of a course card.
+///
+/// When the course has no cover the fallback is the course's own initials set
+/// on the panel — never a broken image box, and never a stock photograph of
+/// books.
+class CourseCover extends StatelessWidget {
+  const CourseCover({super.key, required this.title, this.url, this.height = 104});
+
+  final String title;
+  final String? url;
+  final double height;
+
+  String get _initials {
+    final words = title.trim().split(RegExp(r'\s+')).where((w) => w.isNotEmpty).toList();
+    if (words.isEmpty) return '—';
+    if (words.length == 1) {
+      return words.first.substring(0, words.first.length.clamp(0, 2)).toUpperCase();
+    }
+    return (words[0][0] + words[1][0]).toUpperCase();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final c = useColors(context);
+    final fallback = Container(
+      height: height,
+      width: double.infinity,
+      color: c.isDark ? c.raised : c.sunken,
+      alignment: Alignment.center,
+      child: Text(
+        _initials,
+        style: AppText.score.copyWith(
+          color: c.textPrimary.withValues(alpha: 0.5),
+          fontFamily: AppFont.display,
+        ),
+      ),
+    );
+
+    final src = url;
+    if (src == null || src.isEmpty) return fallback;
+    return Image.network(
+      src,
+      height: height,
+      width: double.infinity,
+      fit: BoxFit.cover,
+      errorBuilder: (context, _, __) => fallback,
+      loadingBuilder: (context, child, progress) =>
+          progress == null ? child : SizedBox(height: height, child: fallback),
     );
   }
 }

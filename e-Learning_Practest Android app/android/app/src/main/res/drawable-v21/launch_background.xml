@@ -1,12 +1,14 @@
 <?xml version="1.0" encoding="utf-8"?>
-<!-- Modify this file to customize your launch splash screen -->
-<layer-list xmlns:android="http://schemas.android.com/apk/res/android">
-    <item android:drawable="?android:colorBackground" />
+<!--
+  The window the OS paints before Flutter has a frame to show.
 
-    <!-- You can insert your own image assets here -->
-    <!-- <item>
-        <bitmap
-            android:gravity="center"
-            android:src="@mipmap/launch_image" />
-    </item> -->
+  It was white, and the app boots into the dark palette by default — so every
+  cold start flashed white and then snapped to teal-black. This is the app's own
+  ground, in both day and night resources, because the theme the student is
+  actually in is stored in SharedPreferences and the platform cannot read it
+  this early. Matching the default is the closest a native launch screen can
+  honestly get.
+-->
+<layer-list xmlns:android="http://schemas.android.com/apk/res/android">
+    <item android:drawable="@color/launch_background" />
 </layer-list>

@@ -1,12 +1,19 @@
-import '../scaffold.dart';
 import 'package:flutter/material.dart';
 
 import '../api_client.dart';
 import '../models.dart';
+import '../scaffold.dart';
+import '../share_card.dart';
 import '../theme.dart';
 import '../utils.dart';
+import '../verdict.dart';
 import '../widgets.dart';
 
+/// The result.
+///
+/// The old screen ended with a score and a list. An aspirant most needs it to
+/// end with an opinion, so the order here is: the figure, the standing, the
+/// verdict, the sections, and only then the question-by-question review.
 class TestResultScreen extends StatefulWidget {
   const TestResultScreen({super.key, required this.sessionId});
 
@@ -21,10 +28,23 @@ class _TestResultScreenState extends State<TestResultScreen> {
   bool _loading = true;
   String _error = '';
 
+  /// Set when the student taps the verdict's action, so the review list can
+  /// narrow to the answers the verdict was actually about.
+  bool _wrongOnly = false;
+
+  final _reviewKey = GlobalKey();
+  final _scroll = ScrollController();
+
   @override
   void initState() {
     super.initState();
     _fetch();
+  }
+
+  @override
+  void dispose() {
+    _scroll.dispose();
+    super.dispose();
   }
 
   Future<void> _fetch() async {
@@ -55,16 +75,45 @@ class _TestResultScreenState extends State<TestResultScreen> {
     }
   }
 
+  void _reviewWrongAnswers() {
+    setState(() => _wrongOnly = true);
+    // Let the filtered list lay out before scrolling to it.
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      final ctx = _reviewKey.currentContext;
+      if (ctx != null) {
+        Scrollable.ensureVisible(ctx,
+            duration: AppTheme.routeDuration, curve: Curves.easeOut);
+      }
+    });
+  }
+
+  Future<void> _share() async {
+    final data = _data;
+    if (data == null) return;
+    await showResultShareSheet(context, sessionId: widget.sessionId, data: data);
+  }
+
   @override
   Widget build(BuildContext context) {
     return AppScaffold(
       safeArea: false,
       child: Column(
         children: [
-          AppHeader(userName: 'Result', onLogout: () {}, showLogout: false),
+          AppHeader(
+            title: 'Result',
+            showBack: true,
+            trailing: _data == null
+                ? null
+                : IconButton(
+                    tooltip: 'Share',
+                    onPressed: _share,
+                    icon: Icon(Icons.ios_share,
+                        size: 20, color: useColors(context).textSecondary),
+                  ),
+          ),
           Expanded(
             child: _loading
-                ? const LoadingView(message: 'Computing your result...')
+                ? const LoadingView(message: 'Computing your result…')
                 : _error.isNotEmpty
                     ? ListView(
                         padding: const EdgeInsets.all(16),
@@ -81,18 +130,96 @@ class _TestResultScreenState extends State<TestResultScreen> {
                         ],
                       )
                     : RefreshIndicator(
+                        color: useColors(context).brand,
                         onRefresh: _fetch,
-                        child: _ResultList(data: _data!),
+                        child: _body(_data!),
                       ),
           ),
         ],
       ),
     );
   }
+
+  Widget _body(TestResultData data) {
+    final c = useColors(context);
+    final verdict = Verdict.from(data);
+    final sections = data.analytic.subjectBreakdown.entries
+        .where((e) => e.value.questions > 0)
+        .toList()
+      ..sort((a, b) {
+        // Weakest first — the section a student needs to look at should not be
+        // the one they have to scroll to.
+        final aa = a.value.accuracy ?? 200;
+        final bb = b.value.accuracy ?? 200;
+        return aa.compareTo(bb);
+      });
+
+    final answers =
+        _wrongOnly ? data.answers.where((a) => !a.isCorrect && !a.isSkipped).toList() : data.answers;
+
+    return ListView(
+      controller: _scroll,
+      padding: EdgeInsets.zero,
+      children: [
+        _ScoreHeader(data: data),
+        Padding(
+          padding: const EdgeInsets.fromLTRB(16, 16, 16, 28),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              if (!verdict.isEmpty) ...[
+                _VerdictBlock(
+                  verdict: verdict,
+                  onReview: verdict.wrongCount > 0 ? _reviewWrongAnswers : null,
+                ),
+                const SizedBox(height: 20),
+              ],
+              if (sections.isNotEmpty) ...[
+                const SectionHeading('By section'),
+                const SizedBox(height: 11),
+                for (final entry in sections) ...[
+                  _SectionRow(name: entry.key, row: entry.value),
+                  const SizedBox(height: 9),
+                ],
+                const SizedBox(height: 12),
+              ],
+              SectionHeading(
+                _wrongOnly ? 'Your wrong answers' : 'Question review',
+                key: _reviewKey,
+                trailing: _wrongOnly
+                    ? GestureDetector(
+                        onTap: () => setState(() => _wrongOnly = false),
+                        child: Text('Show all',
+                            style: AppText.caption.copyWith(color: c.brandBright)),
+                      )
+                    : null,
+              ),
+              const SizedBox(height: 11),
+              if (answers.isEmpty)
+                const EmptyState(
+                  icon: Icons.check_circle_outline,
+                  message: 'Nothing to review here.',
+                )
+              else
+                for (var i = 0; i < answers.length; i++) ...[
+                  _ReviewCard(answer: answers[i], index: i + 1),
+                  const SizedBox(height: 10),
+                ],
+            ],
+          ),
+        ),
+      ],
+    );
+  }
 }
 
-class _ResultList extends StatelessWidget {
-  const _ResultList({required this.data});
+/// The figure, and the standing beside it.
+///
+/// Solid ink, tabular, 42px — no gradient fill and no weight 900. Percentile
+/// and rank take gold because they are *standing*; accuracy takes teal because
+/// it is *performance*. The em-dash fallback when the API omits rank stays.
+class _ScoreHeader extends StatelessWidget {
+  const _ScoreHeader({required this.data});
 
   final TestResultData data;
 
@@ -100,183 +227,176 @@ class _ResultList extends StatelessWidget {
   Widget build(BuildContext context) {
     final c = useColors(context);
     final a = data.analytic;
-    final score = a.totalScore ?? 0;
-    final maxScore = a.maxScore ?? 0;
-    final accuracy = (a.accuracyPercentage ?? 0).round();
-    final timeSecs = a.totalTimeSeconds ?? 0;
-
-    return ListView(
-      padding: const EdgeInsets.all(16),
-      children: [
-        Center(
-          child: StatusChip(
-            'RESULT',
-            icon: Icons.emoji_events_outlined,
-            color: c.violet,
-          ),
-        ),
-        const SizedBox(height: 14),
-        _ScoreCard(
-          score: score,
-          maxScore: maxScore,
-          accuracy: accuracy,
-          percentile: data.percentile,
-          rank: data.rank,
-        ),
-        const SizedBox(height: 12),
-        _StatsRow(
-          correct: a.correctCount ?? 0,
-          incorrect: a.incorrectCount ?? 0,
-          unanswered: a.unansweredCount ?? 0,
-          timeTaken: timeSecs,
-        ),
-        const SizedBox(height: 20),
-        Text(
-          'Question-wise Review',
-          style: TextStyle(fontSize: 18, fontWeight: FontWeight.w800, color: c.textPrimary),
-        ),
-        const SizedBox(height: 4),
-        Text(
-          'Tap a question to see your answer, the correct answer and the explanation.',
-          style: TextStyle(fontSize: 12.5, color: c.textSecondary),
-        ),
-        const SizedBox(height: 12),
-        for (final answer in data.answers) _ReviewCard(answer: answer),
-        const SizedBox(height: 12),
-      ],
-    );
-  }
-}
-
-class _ScoreCard extends StatelessWidget {
-  const _ScoreCard({
-    required this.score,
-    required this.maxScore,
-    required this.accuracy,
-    this.percentile,
-    this.rank,
-  });
-
-  final num score;
-  final num maxScore;
-  final int accuracy;
-  final num? percentile;
-  final num? rank;
-
-  @override
-  Widget build(BuildContext context) {
-    final c = useColors(context);
-    return GlassPanel(
-      padding: const EdgeInsets.all(22),
+    return Container(
+      width: double.infinity,
+      color: c.panel,
+      padding: const EdgeInsets.fromLTRB(16, 18, 16, 18),
       child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text(
-            'Your Score',
-            style: TextStyle(fontSize: 12.5, fontWeight: FontWeight.w600, color: c.textSecondary, letterSpacing: 1),
-          ),
-          const SizedBox(height: 8),
-          ShaderMask(
-            shaderCallback: (r) => AppTheme.textGradient(c).createShader(r),
-            child: Text(
-              '${formatNumber(score)} / ${formatNumber(maxScore)}',
-              style: const TextStyle(
-                fontSize: 34,
-                fontWeight: FontWeight.w900,
-                color: Colors.white,
-                letterSpacing: 0.3,
+          Text('RESULT', style: AppText.labelSm.copyWith(color: c.textSecondary)),
+          const SizedBox(height: 12),
+          Row(
+            crossAxisAlignment: CrossAxisAlignment.end,
+            children: [
+              Text(formatNumber(a.totalScore ?? 0),
+                  style: AppText.scoreHero.copyWith(color: c.textPrimary)),
+              const SizedBox(width: 8),
+              Padding(
+                padding: const EdgeInsets.only(bottom: 5),
+                child: Text('/ ${formatNumber(a.maxScore ?? 0)}',
+                    style: AppText.body.copyWith(color: c.textSecondary, fontSize: 14)),
               ),
-            ),
+            ],
           ),
-          const SizedBox(height: 18),
+          const SizedBox(height: 16),
           Row(
             children: [
-              _scoreItem(context, 'Accuracy', '$accuracy%', Icons.track_changes),
-              const SizedBox(width: 12),
-              _scoreItem(context, 'Percentile', percentile != null ? formatNumber(percentile) : '—', Icons.leaderboard),
-              const SizedBox(width: 12),
-              _scoreItem(context, 'Rank', rank != null ? '#$rank' : '—', Icons.military_tech),
+              Expanded(
+                child: StatTile(
+                  value: a.accuracyPercentage == null
+                      ? '—'
+                      : '${a.accuracyPercentage!.round()}%',
+                  caption: 'Accuracy',
+                  color: c.brandBright,
+                  compact: true,
+                ),
+              ),
+              const SizedBox(width: 9),
+              Expanded(
+                child: StatTile(
+                  value:
+                      data.percentile == null ? '—' : formatNumber(data.percentile),
+                  caption: 'Percentile',
+                  color: c.gold,
+                  compact: true,
+                ),
+              ),
+              const SizedBox(width: 9),
+              Expanded(
+                child: StatTile(
+                  value: data.rank == null ? '—' : formatNumber(data.rank),
+                  caption: 'Rank',
+                  color: c.gold,
+                  compact: true,
+                ),
+              ),
             ],
           ),
         ],
       ),
     );
   }
+}
 
-  Widget _scoreItem(BuildContext context, String label, String value, IconData icon) {
+/// The single highest-value addition on this screen.
+///
+/// One paragraph, computed not written, and one button that goes straight to
+/// the wrong answers. Gold rule, because a verdict is about standing.
+class _VerdictBlock extends StatelessWidget {
+  const _VerdictBlock({required this.verdict, this.onReview});
+
+  final Verdict verdict;
+  final VoidCallback? onReview;
+
+  @override
+  Widget build(BuildContext context) {
     final c = useColors(context);
-    return Expanded(
-      child: Container(
-        padding: const EdgeInsets.symmetric(vertical: 14),
-        decoration: BoxDecoration(
-          color: c.surface1,
-          borderRadius: BorderRadius.circular(12),
-          border: Border.all(color: c.border),
-        ),
-        child: Column(
-          children: [
-            Icon(icon, size: 18, color: c.accent),
-            const SizedBox(height: 6),
-            Text(
-              value,
-              style: TextStyle(fontSize: 17, fontWeight: FontWeight.w800, color: c.textPrimary),
-            ),
-            const SizedBox(height: 2),
-            Text(
-              label,
-              style: TextStyle(fontSize: 11, color: c.textSecondary),
+    return SurfacePanel(
+      padding: const EdgeInsets.all(15),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              Container(
+                width: 3,
+                height: 15,
+                decoration:
+                    BoxDecoration(color: c.gold, borderRadius: BorderRadius.circular(2)),
+              ),
+              const SizedBox(width: 8),
+              Text('THE VERDICT',
+                  style: AppText.labelSm.copyWith(color: c.textPrimary)),
+            ],
+          ),
+          const SizedBox(height: 11),
+          Text(verdict.text,
+              style: AppText.body.copyWith(color: c.textSecondary, fontSize: 14)),
+          if (onReview != null) ...[
+            const SizedBox(height: 13),
+            PrimaryButton(
+              label: 'Review the ${verdict.wrongCount} wrong '
+                  '${verdict.wrongCount == 1 ? 'answer' : 'answers'}',
+              fullWidth: true,
+              onPressed: onReview,
             ),
           ],
-        ),
+        ],
       ),
     );
   }
 }
 
-class _StatsRow extends StatelessWidget {
-  const _StatsRow({
-    required this.correct,
-    required this.incorrect,
-    required this.unanswered,
-    required this.timeTaken,
-  });
+/// Title, right-aligned percentage, an 8px track, and two footnotes on a
+/// justified baseline — accuracy and speed always seen together, since that
+/// pair is what actually diagnoses an aspirant.
+class _SectionRow extends StatelessWidget {
+  const _SectionRow({required this.name, required this.row});
 
-  final int correct;
-  final int incorrect;
-  final int unanswered;
-  final num timeTaken;
+  final String name;
+  final BreakdownRow row;
 
   @override
   Widget build(BuildContext context) {
     final c = useColors(context);
-    return GlassPanel(
-      padding: const EdgeInsets.symmetric(vertical: 16, horizontal: 12),
-      child: Row(
-        children: [
-          _stat(context, '$correct', 'Correct', c.success),
-          _divider(c),
-          _stat(context, '$incorrect', 'Wrong', c.danger),
-          _divider(c),
-          _stat(context, '$unanswered', 'Skipped', c.warning),
-          _divider(c),
-          _stat(context, formatDurationMinutes(timeTaken), 'Time', c.accent),
-        ],
-      ),
-    );
-  }
+    final accuracy = row.accuracy;
+    // Red and green are on loan from the CBT vocabulary here, and only here:
+    // outside the engine they read as a verdict on a section, which is what
+    // this row is.
+    final tone = accuracy == null
+        ? c.textSecondary
+        : accuracy >= 75
+            ? c.success
+            : accuracy >= 50
+                ? c.gold
+                : c.danger;
+    final speed = row.secondsPerQuestion;
 
-  Widget _divider(AppColors c) => Container(width: 1, height: 36, color: c.border);
-
-  Widget _stat(BuildContext context, String value, String label, Color color) {
-    final c = useColors(context);
-    return Expanded(
+    return SurfacePanel(
+      padding: const EdgeInsets.all(14),
       child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text(
-            value,
-            style: TextStyle(fontSize: 17, fontWeight: FontWeight.w800, color: color),
+          Row(
+            children: [
+              Expanded(
+                child: Text(name,
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    style: AppText.cardTitleSm.copyWith(color: c.textPrimary, fontSize: 14.5)),
+              ),
+              const SizedBox(width: 8),
+              Text(accuracy == null ? '—' : '${accuracy.round()}%',
+                  style: AppText.cardTitleSm.copyWith(color: tone, fontSize: 15)),
+            ],
           ),
-          const SizedBox(height: 2),
-          Text(label, style: TextStyle(fontSize: 10.5, color: c.textSecondary)),
+          const SizedBox(height: 10),
+          ProgressBar(percent: (accuracy ?? 0).round(), color: tone),
+          const SizedBox(height: 8),
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              Text('${row.attempted} / ${row.questions} attempted',
+                  style: AppText.caption.copyWith(color: c.textSecondary)),
+              Text(
+                speed == null
+                    ? '—'
+                    : '${(speed / 60).toStringAsFixed(1)} min per Q',
+                style: AppText.caption.copyWith(color: c.textSecondary),
+              ),
+            ],
+          ),
         ],
       ),
     );
@@ -284,9 +404,10 @@ class _StatsRow extends StatelessWidget {
 }
 
 class _ReviewCard extends StatefulWidget {
-  const _ReviewCard({required this.answer});
+  const _ReviewCard({required this.answer, required this.index});
 
   final ResultAnswer answer;
+  final int index;
 
   @override
   State<_ReviewCard> createState() => _ReviewCardState();
@@ -299,83 +420,82 @@ class _ReviewCardState extends State<_ReviewCard> {
   Widget build(BuildContext context) {
     final c = useColors(context);
     final a = widget.answer;
-    final statusColor = a.isCorrect
+    final tone = a.isCorrect
         ? c.success
         : a.isSkipped
-            ? c.warning
+            ? c.textSecondary
             : c.danger;
-    final statusLabel = a.isCorrect ? 'Correct' : a.isSkipped ? 'Skipped' : 'Wrong';
+    final label = a.isCorrect ? 'Correct' : (a.isSkipped ? 'Skipped' : 'Wrong');
 
-    return GlassPanel(
-      margin: const EdgeInsets.only(bottom: 12),
-      padding: const EdgeInsets.all(16),
+    final chosen = a.options.where((o) => o.id == a.selectedOptionId).firstOrNull;
+    final correct = a.options.where((o) => o.isCorrect).firstOrNull;
+
+    return SurfacePanel(
+      padding: const EdgeInsets.all(14),
+      onTap: () => setState(() => _expanded = !_expanded),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Row(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Container(
-                width: 30,
-                height: 30,
-                alignment: Alignment.center,
-                decoration: BoxDecoration(
-                  color: statusColor.withValues(alpha: 0.14),
-                  borderRadius: BorderRadius.circular(9),
-                  border: Border.all(color: statusColor),
-                ),
-                child: Text(
-                  'Q${a.questionId}',
-                  style: TextStyle(fontSize: 10.5, fontWeight: FontWeight.w800, color: statusColor),
-                ),
-              ),
-              const SizedBox(width: 10),
               Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    MathText(
-                      a.questionText,
-                      style: TextStyle(fontSize: 13.5, color: c.textPrimary, height: 1.4),
-                    ),
-                    const SizedBox(height: 6),
-                    Text(
-                      '${formatNumber(a.marks)} marks'
-                      '${(a.negativeMarks ?? 0) > 0 ? '  ·  -${formatNumber(a.negativeMarks)} negative' : ''}',
-                      style: TextStyle(fontSize: 11.5, color: c.textSecondary),
-                    ),
-                  ],
-                ),
+                child: Text('Q${widget.index}',
+                    style: AppText.captionStrong.copyWith(color: c.textSecondary)),
               ),
-              const SizedBox(width: 8),
-              StatusChip(statusLabel, color: statusColor),
+              Row(
+                children: [
+                  Text('${a.timeSpentSeconds}s',
+                      style: AppText.caption.copyWith(color: c.textMuted, fontSize: 11)),
+                  const SizedBox(width: 8),
+                  TrailingBadge(label.toUpperCase(), color: tone),
+                ],
+              ),
             ],
           ),
+          const SizedBox(height: 9),
+          MathText(a.questionText,
+              style: AppText.body.copyWith(color: c.textPrimary, fontSize: 14)),
           if (_expanded) ...[
-            const SizedBox(height: 14),
-            ..._options(a),
+            const SizedBox(height: 13),
+            if (chosen != null)
+              _AnswerLine(
+                label: chosen.label ?? '?',
+                text: chosen.optionText ?? '',
+                caption: 'Your answer',
+                color: a.isCorrect ? CbtStatus.answeredBg : CbtStatus.notAnsweredBg,
+              ),
+            if (correct != null && !a.isCorrect) ...[
+              const SizedBox(height: 10),
+              _AnswerLine(
+                label: correct.label ?? '?',
+                text: correct.optionText ?? '',
+                caption: 'Correct',
+                color: CbtStatus.answeredBg,
+              ),
+            ],
+            // "Why you missed it": the stored explanation, shown where the
+            // student is already looking at their own mistake — no chat box, no
+            // prompt, no blank textbox.
+            //
+            // When there is no explanation there is no panel. An absent panel
+            // is invisible; one that hedges, or that surfaces a system limit as
+            // its answer, is corrosive.
             if ((a.explanation ?? '').isNotEmpty) ...[
-              const SizedBox(height: 14),
+              const SizedBox(height: 13),
               Container(
                 width: double.infinity,
-                padding: const EdgeInsets.all(14),
-                decoration: BoxDecoration(
-                  color: c.accentSoft.withValues(alpha: 0.5),
-                  borderRadius: BorderRadius.circular(12),
-                  border: Border.all(color: c.accentBorder),
-                ),
+                padding: const EdgeInsets.only(top: 12),
+                decoration:
+                    BoxDecoration(border: Border(top: BorderSide(color: c.border))),
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Text(
-                      'Explanation',
-                      style: TextStyle(fontSize: 11.5, fontWeight: FontWeight.w800, color: c.accent, letterSpacing: 0.8),
-                    ),
-                    const SizedBox(height: 6),
-                    MathText(
-                      a.explanation,
-                      style: TextStyle(fontSize: 13, color: c.textPrimary, height: 1.5),
-                    ),
+                    Text(a.isCorrect ? 'WHY THIS IS RIGHT' : 'WHY YOU MISSED IT',
+                        style: AppText.labelSm.copyWith(color: c.brandBright)),
+                    const SizedBox(height: 7),
+                    MathText(a.explanation,
+                        style: AppText.body.copyWith(color: c.textSecondary, fontSize: 13.5)),
                   ],
                 ),
               ),
@@ -384,94 +504,64 @@ class _ReviewCardState extends State<_ReviewCard> {
           const SizedBox(height: 8),
           Align(
             alignment: Alignment.centerRight,
-            child: InkWell(
-              onTap: () => setState(() => _expanded = !_expanded),
-              borderRadius: BorderRadius.circular(8),
-              child: Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 4),
-                child: Row(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    Text(
-                      _expanded ? 'Hide details' : 'View answer & explanation',
-                      style: TextStyle(fontSize: 12.5, fontWeight: FontWeight.w700, color: c.accent),
-                    ),
-                    Icon(
-                      _expanded ? Icons.keyboard_arrow_up : Icons.keyboard_arrow_down,
-                      size: 17,
-                      color: c.accent,
-                    ),
-                  ],
-                ),
-              ),
+            child: Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Text(_expanded ? 'Hide' : 'Show answer',
+                    style: AppText.captionStrong.copyWith(color: c.brandBright)),
+                Icon(_expanded ? Icons.keyboard_arrow_up : Icons.keyboard_arrow_down,
+                    size: 17, color: c.brandBright),
+              ],
             ),
           ),
         ],
       ),
     );
   }
+}
 
-  List<Widget> _options(ResultAnswer a) {
+class _AnswerLine extends StatelessWidget {
+  const _AnswerLine({
+    required this.label,
+    required this.text,
+    required this.caption,
+    required this.color,
+  });
+
+  final String label;
+  final String text;
+  final String caption;
+  final Color color;
+
+  @override
+  Widget build(BuildContext context) {
     final c = useColors(context);
-    return [
-      for (final option in a.options)
+    return Row(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
         Container(
-          width: double.infinity,
-          margin: const EdgeInsets.only(bottom: 8),
-          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
-          decoration: BoxDecoration(
-            color: option.isCorrect
-                ? c.successBg
-                : option.id == a.selectedOptionId
-                    ? c.dangerBg
-                    : c.surface1,
-            borderRadius: BorderRadius.circular(10),
-            border: Border.all(
-              color: option.isCorrect
-                  ? c.successBorder
-                  : option.id == a.selectedOptionId
-                      ? c.dangerBorder
-                      : c.border,
-            ),
-          ),
-          child: Row(
+          width: 24,
+          height: 24,
+          alignment: Alignment.center,
+          decoration: BoxDecoration(color: color, shape: BoxShape.circle),
+          child: Text(label,
+              style: AppText.captionStrong
+                  .copyWith(color: Colors.white, fontSize: 11)),
+        ),
+        const SizedBox(width: 10),
+        Expanded(
+          child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Container(
-                width: 24,
-                height: 24,
-                alignment: Alignment.center,
-                decoration: BoxDecoration(
-                  color: option.isCorrect
-                      ? c.success
-                      : option.id == a.selectedOptionId
-                          ? c.danger
-                          : c.surface2,
-                  shape: BoxShape.circle,
-                ),
-                child: Text(
-                  option.label ?? '',
-                  style: TextStyle(
-                    fontSize: 11.5,
-                    fontWeight: FontWeight.w800,
-                    color: option.isCorrect || option.id == a.selectedOptionId ? Colors.white : c.textPrimary,
-                  ),
-                ),
-              ),
-              const SizedBox(width: 10),
-              Expanded(
-                child: MathText(
-                  option.optionText,
-                  style: TextStyle(fontSize: 13, color: c.textPrimary, height: 1.4),
-                ),
-              ),
-              if (option.isCorrect)
-                const Icon(Icons.check_circle, size: 17, color: Color(0xFF0B9E6D))
-              else if (option.id == a.selectedOptionId)
-                const Icon(Icons.cancel, size: 17, color: Color(0xFFE5484D)),
+              Text(caption,
+                  style: AppText.caption.copyWith(color: c.textMuted, fontSize: 11)),
+              const SizedBox(height: 3),
+              MathText(text,
+                  style: AppText.body.copyWith(color: c.textPrimary, fontSize: 13.5)),
             ],
           ),
         ),
-    ];
+      ],
+    );
   }
 }

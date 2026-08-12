@@ -106,14 +106,14 @@ class _RegisterScreenState extends State<RegisterScreen> {
             padding: const EdgeInsets.all(16),
             child: ConstrainedBox(
               constraints: const BoxConstraints(maxWidth: 460),
-              child: GlassPanel(
+              child: SurfacePanel(
                 padding: const EdgeInsets.all(40),
                 child: Column(
                   children: [
                     const MedallionIcon(icon: Icons.mark_email_read_outlined, size: 34),
                     const SizedBox(height: 16),
                     Text('Check Your Inbox',
-                        style: TextStyle(fontSize: 24, fontWeight: FontWeight.w800, color: c.accent)),
+                        style: TextStyle(fontSize: 24, fontWeight: FontWeight.w800, color: c.brandBright)),
                     const SizedBox(height: 12),
                     Text(
                       "We've sent a verification link to ${_email.text.trim()}. Please click the link in the email to verify your account, then come back to log in.",
@@ -141,7 +141,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
           padding: const EdgeInsets.all(16),
           child: ConstrainedBox(
             constraints: const BoxConstraints(maxWidth: 460),
-            child: GlassPanel(
+            child: SurfacePanel(
               padding: const EdgeInsets.all(32),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -150,7 +150,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
                   Column(
                     children: [
                       Text('Create Account',
-                          style: TextStyle(fontSize: 26, fontWeight: FontWeight.w800, color: c.accent)),
+                          style: TextStyle(fontSize: 26, fontWeight: FontWeight.w800, color: c.brandBright)),
                       const SizedBox(height: 6),
                       Text('Join e-Learning Practest and start your exam preparation',
                           textAlign: TextAlign.center,
@@ -264,7 +264,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
                               Icon(
                                 _agreed ? Icons.check_box : Icons.check_box_outline_blank,
                                 size: 20,
-                                color: _agreed ? c.accent : c.textSecondary,
+                                color: _agreed ? c.brandBright : c.textSecondary,
                               ),
                               const SizedBox(width: 10),
                               Expanded(
@@ -277,7 +277,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
                           ),
                         ),
                         const SizedBox(height: 20),
-                        GradientButton(
+                        PrimaryButton(
                           label: _submitting ? 'Creating Account...' : 'Create Account',
                           fullWidth: true,
                           loading: _submitting,
@@ -293,7 +293,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
                       Text('Already have an account?', style: TextStyle(fontSize: 13, color: c.textSecondary)),
                       TextButton(
                         onPressed: _submitting ? null : () => Navigator.of(context).pop(),
-                        child: Text('Sign In', style: TextStyle(fontWeight: FontWeight.w700, color: c.accent)),
+                        child: Text('Sign In', style: TextStyle(fontWeight: FontWeight.w700, color: c.brandBright)),
                       ),
                     ],
                   ),

@@ -2,7 +2,10 @@ import '../scaffold.dart';
 import 'package:flutter/material.dart';
 
 import '../api_client.dart';
+import '../boards.dart';
 import '../models.dart';
+import '../routes.dart';
+import '../theme.dart';
 import '../utils.dart';
 import '../widgets.dart';
 import 'results_history_screen.dart';
@@ -63,7 +66,7 @@ class _TestSeriesListScreenState extends State<TestSeriesListScreen> {
       safeArea: false,
       child: Column(
         children: [
-          AppHeader(userName: 'Test Series', onLogout: () {}, showLogout: false),
+          const AppHeader(title: 'Test series'),
           Expanded(
             child: _loading
                 ? const LoadingView(message: 'Loading test series...')
@@ -87,48 +90,22 @@ class _TestSeriesListScreenState extends State<TestSeriesListScreen> {
                         child: _series.isEmpty
                             ? ListView(
                                 padding: const EdgeInsets.all(16),
-                                children: [
-                                  GlassPanel(
-                                    padding: const EdgeInsets.all(28),
-                                    child: Column(
-                                      children: [
-                                        MedallionIcon(
-                                          icon: Icons.route,
-                                          color: c.violet,
-                                          size: 34,
-                                          padding: 18,
-                                        ),
-                                        const SizedBox(height: 16),
-                                        Text(
-                                          'No test series assigned',
-                                          style: TextStyle(fontSize: 16, fontWeight: FontWeight.w700, color: c.textPrimary),
-                                        ),
-                                        const SizedBox(height: 6),
-                                        Text(
-                                          'When your institute assigns a test series to your batch, it will appear here.',
-                                          textAlign: TextAlign.center,
-                                          style: TextStyle(fontSize: 13, color: c.textSecondary, height: 1.4),
-                                        ),
-                                      ],
-                                    ),
+                                children: const [
+                                  EmptyState(
+                                    icon: Icons.route_outlined,
+                                    title: 'No test series assigned',
+                                    message: 'When your institute assigns a '
+                                        'series to your batch, the study path '
+                                        'appears here in order.',
                                   ),
                                 ],
                               )
                             : ListView(
-                                padding: const EdgeInsets.all(16),
+                                padding: const EdgeInsets.fromLTRB(16, 16, 16, 28),
                                 children: [
-                                  Text(
-                                    'Test Series',
-                                    style: TextStyle(fontSize: 20, fontWeight: FontWeight.w800, color: c.textPrimary),
-                                  ),
-                                  const SizedBox(height: 4),
-                                  Text(
-                                    'Follow a structured study path with mock tests in order.',
-                                    style: TextStyle(fontSize: 12.5, color: c.textSecondary),
-                                  ),
-                                  const SizedBox(height: 14),
+                                  const SectionHeading('Your study path'),
+                                  const SizedBox(height: 11),
                                   for (final s in _series) _SeriesCard(series: s),
-                                  const SizedBox(height: 12),
                                 ],
                               ),
                       ),
@@ -151,67 +128,65 @@ class _SeriesCard extends StatelessWidget {
         ? (series.attemptedTestsCount * 100 / series.totalTests).round()
         : 0;
 
-    return GlassPanel(
-      margin: const EdgeInsets.only(bottom: 12),
-      padding: const EdgeInsets.all(18),
-      onTap: () => Navigator.of(context).push(
-        MaterialPageRoute(builder: (_) => TestSeriesDetailScreen(seriesId: series.id)),
-      ),
+    final board = BoardCatalog.resolve(series.examCategory);
+
+    return SurfacePanel(
+      margin: const EdgeInsets.only(bottom: 10),
+      padding: const EdgeInsets.all(14),
+      onTap: () => context.openSeries(series.id),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Row(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
+              // The board mark tells the student which exam this path is for
+              // before they read a word of it. Omitted when unmapped.
+              if (board != null) ...[
+                BoardChip(board: board),
+                const SizedBox(width: 10),
+              ],
               Expanded(
-                child: Text(
-                  series.title ?? 'Test Series',
-                  style: TextStyle(fontSize: 16.5, fontWeight: FontWeight.w700, color: c.textPrimary),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      series.title ?? 'Test series',
+                      maxLines: 2,
+                      overflow: TextOverflow.ellipsis,
+                      style: AppText.cardTitleSm.copyWith(color: c.textPrimary),
+                    ),
+                    if ((series.description ?? '').isNotEmpty) ...[
+                      const SizedBox(height: 5),
+                      Text(
+                        series.description!,
+                        maxLines: 2,
+                        overflow: TextOverflow.ellipsis,
+                        style: AppText.caption.copyWith(color: c.textSecondary),
+                      ),
+                    ],
+                  ],
                 ),
               ),
-              if (series.isCompleted)
-                StatusChip('COMPLETED', color: c.success, icon: Icons.check_circle),
+              if (series.isCompleted) ...[
+                const SizedBox(width: 8),
+                // Gold: a completed series is an achievement, not a status.
+                TrailingBadge('DONE', color: c.gold),
+              ],
             ],
           ),
-          if ((series.examCategory ?? '').isNotEmpty) ...[
-            const SizedBox(height: 6),
-            StatusChip(series.examCategory!.toUpperCase(), color: c.violet),
-          ],
-          if ((series.description ?? '').isNotEmpty) ...[
-            const SizedBox(height: 8),
-            Text(
-              series.description!,
-              maxLines: 2,
-              overflow: TextOverflow.ellipsis,
-              style: TextStyle(fontSize: 13, color: c.textSecondary, height: 1.4),
-            ),
-          ],
-          const SizedBox(height: 14),
-          Row(
-            children: [
-              Expanded(
-                child: Text(
-                  '${series.attemptedTestsCount} of ${series.totalTests} tests attempted',
-                  style: TextStyle(fontSize: 12.5, fontWeight: FontWeight.w600, color: c.textPrimary),
-                ),
-              ),
-              Text(
-                '$percent%',
-                style: TextStyle(fontSize: 12.5, fontWeight: FontWeight.w800, color: c.accent),
-              ),
-            ],
-          ),
+          const SizedBox(height: 13),
+          ProgressBar(percent: percent, height: 6),
           const SizedBox(height: 8),
-          ProgressBar(percent: percent),
-          const SizedBox(height: 12),
           Row(
-            mainAxisAlignment: MainAxisAlignment.end,
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
               Text(
-                'Open series',
-                style: TextStyle(fontSize: 13, fontWeight: FontWeight.w700, color: c.accent),
+                '${series.attemptedTestsCount} of ${series.totalTests} tests attempted',
+                style: AppText.caption.copyWith(color: c.textSecondary),
               ),
-              Icon(Icons.arrow_forward, size: 16, color: c.accent),
+              Text('$percent%',
+                  style: AppText.caption.copyWith(color: c.textSecondary)),
             ],
           ),
         ],
@@ -292,9 +267,8 @@ class _TestSeriesDetailScreenState extends State<TestSeriesDetailScreen> {
       child: Column(
         children: [
           AppHeader(
-            userName: _detail?.title ?? 'Test Series',
-            onLogout: () {},
-            showLogout: false,
+            title: _detail?.title ?? 'Test series',
+            showBack: true,
           ),
           Expanded(
             child: _loading
@@ -352,7 +326,7 @@ class _SeriesDetailBody extends StatelessWidget {
       return ListView(
         padding: const EdgeInsets.all(16),
         children: [
-          GlassPanel(
+          SurfacePanel(
             padding: const EdgeInsets.all(24),
             child: Text(
               'No tests published in this series yet.',
@@ -371,7 +345,7 @@ class _SeriesDetailBody extends StatelessWidget {
         children: [
           Padding(
             padding: const EdgeInsets.fromLTRB(16, 4, 16, 0),
-            child: GlassPanel(
+            child: SurfacePanel(
               padding: const EdgeInsets.all(16),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
@@ -397,7 +371,7 @@ class _SeriesDetailBody extends StatelessWidget {
                         ),
                       ),
                       if (detail.nextTestId != null)
-                        StatusChip('NEXT: TEST #${detail.nextTestId}', color: c.accent),
+                        StatusChip('NEXT: TEST #${detail.nextTestId}', color: c.brandBright),
                     ],
                   ),
                 ],
@@ -408,9 +382,9 @@ class _SeriesDetailBody extends StatelessWidget {
           TabBar(
             isScrollable: true,
             tabAlignment: TabAlignment.start,
-            labelColor: c.accent,
+            labelColor: c.brandBright,
             unselectedLabelColor: c.textSecondary,
-            indicatorColor: c.accent,
+            indicatorColor: c.brandBright,
             indicatorSize: TabBarIndicatorSize.label,
             labelStyle: const TextStyle(fontSize: 13, fontWeight: FontWeight.w700),
             tabs: [for (final cat in categories) Tab(text: _categoryLabel(cat))],
@@ -463,11 +437,11 @@ class _TestCard extends StatelessWidget {
     final c = useColors(context);
     final (color, label) = switch (test.status) {
       'completed' => (c.success, 'Completed'),
-      'in_progress' => (c.warning, 'In Progress'),
+      'in_progress' => (c.orange, 'In Progress'),
       _ => (c.textSecondary, 'Not Started'),
     };
 
-    return GlassPanel(
+    return SurfacePanel(
       margin: const EdgeInsets.only(bottom: 12),
       padding: const EdgeInsets.all(16),
       child: Column(
@@ -509,7 +483,7 @@ class _TestCard extends StatelessWidget {
               ),
             )
           else
-            GradientButton(
+            PrimaryButton(
               label: test.status == 'in_progress' ? 'Resume Test' : 'Start Test',
               icon: Icons.play_arrow,
               fullWidth: true,

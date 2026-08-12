@@ -1,11 +1,13 @@
-import '../scaffold.dart';
 import 'package:flutter/material.dart';
 
 import '../api_client.dart';
+import '../boards.dart';
 import '../models.dart';
+import '../routes.dart';
+import '../scaffold.dart';
+import '../theme.dart';
 import '../utils.dart';
 import '../widgets.dart';
-import 'test_result_screen.dart';
 
 class ResultsHistoryScreen extends StatefulWidget {
   const ResultsHistoryScreen({super.key});
@@ -62,7 +64,7 @@ class _ResultsHistoryScreenState extends State<ResultsHistoryScreen> {
       safeArea: false,
       child: Column(
         children: [
-          AppHeader(userName: 'Results', onLogout: () {}, showLogout: false),
+          const AppHeader(title: 'Results'),
           Expanded(
             child: _loading
                 ? const LoadingView(message: 'Loading results...')
@@ -86,48 +88,24 @@ class _ResultsHistoryScreenState extends State<ResultsHistoryScreen> {
                         child: _results.isEmpty
                             ? ListView(
                                 padding: const EdgeInsets.all(16),
-                                children: [
-                                  GlassPanel(
-                                    padding: const EdgeInsets.all(28),
-                                    child: Column(
-                                      children: [
-                                        MedallionIcon(
-                                          icon: Icons.assignment_turned_in_outlined,
-                                          color: c.violet,
-                                          size: 34,
-                                          padding: 18,
-                                        ),
-                                        const SizedBox(height: 16),
-                                        Text(
-                                          'No attempts yet',
-                                          style: TextStyle(fontSize: 16, fontWeight: FontWeight.w700, color: c.textPrimary),
-                                        ),
-                                        const SizedBox(height: 6),
-                                        Text(
-                                          'Attempt a test and your score, accuracy and rank will appear here.',
-                                          textAlign: TextAlign.center,
-                                          style: TextStyle(fontSize: 13, color: c.textSecondary, height: 1.4),
-                                        ),
-                                      ],
-                                    ),
+                                children: const [
+                                  EmptyState(
+                                    icon: Icons.assignment_turned_in_outlined,
+                                    title: 'No attempts yet',
+                                    message: 'Attempt a test and your score, '
+                                        'accuracy and rank appear here.',
                                   ),
                                 ],
                               )
                             : ListView(
-                                padding: const EdgeInsets.all(16),
+                                padding: const EdgeInsets.fromLTRB(16, 16, 16, 28),
                                 children: [
-                                  Text(
-                                    'Test Results History',
-                                    style: TextStyle(fontSize: 20, fontWeight: FontWeight.w800, color: c.textPrimary),
+                                  SectionHeading(
+                                    '${_results.length} completed '
+                                    'attempt${_results.length == 1 ? '' : 's'}',
                                   ),
-                                  const SizedBox(height: 4),
-                                  Text(
-                                    '${_results.length} completed attempt${_results.length == 1 ? '' : 's'}',
-                                    style: TextStyle(fontSize: 12.5, color: c.textSecondary),
-                                  ),
-                                  const SizedBox(height: 14),
+                                  const SizedBox(height: 11),
                                   for (final r in _results) _ResultCard(result: r),
-                                  const SizedBox(height: 12),
                                 ],
                               ),
                       ),
@@ -138,6 +116,11 @@ class _ResultsHistoryScreenState extends State<ResultsHistoryScreen> {
   }
 }
 
+/// One past attempt.
+///
+/// The score leads because that is what the student is scanning for; accuracy,
+/// percentile and rank follow in their own hues — teal is performance, gold is
+/// standing. A figure the API did not return sets as an em dash, never as zero.
 class _ResultCard extends StatelessWidget {
   const _ResultCard({required this.result});
 
@@ -146,105 +129,81 @@ class _ResultCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final c = useColors(context);
-    final statusColor = result.score != null && result.totalMarks != null &&
-            (result.totalMarks ?? 0) > 0 && (result.score ?? 0) / result.totalMarks! >= 0.5
-        ? c.success
-        : c.warning;
+    final board = BoardCatalog.resolve(result.courseTitle);
+    final total = result.totalMarks ?? 0;
+    final ratio = total > 0 ? (result.score ?? 0) / total : null;
+    final scoreTone = ratio == null
+        ? c.textPrimary
+        : ratio >= 0.5
+            ? c.success
+            : c.danger;
 
-    return GlassPanel(
-      margin: const EdgeInsets.only(bottom: 12),
-      padding: const EdgeInsets.all(16),
-      onTap: () => Navigator.of(context).push(
-        MaterialPageRoute(builder: (_) => TestResultScreen(sessionId: result.sessionId)),
-      ),
+    return SurfacePanel(
+      margin: const EdgeInsets.only(bottom: 10),
+      padding: const EdgeInsets.all(14),
+      onTap: () => context.openResult(result.sessionId),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Row(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
+              // Omitted rather than guessed when the course names no board.
+              if (board != null) ...[
+                BoardChip(board: board),
+                const SizedBox(width: 10),
+              ],
               Expanded(
-                child: Text(
-                  result.testTitle ?? 'Unknown Test',
-                  style: TextStyle(fontSize: 15.5, fontWeight: FontWeight.w700, color: c.textPrimary),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      result.testTitle ?? 'Unknown test',
+                      maxLines: 2,
+                      overflow: TextOverflow.ellipsis,
+                      style: AppText.cardTitleSm.copyWith(color: c.textPrimary),
+                    ),
+                    const SizedBox(height: 4),
+                    Text(
+                      formatDateTime(result.submittedAt),
+                      style: AppText.caption
+                          .copyWith(color: c.textSecondary, fontSize: 11.5),
+                    ),
+                  ],
                 ),
               ),
-              if (result.isAutoSubmitted)
-                StatusChip(
-                  'AUTO-SUBMITTED',
-                  color: c.warning,
-                  icon: Icons.timer_outlined,
-                ),
+              if (result.isAutoSubmitted) ...[
+                const SizedBox(width: 8),
+                TrailingBadge('AUTO', color: c.orange),
+              ],
             ],
           ),
-          if ((result.courseTitle ?? '').isNotEmpty) ...[
-            const SizedBox(height: 3),
-            Text(
-              result.courseTitle!,
-              style: TextStyle(fontSize: 12, color: c.textSecondary),
-            ),
-          ],
-          const SizedBox(height: 12),
+          const SizedBox(height: 13),
           Row(
+            crossAxisAlignment: CrossAxisAlignment.end,
             children: [
-              Expanded(
-                child: _stat(
-                  context,
-                  '${formatNumber(result.score)} / ${formatNumber(result.totalMarks)}',
-                  'Score',
-                  statusColor,
-                ),
+              Text(formatNumber(result.score),
+                  style: AppText.figure.copyWith(color: scoreTone, fontSize: 26)),
+              const SizedBox(width: 5),
+              Padding(
+                padding: const EdgeInsets.only(bottom: 3),
+                child: Text('/ ${formatNumber(result.totalMarks)}',
+                    style: AppText.caption.copyWith(color: c.textSecondary)),
               ),
-              Expanded(
-                child: _stat(
-                  context,
-                  '${(result.accuracyPercentage ?? 0).round()}%',
-                  'Accuracy',
-                  c.accent,
-                ),
-              ),
-              Expanded(
-                child: _stat(
-                  context,
-                  result.percentile != null ? formatNumber(result.percentile) : '—',
-                  'Percentile',
-                  c.violet,
-                ),
-              ),
-              Expanded(
-                child: _stat(
-                  context,
-                  result.rank != null ? '#${result.rank}' : '—',
-                  'Rank',
-                  c.success,
-                ),
-              ),
-            ],
-          ),
-          const SizedBox(height: 12),
-          Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: [
-              Row(
-                children: [
-                  Icon(Icons.schedule, size: 14, color: c.textSecondary),
-                  const SizedBox(width: 5),
-                  Text(
-                    formatDurationMinutes(result.timeTakenSeconds),
-                    style: TextStyle(fontSize: 12, color: c.textSecondary),
-                  ),
-                ],
-              ),
-              Row(
-                children: [
-                  Icon(Icons.calendar_today_outlined, size: 13, color: c.textSecondary),
-                  const SizedBox(width: 5),
-                  Text(
-                    formatDateTime(result.submittedAt),
-                    style: TextStyle(fontSize: 12, color: c.textSecondary),
-                  ),
-                ],
-              ),
+              const Spacer(),
+              _figure(c, '${(result.accuracyPercentage ?? 0).round()}%',
+                  'accuracy', c.brandBright),
+              const SizedBox(width: 16),
+              _figure(
+                  c,
+                  result.percentile != null
+                      ? formatNumber(result.percentile)
+                      : '\u2014',
+                  'percentile',
+                  c.gold),
+              const SizedBox(width: 16),
+              _figure(c, result.rank != null ? '#${result.rank}' : '\u2014',
+                  'rank', c.gold),
             ],
           ),
         ],
@@ -252,16 +211,14 @@ class _ResultCard extends StatelessWidget {
     );
   }
 
-  Widget _stat(BuildContext context, String value, String label, Color color) {
-    final c = useColors(context);
+  Widget _figure(AppColors c, String value, String label, Color color) {
     return Column(
+      crossAxisAlignment: CrossAxisAlignment.end,
       children: [
-        Text(
-          value,
-          style: TextStyle(fontSize: 15.5, fontWeight: FontWeight.w800, color: color),
-        ),
-        const SizedBox(height: 2),
-        Text(label, style: TextStyle(fontSize: 10.5, color: c.textSecondary)),
+        Text(value, style: AppText.figureSm.copyWith(color: color, fontSize: 15)),
+        const SizedBox(height: 4),
+        Text(label,
+            style: AppText.caption.copyWith(color: c.textSecondary, fontSize: 10.5)),
       ],
     );
   }

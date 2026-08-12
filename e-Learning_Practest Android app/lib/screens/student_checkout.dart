@@ -198,7 +198,7 @@ class _StudentCheckoutState extends State<_StudentCheckout> {
       return Container(
         padding: const EdgeInsets.all(32),
         decoration: BoxDecoration(
-          color: c.panelBgSolid,
+          color: c.panel,
           borderRadius: const BorderRadius.vertical(top: Radius.circular(24)),
           border: Border.all(color: c.borderStrong),
         ),
@@ -216,7 +216,7 @@ class _StudentCheckoutState extends State<_StudentCheckout> {
               style: TextStyle(fontSize: 13.5, color: c.textSecondary),
             ),
             const SizedBox(height: 20),
-            GradientButton(
+            PrimaryButton(
               label: 'Go to my courses',
               fullWidth: true,
               onPressed: () => Navigator.of(context).pop(),
@@ -231,7 +231,7 @@ class _StudentCheckoutState extends State<_StudentCheckout> {
         maxHeight: MediaQuery.of(context).size.height * 0.9,
       ),
       decoration: BoxDecoration(
-        color: c.panelBgSolid,
+        color: c.panel,
         borderRadius: const BorderRadius.vertical(top: Radius.circular(24)),
         border: Border.all(color: c.borderStrong),
       ),
@@ -268,7 +268,7 @@ class _StudentCheckoutState extends State<_StudentCheckout> {
             Container(
               padding: const EdgeInsets.all(14),
               decoration: BoxDecoration(
-                color: c.surface1,
+                color: c.sunken,
                 borderRadius: BorderRadius.circular(12),
                 border: Border.all(color: c.border),
               ),
@@ -279,7 +279,7 @@ class _StudentCheckoutState extends State<_StudentCheckout> {
                     InkWell(
                       onTap: () => setState(() => _showCouponInput = !_showCouponInput),
                       child: Text('Have a coupon?',
-                          style: TextStyle(fontSize: 13, fontWeight: FontWeight.w600, color: c.accent)),
+                          style: TextStyle(fontSize: 13, fontWeight: FontWeight.w600, color: c.brandBright)),
                     ),
                   if (couponValid)
                     Container(
@@ -374,7 +374,7 @@ class _StudentCheckoutState extends State<_StudentCheckout> {
               ErrorBanner(_error),
             ],
             const SizedBox(height: 20),
-            GradientButton(
+            PrimaryButton(
               label: _payLoading
                   ? 'Starting checkout...'
                   : finalPrice == 0

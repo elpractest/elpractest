@@ -22,3 +22,14 @@ library;
 ///   flutter build apk --dart-define=ENABLE_IN_APP_PURCHASE=true
 const bool enableInAppPurchase =
     bool.fromEnvironment('ENABLE_IN_APP_PURCHASE');
+
+/// What Profile → About prints.
+///
+/// Kept beside the other compile-time switches rather than read from
+/// `package_info_plus` at runtime: this is a one-line label, and adding a
+/// plugin and an async call to render it would cost more than it is worth.
+/// Bump it with `version:` in pubspec.yaml.
+const String appVersionLabel = String.fromEnvironment(
+  'APP_VERSION_LABEL',
+  defaultValue: 'v1.0.0',
+);

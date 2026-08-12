@@ -191,7 +191,7 @@ class _ActivationModalState extends State<_ActivationModal> {
           maxHeight: MediaQuery.of(context).size.height * 0.9,
         ),
         decoration: BoxDecoration(
-          color: c.panelBgSolid,
+          color: c.panel,
           borderRadius: const BorderRadius.vertical(top: Radius.circular(24)),
           border: Border.all(color: c.borderStrong),
         ),
@@ -277,7 +277,7 @@ class _ActivationModalState extends State<_ActivationModal> {
         Container(
           padding: const EdgeInsets.symmetric(horizontal: 14),
           decoration: BoxDecoration(
-            color: c.surfaceSunken,
+            color: c.sunken,
             borderRadius: BorderRadius.circular(AppTheme.radiusSm),
             border: Border.all(color: c.border),
           ),
@@ -285,7 +285,7 @@ class _ActivationModalState extends State<_ActivationModal> {
             child: DropdownButton<int>(
               value: _selectedBatchId,
               isExpanded: true,
-              dropdownColor: c.panelBgSolid,
+              dropdownColor: c.panel,
               hint: Text(_loadingCourses ? 'Loading batches...' : '-- Select Course Batch --',
                   style: TextStyle(fontSize: 14, color: c.textSecondary)),
               items: [
@@ -327,16 +327,16 @@ class _ActivationModalState extends State<_ActivationModal> {
           child: Container(
             padding: const EdgeInsets.all(14),
             decoration: BoxDecoration(
-              color: c.surfaceSunken,
+              color: c.sunken,
               borderRadius: BorderRadius.circular(AppTheme.radiusSm),
-              border: Border.all(color: _proofFile != null ? c.accentBorder : c.border),
+              border: Border.all(color: _proofFile != null ? c.brandBorder : c.border),
             ),
             child: Row(
               children: [
                 Icon(
                   _proofFile != null ? Icons.description_outlined : Icons.upload_file,
                   size: 20,
-                  color: _proofFile != null ? c.accent : c.textSecondary,
+                  color: _proofFile != null ? c.brandBright : c.textSecondary,
                 ),
                 const SizedBox(width: 10),
                 Expanded(
@@ -355,7 +355,7 @@ class _ActivationModalState extends State<_ActivationModal> {
           ),
         ),
         const SizedBox(height: 20),
-        GradientButton(
+        PrimaryButton(
           label: _submitting ? 'Submitting Request...' : 'Submit Activation Request',
           fullWidth: true,
           loading: _submitting,
@@ -390,7 +390,7 @@ class _ActivationModalState extends State<_ActivationModal> {
           style: TextStyle(fontSize: 12.5, color: c.textSecondary, height: 1.4),
         ),
         const SizedBox(height: 20),
-        GradientButton(
+        PrimaryButton(
           label: _submitting ? 'Redeeming Code...' : 'Redeem Code',
           fullWidth: true,
           loading: _submitting,
@@ -419,7 +419,7 @@ class _TabButton extends StatelessWidget {
         decoration: BoxDecoration(
           border: Border(
             bottom: BorderSide(
-              color: selected ? c.accent : Colors.transparent,
+              color: selected ? c.brandBright : Colors.transparent,
               width: 2,
             ),
           ),
@@ -429,7 +429,7 @@ class _TabButton extends StatelessWidget {
           style: TextStyle(
             fontSize: 13,
             fontWeight: FontWeight.w700,
-            color: selected ? c.accent : c.textSecondary,
+            color: selected ? c.brandBright : c.textSecondary,
           ),
         ),
       ),

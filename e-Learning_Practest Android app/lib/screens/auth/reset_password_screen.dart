@@ -96,14 +96,14 @@ class _ResetPasswordScreenState extends State<ResetPasswordScreen> {
             padding: const EdgeInsets.all(16),
             child: ConstrainedBox(
               constraints: const BoxConstraints(maxWidth: 460),
-              child: GlassPanel(
+              child: SurfacePanel(
                 padding: const EdgeInsets.all(40),
                 child: Column(
                   children: [
                     const MedallionIcon(icon: Icons.lock_reset, size: 34),
                     const SizedBox(height: 16),
                     Text('Password Reset!',
-                        style: TextStyle(fontSize: 24, fontWeight: FontWeight.w800, color: c.accent)),
+                        style: TextStyle(fontSize: 24, fontWeight: FontWeight.w800, color: c.brandBright)),
                     const SizedBox(height: 12),
                     Text(
                       _successMessage,
@@ -111,7 +111,7 @@ class _ResetPasswordScreenState extends State<ResetPasswordScreen> {
                       style: TextStyle(fontSize: 14, color: c.textSecondary, height: 1.6),
                     ),
                     const SizedBox(height: 24),
-                    GradientButton(
+                    PrimaryButton(
                       label: 'Continue to Login',
                       fullWidth: true,
                       onPressed: () => returnToLogin(context),
@@ -131,7 +131,7 @@ class _ResetPasswordScreenState extends State<ResetPasswordScreen> {
           padding: const EdgeInsets.all(16),
           child: ConstrainedBox(
             constraints: const BoxConstraints(maxWidth: 460),
-            child: GlassPanel(
+            child: SurfacePanel(
               padding: const EdgeInsets.all(32),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -139,7 +139,7 @@ class _ResetPasswordScreenState extends State<ResetPasswordScreen> {
                   Column(
                     children: [
                       Text('Set a New Password',
-                          style: TextStyle(fontSize: 24, fontWeight: FontWeight.w800, color: c.accent)),
+                          style: TextStyle(fontSize: 24, fontWeight: FontWeight.w800, color: c.brandBright)),
                       const SizedBox(height: 8),
                       Text(
                         'Enter a new password for ${widget.email ?? 'your account'}.',
@@ -178,7 +178,7 @@ class _ResetPasswordScreenState extends State<ResetPasswordScreen> {
                           validator: (v) => (v == null || v.isEmpty) ? 'Confirm your password' : null,
                         ),
                         const SizedBox(height: 20),
-                        GradientButton(
+                        PrimaryButton(
                           label: _submitting ? 'Resetting...' : 'Reset Password',
                           fullWidth: true,
                           loading: _submitting,
@@ -192,7 +192,7 @@ class _ResetPasswordScreenState extends State<ResetPasswordScreen> {
                     onPressed: _submitting
                         ? null
                         : () => returnToLogin(context),
-                    child: Text('← Back to Login', style: TextStyle(color: c.accent)),
+                    child: Text('← Back to Login', style: TextStyle(color: c.brandBright)),
                   ),
                 ],
               ),
