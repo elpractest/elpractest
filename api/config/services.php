@@ -79,4 +79,19 @@ return [
         'api_secret' => env('GA4_API_SECRET'),
     ],
 
+    // ── OpenAI (Vajini AI study companion) ─────────────────────────
+    // The key is never committed — set OPENAI_API_KEY in the server .env.
+    // Absence of the key degrades Vajini gracefully (503), it does not break
+    // any other route.
+
+    'openai' => [
+        'key' => env('OPENAI_API_KEY'),
+        'base_url' => env('OPENAI_BASE_URL', 'https://api.openai.com/v1'),
+        'chat_model' => env('OPENAI_CHAT_MODEL', 'gpt-4o-mini'),
+        'embed_model' => env('OPENAI_EMBED_MODEL', 'text-embedding-3-small'),
+        // Retrieval + generation knobs, tunable without a code change.
+        'top_k' => (int) env('VAJINI_TOP_K', 5),
+        'timeout' => (int) env('OPENAI_TIMEOUT', 30),
+    ],
+
 ];

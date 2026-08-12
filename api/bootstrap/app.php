@@ -71,6 +71,17 @@ return Application::configure(basePath: dirname(__DIR__))
         RateLimiter::for('api', function (Request $request) {
             return Limit::perMinute(60)->by($request->user()?->id ?: $request->ip());
         });
+
+        // Vajini chat: 20/min per student. Each request is an OpenAI call, so
+        // this caps runaway cost from a hammered composer without hurting a
+        // normal back-and-forth.
+        RateLimiter::for('vajini', function (Request $request) {
+            return Limit::perMinute(20)->by($request->user()?->id ?: $request->ip())->response(function () {
+                return response()->json([
+                    'message' => 'You are asking Vajini very quickly — please wait a moment.',
+                ], 429);
+            });
+        });
     })
     ->withExceptions(function (Exceptions $exceptions): void {
         //

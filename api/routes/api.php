@@ -8,6 +8,7 @@ use App\Http\Controllers\Admin\EnrollmentController;
 use App\Http\Controllers\Admin\ActivationRequestController;
 use App\Http\Controllers\Admin\ActivationCodeController;
 use App\Http\Controllers\Admin\BatchController;
+use App\Http\Controllers\Admin\BannerController;
 use App\Http\Controllers\Admin\UserController;
 use App\Http\Controllers\Admin\SuperAdminController;
 use App\Http\Controllers\Admin\ResultController;
@@ -65,6 +66,11 @@ Route::post('/contact', [ContactController::class, 'store'])
 // Public settings
 Route::get('/settings/public', [\App\Http\Controllers\Admin\SettingsController::class, 'publicIndex']);
 Route::get('/courses/public', [\App\Http\Controllers\PublicCourseController::class, 'index'])
+    ->middleware('throttle:60,1');
+
+// Public Home banners — managed by super-admin, consumed by the student app,
+// marketing site and mobile apps.
+Route::get('/banners/public', [BannerController::class, 'publicIndex'])
     ->middleware('throttle:60,1');
 
 // Razorpay webhook — must be outside auth and CSRF
@@ -177,6 +183,14 @@ Route::middleware('auth:sanctum')->group(function () {
         Route::put('/settings', [SettingsController::class, 'update']);
         Route::post('/settings/upload', [SuperAdminController::class, 'uploadBrandingImage']);
 
+        // Home promo banners (marketing content — super-admin owned)
+        Route::get('/banners', [BannerController::class, 'index']);
+        Route::post('/banners', [BannerController::class, 'store']);
+        Route::post('/banners/reorder', [BannerController::class, 'reorder']);
+        Route::post('/banners/{banner}/image', [BannerController::class, 'uploadImage']);
+        Route::put('/banners/{banner}', [BannerController::class, 'update']);
+        Route::delete('/banners/{banner}', [BannerController::class, 'destroy']);
+
         // Admin Account & Support Management
         Route::get('/admins', [SuperAdminController::class, 'getAdmins']);
         Route::post('/admins', [SuperAdminController::class, 'createAdmin']);
@@ -199,6 +213,11 @@ Route::middleware('auth:sanctum')->group(function () {
         // treats a 404 here as "this API has not been deployed yet" and falls
         // back to the older endpoints, so the two can ship independently.
         Route::get('home-summary', [\App\Http\Controllers\Student\StudentHomeController::class, 'summary']);
+
+        // Vajini — AI study companion (RAG over course content). Throttled to
+        // protect the OpenAI key/cost; degrades to 503 when unconfigured.
+        Route::post('vajini/chat', [\App\Http\Controllers\Student\VajiniController::class, 'chat'])
+            ->middleware('throttle:vajini');
 
         // Test taking
         Route::get('tests', [TestTakingController::class, 'availableTests']);
