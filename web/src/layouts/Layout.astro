@@ -55,8 +55,8 @@ const orgSchema = JSON.stringify({
     <title>{title}</title>
     <meta name="title" content={title} />
     <meta name="description" content={description} />
-    <meta name="theme-color" content="#070b16" media="(prefers-color-scheme: dark)" />
-    <meta name="theme-color" content="#f3f1ea" media="(prefers-color-scheme: light)" />
+    <meta name="theme-color" content="#0b0f1a" media="(prefers-color-scheme: dark)" />
+    <meta name="theme-color" content="#eaeef6" media="(prefers-color-scheme: light)" />
 
     <!-- Open Graph / Facebook -->
     <meta property="og:type" content="website" />
@@ -74,10 +74,10 @@ const orgSchema = JSON.stringify({
     <!-- Schema.org Organization -->
     <script type="application/ld+json" set:html={orgSchema} />
 
-    <!-- Fonts: Space Grotesk (display) · Inter (UI) · JetBrains Mono (data) -->
+    <!-- Fonts: Sora (display) · Plus Jakarta Sans (UI) · JetBrains Mono (data) · Noto Sans Devanagari (हिं) -->
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@500;700&family=Space+Grotesk:wght@500;600;700&display=swap" rel="stylesheet" />
+    <link href="https://fonts.googleapis.com/css2?family=Sora:wght@400;500;600;700;800&family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=JetBrains+Mono:wght@500;700&family=Noto+Sans+Devanagari:wght@500;600;700&display=swap" rel="stylesheet" />
   </head>
   <body>
     <Analytics />
@@ -281,7 +281,7 @@ const orgSchema = JSON.stringify({
     height: 32px;
     border-radius: 9px;
     background: var(--grad-primary);
-    color: #ffffff;
+    color: var(--on-brand);
     box-shadow: 0 6px 16px -6px var(--accent-glow);
   }
 
@@ -480,7 +480,7 @@ const orgSchema = JSON.stringify({
 
   .fab-wa { background: #25d366; animation-delay: 0.05s; }
   .fab-wa:hover { box-shadow: 0 16px 34px -8px rgba(37, 211, 102, 0.55); }
-  .fab-call { background: var(--grad-primary); animation-delay: 0.12s; }
+  .fab-call { background: var(--grad-primary); color: var(--on-brand); animation-delay: 0.12s; }
   .fab-call:hover { box-shadow: 0 16px 34px -8px var(--accent-glow); }
 
   .fab-ico { width: 26px; height: 26px; flex-shrink: 0; }

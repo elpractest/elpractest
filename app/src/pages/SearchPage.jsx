@@ -4,6 +4,7 @@ import { useTranslation } from 'react-i18next';
 import api from '../api';
 import Icon from '../components/Icon';
 import { useTheme } from '../lib/theme';
+import { demoTrending, demoRecent } from '../lib/demoData';
 
 /**
  * SEARCH — functional. Pulls the student's assigned test-series and enrolled
@@ -13,9 +14,8 @@ import { useTheme } from '../lib/theme';
  *
  * No new backend: it reuses /api/student/test-series and /api/student/courses
  * (the same shapes StudentTestSeries.jsx and Dashboard.jsx already consume).
+ * When the query is empty it shows trending chips + recent-search demo rows.
  */
-const POPULAR = ['SSC', 'Banking', 'Railways', 'UPSC', 'NEET', 'Defence'];
-
 export default function SearchPage() {
   const navigate = useNavigate();
   const { t } = useTranslation();
@@ -101,8 +101,18 @@ export default function SearchPage() {
           <>
             <div style={{ font: '700 12px var(--font-body)', color: 'var(--muted)', letterSpacing: '.04em', margin: '8px 0 12px' }}>{t('search.popular')}</div>
             <div style={{ display: 'flex', flexWrap: 'wrap', gap: '9px' }}>
-              {POPULAR.map((p) => (
+              {demoTrending.map((p) => (
                 <button key={p} className="chip-filter" onClick={() => setQuery(p)}>{p}</button>
+              ))}
+            </div>
+            <div style={{ font: '700 12px var(--font-body)', color: 'var(--muted)', letterSpacing: '.04em', margin: '22px 0 10px' }}>RECENT</div>
+            <div style={{ display: 'flex', flexDirection: 'column' }}>
+              {demoRecent.map((r) => (
+                <button key={r} onClick={() => setQuery(r)} style={{ display: 'flex', alignItems: 'center', gap: '12px', padding: '12px 4px', background: 'none', border: 'none', borderBottom: '1px solid var(--line)', cursor: 'pointer', textAlign: 'left' }}>
+                  <Icon name="clock" size={17} style={{ color: 'var(--muted)' }} />
+                  <span style={{ flex: 1, font: '600 13.5px var(--font-body)', color: 'var(--tx2)' }}>{r}</span>
+                  <Icon name="arrow-right" size={15} style={{ color: 'var(--muted)' }} />
+                </button>
               ))}
             </div>
           </>

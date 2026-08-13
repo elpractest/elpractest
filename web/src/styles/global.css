@@ -1,20 +1,29 @@
 /* ============================================================
-   PRACTEST PUBLIC SITE — "the examination paper, reimagined"
-   Two themes sharing the SPA's brand DNA:
-   Space Grotesk (display) · Inter (UI) · JetBrains Mono (data)
-   Theme set as <html data-theme="dark|light"> before first paint;
-   synced with the SPA via the `practest_theme` cookie.
+   PRACTEST PUBLIC SITE — "deep-ink + amber/gold", two themes.
+   Now aligned to the student SPA's design system (app/src/index.css):
+   Sora (display) · Plus Jakarta Sans (UI) · JetBrains Mono (data) ·
+   Noto Sans Devanagari (हिं). Brand is amber/gold #F5A623, royal-blue
+   secondary #3B6FF6. Theme set as <html data-theme="dark|light"> before
+   first paint; synced with the SPA via the `practest_theme` cookie.
+   The exam-paper motifs (ruled lines, OMR bubbles, marker underline) are
+   kept — they now read in gold instead of indigo.
    ============================================================ */
 
 :root {
-  --font-body: 'Inter', system-ui, -apple-system, 'Segoe UI', Arial, sans-serif;
-  --font-display: 'Space Grotesk', var(--font-body);
+  --font-body: 'Plus Jakarta Sans', 'Noto Sans Devanagari', system-ui, -apple-system, 'Segoe UI', Arial, sans-serif;
+  --font-display: 'Sora', 'Noto Sans Devanagari', 'Plus Jakarta Sans', system-ui, sans-serif;
   --font-mono: 'JetBrains Mono', 'Cascadia Code', Consolas, monospace;
+  --font-hindi: 'Noto Sans Devanagari', 'Plus Jakarta Sans', system-ui, sans-serif;
 
-  --radius-sm: 10px;
-  --radius-md: 14px;
+  --radius-sm: 12px;
+  --radius-md: 16px;
   --radius-lg: 20px;
   --ease-out: cubic-bezier(0.22, 1, 0.36, 1);
+
+  /* brand — constant across both themes */
+  --brand: #f5a623;
+  --brand-2: #3b6ff6;
+  --on-brand: #1a1206;               /* dark ink for text ON gold */
 
   /* CBT palette states — brand-critical, identical in both themes */
   --st-gray: #64748b;
@@ -33,57 +42,57 @@
 :root,
 :root[data-theme='dark'] {
   color-scheme: dark;
-  --bg-color: #070b16;
-  --bg-soft: #0a1020;
-  --panel-bg: rgba(15, 22, 41, 0.6);
-  --panel-solid: #0e1526;
-  --border-color: rgba(148, 163, 255, 0.14);
-  --border-strong: rgba(148, 163, 255, 0.3);
-  --text-primary: #eef1fb;
-  --text-secondary: #98a4c8;
-  --accent-color: #8b93ff;
-  --accent-hover: #a5abff;
-  --accent-glow: rgba(122, 131, 255, 0.3);
-  --accent-soft: rgba(99, 102, 241, 0.16);
-  --accent-border: rgba(129, 140, 248, 0.4);
-  --grad-primary: linear-gradient(135deg, #6366f1 0%, #8b5cf6 55%, #a855f7 100%);
-  --grad-text: linear-gradient(92deg, #a5b4fc 0%, #8b93ff 45%, #67e8f9 100%);
-  --marker: #f59e0b;                 /* saffron marker-pen accent */
-  --marker-soft: rgba(245, 158, 11, 0.16);
-  --surface-1: rgba(160, 175, 255, 0.04);
-  --surface-2: rgba(160, 175, 255, 0.07);
-  --surface-3: rgba(160, 175, 255, 0.11);
-  --shadow-panel: 0 20px 50px -12px rgba(2, 6, 18, 0.6);
-  --rule: rgba(148, 163, 255, 0.16); /* ruled-line color */
-  --omr-empty: rgba(148, 163, 255, 0.28);
+  --bg-color: #0b0f1a;
+  --bg-soft: #12203a;                /* deep-ink chrome, matches SPA header */
+  --panel-bg: rgba(20, 27, 43, 0.66);
+  --panel-solid: #141b2b;
+  --border-color: rgba(255, 255, 255, 0.08);
+  --border-strong: rgba(255, 255, 255, 0.12);
+  --text-primary: #f3f6ff;
+  --text-secondary: #8a96b4;
+  --accent-color: #ffc968;           /* readable gold on dark */
+  --accent-hover: #ffd98a;
+  --accent-glow: rgba(245, 166, 35, 0.4);
+  --accent-soft: rgba(245, 166, 35, 0.16);
+  --accent-border: rgba(245, 166, 35, 0.3);
+  --grad-primary: linear-gradient(135deg, #ffc968, #f5a623 55%, #e07c0a);
+  --grad-text: linear-gradient(92deg, #ffc968 0%, #f5a623 55%, #ffb04a 100%);
+  --marker: #f5a623;                 /* highlighter swipe */
+  --marker-soft: rgba(245, 166, 35, 0.18);
+  --surface-1: rgba(255, 255, 255, 0.05);
+  --surface-2: rgba(255, 255, 255, 0.08);
+  --surface-3: rgba(255, 255, 255, 0.12);
+  --shadow-panel: 0 1px 2px rgba(0, 0, 0, 0.25);
+  --rule: rgba(255, 255, 255, 0.09);
+  --omr-empty: rgba(255, 255, 255, 0.28);
 }
 
 /* ---------- DAY ---------- */
 :root[data-theme='light'] {
   color-scheme: light;
-  --bg-color: #f3f1ea;               /* warm exam-paper ivory */
-  --bg-soft: #ebe8df;
-  --panel-bg: rgba(255, 255, 255, 0.78);
-  --panel-solid: #fffdf8;
-  --border-color: rgba(43, 46, 96, 0.14);
-  --border-strong: rgba(43, 46, 96, 0.3);
-  --text-primary: #1b2148;           /* exam ink */
-  --text-secondary: #5b628f;
-  --accent-color: #4338ca;
-  --accent-hover: #3730a3;
-  --accent-glow: rgba(67, 56, 202, 0.2);
-  --accent-soft: rgba(67, 56, 202, 0.09);
-  --accent-border: rgba(67, 56, 202, 0.3);
-  --grad-primary: linear-gradient(135deg, #4f46e5 0%, #7c3aed 60%, #9333ea 100%);
-  --grad-text: linear-gradient(92deg, #4338ca 0%, #7c3aed 60%, #0e7490 100%);
-  --marker: #d97706;
-  --marker-soft: rgba(217, 119, 6, 0.14);
-  --surface-1: rgba(43, 46, 96, 0.035);
-  --surface-2: rgba(43, 46, 96, 0.06);
-  --surface-3: rgba(43, 46, 96, 0.1);
-  --shadow-panel: 0 18px 44px -16px rgba(43, 46, 96, 0.25);
-  --rule: rgba(43, 46, 96, 0.16);
-  --omr-empty: rgba(43, 46, 96, 0.3);
+  --bg-color: #eaeef6;
+  --bg-soft: #f4f7fc;
+  --panel-bg: rgba(255, 255, 255, 0.82);
+  --panel-solid: #ffffff;
+  --border-color: rgba(18, 22, 35, 0.1);
+  --border-strong: rgba(18, 22, 35, 0.16);
+  --text-primary: #131722;
+  --text-secondary: #616b7a;
+  --accent-color: #a85f00;           /* readable gold on light (WCAG AA) */
+  --accent-hover: #8a4e00;
+  --accent-glow: rgba(245, 166, 35, 0.3);
+  --accent-soft: rgba(245, 166, 35, 0.16);
+  --accent-border: rgba(168, 95, 0, 0.32);
+  --grad-primary: linear-gradient(135deg, #ffc968, #f5a623 55%, #e07c0a);
+  --grad-text: linear-gradient(92deg, #b5720a 0%, #a85f00 55%, #8a4e00 100%);
+  --marker: #e07c0a;
+  --marker-soft: rgba(245, 166, 35, 0.2);
+  --surface-1: rgba(18, 22, 35, 0.05);
+  --surface-2: rgba(18, 22, 35, 0.08);
+  --surface-3: rgba(18, 22, 35, 0.12);
+  --shadow-panel: 0 6px 18px -8px rgba(24, 36, 64, 0.18);
+  --rule: rgba(18, 22, 35, 0.1);
+  --omr-empty: rgba(18, 22, 35, 0.3);
 }
 
 /* ---------- base ---------- */
@@ -177,15 +186,15 @@ a { color: inherit; text-decoration: none; }
   gap: 8px;
   padding: 13px 26px;
   background: var(--grad-primary);
-  color: #ffffff;
+  color: var(--on-brand);
   border: none;
   border-radius: var(--radius-sm);
-  font-weight: 650;
+  font-weight: 800;
   font-size: 0.95rem;
-  font-family: var(--font-body);
+  font-family: var(--font-display);
   cursor: pointer;
   transition: transform 0.25s var(--ease-out), box-shadow 0.25s ease;
-  box-shadow: 0 8px 22px -6px var(--accent-glow);
+  box-shadow: 0 12px 26px -10px var(--accent-glow);
 }
 .btn-primary:hover { transform: translateY(-2px); box-shadow: 0 14px 30px -8px var(--accent-glow); }
 .btn-primary:active { transform: translateY(0); }

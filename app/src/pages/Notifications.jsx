@@ -4,6 +4,7 @@ import { useTranslation } from 'react-i18next';
 import Icon from '../components/Icon';
 import { useTheme } from '../lib/theme';
 import { useNotifications } from '../lib/notifications';
+import { USE_DEMO_DATA, demoNotifs } from '../lib/demoData';
 
 /**
  * NOTIFICATIONS — a real feed derived from the student's results and
@@ -40,6 +41,26 @@ export default function Notifications() {
 
       {loading ? (
         <div style={{ display: 'flex', justifyContent: 'center', padding: '48px' }}><div className="spinner" /></div>
+      ) : items.length === 0 && USE_DEMO_DATA ? (
+        <div style={{ padding: '12px 18px 30px' }}>
+          {demoNotifs.map((it, idx) => {
+            const tc = tint(it.hue);
+            return (
+              <div key={idx} className="glass-panel" style={{ display: 'flex', gap: '13px', width: '100%', padding: '14px', borderRadius: '16px', marginBottom: '10px', textAlign: 'left' }}>
+                <span className="tile" style={{ width: '40px', height: '40px', borderRadius: '12px', background: tc.bg, color: tc.c }}>
+                  <Icon name={it.icon} size={19} />
+                </span>
+                <span style={{ flex: 1, minWidth: 0 }}>
+                  <span style={{ display: 'flex', justifyContent: 'space-between', gap: '8px' }}>
+                    <span style={{ font: '700 13.5px var(--font-body)', color: 'var(--tx)' }}>{it.title}</span>
+                    <span style={{ font: '500 10.5px var(--font-body)', color: 'var(--muted)', flex: 'none' }}>{it.time}</span>
+                  </span>
+                  <span style={{ display: 'block', font: '500 12.5px/1.45 var(--font-body)', color: 'var(--muted)', marginTop: '3px' }}>{it.body}</span>
+                </span>
+              </div>
+            );
+          })}
+        </div>
       ) : items.length === 0 ? (
         <div style={{ flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: '16px', padding: '40px 24px', textAlign: 'center' }}>
           <span className="tile" style={{ width: '64px', height: '64px', borderRadius: '20px', background: n.bg, color: n.c }}>

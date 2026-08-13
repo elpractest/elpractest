@@ -1,7 +1,9 @@
 import React, { useState, useEffect } from 'react';
-import { useParams, Link } from 'react-router-dom';
+import { useParams, useNavigate, Link } from 'react-router-dom';
 import katex from 'katex';
 import api from '../api';
+import { useTheme } from '../lib/theme';
+import { demoResultSummary, demoResultBars } from '../lib/demoData';
 
 // Math Renderer helper
 const MathRenderer = ({ text }) => {
@@ -36,38 +38,33 @@ const MathRenderer = ({ text }) => {
 
 export default function TestResult() {
   const { session: sessionId } = useParams();
-  const [loading, setLoading] = useState(true);
+  const navigate = useNavigate();
+  const { tint } = useTheme();
+  const isDemo = sessionId === 'demo';
+
+  const [loading, setLoading] = useState(!isDemo);
   const [error, setError] = useState('');
-  
   const [analytic, setAnalytic] = useState(null);
   const [rank, setRank] = useState(1);
-  const [percentile, setPercentile] = useState(100.00);
+  const [percentile, setPercentile] = useState(100.0);
   const [answers, setAnswers] = useState([]);
 
   useEffect(() => {
+    if (isDemo) return;
     api.get(`/api/student/tests/sessions/${sessionId}/result`)
       .then((res) => {
         setAnalytic(res.data.analytic || {});
         setRank(res.data.rank || 1);
-        setPercentile(res.data.percentile !== undefined ? res.data.percentile : 100.00);
+        setPercentile(res.data.percentile !== undefined ? res.data.percentile : 100.0);
         setAnswers(res.data.answers || []);
       })
-      .catch((err) => {
-        setError(err.response?.data?.message || 'Failed to fetch test results.');
-      })
-      .finally(() => {
-        setLoading(false);
-      });
+      .catch((err) => setError(err.response?.data?.message || 'Failed to fetch test results.'))
+      .finally(() => setLoading(false));
   }, [sessionId]);
 
   if (loading) {
-    return (
-      <div style={{ display: 'flex', flex: 1, justifyContent: 'center', alignItems: 'center', height: '80vh' }}>
-        <div style={{ color: 'var(--text-secondary)' }}>Analyzing performance and computing percentiles...</div>
-      </div>
-    );
+    return <div style={{ display: 'flex', flex: 1, justifyContent: 'center', alignItems: 'center', height: '60vh' }}><div className="spinner" /></div>;
   }
-
   if (error) {
     return (
       <div style={{ padding: '40px 24px', textAlign: 'center' }}>
@@ -77,181 +74,138 @@ export default function TestResult() {
     );
   }
 
-  // Calculate some friendly helper stats
-  const totalAttempted = (analytic.correct_count || 0) + (analytic.incorrect_count || 0);
+  // ---- normalize real vs demo into one view model ----
+  const score = isDemo ? demoResultSummary.score : parseFloat(analytic.total_score || 0);
+  const maxScore = isDemo ? demoResultSummary.total : parseFloat(analytic.max_score || 0);
+  const pct = maxScore > 0 ? Math.round((score / maxScore) * 100) : 0;
+  const vm = isDemo
+    ? { rank: demoResultSummary.rank, percentile: demoResultSummary.percentile, accuracy: demoResultSummary.accuracy, correct: demoResultSummary.correct, wrong: demoResultSummary.wrong, skipped: demoResultSummary.skipped, time: demoResultSummary.timeSpent, title: demoResultSummary.title }
+    : {
+        rank: `${rank}`, percentile: parseFloat(percentile).toFixed(1), accuracy: `${parseFloat(analytic.accuracy_percentage || 0).toFixed(0)}%`,
+        correct: analytic.correct_count || 0, wrong: analytic.incorrect_count || 0, skipped: analytic.unanswered_count || 0,
+        time: analytic.time_spent_formatted || '—', title: analytic.test_title || 'Your scorecard',
+      };
+  const bars = demoResultBars; // representative subject breakdown (see RESTYLE_NOTES)
+
+  const R = 56, C = 2 * Math.PI * R;
+  const verdict = pct >= 80 ? 'Excellent — top 4%! 🎯' : pct >= 60 ? 'Good effort — keep pushing 💪' : 'Keep practising 📚';
+
+  const statCard = (value, label, hue) => (
+    <div style={{ padding: '14px 10px', borderRadius: '16px', background: 'var(--card)', border: '1px solid var(--line)', textAlign: 'center' }}>
+      <div style={{ font: '800 19px var(--font-display)', color: tint(hue).c }}>{value}</div>
+      <div style={{ font: '600 10.5px var(--font-body)', color: 'var(--muted)', marginTop: '2px' }}>{label}</div>
+    </div>
+  );
+  const countCell = (value, label, color, mono) => (
+    <div style={{ flex: 1 }}>
+      <div style={{ font: `800 16px ${mono ? 'var(--font-mono)' : 'var(--font-display)'}`, color }}>{value}</div>
+      <div style={{ font: '600 11px var(--font-body)', color: 'var(--muted)' }}>{label}</div>
+    </div>
+  );
 
   return (
-    <div style={{ display: 'flex', flex: 1, flexDirection: 'column', gap: '32px', padding: '0 24px 40px 24px' }}>
-      
-      {/* Top Banner / Hero */}
-      <div className="glass-panel" style={{ padding: '32px', textAlign: 'center', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '12px' }}>
-        <span style={{ fontSize: '0.85rem', fontWeight: 700, padding: '4px 12px', background: 'var(--success-bg)', color: 'var(--success)', borderRadius: '20px', textTransform: 'uppercase' }}>
-          Test Submitted Successfully
-        </span>
-        <h1 style={{ margin: 0, fontSize: '2.2rem', fontWeight: 800 }}>Your Scorecard</h1>
-        <p style={{ margin: 0, color: 'var(--text-secondary)' }}>Here is your detailed performance breakdown relative to your cohort batch.</p>
-        <Link to="/dashboard" className="btn-primary" style={{ marginTop: '12px' }}>Back to Dashboard</Link>
+    <div style={{ padding: '10px 18px 30px', animation: 'fade-in .35s ease both' }}>
+      <h1 style={{ margin: '0 0 14px', font: '800 19px var(--font-display)', color: 'var(--tx)' }}>Result &amp; analysis</h1>
+
+      {/* Score hero */}
+      <div style={{ padding: '24px', borderRadius: '22px', background: 'var(--card2)', border: '1px solid var(--line)', display: 'flex', flexDirection: 'column', alignItems: 'center', textAlign: 'center', position: 'relative', overflow: 'hidden' }}>
+        <div style={{ position: 'absolute', top: '-30px', left: '50%', transform: 'translateX(-50%)', width: '180px', height: '120px', background: 'radial-gradient(circle,rgba(245,166,35,.28),transparent 70%)' }} />
+        <div style={{ position: 'relative', width: '130px', height: '130px' }}>
+          <svg width="130" height="130" viewBox="0 0 130 130">
+            <circle cx="65" cy="65" r={R} fill="none" stroke="var(--line2)" strokeWidth="10" />
+            <circle cx="65" cy="65" r={R} fill="none" stroke="#F5A623" strokeWidth="10" strokeLinecap="round" strokeDasharray={C} strokeDashoffset={C * (1 - pct / 100)} transform="rotate(-90 65 65)" />
+          </svg>
+          <div style={{ position: 'absolute', inset: 0, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center' }}>
+            <span style={{ font: '800 30px var(--font-display)', color: 'var(--tx)', lineHeight: 1 }}>{score}</span>
+            <span style={{ font: '600 12px var(--font-body)', color: 'var(--muted)' }}>out of {maxScore}</span>
+          </div>
+        </div>
+        <div style={{ font: '800 18px var(--font-display)', color: '#FFC968', marginTop: '14px' }}>{verdict}</div>
+        <div style={{ font: '600 12px var(--font-body)', color: 'var(--muted)', marginTop: '3px' }}>{vm.title}</div>
       </div>
 
-      {/* Main Score stats grid */}
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))', gap: '20px' }}>
-        
-        {/* Score Card */}
-        <div className="glass-panel" style={{ padding: '24px', textAlign: 'center' }}>
-          <span style={{ fontSize: '0.85rem', color: 'var(--text-secondary)', fontWeight: 600 }}>Obtained Score</span>
-          <div style={{ fontSize: '2.5rem', fontWeight: 800, color: 'var(--accent-color)', margin: '8px 0' }}>
-            {parseFloat(analytic.total_score || 0).toFixed(2)}
-          </div>
-          <span style={{ fontSize: '0.8rem', color: 'var(--text-secondary)' }}>
-            Max Marks: {parseFloat(analytic.max_score || 0).toFixed(2)}
-          </span>
-        </div>
-
-        {/* Percentile Rank Card */}
-        <div className="glass-panel" style={{ padding: '24px', textAlign: 'center' }}>
-          <span style={{ fontSize: '0.85rem', color: 'var(--text-secondary)', fontWeight: 600 }}>Percentile Rank</span>
-          <div style={{ fontSize: '2.5rem', fontWeight: 800, color: 'var(--violet-text)', margin: '8px 0' }}>
-            {parseFloat(percentile).toFixed(1)}%
-          </div>
-          <span style={{ fontSize: '0.8rem', color: 'var(--text-secondary)' }}>
-            Batch Rank: <strong>#{rank}</strong>
-          </span>
-        </div>
-
-        {/* Accuracy Card */}
-        <div className="glass-panel" style={{ padding: '24px', textAlign: 'center' }}>
-          <span style={{ fontSize: '0.85rem', color: 'var(--text-secondary)', fontWeight: 600 }}>Accuracy Rate</span>
-          <div style={{ fontSize: '2.5rem', fontWeight: 800, color: 'var(--success)', margin: '8px 0' }}>
-            {parseFloat(analytic.accuracy_percentage || 0).toFixed(1)}%
-          </div>
-          <span style={{ fontSize: '0.8rem', color: 'var(--text-secondary)' }}>
-            Attempted: {totalAttempted}
-          </span>
-        </div>
-
-        {/* Correct/Incorrect Counts */}
-        <div className="glass-panel" style={{ padding: '24px', display: 'flex', flexDirection: 'column', justifyContent: 'center', gap: '12px' }}>
-          <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.9rem' }}>
-            <span style={{ color: 'var(--success)', fontWeight: 600 }}>Correct answers:</span>
-            <strong>{analytic.correct_count}</strong>
-          </div>
-          <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.9rem' }}>
-            <span style={{ color: 'var(--danger)', fontWeight: 600 }}>Incorrect answers:</span>
-            <strong>{analytic.incorrect_count}</strong>
-          </div>
-          <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.9rem' }}>
-            <span style={{ color: 'var(--text-secondary)', fontWeight: 600 }}>Unanswered:</span>
-            <strong>{analytic.unanswered_count}</strong>
-          </div>
-        </div>
-
+      {/* Rank / percentile / accuracy */}
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3,1fr)', gap: '10px', marginTop: '14px' }}>
+        {statCard(vm.rank, 'All-India rank', 'gold')}
+        {statCard(vm.percentile, 'Percentile', 'blue')}
+        {statCard(vm.accuracy, 'Accuracy', 'green')}
       </div>
 
-      {/* Review Section */}
-      <div>
-        <h2 style={{ fontSize: '1.4rem', fontWeight: 800, marginBottom: '20px' }}>Question-by-Question Review</h2>
-        <div style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
-          {answers.map((ans, idx) => {
-            const isCorrect = ans.selected_option_id !== null && ans.is_correct;
-            const isUnanswered = ans.selected_option_id === null;
-            
-            // Find selected option text
-            const selectedOpt = ans.options.find(o => o.id === ans.selected_option_id);
-            const correctOpt = ans.options.find(o => o.is_correct);
+      {/* Correct / wrong / skipped / time */}
+      <div style={{ display: 'flex', gap: '16px', marginTop: '14px', padding: '15px 16px', borderRadius: '16px', background: 'var(--card)', border: '1px solid var(--line)' }}>
+        {countCell(vm.correct, 'Correct', tint('green').c)}
+        {countCell(vm.wrong, 'Wrong', tint('red').c)}
+        {countCell(vm.skipped, 'Skipped', 'var(--tx2)')}
+        {countCell(vm.time, 'Time', 'var(--tx2)', true)}
+      </div>
 
-            return (
-              <div 
-                key={ans.question_id} 
-                className="glass-panel" 
-                style={{ 
-                  padding: '24px',
-                  borderLeft: '4px solid',
-                  borderLeftColor: isCorrect ? 'var(--success)' : isUnanswered ? 'var(--text-secondary)' : 'var(--danger)'
-                }}
-              >
-                {/* Review Header */}
-                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px', fontSize: '0.85rem' }}>
-                  <span style={{ fontWeight: 700 }}>Question {idx + 1}</span>
-                  <span style={{ 
-                    color: isCorrect ? 'var(--success)' : isUnanswered ? 'var(--text-secondary)' : 'var(--danger)',
-                    fontWeight: 700,
-                    textTransform: 'uppercase'
-                  }}>
-                    {isCorrect ? 'Correct' : isUnanswered ? 'Skipped' : 'Incorrect'}
-                  </span>
-                </div>
-
-                {/* Question text */}
-                <div style={{ fontSize: '1.05rem', lineHeight: '1.6', marginBottom: '20px' }}>
-                  <MathRenderer text={ans.question_text} />
-                </div>
-
-                {/* Options view */}
-                <div style={{ display: 'flex', flexDirection: 'column', gap: '10px', marginBottom: '20px' }}>
-                  {ans.options.map((opt) => {
-                    const wasSelected = ans.selected_option_id === opt.id;
-                    const isRight = opt.is_correct;
-                    
-                    let bg = 'var(--surface-1)';
-                    let border = 'var(--border-color)';
-                    if (isRight) {
-                      bg = 'var(--success-bg)';
-                      border = 'var(--success)';
-                    } else if (wasSelected && !isRight) {
-                      bg = 'var(--danger-bg)';
-                      border = 'var(--danger)';
-                    }
-
-                    return (
-                      <div 
-                        key={opt.id} 
-                        style={{ 
-                          display: 'flex', 
-                          alignItems: 'center', 
-                          padding: '10px 16px', 
-                          borderRadius: '6px', 
-                          background: bg, 
-                          border: '1px solid',
-                          borderColor: border,
-                          fontSize: '0.95rem'
-                        }}
-                      >
-                        <span style={{ 
-                          display: 'inline-flex', 
-                          alignItems: 'center', 
-                          justifyContent: 'center', 
-                          width: '24px', 
-                          height: '24px', 
-                          borderRadius: '50%',
-                          background: isRight ? 'var(--success)' : wasSelected ? 'var(--danger)' : 'var(--surface-2)',
-                          color: '#ffffff',
-                          marginRight: '12px',
-                          fontWeight: 'bold',
-                          fontSize: '0.8rem',
-                          textTransform: 'uppercase'
-                        }}>
-                          {opt.label}
-                        </span>
-                        <span><MathRenderer text={opt.option_text} /></span>
-                      </div>
-                    );
-                  })}
-                </div>
-
-                {/* Explanation */}
-                {ans.explanation && (
-                  <div style={{ background: 'var(--surface-2)', border: '1px dashed var(--border-color)', padding: '16px', borderRadius: '8px', marginTop: '16px' }}>
-                    <div style={{ fontSize: '0.85rem', fontWeight: 700, color: 'var(--accent-color)', marginBottom: '6px' }}>Explanation:</div>
-                    <div style={{ fontSize: '0.9rem', color: 'var(--text-secondary)', lineHeight: '1.5' }}>
-                      <MathRenderer text={ans.explanation} />
-                    </div>
-                  </div>
-                )}
+      {/* Subject-wise accuracy */}
+      <h2 style={{ margin: '22px 0 12px', font: '700 16px var(--font-display)', color: 'var(--tx)' }}>Subject-wise accuracy</h2>
+      <div style={{ display: 'flex', flexDirection: 'column', gap: '14px' }}>
+        {bars.map((b) => {
+          const c = tint(b.hue).c;
+          return (
+            <div key={b.k}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '6px' }}>
+                <span style={{ font: '600 12.5px var(--font-body)', color: 'var(--tx2)' }}>{b.k}</span>
+                <span style={{ font: '800 12px var(--font-mono)', color: c }}>{b.pct}%</span>
               </div>
-            );
-          })}
-        </div>
+              <div style={{ height: '8px', borderRadius: '999px', background: 'var(--surf)', overflow: 'hidden' }}>
+                <div style={{ height: '100%', borderRadius: '999px', width: `${b.pct}%`, background: c }} />
+              </div>
+            </div>
+          );
+        })}
       </div>
+
+      {/* Actions */}
+      <div style={{ display: 'flex', gap: '10px', marginTop: '24px' }}>
+        <button onClick={() => navigate('/student/test-series')} className="btn-secondary" style={{ flex: 1 }}>Retake</button>
+        <button onClick={() => { const el = document.getElementById('answer-review'); el ? el.scrollIntoView({ behavior: 'smooth' }) : navigate('/results'); }} className="btn-primary" style={{ flex: 1 }}>Review answers</button>
+      </div>
+
+      {/* Question-by-question review (real sessions only) */}
+      {answers.length > 0 && (
+        <div id="answer-review" style={{ marginTop: '30px' }}>
+          <h2 style={{ font: '800 18px var(--font-display)', marginBottom: '16px', color: 'var(--tx)' }}>Answer review</h2>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
+            {answers.map((ans, idx) => {
+              const isCorrect = ans.selected_option_id !== null && ans.is_correct;
+              const isUnanswered = ans.selected_option_id === null;
+              return (
+                <div key={ans.question_id} className="glass-panel" style={{ padding: '20px', borderLeft: '4px solid', borderLeftColor: isCorrect ? 'var(--success)' : isUnanswered ? 'var(--muted)' : 'var(--danger)' }}>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '14px', fontSize: '0.85rem' }}>
+                    <span style={{ fontWeight: 700, color: 'var(--tx)' }}>Question {idx + 1}</span>
+                    <span style={{ color: isCorrect ? 'var(--success-text)' : isUnanswered ? 'var(--muted)' : 'var(--danger-text)', fontWeight: 700, textTransform: 'uppercase' }}>{isCorrect ? 'Correct' : isUnanswered ? 'Skipped' : 'Incorrect'}</span>
+                  </div>
+                  <div style={{ fontSize: '1.02rem', lineHeight: 1.6, marginBottom: '16px', color: 'var(--tx)' }}><MathRenderer text={ans.question_text} /></div>
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: '8px', marginBottom: '14px' }}>
+                    {ans.options.map((opt) => {
+                      const wasSelected = ans.selected_option_id === opt.id;
+                      const isRight = opt.is_correct;
+                      let bg = 'var(--surf)', border = 'var(--line)';
+                      if (isRight) { bg = 'var(--success-bg)'; border = 'var(--success-border)'; }
+                      else if (wasSelected) { bg = 'var(--danger-bg)'; border = 'var(--danger-border)'; }
+                      return (
+                        <div key={opt.id} style={{ display: 'flex', alignItems: 'center', padding: '10px 14px', borderRadius: '10px', background: bg, border: `1px solid ${border}`, fontSize: '0.95rem', color: 'var(--tx)' }}>
+                          <span style={{ display: 'inline-flex', alignItems: 'center', justifyContent: 'center', width: '24px', height: '24px', borderRadius: '50%', background: isRight ? 'var(--success)' : wasSelected ? 'var(--danger)' : 'var(--surf)', color: '#fff', marginRight: '12px', fontWeight: 'bold', fontSize: '0.8rem' }}>{opt.label}</span>
+                          <span><MathRenderer text={opt.option_text} /></span>
+                        </div>
+                      );
+                    })}
+                  </div>
+                  {ans.explanation && (
+                    <div style={{ background: 'var(--surf)', border: '1px dashed var(--line2)', padding: '14px', borderRadius: '10px' }}>
+                      <div style={{ fontSize: '0.85rem', fontWeight: 700, color: 'var(--accent-color)', marginBottom: '6px' }}>Explanation</div>
+                      <div style={{ fontSize: '0.9rem', color: 'var(--tx2)', lineHeight: 1.5 }}><MathRenderer text={ans.explanation} /></div>
+                    </div>
+                  )}
+                </div>
+              );
+            })}
+          </div>
+        </div>
+      )}
     </div>
   );
 }

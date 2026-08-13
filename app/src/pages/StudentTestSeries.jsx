@@ -1,114 +1,98 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import api from '../api';
+import { withDemo, demoCourses, demoFilterChips } from '../lib/demoData';
+
+/* Map a real assigned test-series into the reference card shape. */
+function toCard(s) {
+  const total = s.total_tests || 0;
+  const done = s.attempted_tests_count || 0;
+  return {
+    id: s.id,
+    exam: s.exam_category || 'Test Series',
+    lang: 'EN',
+    tag: s.is_completed ? 'Completed' : 'Assigned',
+    title: s.title,
+    meta: s.description || 'Guided study path',
+    progress: { done, total, pct: total > 0 ? Math.round((done / total) * 100) : 0 },
+    grad: 'linear-gradient(120deg,#3A2A08,#1A1206)',
+    real: true,
+  };
+}
 
 export default function StudentTestSeries() {
+  const navigate = useNavigate();
   const [seriesList, setSeriesList] = useState([]);
   const [loading, setLoading] = useState(true);
-  const [error, setError] = useState('');
-  const navigate = useNavigate();
+  const [activeChip, setActiveChip] = useState('All exams');
 
   useEffect(() => {
-    fetchStudentSeries();
+    let alive = true;
+    api.get('/api/student/test-series')
+      .then((res) => { if (alive) setSeriesList(res.data || []); })
+      .catch(() => {})
+      .finally(() => { if (alive) setLoading(false); });
+    return () => { alive = false; };
   }, []);
 
-  const fetchStudentSeries = async () => {
-    setLoading(true);
-    try {
-      const res = await api.get('/api/student/test-series');
-      setSeriesList(res.data || []);
-    } catch (err) {
-      setError('Failed to load your assigned Test Series.');
-    } finally {
-      setLoading(false);
-    }
-  };
+  const cards = withDemo(seriesList.map(toCard), demoCourses);
+  const filtered = activeChip === 'All exams'
+    ? cards
+    : cards.filter((c) => (c.exam || '').toLowerCase().includes(activeChip.toLowerCase()));
 
-  if (loading) {
-    return (
-      <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', height: '250px', color: 'var(--text-secondary)' }}>
-        <span>⏳ Loading your assigned Test Series...</span>
-      </div>
-    );
-  }
+  const open = (c) => (c.real && c.id ? navigate(`/student/test-series/${c.id}`) : navigate(`/student/test-series/${c.id || 'demo'}`));
 
   return (
-    <div style={{ maxWidth: '1100px', margin: '0 auto', padding: '24px' }}>
-      {/* Header */}
-      <div style={{ marginBottom: '32px' }}>
-        <h1 style={{ fontSize: '2rem', fontWeight: 800, margin: '0 0 8px 0', color: 'var(--text-primary)', fontFamily: 'var(--font-display)' }}>
-          🎯 My Test Series &amp; Study Paths
-        </h1>
-        <p style={{ margin: 0, color: 'var(--text-secondary)' }}>
-          Follow guided test series, track completion status, and compare your batch ranks.
-        </p>
+    <div style={{ padding: '16px 18px 24px', animation: 'fade-in .35s ease both' }}>
+      <h1 style={{ margin: '0 0 4px', font: '800 24px var(--font-display)', color: 'var(--tx)', letterSpacing: '-.02em' }}>Test series</h1>
+      <p style={{ margin: '0 0 16px', font: '500 13px var(--font-body)', color: 'var(--muted)' }}>Pick your exam, then a pack</p>
+
+      {/* Filter chips */}
+      <div style={{ display: 'flex', gap: '9px', overflowX: 'auto', paddingBottom: '14px' }}>
+        {demoFilterChips.map((k) => (
+          <button key={k} className={`chip-filter${activeChip === k ? ' active' : ''}`} onClick={() => setActiveChip(k)}>{k}</button>
+        ))}
       </div>
 
-      {error && (
-        <div style={{ background: 'var(--danger-bg)', border: '1px solid var(--danger-border)', padding: '12px 16px', borderRadius: '8px', color: 'var(--danger-text)', marginBottom: '24px' }}>
-          ⚠️ {error}
-        </div>
-      )}
-
-      {/* Series Grid */}
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(320px, 1fr))', gap: '24px' }}>
-        {seriesList.length === 0 ? (
-          <div className="glass-panel" style={{ gridColumn: '1 / -1', padding: '48px', textAlign: 'center', color: 'var(--text-secondary)' }}>
-            📚 No active test series assigned to your enrolled batches yet.
-          </div>
-        ) : (
-          seriesList.map((series) => (
-            <div key={series.id} className="glass-panel" style={{ padding: '24px', display: 'flex', flexDirection: 'column', justifyContent: 'space-between', transition: 'all 0.2s ease' }}>
-              <div>
-                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '12px' }}>
-                  <span style={{ fontSize: '0.75rem', fontWeight: 700, padding: '4px 10px', borderRadius: '20px', background: 'var(--accent-soft)', color: 'var(--accent-color)', textTransform: 'uppercase' }}>
-                    {series.exam_category}
-                  </span>
-                  {series.is_completed && (
-                    <span style={{ fontSize: '0.75rem', fontWeight: 700, padding: '4px 10px', borderRadius: '20px', background: 'var(--success-bg)', color: 'var(--success)' }}>
-                      Completed ✓
-                    </span>
+      {/* Course list */}
+      {loading ? (
+        <div style={{ color: 'var(--muted)', padding: '24px 0' }}>Loading test series…</div>
+      ) : (
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '14px' }}>
+          {filtered.map((c, i) => (
+            <div key={c.id || i} onClick={() => open(c)} style={{ cursor: 'pointer', borderRadius: '20px', background: 'var(--card)', border: '1px solid var(--line)', boxShadow: 'var(--cardsh)', overflow: 'hidden' }}>
+              <div style={{ display: 'flex' }}>
+                <div style={{ position: 'relative', width: '118px', flex: 'none', background: c.grad }} />
+                <div style={{ flex: 1, minWidth: 0, padding: '13px 14px' }}>
+                  <div style={{ display: 'flex', gap: '6px', alignItems: 'center' }}>
+                    <span style={{ font: '700 9.5px var(--font-body)', letterSpacing: '.06em', color: '#F5A623' }}>{c.exam}</span>
+                    <span style={{ font: '700 9px var(--font-hindi)', color: '#0B0F1A', background: '#FFC968', padding: '2px 7px', borderRadius: '999px' }}>{c.lang}</span>
+                  </div>
+                  <div style={{ font: '700 14px/1.2 var(--font-body)', color: 'var(--tx)', margin: '5px 0 0' }}>{c.title}</div>
+                  <div style={{ font: '600 11px var(--font-body)', color: 'var(--muted)', marginTop: '5px' }}>{c.meta}</div>
+                  {c.progress ? (
+                    <div style={{ marginTop: '9px' }}>
+                      <div style={{ display: 'flex', justifyContent: 'space-between', font: '600 10.5px var(--font-body)', color: 'var(--muted)', marginBottom: '5px' }}>
+                        <span>{c.progress.done} / {c.progress.total} tests</span>
+                        <span>{c.progress.pct}%</span>
+                      </div>
+                      <div style={{ height: '6px', background: 'var(--surf)', borderRadius: '3px', overflow: 'hidden' }}>
+                        <div style={{ height: '100%', width: `${c.progress.pct}%`, background: 'var(--grad-primary)' }} />
+                      </div>
+                    </div>
+                  ) : (
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '7px', marginTop: '9px' }}>
+                      <span style={{ font: '800 15px var(--font-display)', color: 'var(--tx)' }}>{c.price}</span>
+                      <span style={{ font: '600 11px var(--font-body)', color: '#748099', textDecoration: 'line-through' }}>{c.mrp}</span>
+                      <span style={{ font: '800 10px var(--font-body)', color: '#12B981', marginLeft: 'auto' }}>{c.off}</span>
+                    </div>
                   )}
                 </div>
-
-                <h3 style={{ fontSize: '1.25rem', fontWeight: 700, margin: '0 0 8px 0', color: 'var(--text-primary)' }}>
-                  {series.title}
-                </h3>
-                <p style={{ fontSize: '0.88rem', color: 'var(--text-secondary)', margin: '0 0 16px 0', lineHeight: 1.5 }}>
-                  {series.description || 'Guided study path for targeted exam preparation.'}
-                </p>
-
-                {/* Progress bar */}
-                <div style={{ marginBottom: '16px' }}>
-                  <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.8rem', color: 'var(--text-secondary)', marginBottom: '6px' }}>
-                    <span>Progress: {series.attempted_tests_count} / {series.total_tests} Tests</span>
-                    <span>{series.total_tests > 0 ? Math.round((series.attempted_tests_count / series.total_tests) * 100) : 0}%</span>
-                  </div>
-                  <div style={{ height: '6px', background: 'var(--surface-2)', borderRadius: '3px', overflow: 'hidden' }}>
-                    <div
-                      style={{
-                        height: '100%',
-                        width: `${series.total_tests > 0 ? (series.attempted_tests_count / series.total_tests) * 100 : 0}%`,
-                        background: 'var(--grad-primary)',
-                        transition: 'width 0.3s ease',
-                      }}
-                    />
-                  </div>
-                </div>
               </div>
-
-              <button
-                onClick={() => navigate(`/student/test-series/${series.id}`)}
-                className="btn-primary"
-                style={{ width: '100%', padding: '12px', fontWeight: 700, display: 'flex', justifyContent: 'center', alignItems: 'center', gap: '8px' }}
-              >
-                <span>View Study Path</span>
-                <span>→</span>
-              </button>
             </div>
-          ))
-        )}
-      </div>
+          ))}
+        </div>
+      )}
     </div>
   );
 }

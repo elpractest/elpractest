@@ -1,6 +1,100 @@
 import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import api from '../api';
+import Icon from '../components/Icon';
+import ActivationModal from './ActivationModal';
+import { useTheme } from '../lib/theme';
+import { demoCourses, demoDetailFeatures } from '../lib/demoData';
+
+/* ------------------------------------------------------------------
+   Reference "course detail" — a pre-enrollment sales page (hero + tags +
+   rating + price card + What's inside + How to get access + sticky enroll
+   bar). Shown for demo / browse courses (ids that aren't a real enrolled
+   series). Real enrolled series render the study-path view below instead.
+   ------------------------------------------------------------------ */
+function SalesDetail({ course }) {
+  const navigate = useNavigate();
+  const { tint } = useTheme();
+  const [showActivation, setShowActivation] = useState(false);
+
+  return (
+    <div style={{ paddingBottom: '92px', animation: 'fade-in .35s ease both' }}>
+      {/* Hero */}
+      <div style={{ position: 'relative', height: '210px', background: course.grad, borderRadius: '0 0 24px 24px', overflow: 'hidden' }}>
+        <div style={{ position: 'absolute', inset: 0, background: 'linear-gradient(180deg,rgba(11,15,26,.15),transparent 38%,rgba(11,15,26,.92))' }} />
+        <button onClick={() => navigate('/student/test-series')} aria-label="Back" style={{ position: 'absolute', top: '14px', left: '16px', width: '40px', height: '40px', borderRadius: '12px', background: 'rgba(8,12,20,.5)', backdropFilter: 'blur(8px)', border: '1px solid rgba(255,255,255,.14)', color: '#fff', cursor: 'pointer', display: 'grid', placeItems: 'center' }}>
+          <Icon name="arrow-left" size={20} />
+        </button>
+        <div style={{ position: 'absolute', left: '18px', right: '18px', bottom: '16px' }}>
+          <div style={{ display: 'flex', gap: '7px', marginBottom: '9px', flexWrap: 'wrap' }}>
+            <span style={{ font: '800 10px var(--font-body)', letterSpacing: '.06em', color: '#1A1206', background: '#FFC968', padding: '4px 9px', borderRadius: '999px' }}>{course.exam}</span>
+            <span style={{ font: '700 10px var(--font-hindi)', color: '#fff', background: 'rgba(8,12,20,.55)', backdropFilter: 'blur(6px)', padding: '4px 9px', borderRadius: '999px' }}>{course.lang}</span>
+            <span style={{ font: '700 10px var(--font-body)', color: '#fff', background: 'rgba(139,92,246,.7)', padding: '4px 9px', borderRadius: '999px' }}>{course.tag}</span>
+          </div>
+          <h1 style={{ margin: 0, font: '800 24px/1.14 var(--font-display)', color: '#fff', letterSpacing: '-.02em' }}>{course.title}</h1>
+        </div>
+      </div>
+
+      <div style={{ padding: '18px 18px 24px' }}>
+        {/* Rating row */}
+        <div style={{ display: 'flex', alignItems: 'center', gap: '14px', font: '600 12px var(--font-body)', color: 'var(--muted)' }}>
+          <span style={{ display: 'flex', alignItems: 'center', gap: '5px', color: '#FFC968' }}>
+            <Icon name="star" size={15} /><span style={{ color: 'var(--tx)', fontWeight: 800 }}>{course.rating || 4.8}</span>
+          </span>
+          <span>· {course.ratingCount || '12.4k'} enrolled</span>
+          <span>· Updated Aug 2026</span>
+        </div>
+
+        {/* Price card */}
+        <div style={{ marginTop: '16px', padding: '16px', borderRadius: '18px', background: 'var(--card2)', border: '1px solid var(--line)' }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '9px' }}>
+            <span style={{ font: '800 26px var(--font-display)', color: 'var(--tx)' }}>{course.price}</span>
+            <span style={{ font: '600 14px var(--font-body)', color: '#748099', textDecoration: 'line-through' }}>{course.mrp}</span>
+            <span style={{ font: '800 12px var(--font-body)', color: '#12B981', background: 'rgba(18,185,129,.14)', padding: '4px 10px', borderRadius: '999px', marginLeft: 'auto' }}>{course.off}</span>
+          </div>
+          <div style={{ font: '600 12px var(--font-body)', color: 'var(--muted)', marginTop: '8px' }}>or 3 × ₹500 · no-cost EMI · 1-year access</div>
+        </div>
+
+        {/* What's inside */}
+        <h2 style={{ margin: '22px 0 12px', font: '700 16px var(--font-display)', color: 'var(--tx)' }}>What's inside</h2>
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '11px' }}>
+          {demoDetailFeatures.map((f) => {
+            const t = tint(f.hue);
+            return (
+              <div key={f.k} style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+                <span style={{ width: '36px', height: '36px', borderRadius: '11px', background: t.bg, display: 'grid', placeItems: 'center', flex: 'none', color: t.c }}>
+                  <Icon name={f.icon} size={18} />
+                </span>
+                <span style={{ font: '600 14px var(--font-body)', color: 'var(--tx2)' }}>{f.k}</span>
+              </div>
+            );
+          })}
+        </div>
+
+        {/* How to get access */}
+        <h2 style={{ margin: '24px 0 12px', font: '700 16px var(--font-display)', color: 'var(--tx)' }}>How to get access</h2>
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
+          <div style={{ padding: '14px 15px', borderRadius: '14px', background: 'var(--card)', border: '1px solid var(--line)' }}>
+            <div style={{ font: '700 13px var(--font-body)', color: 'var(--tx)' }}>Redeem an activation code</div>
+            <div style={{ font: '600 11.5px var(--font-body)', color: 'var(--muted)', marginTop: '3px' }}>Got a code from your institute? Enter it to unlock instantly.</div>
+          </div>
+          <div style={{ padding: '14px 15px', borderRadius: '14px', background: 'var(--card)', border: '1px solid var(--line)' }}>
+            <div style={{ font: '700 13px var(--font-body)', color: 'var(--tx)' }}>Pay online</div>
+            <div style={{ font: '600 11.5px var(--font-body)', color: 'var(--muted)', marginTop: '3px' }}>Instant activation on successful payment.</div>
+          </div>
+        </div>
+      </div>
+
+      {/* Sticky enroll bar */}
+      <div style={{ position: 'sticky', bottom: 0, display: 'flex', gap: '10px', padding: '12px 16px', background: 'var(--nav)', backdropFilter: 'blur(16px)', borderTop: '1px solid var(--line)' }}>
+        <button onClick={() => navigate('/tests/demo')} style={{ flex: 'none', padding: '14px 16px', border: '1px solid var(--line2)', borderRadius: '14px', background: 'var(--surf)', color: 'var(--tx2)', font: '700 13px var(--font-body)', cursor: 'pointer' }}>Free test</button>
+        <button onClick={() => setShowActivation(true)} className="btn-primary" style={{ flex: 1, padding: '14px', borderRadius: '14px', fontSize: '15px' }}>Enroll {course.price}</button>
+      </div>
+
+      {showActivation && <ActivationModal onClose={() => setShowActivation(false)} onSuccess={() => setShowActivation(false)} />}
+    </div>
+  );
+}
 
 export default function TestSeriesDetail() {
   const { id } = useParams();
@@ -9,317 +103,151 @@ export default function TestSeriesDetail() {
   const [series, setSeries] = useState(null);
   const [leaderboardData, setLeaderboardData] = useState(null);
   const [activeCategoryTab, setActiveCategoryTab] = useState('all');
-  const [activeTab, setActiveTab] = useState('path'); // 'path' or 'leaderboard'
+  const [activeTab, setActiveTab] = useState('path');
   const [loading, setLoading] = useState(true);
-  const [error, setError] = useState('');
+  const [notFound, setNotFound] = useState(false);
+
+  // Demo/browse course? (id from demo cards) — show the sales page.
+  const demoCourse = demoCourses.find((c) => c.id === id) || (String(id).startsWith('demo') ? demoCourses[0] : null);
 
   useEffect(() => {
-    fetchSeriesDetail();
+    if (demoCourse) { setLoading(false); return; }
+    let alive = true;
+    Promise.all([
+      api.get(`/api/student/test-series/${id}`),
+      api.get(`/api/student/test-series/${id}/leaderboard`).catch(() => ({ data: null })),
+    ])
+      .then(([detailRes, lbRes]) => { if (!alive) return; setSeries(detailRes.data); setLeaderboardData(lbRes.data); })
+      .catch(() => { if (alive) setNotFound(true); })
+      .finally(() => { if (alive) setLoading(false); });
+    return () => { alive = false; };
   }, [id]);
 
-  const fetchSeriesDetail = async () => {
-    setLoading(true);
-    try {
-      const [detailRes, lbRes] = await Promise.all([
-        api.get(`/api/student/test-series/${id}`),
-        api.get(`/api/student/test-series/${id}/leaderboard`),
-      ]);
-      setSeries(detailRes.data);
-      setLeaderboardData(lbRes.data);
-    } catch (err) {
-      setError(err.response?.data?.message || 'Failed to load test series.');
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const getCategoryLabel = (catKey) => {
-    switch (catKey) {
-      case 'full_mock': return 'Full Mock';
-      case 'sectional': return 'Sectional';
-      case 'pyp': return 'Previous Year (PYP)';
-      case 'topic': return 'Topic Test';
-      case 'current_affairs': return 'Current Affairs';
-      default: return 'Mock Test';
-    }
-  };
+  const getCategoryLabel = (catKey) => ({
+    full_mock: 'Full Mock', sectional: 'Sectional', pyp: 'Previous Year (PYP)',
+    topic: 'Topic Test', current_affairs: 'Current Affairs',
+  })[catKey] || 'Mock Test';
 
   if (loading) {
-    return (
-      <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', height: '300px', color: 'var(--text-secondary)' }}>
-        <span>⏳ Loading Study Path...</span>
-      </div>
-    );
+    return <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', height: '300px', color: 'var(--muted)' }}><div className="spinner" /></div>;
   }
 
-  if (error || !series) {
-    return (
-      <div style={{ maxWidth: '800px', margin: '40px auto', padding: '24px', textAlign: 'center' }}>
-        <div style={{ background: 'var(--danger-bg)', padding: '20px', borderRadius: '12px', color: 'var(--danger-text)', marginBottom: '16px' }}>
-          ⚠️ {error || 'Test Series not found.'}
-        </div>
-        <button onClick={() => navigate('/student/test-series')} className="btn-secondary">
-          ← Back to My Series
-        </button>
-      </div>
-    );
+  // Demo course, or real series missing → reference sales page.
+  if (demoCourse || (notFound && !series)) {
+    return <SalesDetail course={demoCourse || demoCourses[0]} />;
   }
 
   const filteredTests = activeCategoryTab === 'all'
     ? series.tests
     : series.tests.filter((t) => t.category === activeCategoryTab);
 
+  const tabBtn = (key, label, isActive) => (
+    <button onClick={() => setActiveTab(key)} style={{ background: 'none', border: 'none', borderBottom: isActive ? '3px solid var(--brand)' : '3px solid transparent', padding: '12px 4px', font: '700 14px var(--font-body)', color: isActive ? 'var(--accent-color)' : 'var(--muted)', cursor: 'pointer' }}>{label}</button>
+  );
+
   return (
-    <div style={{ maxWidth: '1000px', margin: '0 auto', padding: '24px' }}>
-      
-      {/* Top Navigation */}
-      <button
-        onClick={() => navigate('/student/test-series')}
-        className="btn-secondary"
-        style={{ marginBottom: '20px', padding: '6px 14px', fontSize: '0.85rem' }}
-      >
-        ← Back to All Series
-      </button>
+    <div style={{ padding: '16px 18px 24px', animation: 'fade-in .35s ease both' }}>
+      <button onClick={() => navigate('/student/test-series')} className="btn-secondary" style={{ marginBottom: '16px', padding: '7px 14px', fontSize: '0.85rem' }}>← Back</button>
 
-      {/* Series Hero Banner */}
-      <div className="glass-panel" style={{ padding: '32px', borderRadius: '16px', marginBottom: '28px', background: 'var(--surface-1)' }}>
+      {/* Hero */}
+      <div style={{ padding: '20px', borderRadius: '20px', background: 'var(--card2)', border: '1px solid var(--line)', boxShadow: 'var(--cardsh)', marginBottom: '20px' }}>
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', flexWrap: 'wrap', gap: '16px' }}>
-          <div>
-            <span style={{ fontSize: '0.75rem', fontWeight: 700, padding: '4px 12px', borderRadius: '20px', background: 'var(--accent-soft)', color: 'var(--accent-color)', textTransform: 'uppercase' }}>
-              {series.exam_category}
-            </span>
-            <h1 style={{ fontSize: '2.2rem', fontWeight: 800, margin: '12px 0 8px 0', color: 'var(--text-primary)', fontFamily: 'var(--font-display)' }}>
-              {series.title}
-            </h1>
-            <p style={{ margin: 0, color: 'var(--text-secondary)', maxWidth: '650px', lineHeight: 1.6 }}>
-              {series.description || 'Guided Study Path tailored for your exam preparation schedule.'}
-            </p>
+          <div style={{ flex: 1, minWidth: 0 }}>
+            <span className="chip">{series.exam_category}</span>
+            <h1 style={{ font: '800 22px var(--font-display)', margin: '12px 0 8px', color: 'var(--tx)', letterSpacing: '-.02em' }}>{series.title}</h1>
+            <p style={{ margin: 0, color: 'var(--muted)', lineHeight: 1.6 }}>{series.description || 'Guided study path tailored for your exam preparation.'}</p>
           </div>
-
-          {/* Quick Stats Box */}
-          <div style={{ background: 'var(--surface-2)', padding: '16px 24px', borderRadius: '12px', textAlign: 'center', minWidth: '160px' }}>
-            <div style={{ fontSize: '1.8rem', fontWeight: 800, color: 'var(--accent-color)' }}>
-              {series.total_tests}
-            </div>
-            <div style={{ fontSize: '0.8rem', color: 'var(--text-secondary)', fontWeight: 600 }}>Total Tests</div>
+          <div style={{ background: 'var(--surf)', padding: '16px 24px', borderRadius: '14px', textAlign: 'center', minWidth: '130px' }}>
+            <div style={{ font: '800 28px var(--font-display)', color: 'var(--accent-color)' }}>{series.total_tests}</div>
+            <div style={{ font: '600 12px var(--font-body)', color: 'var(--muted)' }}>Total Tests</div>
           </div>
         </div>
-
-        {/* Continue Next Test Banner */}
         {series.next_test_id && (
-          <div style={{ marginTop: '24px', paddingTop: '20px', borderTop: '1px solid var(--border-color)', display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '16px' }}>
+          <div style={{ marginTop: '20px', paddingTop: '18px', borderTop: '1px solid var(--line)', display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '14px' }}>
             <div>
-              <span style={{ fontSize: '0.8rem', fontWeight: 700, color: 'var(--success)' }}>⚡ NEXT STEP IN STUDY PATH:</span>
-              <div style={{ fontSize: '1.1rem', fontWeight: 700, color: 'var(--text-primary)' }}>
-                {series.tests.find((t) => t.id === series.next_test_id)?.title}
-              </div>
+              <span style={{ font: '700 11px var(--font-body)', color: 'var(--success-text)', letterSpacing: '.04em' }}>NEXT STEP IN STUDY PATH</span>
+              <div style={{ font: '700 15px var(--font-body)', color: 'var(--tx)', marginTop: '2px' }}>{series.tests.find((t) => t.id === series.next_test_id)?.title}</div>
             </div>
-            <button
-              onClick={() => navigate(`/student/test/${series.next_test_id}`)}
-              className="btn-primary"
-              style={{ padding: '12px 24px', fontWeight: 800, fontSize: '1rem', display: 'flex', alignItems: 'center', gap: '8px' }}
-            >
-              <span>Continue → Next Test</span>
-            </button>
+            <button onClick={() => navigate(`/student/test/${series.next_test_id}`)} className="btn-primary" style={{ padding: '11px 20px' }}>Continue →</button>
           </div>
         )}
       </div>
 
-      {/* Main Content Navigation (Study Path vs Leaderboard) */}
-      <div style={{ display: 'flex', borderBottom: '1px solid var(--border-color)', marginBottom: '24px', gap: '24px' }}>
-        <button
-          onClick={() => setActiveTab('path')}
-          style={{
-            background: 'none',
-            border: 'none',
-            borderBottom: activeTab === 'path' ? '3px solid var(--accent-color)' : '3px solid transparent',
-            padding: '12px 4px',
-            fontSize: '1rem',
-            fontWeight: 700,
-            color: activeTab === 'path' ? 'var(--accent-color)' : 'var(--text-secondary)',
-            cursor: 'pointer',
-          }}
-        >
-          🗺️ Guided Study Path
-        </button>
-
-        <button
-          onClick={() => setActiveTab('leaderboard')}
-          style={{
-            background: 'none',
-            border: 'none',
-            borderBottom: activeTab === 'leaderboard' ? '3px solid var(--accent-color)' : '3px solid transparent',
-            padding: '12px 4px',
-            fontSize: '1rem',
-            fontWeight: 700,
-            color: activeTab === 'leaderboard' ? 'var(--accent-color)' : 'var(--text-secondary)',
-            cursor: 'pointer',
-          }}
-        >
-          🏆 Batch Leaderboard
-        </button>
+      {/* Tabs */}
+      <div style={{ display: 'flex', borderBottom: '1px solid var(--line)', marginBottom: '20px', gap: '24px' }}>
+        {tabBtn('path', 'Study Path', activeTab === 'path')}
+        {tabBtn('leaderboard', 'Leaderboard', activeTab === 'leaderboard')}
       </div>
 
-      {/* STUDY PATH TAB CONTENT */}
       {activeTab === 'path' && (
         <div>
-          {/* Category Tabs */}
-          <div style={{ display: 'flex', gap: '8px', overflowX: 'auto', paddingBottom: '12px', marginBottom: '20px' }}>
+          <div style={{ display: 'flex', gap: '8px', overflowX: 'auto', paddingBottom: '12px', marginBottom: '18px' }}>
             {['all', 'full_mock', 'sectional', 'pyp', 'topic', 'current_affairs'].map((catKey) => {
               const count = catKey === 'all' ? series.tests.length : (series.categories[catKey]?.length || 0);
               if (catKey !== 'all' && count === 0) return null;
-
               return (
-                <button
-                  key={catKey}
-                  onClick={() => setActiveCategoryTab(catKey)}
-                  className={activeCategoryTab === catKey ? 'btn-primary' : 'btn-secondary'}
-                  style={{ padding: '8px 16px', fontSize: '0.85rem', fontWeight: 600, borderRadius: '20px', whiteSpace: 'nowrap' }}
-                >
+                <button key={catKey} onClick={() => setActiveCategoryTab(catKey)} className={`chip-filter${activeCategoryTab === catKey ? ' active' : ''}`}>
                   {catKey === 'all' ? 'All Tests' : getCategoryLabel(catKey)} ({count})
                 </button>
               );
             })}
           </div>
-
-          {/* Test List Sequence */}
-          <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
             {filteredTests.map((test, index) => (
-              <div
-                key={test.id}
-                className="glass-panel"
-                style={{
-                  padding: '20px 24px',
-                  display: 'flex',
-                  justify: 'space-between',
-                  alignItems: 'center',
-                  borderRadius: '12px',
-                  borderLeft: test.id === series.next_test_id ? '4px solid var(--accent-color)' : '1px solid var(--border-color)',
-                }}
-              >
-                <div style={{ display: 'flex', alignItems: 'center', gap: '16px' }}>
-                  <div
-                    style={{
-                      width: '36px',
-                      height: '36px',
-                      borderRadius: '50%',
-                      background: test.status === 'completed' ? 'var(--success-bg)' : 'var(--surface-2)',
-                      color: test.status === 'completed' ? 'var(--success)' : 'var(--text-secondary)',
-                      display: 'flex',
-                      alignItems: 'center',
-                      justify: 'center',
-                      fontWeight: 800,
-                      fontSize: '0.9rem',
-                    }}
-                  >
+              <div key={test.id} className="glass-panel" style={{ padding: '16px 18px', display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: '12px', borderLeft: test.id === series.next_test_id ? '4px solid var(--brand)' : undefined, flexWrap: 'wrap' }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '14px', minWidth: 0 }}>
+                  <div style={{ width: '36px', height: '36px', borderRadius: '50%', background: test.status === 'completed' ? 'var(--success-bg)' : 'var(--surf)', color: test.status === 'completed' ? 'var(--success-text)' : 'var(--muted)', display: 'grid', placeItems: 'center', fontWeight: 800, flex: 'none' }}>
                     {test.status === 'completed' ? '✓' : index + 1}
                   </div>
-
-                  <div>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-                      <h4 style={{ margin: 0, fontSize: '1.05rem', fontWeight: 700, color: 'var(--text-primary)' }}>
-                        {test.title}
-                      </h4>
-                      <span style={{ fontSize: '0.72rem', fontWeight: 600, padding: '2px 8px', borderRadius: '4px', background: 'var(--surface-2)', color: 'var(--text-secondary)' }}>
-                        {getCategoryLabel(test.category)}
-                      </span>
+                  <div style={{ minWidth: 0 }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '10px', flexWrap: 'wrap' }}>
+                      <h4 style={{ margin: 0, font: '700 15px var(--font-body)', color: 'var(--tx)' }}>{test.title}</h4>
+                      <span style={{ font: '600 11px var(--font-body)', padding: '2px 8px', borderRadius: '6px', background: 'var(--surf)', color: 'var(--muted)' }}>{getCategoryLabel(test.category)}</span>
                     </div>
-
-                    <div style={{ display: 'flex', gap: '16px', fontSize: '0.8rem', color: 'var(--text-secondary)', marginTop: '4px' }}>
-                      <span>⏱️ {Math.round(test.duration_seconds / 60)} mins</span>
-                      <span>💯 {test.total_marks} Marks</span>
-                      {test.status === 'completed' && (
-                        <span style={{ color: 'var(--success)', fontWeight: 700 }}>Score: {test.score} Marks</span>
-                      )}
+                    <div style={{ display: 'flex', gap: '16px', font: '600 12px var(--font-body)', color: 'var(--muted)', marginTop: '4px', flexWrap: 'wrap' }}>
+                      <span>{Math.round(test.duration_seconds / 60)} mins</span>
+                      <span>{test.total_marks} Marks</span>
+                      {test.status === 'completed' && <span style={{ color: 'var(--success-text)', fontWeight: 700 }}>Score: {test.score}</span>}
                     </div>
                   </div>
                 </div>
-
-                <div>
-                  {test.status === 'completed' ? (
-                    <button
-                      onClick={() => navigate(`/student/test/${test.id}`)}
-                      className="btn-secondary"
-                      style={{ padding: '8px 16px', fontSize: '0.85rem' }}
-                    >
-                      Re-attempt / Analysis
-                    </button>
-                  ) : (
-                    <button
-                      onClick={() => navigate(`/student/test/${test.id}`)}
-                      className={test.id === series.next_test_id ? 'btn-primary' : 'btn-secondary'}
-                      style={{ padding: '8px 18px', fontSize: '0.85rem', fontWeight: 700 }}
-                    >
-                      Start Test →
-                    </button>
-                  )}
-                </div>
+                <button onClick={() => navigate(`/student/test/${test.id}`)} className={test.id === series.next_test_id ? 'btn-primary' : 'btn-secondary'} style={{ padding: '8px 16px', fontSize: '0.85rem' }}>
+                  {test.status === 'completed' ? 'Analysis' : 'Start →'}
+                </button>
               </div>
             ))}
           </div>
         </div>
       )}
 
-      {/* LEADERBOARD TAB CONTENT */}
       {activeTab === 'leaderboard' && (
-        <div className="glass-panel" style={{ padding: '24px', borderRadius: '12px' }}>
-          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px' }}>
-            <h3 style={{ margin: 0, fontSize: '1.2rem', fontWeight: 700, color: 'var(--text-primary)' }}>
-              Batch Peer Leaderboard
-            </h3>
-            {leaderboardData?.user_rank && (
-              <span style={{ padding: '6px 14px', background: 'var(--accent-soft)', color: 'var(--accent-color)', borderRadius: '20px', fontWeight: 700, fontSize: '0.88rem' }}>
-                Your Rank: #{leaderboardData.user_rank}
-              </span>
-            )}
+        <div className="glass-panel" style={{ padding: '20px' }}>
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '18px' }}>
+            <h3 style={{ margin: 0, font: '700 17px var(--font-display)', color: 'var(--tx)' }}>Batch Leaderboard</h3>
+            {leaderboardData?.user_rank && <span className="chip">Your Rank #{leaderboardData.user_rank}</span>}
           </div>
-
           <table style={{ width: '100%', borderCollapse: 'collapse', textAlign: 'left', fontSize: '0.9rem' }}>
             <thead>
-              <tr style={{ background: 'var(--surface-1)', borderBottom: '1px solid var(--border-color)' }}>
-                <th style={{ padding: '12px', width: '70px' }}>Rank</th>
-                <th style={{ padding: '12px' }}>Student Name</th>
-                <th style={{ padding: '12px', textAlign: 'center' }}>Tests Completed</th>
-                <th style={{ padding: '12px', textAlign: 'right' }}>Total Series Score</th>
+              <tr style={{ background: 'var(--surf)', borderBottom: '1px solid var(--line)', color: 'var(--muted)' }}>
+                <th style={{ padding: '12px', width: '70px' }}>Rank</th><th style={{ padding: '12px' }}>Name</th>
+                <th style={{ padding: '12px', textAlign: 'center' }}>Done</th><th style={{ padding: '12px', textAlign: 'right' }}>Score</th>
               </tr>
             </thead>
             <tbody>
               {!leaderboardData?.leaderboard?.length ? (
-                <tr>
-                  <td colSpan="4" style={{ padding: '32px', textAlign: 'center', color: 'var(--text-secondary)' }}>
-                    No student submissions recorded for this series yet.
-                  </td>
+                <tr><td colSpan="4" style={{ padding: '32px', textAlign: 'center', color: 'var(--muted)' }}>No submissions recorded yet.</td></tr>
+              ) : leaderboardData.leaderboard.map((item) => (
+                <tr key={item.user_id} style={{ borderBottom: '1px solid var(--line)', background: item.is_current_user ? 'var(--accent-soft)' : 'transparent', fontWeight: item.is_current_user ? 700 : 400 }}>
+                  <td style={{ padding: '12px', fontWeight: 'bold' }}>#{item.rank}</td>
+                  <td style={{ padding: '12px', color: 'var(--tx)' }}>{item.name} {item.is_current_user && '(You)'}</td>
+                  <td style={{ padding: '12px', textAlign: 'center' }}>{item.tests_completed}</td>
+                  <td style={{ padding: '12px', textAlign: 'right', fontWeight: 'bold', color: 'var(--accent-color)' }}>{item.total_score} pts</td>
                 </tr>
-              ) : (
-                leaderboardData.leaderboard.map((item) => (
-                  <tr
-                    key={item.user_id}
-                    style={{
-                      borderBottom: '1px solid var(--border-color)',
-                      background: item.is_current_user ? 'rgba(99, 102, 241, 0.1)' : 'transparent',
-                      fontWeight: item.is_current_user ? 700 : 400,
-                    }}
-                  >
-                    <td style={{ padding: '12px', fontWeight: 'bold' }}>
-                      {item.rank === 1 ? '🥇 #1' : item.rank === 2 ? '🥈 #2' : item.rank === 3 ? '🥉 #3' : `#${item.rank}`}
-                    </td>
-                    <td style={{ padding: '12px', color: 'var(--text-primary)' }}>
-                      {item.name} {item.is_current_user && '(You)'}
-                    </td>
-                    <td style={{ padding: '12px', textAlign: 'center' }}>
-                      {item.tests_completed}
-                    </td>
-                    <td style={{ padding: '12px', textAlign: 'right', fontWeight: 'bold', color: 'var(--accent-color)' }}>
-                      {item.total_score} pts
-                    </td>
-                  </tr>
-                ))
-              )}
+              ))}
             </tbody>
           </table>
         </div>
       )}
-
     </div>
   );
 }

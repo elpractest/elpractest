@@ -168,6 +168,10 @@ export default function Login({ setUser }) {
           {t('login.noAccount')}{' '}
           <Link to="/register" style={{ color: 'var(--accent-color)', textDecoration: 'none', fontWeight: 600 }}>{t('login.create')}</Link>
         </div>
+
+        <div style={{ textAlign: 'center' }}>
+          <Link to="/welcome" style={{ fontSize: '0.8rem', color: 'var(--muted)', textDecoration: 'none' }}>New to Practest? See what's inside →</Link>
+        </div>
       </div>
     </div>
   );

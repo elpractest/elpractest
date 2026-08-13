@@ -2,6 +2,8 @@ import React, { useState, useEffect, useRef } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import katex from 'katex';
 import api from '../api';
+import Icon from '../components/Icon';
+import { buildDemoQuestions } from '../lib/demoData';
 
 // Math Renderer helper to parse inline ($...$) and block ($$...$$) LaTeX equations
 const MathRenderer = ({ text }) => {
@@ -38,19 +40,24 @@ export default function TestTaking() {
   const { session: sessionId } = useParams();
   const navigate = useNavigate();
 
+  // Demo mode: reachable via "Free test" / "Attempt free". Renders the CBT
+  // reference against local demo questions with NO backend calls. The real
+  // server-authoritative engine below is untouched for any real session id.
+  const isDemo = sessionId === 'demo';
+
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
-  
+
   // Test structures
   const [session, setSession] = useState(null);
   const [sections, setSections] = useState([]);
   const [currentSectionIndex, setCurrentSectionIndex] = useState(0);
   const [currentQuestionIndex, setCurrentQuestionIndex] = useState(0);
-  
+
   // Interactive timers (in seconds)
   const [timeRemaining, setTimeRemaining] = useState(null);
   const [sectionTimeRemaining, setSectionTimeRemaining] = useState(null);
-  
+
   // Status states
   const [palette, setPalette] = useState({}); // { question_id: 'status' }
   const [answers, setAnswers] = useState({}); // { question_id: selected_option_id }
@@ -63,28 +70,52 @@ export default function TestTaking() {
   // Keep track of active question start time for calculating time spent
   const questionStartTime = useRef(Date.now());
   const [timeSpentOnCurrentQuestion, setTimeSpentOnCurrentQuestion] = useState(0);
-  
+
   // Prevent duplicate double-clicks within 300ms
   const lastSaveTime = useRef(0);
 
+  // Build a synthetic session from demo questions (no backend).
+  const buildDemoSession = () => {
+    const dq = buildDemoQuestions(20);
+    const demoSection = {
+      id: 'demo-sec', title: 'Full Mock', duration_seconds: 0,
+      questions: dq.map((q, i) => ({
+        id: `dq-${i}`, marks: 2, negative_marks: 0.5, question_text: q.text,
+        section: q.sec,
+        options: q.opts.map((t, j) => ({ id: `dq-${i}-o${j}`, label: 'ABCD'[j], option_text: t })),
+      })),
+    };
+    setSession({ test_title: 'Free Practest Scholarship Test', current_section_index: 0, time_remaining_seconds: 1800, section_time_remaining_seconds: null });
+    setSections([demoSection]);
+    setCurrentSectionIndex(0);
+    setTimeRemaining(1800);
+    setSectionTimeRemaining(null);
+    setAnswers({});
+    setMarkedForReview({});
+    setCurrentQuestionIndex(0);
+    setPalette({ 'dq-0': 'not_answered' });
+    setLoading(false);
+  };
+
   // Fetch session details and resume state
   const fetchSessionState = async (showProgressLoader = false) => {
+    if (isDemo) { buildDemoSession(); return; }
     if (showProgressLoader) setAutoAdvancing(true);
     try {
       const res = await api.get(`/api/student/tests/sessions/${sessionId}`);
       const data = res.data;
-      
+
       setSession(data.session);
       setSections(data.sections || []);
       setCurrentSectionIndex(data.session.current_section_index);
-      
+
       setTimeRemaining(data.session.time_remaining_seconds);
       setSectionTimeRemaining(data.session.section_time_remaining_seconds);
 
       // Map answers to local state
       const initialAnswers = {};
       const initialMarked = {};
-      
+
       if (data.answers) {
         data.answers.forEach((ans) => {
           initialAnswers[ans.question_id] = ans.selected_option_id;
@@ -111,6 +142,7 @@ export default function TestTaking() {
 
   // Fetch latest question palette status
   const refreshPalette = async () => {
+    if (isDemo) return;
     try {
       const res = await api.get(`/api/student/tests/sessions/${sessionId}/palette`);
       const palList = res.data.palette || [];
@@ -176,6 +208,7 @@ export default function TestTaking() {
   };
 
   const handleAutoSubmit = async () => {
+    if (isDemo) { navigate('/tests/demo/result'); return; }
     setIsSubmitting(true);
     try {
       await api.post(`/api/student/tests/sessions/${sessionId}/submit`);
@@ -186,6 +219,7 @@ export default function TestTaking() {
   };
 
   const handleManualSubmit = async () => {
+    if (isDemo) { navigate('/tests/demo/result'); return; }
     setIsSubmitting(true);
     try {
       await api.post(`/api/student/tests/sessions/${sessionId}/submit`);
@@ -205,6 +239,7 @@ export default function TestTaking() {
     if (!palette[questionId] || palette[questionId] === 'not_visited') {
       // Update locally immediately to keep UX snappy
       setPalette((prev) => ({ ...prev, [questionId]: 'not_answered' }));
+      if (isDemo) return;
       try {
         await api.put(`/api/student/tests/sessions/${sessionId}/answers/${questionId}/visit`);
       } catch (e) {
@@ -242,7 +277,7 @@ export default function TestTaking() {
     lastSaveTime.current = nowTime;
 
     const questionId = activeQuestion.id;
-    
+
     // Snappy local UI update
     setAnswers((prev) => ({ ...prev, [questionId]: optionId }));
     setPalette((prev) => {
@@ -253,6 +288,7 @@ export default function TestTaking() {
       };
     });
 
+    if (isDemo) return;
     try {
       await api.put(`/api/student/tests/sessions/${sessionId}/answers/${questionId}`, {
         selected_option_id: optionId,
@@ -266,7 +302,7 @@ export default function TestTaking() {
   // Clear selected MCQ option
   const clearResponse = async () => {
     const questionId = activeQuestion.id;
-    
+
     setAnswers((prev) => ({ ...prev, [questionId]: null }));
     setPalette((prev) => {
       const isMarked = markedForReview[questionId];
@@ -276,6 +312,7 @@ export default function TestTaking() {
       };
     });
 
+    if (isDemo) return;
     try {
       await api.put(`/api/student/tests/sessions/${sessionId}/answers/${questionId}`, {
         selected_option_id: null,
@@ -290,7 +327,7 @@ export default function TestTaking() {
   const toggleMarkForReview = async () => {
     const questionId = activeQuestion.id;
     const nextMarkedState = !markedForReview[questionId];
-    
+
     setMarkedForReview((prev) => ({ ...prev, [questionId]: nextMarkedState }));
     setPalette((prev) => {
       const hasAnswer = !!answers[questionId];
@@ -301,6 +338,7 @@ export default function TestTaking() {
       }
     });
 
+    if (isDemo) return;
     try {
       await api.put(`/api/student/tests/sessions/${sessionId}/answers/${questionId}/review`);
     } catch (err) {
@@ -353,241 +391,157 @@ export default function TestTaking() {
 
   if (loading) {
     return (
-      <div style={{ display: 'flex', flex: 1, justifyContent: 'center', alignItems: 'center', height: '80vh' }}>
-        <div style={{ color: 'var(--text-secondary)' }}>Resuming test session details...</div>
+      <div className="cbt-root" style={{ position: 'fixed', inset: 0, display: 'flex', justifyContent: 'center', alignItems: 'center' }}>
+        <div className="spinner" />
       </div>
     );
   }
 
   if (autoAdvancing) {
     return (
-      <div style={{ display: 'flex', flex: 1, justifyContent: 'center', alignItems: 'center', height: '80vh', flexDirection: 'column', gap: '16px' }}>
-        <div style={{ color: 'var(--accent-color)', fontSize: '1.25rem', fontWeight: 'bold' }}>Section Time Expired!</div>
-        <div style={{ color: 'var(--text-secondary)' }}>Auto-advancing to next section...</div>
+      <div className="cbt-root" style={{ position: 'fixed', inset: 0, display: 'flex', justifyContent: 'center', alignItems: 'center', flexDirection: 'column', gap: '14px' }}>
+        <div style={{ color: '#F5A623', fontSize: '1.15rem', fontWeight: 800 }}>Section time expired</div>
+        <div style={{ color: '#5A6A85' }}>Auto-advancing to the next section…</div>
       </div>
     );
   }
 
-  return (
-    <div style={{ display: 'flex', flex: 1, flexDirection: 'column', height: 'calc(100vh - 100px)', padding: '0 24px 24px 24px', overflow: 'hidden' }}>
-      
-      {/* CBT Subheader / Bar */}
-      <div className="glass-panel" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '12px 20px', marginBottom: '16px' }}>
-        <div>
-          <span style={{ fontSize: '1.1rem', fontWeight: 700 }}>{session.test_title || 'Mock Test Series'}</span>
-          {activeSection && (
-            <span style={{ marginLeft: '12px', background: 'var(--accent-soft)', color: 'var(--accent-color)', padding: '4px 10px', borderRadius: '6px', fontSize: '0.8rem', fontWeight: 600 }}>
-              Active Section: {activeSection.title}
-            </span>
-          )}
-        </div>
-        
-        <div style={{ display: 'flex', gap: '16px', alignItems: 'center' }}>
-          {sectionTimeRemaining !== null && (
-            <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end' }}>
-              <span style={{ fontSize: '0.75rem', color: 'var(--text-secondary)' }}>Section Time Remaining</span>
-              <div className="header-clock" style={{ color: sectionTimeRemaining < 60 ? 'var(--danger-text)' : 'var(--text-primary)' }}>
-                {formatTime(sectionTimeRemaining)}
-              </div>
-            </div>
-          )}
+  // ---- palette legend counts (across the whole test) ----
+  const allQuestions = sections.flatMap((s) => s.questions || []);
+  const statusOf = (qid) => palette[qid] || 'not_visited';
+  const cAnswered = allQuestions.filter((q) => ['answered', 'answered_and_marked'].includes(statusOf(q.id))).length;
+  const cMarked = allQuestions.filter((q) => ['marked_for_review', 'answered_and_marked'].includes(statusOf(q.id))).length;
+  const cNotVisited = allQuestions.filter((q) => statusOf(q.id) === 'not_visited').length;
+  const cNotAnswered = allQuestions.filter((q) => statusOf(q.id) === 'not_answered').length;
 
-          <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end' }}>
-            <span style={{ fontSize: '0.75rem', color: 'var(--text-secondary)' }}>Total Exam Time Remaining</span>
-            <div className="header-clock" style={{ color: timeRemaining < 300 ? 'var(--danger-text)' : 'var(--text-primary)' }}>
-              {formatTime(timeRemaining)}
-            </div>
+  const clockLow = timeRemaining !== null && timeRemaining < 300;
+
+  return (
+    <div className="cbt-root" style={{ position: 'fixed', inset: 0, display: 'flex', flexDirection: 'column' }}>
+      {/* ---- Deep header: title + section + clock ---- */}
+      <div style={{ flex: 'none', padding: 'max(env(safe-area-inset-top),18px) 16px 12px', background: 'linear-gradient(180deg,#12203A,#16264A)' }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+          <div style={{ flex: 1, minWidth: 0 }}>
+            <div style={{ font: '700 14px var(--font-body)', color: '#fff', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{session.test_title || 'Mock Test'}</div>
+            <div style={{ font: '600 11px var(--font-body)', color: '#9AB0E0', marginTop: '2px' }}>{activeQuestion?.section || activeSection?.title}</div>
+          </div>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '7px', padding: '8px 12px', borderRadius: '11px', background: clockLow ? 'rgba(229,72,77,.18)' : 'rgba(255,255,255,.1)', border: `1px solid ${clockLow ? 'rgba(251,143,146,.5)' : 'rgba(255,255,255,.18)'}` }}>
+            <Icon name="clock" size={15} style={{ color: clockLow ? '#FFB4B6' : '#DCE6FF' }} />
+            <span style={{ font: '800 15px var(--font-mono)', color: clockLow ? '#FFB4B6' : '#DCE6FF', letterSpacing: '.04em' }}>{formatTime(timeRemaining)}</span>
           </div>
         </div>
+        {sectionTimeRemaining !== null && (
+          <div style={{ marginTop: '8px', font: '700 11px var(--font-body)', color: sectionTimeRemaining < 60 ? '#FFB4B6' : '#9AB0E0' }}>
+            Section time: <span style={{ fontFamily: 'var(--font-mono)' }}>{formatTime(sectionTimeRemaining)}</span>
+          </div>
+        )}
       </div>
 
-      {error && (
-        <div style={{ background: 'var(--danger-bg)', border: '1px solid var(--danger-border)', padding: '10px 16px', borderRadius: '8px', color: 'var(--danger-text)', fontSize: '0.85rem', marginBottom: '16px' }}>
-          {error}
+      {/* ---- Section tabs ---- */}
+      {sections.length > 1 && (
+        <div style={{ flex: 'none', display: 'flex', gap: '8px', overflowX: 'auto', padding: '11px 16px', background: '#fff', borderBottom: '1px solid #E2E7F0' }}>
+          {sections.map((section, idx) => {
+            const isCurrent = idx === currentSectionIndex;
+            const hasSectionalTiming = sections.some((s) => s.duration_seconds > 0);
+            const isLocked = hasSectionalTiming && idx !== session.current_section_index;
+            return (
+              <span key={section.id} onClick={() => !isLocked && navigateToQuestion(idx, 0)}
+                style={{ flex: 'none', padding: '8px 15px', borderRadius: '999px', font: '700 12px var(--font-body)', cursor: isLocked ? 'not-allowed' : 'pointer', opacity: isLocked ? 0.5 : 1, color: isCurrent ? '#fff' : '#5A6A85', background: isCurrent ? '#12203A' : '#F0F3F8' }}>
+                {section.title}{isLocked ? ' 🔒' : ''}
+              </span>
+            );
+          })}
         </div>
       )}
 
-      {/* Main CBT Workspace Split */}
-      <div style={{ display: 'flex', flex: 1, gap: '20px', overflow: 'hidden' }}>
-        
-        {/* Left Side: Question area */}
-        <div className="glass-panel" style={{ flex: 1, padding: '32px', display: 'flex', flexDirection: 'column', justifyContent: 'space-between', overflowY: 'auto' }}>
-          {activeQuestion ? (
-            <div>
-              {/* Question Header */}
-              <div style={{ display: 'flex', justifyContent: 'space-between', borderBottom: '1px solid var(--border-color)', paddingBottom: '16px', marginBottom: '24px' }}>
-                <span style={{ fontSize: '1.1rem', fontWeight: 700, color: 'var(--text-primary)' }}>
-                  Question {currentQuestionIndex + 1}
-                </span>
-                <span style={{ fontSize: '0.8rem', color: 'var(--text-secondary)' }}>
-                  Marks: <span style={{ color: 'var(--success)', fontWeight: 'bold' }}>+{activeQuestion.marks}</span> / Negative: <span style={{ color: 'var(--danger)', fontWeight: 'bold' }}>-{activeQuestion.negative_marks}</span>
-                </span>
-              </div>
+      {error && (
+        <div style={{ flex: 'none', margin: '10px 16px 0', background: 'rgba(229,72,77,.1)', border: '1px solid rgba(217,45,51,.3)', padding: '10px 14px', borderRadius: '10px', color: '#CB2F37', fontSize: '0.85rem' }}>{error}</div>
+      )}
 
-              {/* Question Text */}
-              <div style={{ fontSize: '1.15rem', color: 'var(--text-primary)', marginBottom: '32px', lineHeight: '1.6' }}>
+      {/* ---- Scroll body ---- */}
+      <div style={{ flex: 1, minHeight: 0, overflowY: 'auto', padding: '16px' }}>
+        {activeQuestion ? (
+          <>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '12px' }}>
+              <span style={{ font: '800 15px var(--font-display)', color: '#12203A' }}>
+                Question {currentQuestionIndex + 1} <span style={{ color: '#93A0B5', fontWeight: 600 }}>/ {activeSection.questions.length}</span>
+              </span>
+              <div style={{ display: 'flex', gap: '6px' }}>
+                <span style={{ font: '800 11px var(--font-mono)', color: '#0B9E6D', background: 'rgba(11,158,109,.12)', padding: '4px 9px', borderRadius: '8px' }}>+{activeQuestion.marks}</span>
+                <span style={{ font: '800 11px var(--font-mono)', color: '#D92D33', background: 'rgba(217,45,51,.1)', padding: '4px 9px', borderRadius: '8px' }}>−{activeQuestion.negative_marks}</span>
+              </div>
+            </div>
+
+            {/* Question card */}
+            <div style={{ padding: '16px', borderRadius: '16px', background: '#fff', border: '1px solid #E2E7F0', boxShadow: '0 6px 20px -12px rgba(18,32,58,.25)' }}>
+              <div style={{ font: '600 15.5px/1.5 var(--font-body)', color: '#1A2233', margin: '0 0 16px' }}>
                 <MathRenderer text={activeQuestion.question_text} />
               </div>
+              {activeQuestion.options?.map((option) => {
+                const isSelected = answers[activeQuestion.id] === option.id;
+                return (
+                  <div key={option.id} onClick={() => selectOption(option.id)} className={`mcq-option ${isSelected ? 'selected' : ''}`}>
+                    <span className="option-badge">{option.label}</span>
+                    <span style={{ fontSize: '14.5px' }}><MathRenderer text={option.option_text} /></span>
+                  </div>
+                );
+              })}
+            </div>
 
-              {/* Option Selection List */}
-              <div>
-                {activeQuestion.options?.map((option) => {
-                  const isSelected = answers[activeQuestion.id] === option.id;
+            {/* Legend + palette */}
+            <div style={{ marginTop: '16px', padding: '15px', borderRadius: '16px', background: '#fff', border: '1px solid #E2E7F0' }}>
+              <div style={{ display: 'flex', flexWrap: 'wrap', gap: '12px 16px' }}>
+                {[['#0ea371', 'Answered', cAnswered], ['#e5484d', 'Not answered', cNotAnswered], ['#8b5cf6', 'Marked', cMarked], ['#64748b', 'Not visited', cNotVisited]].map(([c, label, n]) => (
+                  <span key={label} style={{ display: 'flex', alignItems: 'center', gap: '6px', font: '700 11px var(--font-body)', color: '#5A6A85' }}>
+                    <span style={{ width: '12px', height: '12px', borderRadius: '3px', background: c }} />{label} {n}
+                  </span>
+                ))}
+              </div>
+              <div style={{ display: 'flex', flexWrap: 'wrap', gap: '9px', marginTop: '14px' }}>
+                {activeSection?.questions?.map((q, idx) => {
+                  const qStatus = statusOf(q.id);
+                  const isActive = idx === currentQuestionIndex;
                   return (
-                    <div 
-                      key={option.id}
-                      onClick={() => selectOption(option.id)}
-                      className={`mcq-option ${isSelected ? 'selected' : ''}`}
-                    >
-                      <span className="option-badge">{option.label}</span>
-                      <span style={{ fontSize: '1rem' }}><MathRenderer text={option.option_text} /></span>
-                    </div>
+                    <button key={q.id} onClick={() => navigateToQuestion(currentSectionIndex, idx)} className={`palette-btn ${qStatus} ${isActive ? 'active' : ''}`}>
+                      {idx + 1}
+                    </button>
                   );
                 })}
               </div>
             </div>
-          ) : (
-            <div style={{ color: 'var(--text-secondary)' }}>No questions available.</div>
-          )}
-
-          {/* Action Control Bar */}
-          <div style={{ display: 'flex', justifyContent: 'space-between', borderTop: '1px solid var(--border-color)', paddingTop: '20px', marginTop: '24px' }}>
-            <div style={{ display: 'flex', gap: '12px' }}>
-              <button onClick={toggleMarkForReview} className="btn-secondary" style={{ borderColor: 'var(--status-marked-bg)', color: 'var(--violet-text)' }}>
-                {markedForReview[activeQuestion?.id] ? 'Unmark Review' : 'Mark for Review'}
-              </button>
-              <button onClick={clearResponse} className="btn-secondary">
-                Clear Response
-              </button>
-            </div>
-            {(() => {
-              const isLastQuestionOfSection = currentQuestionIndex === activeSection?.questions?.length - 1;
-              const hasSectionalTiming = sections.some(s => s.duration_seconds > 0);
-              const isNotLastSection = currentSectionIndex < sections.length - 1;
-
-              if (isLastQuestionOfSection && hasSectionalTiming && isNotLastSection) {
-                return (
-                  <button onClick={handleAdvanceSection} className="btn-primary" style={{ background: '#db2777' }}>
-                    Submit Section
-                  </button>
-                );
-              }
-              return (
-                <button onClick={handleSaveAndNext} className="btn-primary">
-                  Save & Next
-                </button>
-              );
-            })()}
-          </div>
-        </div>
-
-        {/* Right Side: Navigation & Palette */}
-        <div className="glass-panel" style={{ width: '320px', padding: '24px', display: 'flex', flexDirection: 'column', gap: '20px', overflowY: 'auto' }}>
-          
-          {/* Section Selector Tab (sectional timing restriction checks) */}
-          <div>
-            <h4 style={{ margin: '0 0 12px 0', fontSize: '0.9rem', color: 'var(--text-secondary)', textTransform: 'uppercase', letterSpacing: '0.5px' }}>Sections</h4>
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
-              {sections.map((section, idx) => {
-                const isCurrent = idx === currentSectionIndex;
-                const hasSectionalTiming = sections.some(s => s.duration_seconds > 0);
-                const isLocked = hasSectionalTiming && idx !== session.current_section_index;
-                
-                return (
-                  <button
-                    key={section.id}
-                    onClick={() => !isLocked && navigateToQuestion(idx, 0)}
-                    disabled={isLocked}
-                    style={{
-                      width: '100%',
-                      padding: '10px 14px',
-                      background: isCurrent ? 'var(--accent-color)' : 'var(--surface-2)',
-                      color: isCurrent ? '#ffffff' : isLocked ? 'var(--text-secondary)' : 'var(--text-primary)',
-                      border: '1px solid',
-                      borderColor: isCurrent ? 'var(--accent-color)' : 'var(--border-color)',
-                      borderRadius: '8px',
-                      textAlign: 'left',
-                      fontWeight: 600,
-                      cursor: isLocked ? 'not-allowed' : 'pointer',
-                      opacity: isLocked ? 0.4 : 1,
-                      display: 'flex',
-                      justifyContent: 'space-between',
-                      alignItems: 'center'
-                    }}
-                  >
-                    <span>{section.title}</span>
-                    {isLocked && <span style={{ fontSize: '0.7rem', background: 'var(--surface-3)', padding: '2px 6px', borderRadius: '4px' }}>Locked</span>}
-                  </button>
-                );
-              })}
-            </div>
-          </div>
-
-          {/* Color-coded Question Palette Grid */}
-          <div style={{ flex: 1 }}>
-            <h4 style={{ margin: '0 0 12px 0', fontSize: '0.9rem', color: 'var(--text-secondary)', textTransform: 'uppercase', letterSpacing: '0.5px' }}>Question Palette</h4>
-            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(5, 1fr)', gap: '10px' }}>
-              {activeSection?.questions?.map((q, idx) => {
-                const qStatus = palette[q.id] || 'not_visited';
-                const isActive = idx === currentQuestionIndex;
-                return (
-                  <button
-                    key={q.id}
-                    onClick={() => navigateToQuestion(currentSectionIndex, idx)}
-                    className={`palette-btn ${qStatus} ${isActive ? 'active' : ''}`}
-                  >
-                    {idx + 1}
-                  </button>
-                );
-              })}
-            </div>
-          </div>
-
-          {/* Palette Legend */}
-          <div style={{ borderTop: '1px solid var(--border-color)', paddingTop: '16px', display: 'flex', flexDirection: 'column', gap: '8px', fontSize: '0.75rem', color: 'var(--text-secondary)' }}>
-            <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-              <span className="palette-btn not_visited" style={{ width: '16px', height: '16px', borderRadius: '4px', border: 'none' }}></span>
-              <span>Not Visited</span>
-            </div>
-            <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-              <span className="palette-btn not_answered" style={{ width: '16px', height: '16px', borderRadius: '4px', border: 'none' }}></span>
-              <span>Not Answered</span>
-            </div>
-            <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-              <span className="palette-btn answered" style={{ width: '16px', height: '16px', borderRadius: '4px', border: 'none' }}></span>
-              <span>Answered</span>
-            </div>
-            <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-              <span className="palette-btn marked_for_review" style={{ width: '16px', height: '16px', borderRadius: '4px', border: 'none' }}></span>
-              <span>Marked for Review</span>
-            </div>
-            <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-              <span className="palette-btn answered_and_marked" style={{ width: '16px', height: '16px', borderRadius: '4px' }}></span>
-              <span>Answered & Marked for Review</span>
-            </div>
-          </div>
-
-          <button onClick={() => setShowSubmitConfirm(true)} className="btn-primary" style={{ background: 'var(--danger)', width: '100%' }}>
-            Submit Test
-          </button>
-        </div>
+          </>
+        ) : (
+          <div style={{ color: '#5A6A85' }}>No questions available.</div>
+        )}
       </div>
 
-      {/* Submit Confirmation Modal Overlay */}
+      {/* ---- Bottom action bar ---- */}
+      <div style={{ flex: 'none', display: 'flex', gap: '8px', padding: '12px 14px calc(14px + env(safe-area-inset-bottom,8px))', background: '#fff', borderTop: '1px solid #E2E7F0' }}>
+        <button onClick={toggleMarkForReview} style={{ flex: 'none', padding: '13px 12px', border: '1px solid #C9D2E0', borderRadius: '12px', background: markedForReview[activeQuestion?.id] ? 'rgba(139,92,246,.1)' : '#fff', color: markedForReview[activeQuestion?.id] ? '#6A34DE' : '#5A6A85', font: '700 12px var(--font-body)', cursor: 'pointer' }}>
+          {markedForReview[activeQuestion?.id] ? 'Unmark' : 'Mark'}
+        </button>
+        <button onClick={clearResponse} style={{ flex: 'none', padding: '13px 12px', border: '1px solid #C9D2E0', borderRadius: '12px', background: '#fff', color: '#5A6A85', font: '700 12px var(--font-body)', cursor: 'pointer' }}>Clear</button>
+        {(() => {
+          const isLastQuestionOfSection = currentQuestionIndex === activeSection?.questions?.length - 1;
+          const hasSectionalTiming = sections.some((s) => s.duration_seconds > 0);
+          const isNotLastSection = currentSectionIndex < sections.length - 1;
+          if (isLastQuestionOfSection && hasSectionalTiming && isNotLastSection) {
+            return <button onClick={handleAdvanceSection} style={{ flex: 1, padding: '13px', border: 'none', borderRadius: '12px', background: 'linear-gradient(135deg,#FFC968,#F5A623 55%,#E07C0A)', color: '#1A1206', font: '800 14px var(--font-display)', cursor: 'pointer' }}>Submit Section</button>;
+          }
+          return <button onClick={handleSaveAndNext} style={{ flex: 1, padding: '13px', border: 'none', borderRadius: '12px', background: 'linear-gradient(135deg,#FFC968,#F5A623 55%,#E07C0A)', color: '#1A1206', font: '800 14px var(--font-display)', cursor: 'pointer' }}>Save &amp; Next</button>;
+        })()}
+        <button onClick={() => setShowSubmitConfirm(true)} style={{ flex: 'none', padding: '13px 16px', border: 'none', borderRadius: '12px', background: '#0B9E6D', color: '#fff', font: '800 13px var(--font-body)', cursor: 'pointer' }}>Submit</button>
+      </div>
+
+      {/* Submit confirmation */}
       {showSubmitConfirm && (
-        <div style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, backgroundColor: 'var(--overlay)', display: 'flex', justifyContent: 'center', alignItems: 'center', zIndex: 1000, padding: '16px' }}>
-          <div className="glass-panel" style={{ width: '100%', maxWidth: '400px', padding: '32px', display: 'flex', flexDirection: 'column', gap: '20px' }}>
-            <h3 style={{ margin: 0, fontSize: '1.25rem', fontWeight: 800 }}>Confirm Test Submission</h3>
-            <p style={{ margin: 0, color: 'var(--text-secondary)', fontSize: '0.9rem', lineHeight: '1.5' }}>
-              Are you sure you want to submit your answers? You cannot change responses after submission.
-            </p>
-            <div style={{ display: 'flex', gap: '12px', justifyContent: 'flex-end', marginTop: '8px' }}>
-              <button onClick={() => setShowSubmitConfirm(false)} className="btn-secondary" style={{ padding: '8px 16px' }}>
-                Cancel
-              </button>
-              <button onClick={handleManualSubmit} className="btn-primary" style={{ background: 'var(--danger)', padding: '8px 16px' }} disabled={isSubmitting}>
-                {isSubmitting ? 'Submitting...' : 'Yes, Submit'}
-              </button>
+        <div style={{ position: 'fixed', inset: 0, background: 'rgba(18,24,48,.5)', display: 'flex', justifyContent: 'center', alignItems: 'center', zIndex: 1000, padding: '16px' }}>
+          <div style={{ width: '100%', maxWidth: '380px', padding: '26px', borderRadius: '20px', background: '#fff', border: '1px solid #E2E7F0', display: 'flex', flexDirection: 'column', gap: '18px' }}>
+            <h3 style={{ margin: 0, font: '800 19px var(--font-display)', color: '#12203A' }}>Submit test?</h3>
+            <p style={{ margin: 0, color: '#5A6A85', fontSize: '0.9rem', lineHeight: 1.5 }}>You cannot change responses after submission. {cNotVisited + cNotAnswered > 0 && `${cNotVisited + cNotAnswered} question(s) are unanswered.`}</p>
+            <div style={{ display: 'flex', gap: '12px', justifyContent: 'flex-end' }}>
+              <button onClick={() => setShowSubmitConfirm(false)} style={{ padding: '10px 18px', border: '1px solid #C9D2E0', borderRadius: '12px', background: '#fff', color: '#5A6A85', font: '700 13px var(--font-body)', cursor: 'pointer' }}>Cancel</button>
+              <button onClick={handleManualSubmit} disabled={isSubmitting} style={{ padding: '10px 18px', border: 'none', borderRadius: '12px', background: '#0B9E6D', color: '#fff', font: '800 13px var(--font-body)', cursor: 'pointer', opacity: isSubmitting ? 0.6 : 1 }}>{isSubmitting ? 'Submitting…' : 'Yes, submit'}</button>
             </div>
           </div>
         </div>

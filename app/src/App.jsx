@@ -4,6 +4,7 @@ import api, { setOn2FARequired } from './api';
 import ThemeToggle from './components/ThemeToggle';
 import StudentShell from './components/StudentShell';
 import Login from './pages/Login';
+import Welcome from './pages/Welcome';
 import Register from './pages/Register';
 import VerifyEmailNotice from './pages/VerifyEmailNotice';
 import VerifyEmail from './pages/VerifyEmail';
@@ -141,6 +142,7 @@ function AppContent({ user, setUser, loading }) {
           )
         } />
         
+        <Route path="/welcome" element={<Welcome />} />
         <Route path="/register" element={<Register />} />
         <Route path="/verify-email-notice" element={<VerifyEmailNotice />} />
         <Route path="/verify-email" element={<VerifyEmail />} />

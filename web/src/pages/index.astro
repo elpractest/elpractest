@@ -765,7 +765,7 @@ const faqSchema = JSON.stringify({
     left: -20px;
     width: 68px;
     height: 68px;
-    background: #e63946;
+    background: #f5a623;
     border-radius: 50%;
     z-index: -1;
     opacity: 0.85;
@@ -780,7 +780,7 @@ const faqSchema = JSON.stringify({
   .vector-outline-box {
     position: absolute;
     inset: -12px -12px 12px 12px;
-    border: 2px solid rgba(230, 57, 70, 0.4);
+    border: 2px solid rgba(245, 166, 35, 0.4);
     border-radius: 2rem;
     pointer-events: none;
     z-index: 1;
@@ -791,7 +791,7 @@ const faqSchema = JSON.stringify({
     right: 5%;
     width: 140px;
     height: 140px;
-    background: radial-gradient(circle, #e63946 0%, rgba(230, 57, 70, 0.2) 100%);
+    background: radial-gradient(circle, #f5a623 0%, rgba(245, 166, 35, 0.2) 100%);
     border-radius: 50%;
     z-index: 0;
     filter: blur(8px);
@@ -1074,12 +1074,13 @@ const faqSchema = JSON.stringify({
     justify-content: center;
     flex-shrink: 0;
   }
-  .ssc-bg { background: rgba(230, 57, 70, 0.15); color: #e63946; }
-  .sbi-bg { background: rgba(42, 157, 143, 0.15); color: #2a9d8f; }
-  .rrb-bg { background: rgba(244, 162, 97, 0.15); color: #f4a261; }
-  .upsc-bg { background: rgba(231, 111, 81, 0.15); color: #e76f51; }
-  .defense-bg { background: rgba(58, 134, 255, 0.15); color: #3a86ff; }
-  .teaching-bg { background: rgba(131, 56, 236, 0.15); color: #8338ec; }
+  /* exam-category tints, aligned to the SPA's tint palette */
+  .ssc-bg { background: rgba(245, 166, 35, 0.16); color: #ffc968; }
+  .sbi-bg { background: rgba(18, 185, 129, 0.16); color: #3ddba9; }
+  .rrb-bg { background: rgba(229, 72, 77, 0.16); color: #fb8f92; }
+  .upsc-bg { background: rgba(59, 111, 246, 0.16); color: #8fb0ff; }
+  .defense-bg { background: rgba(14, 165, 233, 0.16); color: #7dd3fc; }
+  .teaching-bg { background: rgba(139, 92, 246, 0.16); color: #b9a6ff; }
 
   .exam-real-logo {
     width: 26px;

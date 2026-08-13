@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import Icon from '../components/Icon';
 import { useTheme } from '../lib/theme';
+import { demoStudyStats } from '../lib/demoData';
 
 /**
  * Study zone hub — stat header + tile grid. Tiles that map to a real
@@ -27,6 +28,16 @@ export default function StudyZone() {
     <div style={{ padding: '18px 18px 8px', animation: 'fade-in .35s ease both' }}>
       <h1 style={{ margin: '0 0 4px', font: '800 24px var(--font-display)', color: 'var(--tx)', letterSpacing: '-.02em' }}>{t('study.title')}</h1>
       <p style={{ margin: '0 0 18px', font: '500 13px var(--font-body)', color: 'var(--muted)' }}>{t('study.subtitle')}</p>
+
+      {/* Stat header */}
+      <div style={{ padding: '16px', borderRadius: '20px', background: 'var(--card2)', border: '1px solid var(--line)', marginBottom: '18px', display: 'flex', justifyContent: 'space-between', gap: '10px' }}>
+        {demoStudyStats.map((s) => (
+          <div key={s.label}>
+            <div style={{ font: '800 26px var(--font-display)', color: tint(s.hue).c }}>{s.value}</div>
+            <div style={{ font: '600 11px var(--font-body)', color: 'var(--muted)' }}>{s.label}</div>
+          </div>
+        ))}
+      </div>
 
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(160px, 1fr))', gap: '12px' }}>
         {tiles.map((t) => {
