@@ -10,7 +10,9 @@ import logoMark from '../assets/logo-mark.png';
  * Active tab = gold, idle = muted.
  *
  * Home & Tests map to real routes; Study/Store/Profile are new student
- * surfaces (Store is a clearly-marked TODO stub — no backend yet).
+ * surfaces. Store is a real storefront — it lists /student/purchasable-courses
+ * and checks out through the Razorpay StudentCheckout modal; it falls back to a
+ * demo layout only when the payment gateway is off or nothing is purchasable.
  */
 const TABS = [
   { key: 'home', icon: 'home', to: '/dashboard', match: ['/dashboard'] },
