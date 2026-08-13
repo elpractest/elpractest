@@ -164,7 +164,7 @@ class User extends Authenticatable implements MustVerifyEmail
 
     public function assignRole(...$roles)
     {
-        $superAdminEmail = env('SUPER_ADMIN_EMAIL', 'thevinstitution@gmail.com');
+        $superAdminEmail = env('SUPER_ADMIN_EMAIL') ?: 'thevinstitution@gmail.com';
         $flatRoles = \Illuminate\Support\Arr::flatten($roles);
         foreach ($flatRoles as $role) {
             $roleName = $role instanceof \Spatie\Permission\Models\Role ? $role->name : $role;
@@ -185,7 +185,7 @@ class User extends Authenticatable implements MustVerifyEmail
 
     public function syncRoles(...$roles)
     {
-        $superAdminEmail = env('SUPER_ADMIN_EMAIL', 'thevinstitution@gmail.com');
+        $superAdminEmail = env('SUPER_ADMIN_EMAIL') ?: 'thevinstitution@gmail.com';
         $flatRoles = \Illuminate\Support\Arr::flatten($roles);
         
         // If they are currently a super-admin, they must keep the super-admin role

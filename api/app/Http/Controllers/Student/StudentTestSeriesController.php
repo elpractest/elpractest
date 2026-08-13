@@ -45,9 +45,11 @@ class StudentTestSeriesController extends Controller
             $testIds = Test::where('test_series_id', $series->id)->pluck('id');
             $totalTests = $testIds->count();
             
+            // A submitted session is one with a submitted_at timestamp — there is
+            // no `status` column on test_sessions (null submitted_at = in progress).
             $submittedTestIds = TestSession::where('user_id', $user->id)
                 ->whereIn('test_id', $testIds)
-                ->where('status', 'submitted')
+                ->whereNotNull('submitted_at')
                 ->pluck('test_id')
                 ->unique();
 
@@ -109,8 +111,10 @@ class StudentTestSeriesController extends Controller
         $nextTestId = null;
         $testsWithStatus = $tests->map(function ($test) use ($userSessions, &$nextTestId) {
             $sessions = $userSessions->get($test->id);
-            $submittedSession = $sessions?->firstWhere('status', 'submitted');
-            $inProgressSession = $sessions?->firstWhere('status', 'in_progress');
+            // Same here: submitted = has submitted_at, in-progress = does not.
+            // `firstWhere('status', …)` silently matched nothing (no such column).
+            $submittedSession = $sessions?->first(fn ($s) => $s->submitted_at !== null);
+            $inProgressSession = $sessions?->first(fn ($s) => $s->submitted_at === null);
 
             $status = 'not_started';
             if ($submittedSession) {

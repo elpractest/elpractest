@@ -80,7 +80,13 @@ class SocialAuthController extends Controller
         }
 
         Auth::login($user);
-        $request->session()->regenerate();
+        // Regenerate only when a session is actually bound to the request. The
+        // OAuth callback lands on a stateful browser request in production (session
+        // present → regenerated as before), but the same route with no session
+        // store must not fatal on ->session().
+        if ($request->hasSession()) {
+            $request->session()->regenerate();
+        }
 
         return redirect(config('app.frontend_url') . '/dashboard');
     }
