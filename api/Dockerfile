@@ -45,13 +45,15 @@ USER root
 RUN install-php-extensions gd intl bcmath gmp exif
 COPY --from=vendor --chown=www-data:www-data /var/www/html /var/www/html
 USER www-data
-# Boot-time Laravel prep (serversideup AUTORUN contract). Migrations run under
-# --isolation so only one replica migrates; OPTIMIZE caches config+routes+views.
+# Boot-time Laravel prep (serversideup AUTORUN contract). OPTIMIZE caches
+# config+routes+views. Migration isolation is deliberately OFF: it acquires a
+# lock in the `cache_locks` table (CACHE_STORE=database), which does not exist
+# on a fresh DB until migrations create it — a chicken-and-egg that fails the
+# first boot. There is a single api replica, so isolation buys nothing here.
 # Seeding is intentionally NOT autorun — the super-admin seed is a one-off after
 # the first deploy (see docs), so it never re-runs on every container restart.
 ENV AUTORUN_ENABLED=true \
     AUTORUN_LARAVEL_MIGRATION=true \
-    AUTORUN_LARAVEL_MIGRATION_ISOLATION=true \
     AUTORUN_LARAVEL_STORAGE_LINK=true \
     AUTORUN_LARAVEL_OPTIMIZE=true \
     PHP_OPCACHE_ENABLE=1
