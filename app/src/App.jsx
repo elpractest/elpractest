@@ -164,7 +164,7 @@ function AppContent({ user, setUser, loading }) {
 
         <Route path="/store" element={
           <StudentGuard user={user} loading={loading}>
-            {shell(<Store />)}
+            {shell(<Store user={user} />)}
           </StudentGuard>
         } />
 
