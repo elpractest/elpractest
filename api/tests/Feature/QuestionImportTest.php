@@ -54,7 +54,11 @@ class QuestionImportTest extends TestCase
         // OR dispatch the job manually.
         // Let's verify the Import class directly first!
         $import = new QuestionImport($this->admin->id);
-        $import->import($file->getRealPath());
+        // Pass an explicit CSV reader type: the fake upload's getRealPath() is an
+        // extensionless temp path on Linux (/tmp/phpXXXX), so maatwebsite/excel's
+        // FileTypeDetector would otherwise throw NoTypeDetectedException. Production
+        // never hits this — the controller stores the upload with an extension first.
+        $import->import($file->getRealPath(), null, \Maatwebsite\Excel\Excel::CSV);
 
         $this->assertEquals(2, $import->getImportedCount());
         $this->assertEmpty($import->getErrors());
@@ -104,7 +108,7 @@ class QuestionImportTest extends TestCase
         $file = UploadedFile::fake()->createWithContent('questions.csv', $csvContent);
 
         $import = new QuestionImport($this->admin->id);
-        $import->import($file->getRealPath());
+        $import->import($file->getRealPath(), null, \Maatwebsite\Excel\Excel::CSV);
 
         // 1 row should be valid, 1 row should fail
         $this->assertEquals(1, $import->getImportedCount());
@@ -124,7 +128,7 @@ class QuestionImportTest extends TestCase
         $import = new QuestionImport($this->admin->id);
 
         try {
-            $import->import($file->getRealPath());
+            $import->import($file->getRealPath(), null, \Maatwebsite\Excel\Excel::CSV);
         } catch (\Exception $e) {
             // Silence PhpSpreadsheet's empty worksheet row iterator crash
             if (!str_contains($e->getMessage(), 'Start row (2) is beyond highest row')) {
@@ -145,7 +149,7 @@ class QuestionImportTest extends TestCase
         $file = UploadedFile::fake()->createWithContent('questions.csv', $csvContent);
 
         $import = new QuestionImport($this->admin->id);
-        $import->import($file->getRealPath());
+        $import->import($file->getRealPath(), null, \Maatwebsite\Excel\Excel::CSV);
 
         $this->assertEquals(1, $import->getImportedCount());
         $this->assertEmpty($import->getErrors());
