@@ -16,6 +16,7 @@ class Batch extends Model
         'max_students',
         'is_active',
         'price_paise',
+        'play_product_id',
     ];
 
     protected function casts(): array

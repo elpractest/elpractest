@@ -251,10 +251,15 @@ Route::middleware('auth:sanctum')->group(function () {
         Route::post('activation-requests', [StudentActivationController::class, 'requestActivation']);
         Route::post('activation-codes/redeem', [StudentActivationController::class, 'redeemCode']);
 
-        // Payments
+        // Payments — Razorpay rail (web / non-Play builds).
         Route::post('checkout/create-order', [\App\Http\Controllers\Student\PaymentController::class, 'createOrder']);
         Route::post('checkout/verify', [\App\Http\Controllers\Student\PaymentController::class, 'verifyPayment']);
         Route::post('checkout/validate-coupon', [\App\Http\Controllers\Student\PaymentController::class, 'validateCoupon']);
+
+        // Payments — Google Play Billing rail (the Android in-app store). Server
+        // validates the purchase token before granting; inert (503) until a
+        // service account is configured. See config/googleplay.php.
+        Route::post('checkout/google-play/verify', [\App\Http\Controllers\Student\GooglePlayController::class, 'verify']);
 
     });
 });
