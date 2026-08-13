@@ -1,0 +1,139 @@
+# ─────────────────────────────────────────────────────────────────────────────
+# Practest — full stack for the Coolify (Docker) host. One compose file = one
+# Coolify application. Each web-facing service gets its domain assigned in
+# Coolify (Traefik terminates TLS and routes to the internal port):
+#
+#   web  → practest.live + www.practest.live   (:80)
+#   app  → app.practest.live                    (:80)
+#   api  → api.practest.live                    (:8080)
+#
+# Secrets and domains are set as env in Coolify, NOT committed here. The
+# ${VAR:-default} fallbacks are the safe, non-secret production defaults so the
+# same file builds locally for verification; real secrets have no default.
+#
+# DB is an embedded MariaDB 10.6 service (self-contained). Its data lives in the
+# named volume `practest-db`, which Coolify preserves across redeploys. NOTE:
+# automated backups are a follow-up — an embedded compose DB is not a Coolify
+# "managed database", so add a nightly mariadb-dump (see docs) before this holds
+# real user data long-term.
+# ─────────────────────────────────────────────────────────────────────────────
+
+# Shared Laravel env for the api + worker services (identical runtime config).
+x-api-env: &api-env
+  APP_NAME: Practest
+  APP_ENV: production
+  APP_DEBUG: "false"
+  APP_KEY: ${APP_KEY}
+  APP_URL: ${APP_URL:-https://api.practest.live}
+  LOG_CHANNEL: stderr
+  LOG_LEVEL: ${LOG_LEVEL:-warning}
+  DB_CONNECTION: mysql
+  DB_HOST: mariadb
+  DB_PORT: "3306"
+  DB_DATABASE: ${DB_DATABASE:-practest}
+  DB_USERNAME: ${DB_USERNAME:-practest}
+  DB_PASSWORD: ${DB_PASSWORD}
+  SESSION_DRIVER: database
+  SESSION_DOMAIN: ${SESSION_DOMAIN:-.practest.live}
+  SANCTUM_STATEFUL_DOMAINS: ${SANCTUM_STATEFUL_DOMAINS:-app.practest.live}
+  CORS_ALLOWED_ORIGINS: ${CORS_ALLOWED_ORIGINS:-https://app.practest.live}
+  FRONTEND_URL: ${FRONTEND_URL:-https://app.practest.live}
+  QUEUE_CONNECTION: database
+  CACHE_STORE: database
+  # ── Feature-gated integrations: pass through if set in Coolify, else inert ──
+  MAIL_MAILER: ${MAIL_MAILER:-log}
+  MAIL_HOST: ${MAIL_HOST:-127.0.0.1}
+  MAIL_PORT: ${MAIL_PORT:-2525}
+  MAIL_USERNAME: ${MAIL_USERNAME:-}
+  MAIL_PASSWORD: ${MAIL_PASSWORD:-}
+  MAIL_FROM_ADDRESS: ${MAIL_FROM_ADDRESS:-noreply@practest.live}
+  GOOGLE_CLIENT_ID: ${GOOGLE_CLIENT_ID:-}
+  GOOGLE_CLIENT_SECRET: ${GOOGLE_CLIENT_SECRET:-}
+  FACEBOOK_CLIENT_ID: ${FACEBOOK_CLIENT_ID:-}
+  FACEBOOK_CLIENT_SECRET: ${FACEBOOK_CLIENT_SECRET:-}
+  MSG91_AUTH_KEY: ${MSG91_AUTH_KEY:-}
+  MSG91_TEMPLATE_ID: ${MSG91_TEMPLATE_ID:-}
+  RAZORPAY_KEY_ID: ${RAZORPAY_KEY_ID:-}
+  RAZORPAY_KEY_SECRET: ${RAZORPAY_KEY_SECRET:-}
+  RAZORPAY_WEBHOOK_SECRET: ${RAZORPAY_WEBHOOK_SECRET:-}
+  RECAPTCHA_SECRET_KEY: ${RECAPTCHA_SECRET_KEY:-}
+  RECAPTCHA_SITE_KEY: ${RECAPTCHA_SITE_KEY:-}
+  OPENAI_API_KEY: ${OPENAI_API_KEY:-}
+  SUPER_ADMIN_NAME: ${SUPER_ADMIN_NAME:-Thevi Institution}
+  SUPER_ADMIN_EMAIL: ${SUPER_ADMIN_EMAIL:-thevinstitution@gmail.com}
+  SUPER_ADMIN_PASSWORD: ${SUPER_ADMIN_PASSWORD:-}
+
+services:
+  mariadb:
+    image: mariadb:10.6
+    restart: unless-stopped
+    environment:
+      MARIADB_DATABASE: ${DB_DATABASE:-practest}
+      MARIADB_USER: ${DB_USERNAME:-practest}
+      MARIADB_PASSWORD: ${DB_PASSWORD}
+      MARIADB_ROOT_PASSWORD: ${DB_ROOT_PASSWORD}
+    volumes:
+      - practest-db:/var/lib/mysql
+    healthcheck:
+      test: ["CMD", "healthcheck.sh", "--connect", "--innodb_initialized"]
+      interval: 10s
+      timeout: 5s
+      retries: 12
+
+  api:
+    build:
+      context: .
+      dockerfile: api/Dockerfile
+      target: web
+    restart: unless-stopped
+    depends_on:
+      mariadb:
+        condition: service_healthy
+    environment: *api-env
+    volumes:
+      # Only storage/app (uploads: banners, thumbnails, proof docs) persists;
+      # framework cache/sessions/views are DB-backed or rebuilt each boot.
+      - practest-storage:/var/www/html/storage/app
+    expose:
+      - "8080"
+
+  worker:
+    build:
+      context: .
+      dockerfile: api/Dockerfile
+      target: worker
+    restart: unless-stopped
+    depends_on:
+      api:
+        condition: service_healthy
+    environment: *api-env
+    volumes:
+      - practest-storage:/var/www/html/storage/app
+
+  app:
+    build:
+      context: .
+      dockerfile: app/Dockerfile
+      args:
+        VITE_API_URL: ${VITE_API_URL:-https://api.practest.live}
+        VITE_RECAPTCHA_SITE_KEY: ${VITE_RECAPTCHA_SITE_KEY:-}
+        VITE_GTM_ID: ${VITE_GTM_ID:-}
+    restart: unless-stopped
+    expose:
+      - "80"
+
+  web:
+    build:
+      context: .
+      dockerfile: web/Dockerfile
+      args:
+        PUBLIC_API_URL: ${PUBLIC_API_URL:-https://api.practest.live}
+        PUBLIC_SPA_URL: ${PUBLIC_SPA_URL:-https://app.practest.live}
+        PUBLIC_GTM_ID: ${PUBLIC_GTM_ID:-}
+    restart: unless-stopped
+    expose:
+      - "80"
+
+volumes:
+  practest-db:
+  practest-storage:

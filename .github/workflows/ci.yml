@@ -1,25 +1,21 @@
 name: CI
 
 # ---------------------------------------------------------------------------
-# Server layout this workflow targets (source of truth: docs/INFRASTRUCTURE.md
-# §4 and §7, docs/SESSION-HANDOVER.md §3). Do NOT invent new paths here:
+# Deploy model: COOLIFY (Docker). The old cPanel tarball-upload + SSH deploy is
+# retired. On a green push to main, this workflow asks Coolify to redeploy; the
+# Coolify host builds the images from docker-compose.coolify.yml (api, worker,
+# app, web) and rolls them out behind Traefik. api-tests remains the gate.
 #
-#   ~/practest-src              git clone (pulls from GitHub via deploy key)
-#   ~/practest-src/api/.env     server-only env file, NEVER in git
-#   ~/practest-src/api/public   docroot for api.practest.live
-#   ~/app.practest.live         docroot for app.practest.live  (SPA dist)
-#   ~/practest.live             docroot for practest.live/www  (Astro dist)
-#   ~/public_html               docroot of the PRIMARY domain vinstitution.com
-#                               -- practest.live is an ADDON domain. Never touch.
+# MariaDB 10.6 (NOT MySQL 8) matches production: migrations that pass on
+# SQLite/MySQL can still fail on MariaDB (the ->after() gotcha), and this job is
+# the gate that catches that.
 #
-# Deploy model:
-#   * backend  -> `git pull` on the server + artisan re-cache (route:cache is
-#                 mandatory or new routes 404 in prod).
-#   * frontend -> built HERE, shipped as a tarball, extracted into the docroot.
-#                 Production is deliberately Node-free.
-#   * composer -> NEVER run on the server: CloudLinux kills it ("Terminated").
-#                 vendor/ is built locally and uploaded by hand. This workflow
-#                 therefore refuses to deploy when composer.lock changes.
+# Required repo secrets for the deploy job (set after the Coolify app exists):
+#   COOLIFY_URL       base URL of the Coolify instance, no trailing slash
+#   COOLIFY_TOKEN     a Coolify API token (sent as Bearer)
+#   COOLIFY_APP_UUID  the Practest compose application's resource UUID
+# Coolify's own auto-deploy-on-push must be OFF so this test gate is the only
+# path to production.
 # ---------------------------------------------------------------------------
 
 on:
@@ -30,7 +26,7 @@ on:
   workflow_dispatch:
 
 concurrency:
-  # Never let two deploys interleave on the same server.
+  # Never let two deploys interleave.
   group: ci-${{ github.ref }}
   cancel-in-progress: false
 
@@ -42,9 +38,6 @@ jobs:
       run:
         working-directory: ./api
     services:
-      # MariaDB 10.6 to match production. NOT MySQL 8: migrations that pass on
-      # SQLite/MySQL can still fail on MariaDB (see the `->after()` gotcha in
-      # docs/SESSION-HANDOVER.md §4.5). This job is the gate that catches that.
       mariadb:
         image: mariadb:10.6
         env:
@@ -85,9 +78,16 @@ jobs:
           sed -i 's/# DB_DATABASE=practest/DB_DATABASE=practest_test/' .env.testing
           sed -i 's/# DB_USERNAME=root/DB_USERNAME=test/' .env.testing
           sed -i 's/# DB_PASSWORD=/DB_PASSWORD=test/' .env.testing
+          # Run the suite as a real 'testing' environment. --env=testing makes this
+          # file's APP_ENV win over phpunit.xml, and if it stays 'local' then
+          # app()->environment('testing') is false, the SuperAdminSeeder seeds the
+          # production VSN admin, and the super-admin/admin-count tests fail.
+          sed -i 's/^APP_ENV=local/APP_ENV=testing/' .env.testing
           sed -i 's/SESSION_DOMAIN=.practest.live/SESSION_DOMAIN=null/' .env.testing
-          sed -i 's/SANCTUM_STATEFUL_DOMAINS=app.practest.live,localhost:3000,localhost/SANCTUM_STATEFUL_DOMAINS=localhost/' .env.testing
-          sed -i 's/FRONTEND_URL=http:\/\/localhost:3000/FRONTEND_URL=http:\/\/localhost/' .env.testing
+          # SANCTUM_STATEFUL_DOMAINS and FRONTEND_URL are left exactly as the example
+          # ships them: the 2FA-gate test sends a localhost:3000 Referer and must be
+          # treated as stateful (so the session — and the gate — actually engage), and
+          # PhaseA0FixesTest asserts config('app.frontend_url') is exactly :3000.
 
       - name: Generate APP_KEY
         run: php artisan key:generate --env=testing
@@ -98,266 +98,19 @@ jobs:
       - name: Run tests
         run: php artisan test --env=testing
 
-  app-build:
-    name: Build React SPA
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v4
-
-      - name: Setup Node.js
-        uses: actions/setup-node@v4
-        with:
-          node-version: '22'
-          cache: 'npm'
-          cache-dependency-path: app/package-lock.json
-
-      - name: Install dependencies
-        working-directory: ./app
-        run: npm ci
-
-      - name: Run lint
-        working-directory: ./app
-        run: npm run lint
-
-      - name: Build
-        working-directory: ./app
-        run: npm run build
-        env:
-          VITE_API_URL: https://api.practest.live
-          VITE_RECAPTCHA_SITE_KEY: ${{ secrets.VITE_RECAPTCHA_SITE_KEY }}
-          VITE_GTM_ID: ${{ secrets.VITE_GTM_ID }}
-
-      - name: Package dist tarball
-        # Mirrors the documented manual build exactly (SESSION-HANDOVER.md §3).
-        # The .htaccess carries the SPA history fallback AND the /.well-known
-        # exclusion that AutoSSL renewal depends on -- it must be inside the
-        # tarball, because upload-artifact drops dotfiles by default.
-        run: |
-          cp deploy/.htaccess-app app/dist/.htaccess
-          cp app/public/favicon.svg app/dist/favicon.svg
-          tar -czf practest-app-dist.tar.gz -C app/dist .
-          tar -tzf practest-app-dist.tar.gz | grep -q '^\./\.htaccess$' \
-            || { echo "::error::.htaccess missing from SPA tarball"; exit 1; }
-
-      - name: Upload SPA tarball
-        uses: actions/upload-artifact@v4
-        with:
-          name: app-dist
-          path: practest-app-dist.tar.gz
-          retention-days: 7
-
-  web-build:
-    name: Build Astro Site
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v4
-
-      - name: Setup Node.js
-        uses: actions/setup-node@v4
-        with:
-          node-version: '22'
-          cache: 'npm'
-          cache-dependency-path: web/package-lock.json
-
-      - name: Install dependencies
-        working-directory: ./web
-        run: npm ci
-
-      - name: Build
-        working-directory: ./web
-        run: npm run build
-        env:
-          PUBLIC_API_URL: https://api.practest.live
-          PUBLIC_SPA_URL: https://app.practest.live
-          PUBLIC_GTM_ID: ${{ secrets.PUBLIC_GTM_ID }}
-
-      - name: Package dist tarball
-        run: |
-          cp deploy/.htaccess-web web/dist/.htaccess
-          tar -czf practest-web-dist.tar.gz -C web/dist .
-          tar -tzf practest-web-dist.tar.gz | grep -q '^\./\.htaccess$' \
-            || { echo "::error::.htaccess missing from Astro tarball"; exit 1; }
-
-      - name: Upload Astro tarball
-        uses: actions/upload-artifact@v4
-        with:
-          name: web-dist
-          path: practest-web-dist.tar.gz
-          retention-days: 7
-
-  deploy-production:
-    name: Deploy to Production (cPanel)
-    needs: [api-tests, app-build, web-build]
+  deploy:
+    name: Trigger Coolify deploy
+    needs: [api-tests]
     if: github.ref == 'refs/heads/main' && (github.event_name == 'push' || github.event_name == 'workflow_dispatch')
     runs-on: ubuntu-latest
-    environment: production
     steps:
-      - name: Download SPA tarball
-        uses: actions/download-artifact@v4
-        with:
-          name: app-dist
-
-      - name: Download Astro tarball
-        uses: actions/download-artifact@v4
-        with:
-          name: web-dist
-
-      # --- 1. Preflight -------------------------------------------------
-      # Everything that could abort the deploy is checked BEFORE anything on
-      # the server is modified. Nothing below this step leaves the site in a
-      # half-deployed state.
-      - name: Preflight checks
-        uses: appleboy/ssh-action@v1
-        with:
-          host: ${{ secrets.CPANEL_HOST }}
-          username: ${{ secrets.CPANEL_USER }}
-          key: ${{ secrets.CPANEL_SSH_KEY }}
-          port: ${{ secrets.CPANEL_PORT }}
-          script: |
-            set -eu
-            PHP83=/opt/cpanel/ea-php83/root/usr/bin/php
-
-            echo "--- paths ---"
-            for p in "$HOME/practest-src/api/artisan" \
-                     "$HOME/practest-src/api/.env" \
-                     "$HOME/app.practest.live" \
-                     "$HOME/practest.live"; do
-              [ -e "$p" ] || { echo "MISSING: $p"; exit 1; }
-              echo "ok: $p"
-            done
-
-            echo "--- binaries ---"
-            [ -x "$PHP83" ] || { echo "MISSING PHP 8.3 at $PHP83"; exit 1; }
-            for b in git tar rsync curl; do
-              command -v "$b" >/dev/null || { echo "MISSING binary: $b"; exit 1; }
-            done
-
-            mkdir -p "$HOME/deploy-incoming" "$HOME/deploy-backups"
-
-            echo "--- fetch (retry: the resource cap kills git at random) ---"
-            cd "$HOME/practest-src"
-            ok=0
-            for i in 1 2 3; do
-              if git fetch origin main; then ok=1; break; fi
-              echo "git fetch failed (attempt $i) - retrying"; sleep 10
-            done
-            [ "$ok" = "1" ] || { echo "git fetch failed 3x"; exit 1; }
-
-            echo "--- composer.lock guard ---"
-            OLD=$(git rev-parse HEAD:api/composer.lock)
-            NEW=$(git rev-parse origin/main:api/composer.lock)
-            if [ "$OLD" != "$NEW" ]; then
-              echo "::error::composer.lock changed. vendor/ CANNOT be built on this"
-              echo "server (CloudLinux kills composer). Build it locally with"
-              echo "  php ../tools/composer.phar install --no-dev --optimize-autoloader"
-              echo "tar it, upload via File Manager into practest-src/api/vendor,"
-              echo "then re-run this workflow."
-              exit 1
-            fi
-
-            echo "--- rollback point ---"
-            echo "current HEAD: $(git rev-parse --short HEAD)"
-
-      # --- 2. Backend: git pull + artisan re-cache ----------------------
-      - name: Deploy API
-        uses: appleboy/ssh-action@v1
-        with:
-          host: ${{ secrets.CPANEL_HOST }}
-          username: ${{ secrets.CPANEL_USER }}
-          key: ${{ secrets.CPANEL_SSH_KEY }}
-          port: ${{ secrets.CPANEL_PORT }}
-          script: |
-            set -eu
-            PHP83=/opt/cpanel/ea-php83/root/usr/bin/php
-
-            cd "$HOME/practest-src"
-            ok=0
-            for i in 1 2 3; do
-              if git pull --ff-only origin main; then ok=1; break; fi
-              echo "git pull failed (attempt $i) - retrying"; sleep 10
-            done
-            [ "$ok" = "1" ] || { echo "git pull failed 3x"; exit 1; }
-            echo "now at: $(git rev-parse --short HEAD)"
-
-            # artisan lives in api/, not in practest-src/
-            cd "$HOME/practest-src/api"
-            $PHP83 artisan migrate --force
-            # All three caches, always. Skipping route:cache makes new routes 404.
-            $PHP83 artisan config:cache
-            $PHP83 artisan route:cache
-            $PHP83 artisan view:cache
-            $PHP83 artisan queue:restart
-
-            # NOTE: api/public/.htaccess is tracked in git and arrives with the
-            # pull. It is NOT the same file as deploy/.htaccess-api -- it also
-            # carries the X-XSRF-Token passthrough that cross-origin login needs.
-            # Never overwrite it from a template here.
-
-      # --- 3. Ship the frontend tarballs --------------------------------
-      - name: Upload frontend tarballs
-        uses: appleboy/scp-action@v0.1.7
-        with:
-          host: ${{ secrets.CPANEL_HOST }}
-          username: ${{ secrets.CPANEL_USER }}
-          key: ${{ secrets.CPANEL_SSH_KEY }}
-          port: ${{ secrets.CPANEL_PORT }}
-          source: "practest-app-dist.tar.gz,practest-web-dist.tar.gz"
-          target: "deploy-incoming"
-
-      # --- 4. Swap them into the docroots -------------------------------
-      - name: Deploy frontends
-        uses: appleboy/ssh-action@v1
-        with:
-          host: ${{ secrets.CPANEL_HOST }}
-          username: ${{ secrets.CPANEL_USER }}
-          key: ${{ secrets.CPANEL_SSH_KEY }}
-          port: ${{ secrets.CPANEL_PORT }}
-          script: |
-            set -eu
-            TS=$(date +%Y%m%d_%H%M%S)
-            IN="$HOME/deploy-incoming"
-            TMP="$HOME/deploy-tmp"
-            BAK="$HOME/deploy-backups"
-            mkdir -p "$BAK"
-
-            # Back up by COPYING, never by moving the live docroot: a failure
-            # after an `mv` would leave the site 404ing.
-            deploy_dist () {
-              name="$1"; tarball="$2"; docroot="$3"
-              echo "=== $name -> $docroot ==="
-              [ -f "$tarball" ] || { echo "MISSING tarball: $tarball"; exit 1; }
-              tar -czf "$BAK/$name-$TS.tgz" -C "$docroot" .
-              rm -rf "$TMP/$name"; mkdir -p "$TMP/$name"
-              tar xzf "$tarball" -C "$TMP/$name"
-              # --delete clears stale hashed assets; the excludes protect the
-              # AutoSSL challenge dir and cPanel's own files.
-              rsync -a --delete \
-                --exclude='.well-known/' \
-                --exclude='cgi-bin/' \
-                "$TMP/$name/" "$docroot/"
-            }
-
-            deploy_dist app "$IN/practest-app-dist.tar.gz" "$HOME/app.practest.live"
-            deploy_dist web "$IN/practest-web-dist.tar.gz" "$HOME/practest.live"
-
-            rm -rf "$TMP"
-            rm -f "$IN"/practest-*-dist.tar.gz
-
-            # Keep the 5 most recent backups of each.
-            ls -1t "$BAK"/app-*.tgz 2>/dev/null | tail -n +6 | xargs -r rm -f
-            ls -1t "$BAK"/web-*.tgz 2>/dev/null | tail -n +6 | xargs -r rm -f
-            echo "backups kept:"; ls -1t "$BAK" | head -10
-
-      # --- 5. Prove it's actually live ----------------------------------
-      - name: Smoke test
+      - name: Ask Coolify to redeploy
         run: |
-          set -e
-          echo "api:"; curl -fsS -o /dev/null -w '  %{http_code}\n' https://api.practest.live/api/settings/public
-          echo "api /up:"; curl -fsS -o /dev/null -w '  %{http_code}\n' https://api.practest.live/up
-          echo "app:"; curl -fsS -o /dev/null -w '  %{http_code}\n' https://app.practest.live/
-          echo "site:"; curl -fsS -o /dev/null -w '  %{http_code}\n' https://practest.live/
-          # An authed admin route must answer 401 (not 404) -- proves route:cache
-          # picked up the current route table.
-          code=$(curl -s -o /dev/null -w '%{http_code}' -H 'Accept: application/json' https://api.practest.live/api/admin/test-series)
-          echo "admin/test-series (expect 401): $code"
-          [ "$code" = "401" ] || { echo "::error::expected 401, got $code - route cache may be stale"; exit 1; }
+          set -euo pipefail
+          code=$(curl -sS -o /tmp/resp -w '%{http_code}' -X POST \
+            "${{ secrets.COOLIFY_URL }}/api/v1/deploy?uuid=${{ secrets.COOLIFY_APP_UUID }}&force=false" \
+            -H "Authorization: Bearer ${{ secrets.COOLIFY_TOKEN }}")
+          echo "Coolify responded: $code"
+          cat /tmp/resp || true
+          echo
+          [ "$code" = "200" ] || { echo "::error::Coolify deploy trigger failed (HTTP $code)"; exit 1; }

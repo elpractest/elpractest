@@ -1,0 +1,32 @@
+# Build context is the repo root. Keep it lean and — critically — keep real
+# secrets and stale local build state OUT of the images.
+
+# VCS / CI
+**/.git
+**/.gitignore
+.github
+
+# ── Secrets: exclude every .env* EXCEPT the committed template ──────────────
+# The api build does `cp .env.example .env`; real env comes from Coolify.
+**/.env*
+!**/.env.example
+
+# ── PHP: never copy the local vendor or stale bootstrap/services caches ─────
+**/vendor
+api/bootstrap/cache/*.php
+api/storage/logs/*
+api/storage/framework/cache/data/*
+api/storage/framework/sessions/*
+api/storage/framework/views/*
+
+# ── Node: build inside the image, not from the host ─────────────────────────
+**/node_modules
+app/dist
+web/dist
+web/.astro
+
+# ── Deploy-era artifacts not needed in any image ────────────────────────────
+deploy/*.tar.gz
+
+# Misc
+**/.DS_Store

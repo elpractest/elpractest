@@ -1,5 +1,10 @@
 # CI/CD Setup — e-Learning Practest
 
+> ⚠️ **RETIRED — cPanel deploy is no longer used.** Practest now deploys to
+> **Coolify (Docker)**. See [`docs/COOLIFY_DEPLOYMENT.md`](docs/COOLIFY_DEPLOYMENT.md)
+> for the current runbook. Everything below describes the old tarball-over-SSH
+> cPanel model and is kept only for history.
+
 How `.github/workflows/ci.yml` deploys to the live cPanel server.
 
 > **Server facts live in `docs/INFRASTRUCTURE.md`. This file must never contradict it.**
