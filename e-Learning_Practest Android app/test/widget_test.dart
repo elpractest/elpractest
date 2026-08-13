@@ -16,9 +16,13 @@ void main() {
     await tester.pumpWidget(const PractestApp());
     await tester.pump();
 
-    // Splash first: brand lockup and tagline, and none of the intro yet.
-    expect(find.text('Practest'), findsOneWidget);
-    expect(find.text('Practice like it is exam day'), findsOneWidget);
+    // Splash first: the full wordmark and the bilingual tagline, and none of
+    // the intro yet. The guide sets the splash wordmark as "e-Learning
+    // Practest" — the short "Practest" belongs to the header, where the lockup
+    // cannot hold its cap height.
+    expect(find.text('e-Learning Practest'), findsOneWidget);
+    expect(
+        find.text('अभ्यास से सफलता तक · Practice to Success'), findsOneWidget);
     expect(find.text('Create free account'), findsNothing);
 
     // Past the splash sequence and the intro's staggered entrance.
@@ -29,6 +33,7 @@ void main() {
     // ways in are on it.
     expect(find.text('Create free account'), findsOneWidget);
     expect(find.text('I already have an account'), findsOneWidget);
-    expect(find.text('Practice like it is exam day'), findsNothing);
+    // The splash is genuinely gone, not merely covered.
+    expect(find.text('अभ्यास से सफलता तक · Practice to Success'), findsNothing);
   });
 }

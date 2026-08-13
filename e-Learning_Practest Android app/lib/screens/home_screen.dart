@@ -1,15 +1,14 @@
 import 'package:flutter/material.dart';
-import 'package:provider/provider.dart';
 
 import '../api_client.dart';
 import '../boards.dart';
 import '../build_config.dart';
 import '../models.dart';
+import '../notifications.dart';
 import '../promo_banner_carousel.dart';
 import '../resume_memory.dart';
 import '../routes.dart';
 import '../scaffold.dart';
-import '../session.dart';
 import '../shell.dart';
 import '../theme.dart';
 import '../utils.dart';
@@ -71,9 +70,9 @@ class _HomeScreenState extends State<HomeScreen> {
   Future<void> _fetchBanners() async {
     try {
       final data = await ApiClient.instance.get('/banners/public');
-      final list = extractList(data)
-          .map((b) => PromoBanner.fromJson(b as Map<String, dynamic>))
-          .toList();
+      final list = extractList(
+        data,
+      ).map((b) => PromoBanner.fromJson(b as Map<String, dynamic>)).toList();
       if (mounted) setState(() => _banners = list);
     } catch (_) {}
   }
@@ -134,16 +133,20 @@ class _HomeScreenState extends State<HomeScreen> {
     try {
       final data = await ApiClient.instance.get('/student/courses');
       courses = extractList(data, 'courses')
-          .map((c) => CourseProgress.fromEnrolled(
-              EnrolledCourse.fromJson(c as Map<String, dynamic>)))
+          .map(
+            (c) => CourseProgress.fromEnrolled(
+              EnrolledCourse.fromJson(c as Map<String, dynamic>),
+            ),
+          )
           .toList();
     } catch (_) {}
 
     try {
       final data = await ApiClient.instance.get('/student/results');
-      final results = extractList(data, 'results')
-          .map((r) => ResultSummary.fromJson(r as Map<String, dynamic>))
-          .toList();
+      final results = extractList(
+        data,
+        'results',
+      ).map((r) => ResultSummary.fromJson(r as Map<String, dynamic>)).toList();
       week = _weekFromResults(results);
     } catch (_) {}
 
@@ -201,11 +204,15 @@ class _HomeScreenState extends State<HomeScreen> {
     if (id == null) return null;
     try {
       final data = await ApiClient.instance.get('/student/tests/sessions/$id');
-      final state = SessionState.fromJson(data['session'] as Map<String, dynamic>);
+      final state = SessionState.fromJson(
+        data['session'] as Map<String, dynamic>,
+      );
       final sections = (data['sections'] as List?) ?? const [];
       final answers = (data['answers'] as List?) ?? const [];
       final questionCount = sections.fold<int>(
-          0, (sum, s) => sum + (((s as Map)['questions'] as List?)?.length ?? 0));
+        0,
+        (sum, s) => sum + (((s as Map)['questions'] as List?)?.length ?? 0),
+      );
       final answered = answers
           .where((a) => (a as Map)['selected_option_id'] != null)
           .length;
@@ -233,9 +240,10 @@ class _HomeScreenState extends State<HomeScreen> {
   Future<void> _fetchTests() async {
     try {
       final data = await ApiClient.instance.get('/student/tests');
-      final list = extractList(data, 'tests')
-          .map((t) => TestSummary.fromJson(t as Map<String, dynamic>))
-          .toList();
+      final list = extractList(
+        data,
+        'tests',
+      ).map((t) => TestSummary.fromJson(t as Map<String, dynamic>)).toList();
       if (mounted) setState(() => _tests = list);
     } catch (_) {}
   }
@@ -253,7 +261,9 @@ class _HomeScreenState extends State<HomeScreen> {
   Future<void> _fetchSettings() async {
     try {
       final data = await ApiClient.instance.get('/settings/public');
-      final settings = PublicSettings.fromJson(data['settings'] as Map<String, dynamic>?);
+      final settings = PublicSettings.fromJson(
+        data['settings'] as Map<String, dynamic>?,
+      );
       if (!mounted) return;
       // The server toggle can only ever turn buying OFF here, never on: a Play
       // build must not sell digital content outside Play Billing. See
@@ -268,9 +278,10 @@ class _HomeScreenState extends State<HomeScreen> {
     setState(() => _loadingPurchasable = true);
     try {
       final data = await ApiClient.instance.get('/student/purchasable-courses');
-      final list = extractList(data, 'courses')
-          .map((c) => PublicCourse.fromJson(c as Map<String, dynamic>))
-          .toList();
+      final list = extractList(
+        data,
+        'courses',
+      ).map((c) => PublicCourse.fromJson(c as Map<String, dynamic>)).toList();
       if (!mounted) return;
       setState(() {
         _purchasable = list;
@@ -286,16 +297,23 @@ class _HomeScreenState extends State<HomeScreen> {
   Future<void> _startTest(int testId) async {
     setState(() => _error = '');
     try {
-      final data = await ApiClient.instance.post('/student/tests/$testId/start');
-      final session = SessionState.fromJson(data['session'] as Map<String, dynamic>);
+      final data = await ApiClient.instance.post(
+        '/student/tests/$testId/start',
+      );
+      final session = SessionState.fromJson(
+        data['session'] as Map<String, dynamic>,
+      );
       await ResumeMemory.remember(session.id);
       if (!mounted) return;
       await context.openTest(session.id);
       if (mounted) _fetchAll();
     } on ApiException catch (e) {
       if (!mounted) return;
-      setState(() =>
-          _error = e.message.isEmpty ? 'Could not start the test session.' : e.message);
+      setState(
+        () => _error = e.message.isEmpty
+            ? 'Could not start the test session.'
+            : e.message,
+      );
     }
   }
 
@@ -320,7 +338,10 @@ class _HomeScreenState extends State<HomeScreen> {
     // Built from tests the student can actually open, falling back to the
     // categories the summary reported. Never from the registry.
     final fromTests = _tests.map((t) => t.category);
-    final rail = BoardCatalog.railFrom([...fromTests, ..._summary.boardCategories]);
+    final rail = BoardCatalog.railFrom([
+      ...fromTests,
+      ..._summary.boardCategories,
+    ]);
     return rail;
   }
 
@@ -334,23 +355,43 @@ class _HomeScreenState extends State<HomeScreen> {
   @override
   Widget build(BuildContext context) {
     final c = useColors(context);
-    final session = context.watch<Session>();
-    final user = session.user;
 
     return AppScaffold(
       safeArea: false,
       child: Column(
         children: [
-          AppHeader(userName: user?.name),
+          AppHeader(
+            trailing: Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                InkWell(
+                  onTap: () => context.openSearch(),
+                  borderRadius: BorderRadius.circular(AppTheme.radiusPill),
+                  child: SizedBox(
+                    width: 40,
+                    height: 40,
+                    child: Icon(
+                      Icons.search_rounded,
+                      size: 22,
+                      color: c.textSecondary,
+                    ),
+                  ),
+                ),
+                const NotificationBell(),
+              ],
+            ),
+          ),
           Expanded(
             child: RefreshIndicator(
               color: c.brand,
               onRefresh: _fetchAll,
               child: _loading
-                  ? ListView(children: const [
-                      SizedBox(height: 80),
-                      LoadingView(message: 'Loading your dashboard…'),
-                    ])
+                  ? ListView(
+                      children: const [
+                        SizedBox(height: 80),
+                        LoadingView(message: 'Loading your dashboard…'),
+                      ],
+                    )
                   : ListView(
                       padding: const EdgeInsets.fromLTRB(16, 16, 16, 28),
                       children: [
@@ -445,11 +486,19 @@ class _HomeScreenState extends State<HomeScreen> {
           const SizedBox(height: 11),
           Text(
             active.testTitle ?? 'Your test',
-            style: AppText.cardTitle.copyWith(color: c.textPrimary, fontSize: 18),
+            style: AppText.cardTitle.copyWith(
+              color: c.textPrimary,
+              fontSize: 18,
+            ),
           ),
           const SizedBox(height: 8),
-          Text('$answered$section',
-              style: AppText.caption.copyWith(color: c.textSecondary, fontSize: 12.5)),
+          Text(
+            '$answered$section',
+            style: AppText.caption.copyWith(
+              color: c.textSecondary,
+              fontSize: 12.5,
+            ),
+          ),
           const SizedBox(height: 11),
           ProgressBar(percent: active.progressPercent),
           const SizedBox(height: 13),
@@ -479,8 +528,10 @@ class _HomeScreenState extends State<HomeScreen> {
               Container(
                 width: 3,
                 height: 15,
-                decoration:
-                    BoxDecoration(color: c.brand, borderRadius: BorderRadius.circular(2)),
+                decoration: BoxDecoration(
+                  color: c.brand,
+                  borderRadius: BorderRadius.circular(2),
+                ),
               ),
               const SizedBox(width: 9),
               Text(
@@ -492,15 +543,21 @@ class _HomeScreenState extends State<HomeScreen> {
           const SizedBox(height: 11),
           Text(
             next?.title ?? 'No test is assigned to you yet',
-            style: AppText.cardTitle.copyWith(color: c.textPrimary, fontSize: 18),
+            style: AppText.cardTitle.copyWith(
+              color: c.textPrimary,
+              fontSize: 18,
+            ),
           ),
           const SizedBox(height: 8),
           Text(
             next == null
                 ? 'Activate a course or redeem a code, and your papers appear here.'
                 : '${(next.durationSeconds ?? 0) ~/ 60} min'
-                    '${next.totalMarks != null ? ' · ${formatNumber(next.totalMarks)} marks' : ''}',
-            style: AppText.caption.copyWith(color: c.textSecondary, fontSize: 12.5),
+                      '${next.totalMarks != null ? ' · ${formatNumber(next.totalMarks)} marks' : ''}',
+            style: AppText.caption.copyWith(
+              color: c.textSecondary,
+              fontSize: 12.5,
+            ),
           ),
           const SizedBox(height: 14),
           if (next == null)
@@ -508,7 +565,8 @@ class _HomeScreenState extends State<HomeScreen> {
               label: 'Activate a course',
               icon: Icons.vpn_key_outlined,
               fullWidth: true,
-              onPressed: () => showActivationModal(context, onSuccess: _handleEnrolled),
+              onPressed: () =>
+                  showActivationModal(context, onSuccess: _handleEnrolled),
             )
           else
             PrimaryButton(
@@ -610,13 +668,23 @@ class _HomeScreenState extends State<HomeScreen> {
                 ),
               ),
               const SizedBox(width: 8),
-              Text('Weakest topic this week',
-                  style: AppText.captionStrong.copyWith(color: c.textSecondary, fontSize: 11.5)),
+              Text(
+                'Weakest topic this week',
+                style: AppText.captionStrong.copyWith(
+                  color: c.textSecondary,
+                  fontSize: 11.5,
+                ),
+              ),
             ],
           ),
           const SizedBox(height: 9),
-          Text(topic.topic,
-              style: AppText.cardTitle.copyWith(color: c.textPrimary, fontSize: 19)),
+          Text(
+            topic.topic,
+            style: AppText.cardTitle.copyWith(
+              color: c.textPrimary,
+              fontSize: 19,
+            ),
+          ),
           const SizedBox(height: 7),
           Text(
             '${topic.accuracy.round()}% accuracy against your '
@@ -656,8 +724,10 @@ class _HomeScreenState extends State<HomeScreen> {
               ? null
               : GestureDetector(
                   onTap: () => setState(() => _boardFilter = null),
-                  child: Text('Clear filter',
-                      style: AppText.caption.copyWith(color: c.brandBright)),
+                  child: Text(
+                    'Clear filter',
+                    style: AppText.caption.copyWith(color: c.brandBright),
+                  ),
                 ),
         ),
         const SizedBox(height: 11),
@@ -674,13 +744,18 @@ class _HomeScreenState extends State<HomeScreen> {
                 board: board,
                 selected: _boardFilter == board.key,
                 onTap: () => setState(
-                    () => _boardFilter = _boardFilter == board.key ? null : board.key),
+                  () => _boardFilter = _boardFilter == board.key
+                      ? null
+                      : board.key,
+                ),
               ),
           ],
         ),
         const SizedBox(height: 10),
-        Text(BoardCatalog.disclaimer,
-            style: AppText.caption.copyWith(color: c.textMuted, fontSize: 10.5)),
+        Text(
+          BoardCatalog.disclaimer,
+          style: AppText.caption.copyWith(color: c.textMuted, fontSize: 10.5),
+        ),
       ],
     );
   }
@@ -695,9 +770,15 @@ class _HomeScreenState extends State<HomeScreen> {
         SectionHeading(
           'Enrolled courses',
           trailing: GestureDetector(
-            onTap: () => showActivationModal(context, onSuccess: _handleEnrolled),
-            child: Text('Activate →',
-                style: AppText.caption.copyWith(color: c.brandBright, fontSize: 12.5)),
+            onTap: () =>
+                showActivationModal(context, onSuccess: _handleEnrolled),
+            child: Text(
+              'Activate →',
+              style: AppText.caption.copyWith(
+                color: c.brandBright,
+                fontSize: 12.5,
+              ),
+            ),
           ),
         ),
         const SizedBox(height: 11),
@@ -705,11 +786,13 @@ class _HomeScreenState extends State<HomeScreen> {
           EmptyState(
             icon: Icons.menu_book_outlined,
             title: 'No courses yet',
-            message: 'Redeem an activation code or request access, and your '
+            message:
+                'Redeem an activation code or request access, and your '
                 'lectures and papers appear here.',
             action: PrimaryButton(
               label: 'Activate a course',
-              onPressed: () => showActivationModal(context, onSuccess: _handleEnrolled),
+              onPressed: () =>
+                  showActivationModal(context, onSuccess: _handleEnrolled),
             ),
           )
         else
@@ -740,10 +823,14 @@ class _HomeScreenState extends State<HomeScreen> {
                   Row(
                     children: [
                       Expanded(
-                        child: Text(course.title ?? '',
-                            maxLines: 2,
-                            overflow: TextOverflow.ellipsis,
-                            style: AppText.cardTitleSm.copyWith(color: c.textPrimary)),
+                        child: Text(
+                          course.title ?? '',
+                          maxLines: 2,
+                          overflow: TextOverflow.ellipsis,
+                          style: AppText.cardTitleSm.copyWith(
+                            color: c.textPrimary,
+                          ),
+                        ),
                       ),
                       const SizedBox(width: 8),
                       TrailingBadge('ACTIVE', color: c.success),
@@ -756,10 +843,18 @@ class _HomeScreenState extends State<HomeScreen> {
                     Row(
                       mainAxisAlignment: MainAxisAlignment.spaceBetween,
                       children: [
-                        Text('${course.lessonsCompleted} of ${course.lessonsTotal} lessons',
-                            style: AppText.caption.copyWith(color: c.textSecondary)),
-                        Text('${course.progressPercent}%',
-                            style: AppText.caption.copyWith(color: c.textSecondary)),
+                        Text(
+                          '${course.lessonsCompleted} of ${course.lessonsTotal} lessons',
+                          style: AppText.caption.copyWith(
+                            color: c.textSecondary,
+                          ),
+                        ),
+                        Text(
+                          '${course.progressPercent}%',
+                          style: AppText.caption.copyWith(
+                            color: c.textSecondary,
+                          ),
+                        ),
                       ],
                     ),
                   ] else if ((course.shortDescription ?? '').isNotEmpty) ...[
@@ -813,16 +908,24 @@ class _HomeScreenState extends State<HomeScreen> {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text(test.title ?? '',
-                    maxLines: 2,
-                    overflow: TextOverflow.ellipsis,
-                    style: AppText.cardTitleSm.copyWith(color: c.textPrimary, fontSize: 14.5)),
+                Text(
+                  test.title ?? '',
+                  maxLines: 2,
+                  overflow: TextOverflow.ellipsis,
+                  style: AppText.cardTitleSm.copyWith(
+                    color: c.textPrimary,
+                    fontSize: 14.5,
+                  ),
+                ),
                 const SizedBox(height: 5),
                 Text(
                   '${(test.durationSeconds ?? 0) ~/ 60} min'
                   '${test.totalMarks != null ? ' · ${formatNumber(test.totalMarks)} marks' : ''}'
                   '${attempts != null ? ' · ${test.sessionsCount}/$attempts attempts' : ''}',
-                  style: AppText.caption.copyWith(color: c.textSecondary, fontSize: 11.5),
+                  style: AppText.caption.copyWith(
+                    color: c.textSecondary,
+                    fontSize: 11.5,
+                  ),
                 ),
               ],
             ),
@@ -852,22 +955,34 @@ class _HomeScreenState extends State<HomeScreen> {
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      Text('${req.course ?? 'Course'} — ${req.batch ?? 'Batch'}',
-                          style: AppText.captionStrong.copyWith(
-                              color: c.textPrimary, fontSize: 13)),
+                      Text(
+                        '${req.course ?? 'Course'} — ${req.batch ?? 'Batch'}',
+                        style: AppText.captionStrong.copyWith(
+                          color: c.textPrimary,
+                          fontSize: 13,
+                        ),
+                      ),
                       if (req.paymentReference != null)
                         Padding(
                           padding: const EdgeInsets.only(top: 3),
-                          child: Text('Ref: ${req.paymentReference}',
-                              style: AppText.caption
-                                  .copyWith(color: c.textSecondary, fontSize: 11.5)),
+                          child: Text(
+                            'Ref: ${req.paymentReference}',
+                            style: AppText.caption.copyWith(
+                              color: c.textSecondary,
+                              fontSize: 11.5,
+                            ),
+                          ),
                         ),
                       if (req.adminNotes != null)
                         Padding(
                           padding: const EdgeInsets.only(top: 3),
-                          child: Text(req.adminNotes!,
-                              style: AppText.caption
-                                  .copyWith(color: c.textSecondary, fontSize: 11.5)),
+                          child: Text(
+                            req.adminNotes!,
+                            style: AppText.caption.copyWith(
+                              color: c.textSecondary,
+                              fontSize: 11.5,
+                            ),
+                          ),
                         ),
                     ],
                   ),
@@ -913,18 +1028,26 @@ class _HomeScreenState extends State<HomeScreen> {
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-                          Text(course.title ?? '',
-                              style:
-                                  AppText.cardTitleSm.copyWith(color: c.textPrimary)),
-                          if ((course.shortDescription ?? course.description ?? '')
+                          Text(
+                            course.title ?? '',
+                            style: AppText.cardTitleSm.copyWith(
+                              color: c.textPrimary,
+                            ),
+                          ),
+                          if ((course.shortDescription ??
+                                  course.description ??
+                                  '')
                               .isNotEmpty) ...[
                             const SizedBox(height: 6),
                             Text(
-                              course.shortDescription ?? course.description ?? '',
+                              course.shortDescription ??
+                                  course.description ??
+                                  '',
                               maxLines: 2,
                               overflow: TextOverflow.ellipsis,
-                              style:
-                                  AppText.caption.copyWith(color: c.textSecondary),
+                              style: AppText.caption.copyWith(
+                                color: c.textSecondary,
+                              ),
                             ),
                           ],
                           const SizedBox(height: 12),
@@ -933,15 +1056,24 @@ class _HomeScreenState extends State<HomeScreen> {
                               children: [
                                 Expanded(
                                   child: Column(
-                                    crossAxisAlignment: CrossAxisAlignment.start,
+                                    crossAxisAlignment:
+                                        CrossAxisAlignment.start,
                                     children: [
-                                      Text(batch.name ?? '',
-                                          style: AppText.captionStrong
-                                              .copyWith(color: c.textPrimary, fontSize: 13)),
+                                      Text(
+                                        batch.name ?? '',
+                                        style: AppText.captionStrong.copyWith(
+                                          color: c.textPrimary,
+                                          fontSize: 13,
+                                        ),
+                                      ),
                                       if (batch.startsAt != null)
-                                        Text('Starts ${formatDate(batch.startsAt!)}',
-                                            style: AppText.caption.copyWith(
-                                                color: c.textSecondary, fontSize: 11.5)),
+                                        Text(
+                                          'Starts ${formatDate(batch.startsAt!)}',
+                                          style: AppText.caption.copyWith(
+                                            color: c.textSecondary,
+                                            fontSize: 11.5,
+                                          ),
+                                        ),
                                     ],
                                   ),
                                 ),
@@ -950,7 +1082,9 @@ class _HomeScreenState extends State<HomeScreen> {
                                   label: formatRupees(batch.pricePaise ?? 0),
                                   fontSize: 13,
                                   padding: const EdgeInsets.symmetric(
-                                      horizontal: 14, vertical: 10),
+                                    horizontal: 14,
+                                    vertical: 10,
+                                  ),
                                   onPressed: () => showStudentCheckout(
                                     context,
                                     batch: batch,

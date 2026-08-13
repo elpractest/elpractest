@@ -70,13 +70,13 @@ flutter:
   uses-material-design: true
 
   assets:
-    # Brand, derived from the master artwork. `practest-logo` is the full-colour
-    # lockup for light surfaces; `practest-logo-knockout` is the dark-header
-    # variant (wordmark #F4F6F7, swoosh #F07830) that exists so the transparent
-    # mark is never plated onto a white box just to survive a dark screen. The
-    # mark alone is resolution-aware because it is drawn small, in the header.
+    # Brand. Byte-identical to what the web SPA serves (app/src/assets), so the
+    # phone and the browser cannot drift apart. `practest-logo` is the full
+    # lockup, for light surfaces only; the old `practest-logo-knockout` is gone
+    # because the new wordmark is solid black and has nothing to knock out of —
+    # on dark, the guide uses a plated mark beside live type instead. The mark
+    # alone is resolution-aware because it is drawn small, in the header.
     - assets/brand/practest-logo.png
-    - assets/brand/practest-logo-knockout.png
     - assets/brand/practest-mark.png
     - assets/brand/2.0x/practest-mark.png
     - assets/brand/3.0x/practest-mark.png
@@ -94,26 +94,44 @@ flutter:
   # render the default instance for all of them), subset to Latin + the symbol
   # ranges the product actually uses — ₹ included.
   fonts:
-    # Display: screen titles and the score figure.
-    - family: SpaceGrotesk
+    # Display: screen titles, the score figure and the wordmark. Sora replaced
+    # Space Grotesk when the app moved onto the deep-ink + gold guide, which the
+    # web SPA already implements (see app/src/index.css --font-display).
+    - family: Sora
       fonts:
-        - asset: assets/fonts/SpaceGrotesk-Medium.ttf
+        - asset: assets/fonts/Sora-Medium.ttf
           weight: 500
-        - asset: assets/fonts/SpaceGrotesk-Bold.ttf
-          weight: 700
-    # Interface: everything the student reads.
-    - family: Inter
-      fonts:
-        - asset: assets/fonts/Inter-Regular.ttf
-          weight: 400
-        - asset: assets/fonts/Inter-Medium.ttf
-          weight: 500
-        - asset: assets/fonts/Inter-SemiBold.ttf
+        - asset: assets/fonts/Sora-SemiBold.ttf
           weight: 600
-        - asset: assets/fonts/Inter-Bold.ttf
+        - asset: assets/fonts/Sora-Bold.ttf
           weight: 700
-        - asset: assets/fonts/Inter-ExtraBold.ttf
+        - asset: assets/fonts/Sora-ExtraBold.ttf
           weight: 800
+    # Interface: everything the student reads. Replaced Inter, same reason.
+    - family: PlusJakartaSans
+      fonts:
+        - asset: assets/fonts/PlusJakartaSans-Regular.ttf
+          weight: 400
+        - asset: assets/fonts/PlusJakartaSans-Medium.ttf
+          weight: 500
+        - asset: assets/fonts/PlusJakartaSans-SemiBold.ttf
+          weight: 600
+        - asset: assets/fonts/PlusJakartaSans-Bold.ttf
+          weight: 700
+        - asset: assets/fonts/PlusJakartaSans-ExtraBold.ttf
+          weight: 800
+    # Hindi. Bundled rather than left to the platform so हिं looks the same on
+    # every OEM skin and matches the web. pubspec has no per-family fallback
+    # mechanism, so this is wired through TextStyle.fontFamilyFallback in
+    # theme.dart — see AppFont.fallback.
+    - family: NotoSansDevanagari
+      fonts:
+        - asset: assets/fonts/NotoSansDevanagari-Regular.ttf
+          weight: 400
+        - asset: assets/fonts/NotoSansDevanagari-SemiBold.ttf
+          weight: 600
+        - asset: assets/fonts/NotoSansDevanagari-Bold.ttf
+          weight: 700
     # Figures: clocks and any number that must not reflow as it counts.
     # Monospaced by construction, so it needs no `tnum` feature.
     - family: JetBrainsMono

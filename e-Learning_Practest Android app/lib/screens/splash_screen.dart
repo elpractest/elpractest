@@ -1,8 +1,5 @@
-import 'dart:math' as math;
-
 import 'package:flutter/material.dart';
 
-import '../scaffold.dart';
 import '../theme.dart';
 import '../widgets.dart';
 
@@ -11,14 +8,19 @@ import '../widgets.dart';
 /// One controller drives everything through [Interval]s, so the sequence stays
 /// in lockstep and there is one place to retime it.
 ///
-/// **1200 ms total, down from 2600.** The splash is not waiting on anything —
-/// `Session.init()` has already finished by the time `runApp` is called — so
-/// every millisecond of it was a millisecond charged to the student for
-/// nothing. What is left is long enough to read as the brand arriving and
-/// short enough that nobody waits through it twice.
+/// **1200 ms total, and deliberately not the guide's 1900.** The splash is not
+/// waiting on anything — `Session.init()` has already finished by the time
+/// `runApp` is called — so every millisecond of it is a millisecond charged to
+/// the student for nothing. 1900 ms is the right number for a mockup that has to
+/// be *seen*; 1200 is the right number for a launch the student sits through
+/// twice a day. What is left is long enough to read as the brand arriving.
 ///
-/// The breathing halo that used to sit behind the mark is gone with the aurora:
-/// depth carries meaning in this system, never decoration.
+/// **Dark in both themes, on purpose.** The native launch window is `#0B0F1A`
+/// in day and night alike (see values/colors.xml — the platform cannot read the
+/// student's stored theme that early), so a theme-aware splash would flash dark,
+/// go light, then go dark again on a light-mode device. Matching the launch
+/// window is the only sequence with no flash in it, and the guide draws this
+/// screen dark regardless.
 ///
 /// Honours the platform "remove animations" setting by collapsing to a short
 /// hold — the brand still appears, it just does not move.
@@ -41,9 +43,9 @@ class _SplashScreenState extends State<SplashScreen>
 
   late final Animation<double> _markFade;
   late final Animation<double> _markScale;
-  late final Animation<double> _ring;
   late final Animation<double> _wordFade;
   late final Animation<double> _wordRise;
+  late final Animation<double> _bar;
 
   bool _fired = false;
 
@@ -66,10 +68,12 @@ class _SplashScreenState extends State<SplashScreen>
     // and "arrived".
     _markScale =
         Tween(begin: 0.84, end: 1.0).animate(curve(0.00, 0.50, Curves.easeOutBack));
-    _ring = curve(0.06, 0.86, Curves.easeInOutCubic);
     _wordFade = curve(0.38, 0.72, Curves.easeOut);
     _wordRise =
         Tween(begin: 10.0, end: 0.0).animate(curve(0.38, 0.74, Curves.easeOutCubic));
+    // Runs the whole length: the bar filling is the only honest progress signal
+    // on screen, so it should finish exactly when the screen leaves.
+    _bar = curve(0.04, 1.00, Curves.easeInOut);
   }
 
   @override
@@ -89,60 +93,105 @@ class _SplashScreenState extends State<SplashScreen>
 
   @override
   Widget build(BuildContext context) {
-    final c = useColors(context);
-    // Tablets get a bigger mark; the layout is otherwise size-independent.
+    // Always the dark palette here — see the class comment.
+    const c = AppColors.dark;
+    // Tablets get a bigger tile; the layout is otherwise size-independent.
     final short = MediaQuery.sizeOf(context).shortestSide;
-    final markSize = short >= 600 ? 148.0 : 104.0;
+    final tile = short >= 600 ? 136.0 : 96.0;
 
-    return AppScaffold(
-      child: Center(
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
+    return Scaffold(
+      backgroundColor: c.bg,
+      body: DecoratedBox(
+        decoration: const BoxDecoration(
+          // The guide's radial: a lit corner above the mark, falling to near
+          // black at the bottom edge.
+          gradient: RadialGradient(
+            center: Alignment(0, -0.4),
+            radius: 1.1,
+            colors: [Color(0xFF16264A), Color(0xFF0B0F1A), Color(0xFF070A12)],
+            stops: [0.0, 0.55, 1.0],
+          ),
+        ),
+        child: Stack(
           children: [
-            AnimatedBuilder(
-              animation: _c,
-              builder: (context, _) => SizedBox(
-                width: markSize * 1.7,
-                height: markSize * 1.7,
-                child: Stack(
-                  alignment: Alignment.center,
-                  children: [
-                    CustomPaint(
-                      size: Size.square(markSize * 1.45),
-                      painter: _RingPainter(
-                        progress: _ring.value,
-                        color: c.brandBright,
-                        trackColor: c.border,
-                      ),
-                    ),
-                    Opacity(
+            Center(
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  AnimatedBuilder(
+                    animation: _c,
+                    builder: (context, _) => Opacity(
                       opacity: _markFade.value,
                       child: Transform.scale(
                         scale: _markScale.value,
-                        child: BrandMark(size: markSize),
+                        child: BrandMark(size: tile, radius: tile * 0.29),
                       ),
                     ),
-                  ],
-                ),
+                  ),
+                  const SizedBox(height: 22),
+                  AnimatedBuilder(
+                    animation: _c,
+                    builder: (context, _) => Opacity(
+                      opacity: _wordFade.value,
+                      child: Transform.translate(
+                        offset: Offset(0, _wordRise.value),
+                        child: Column(
+                          children: [
+                            Text(
+                              'e-Learning Practest',
+                              textAlign: TextAlign.center,
+                              style: AppText.wordmark.copyWith(color: c.textPrimary),
+                            ),
+                            const SizedBox(height: 7),
+                            Text(
+                              'अभ्यास से सफलता तक · Practice to Success',
+                              textAlign: TextAlign.center,
+                              // #8FB0FF: the guide's blue-tinted subline, not
+                              // the palette's muted grey. It is the one place a
+                              // lighter blue reads as part of the lit gradient.
+                              style: AppText.hindi.copyWith(
+                                color: const Color(0xFF8FB0FF),
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ),
+                  ),
+                ],
               ),
             ),
-            const SizedBox(height: 24),
-            AnimatedBuilder(
-              animation: _c,
-              builder: (context, _) => Opacity(
-                opacity: _wordFade.value,
-                child: Transform.translate(
-                  offset: Offset(0, _wordRise.value),
-                  child: Column(
-                    children: [
-                      const BrandWordmark(fontSize: 34),
-                      const SizedBox(height: 10),
-                      Text(
-                        'Practice like it is exam day',
-                        textAlign: TextAlign.center,
-                        style: AppText.body.copyWith(color: c.textSecondary),
+            Positioned(
+              left: 0,
+              right: 0,
+              bottom: 60,
+              child: Center(
+                child: SizedBox(
+                  width: 120,
+                  height: 3,
+                  child: DecoratedBox(
+                    decoration: BoxDecoration(
+                      color: c.borderStrong,
+                      borderRadius: BorderRadius.circular(AppTheme.radiusPill),
+                    ),
+                    child: AnimatedBuilder(
+                      animation: _c,
+                      builder: (context, _) => Align(
+                        alignment: Alignment.centerLeft,
+                        child: FractionallySizedBox(
+                          widthFactor: _bar.value,
+                          child: DecoratedBox(
+                            decoration: BoxDecoration(
+                              gradient: const LinearGradient(
+                                colors: [Color(0xFFFFC968), Color(0xFFF5A623)],
+                              ),
+                              borderRadius:
+                                  BorderRadius.circular(AppTheme.radiusPill),
+                            ),
+                          ),
+                        ),
                       ),
-                    ],
+                    ),
                   ),
                 ),
               ),
@@ -152,52 +201,4 @@ class _SplashScreenState extends State<SplashScreen>
       ),
     );
   }
-}
-
-/// A ring that draws itself once, clockwise from 12 o'clock, over a faint track.
-class _RingPainter extends CustomPainter {
-  _RingPainter({
-    required this.progress,
-    required this.color,
-    required this.trackColor,
-  });
-
-  final double progress;
-  final Color color;
-  final Color trackColor;
-
-  @override
-  void paint(Canvas canvas, Size size) {
-    final rect = Offset.zero & size;
-    final center = rect.center;
-    final radius = size.width / 2;
-
-    final track = Paint()
-      ..style = PaintingStyle.stroke
-      ..strokeWidth = 1.4
-      ..color = trackColor;
-    canvas.drawCircle(center, radius, track);
-
-    if (progress <= 0) return;
-
-    final arc = Paint()
-      ..style = PaintingStyle.stroke
-      ..strokeWidth = 2.4
-      ..strokeCap = StrokeCap.round
-      ..color = color;
-
-    canvas.drawArc(
-      Rect.fromCircle(center: center, radius: radius),
-      -math.pi / 2,
-      2 * math.pi * progress,
-      false,
-      arc,
-    );
-  }
-
-  @override
-  bool shouldRepaint(_RingPainter old) =>
-      old.progress != progress ||
-      old.color != color ||
-      old.trackColor != trackColor;
 }

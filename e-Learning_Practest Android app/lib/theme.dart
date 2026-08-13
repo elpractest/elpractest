@@ -1,11 +1,22 @@
 import 'package:flutter/material.dart';
 
-/// PRACTEST DESIGN SYSTEM
+/// PRACTEST DESIGN SYSTEM — deep ink + gold, two themes.
 ///
-/// The whole palette comes out of the mark. Teal is the product, orange is time
-/// and money, gold is achievement — and each one owns exactly one job. Nothing
-/// borrows another's meaning, which is the single rule that keeps a dense exam
-/// screen legible.
+/// These values are a port of `app/src/index.css`, which is the reference
+/// implementation of the current design guide: the web SPA was rebuilt against
+/// it first, so matching the CSS tokens — rather than re-reading the mockup —
+/// is what keeps the phone and the browser looking like one product. Retarget a
+/// token here and every screen follows, exactly as it does on the web.
+///
+/// **This replaced a teal system, and one thing did not survive the move.** The
+/// old palette gave three hues one job each — teal the product, orange time and
+/// money, gold achievement. The guide has no teal and no orange: gold is now
+/// both the brand *and* achievement, royal blue carries information, violet
+/// carries Vajini, and red/green stay inside the test engine. So [orange]
+/// survives only as an alias for the amber warning family, keeping its existing
+/// call sites compiling and legible; do not read a distinct meaning into it.
+/// The one place that genuinely needed "time" is the CBT countdown, which the
+/// guide draws in red — it uses [danger] now, not [orange].
 ///
 /// Depth carries meaning here, never decoration: two elevations, and a surface
 /// is either bordered or shadowed, never both.
@@ -46,6 +57,10 @@ class AppColors {
     required this.successBorder,
     required this.violet,
     required this.violetText,
+    required this.secondary,
+    required this.secondarySoft,
+    required this.nav,
+    required this.chrome,
   });
 
   /// Which of the two palettes this is. Elevation inverts between them — light
@@ -104,76 +119,147 @@ class AppColors {
   final Color violet;
   final Color violetText;
 
+  /// Royal blue. The guide's secondary: the goal strip, the blue icon tint, and
+  /// anything that must read as "information" beside a gold call to action.
+  final Color secondary;
+  final Color secondarySoft;
+
+  /// The tab bar's own ground. Translucent over the page, so it is not [panel]:
+  /// content scrolling under the bar should tint it.
+  final Color nav;
+
+  /// Top stop of the header gradient. Stays deep and branded in **both**
+  /// themes — the guide keeps the chrome dark on light mode too, which is the
+  /// one place the light palette deliberately does not lighten.
+  final Color chrome;
+
   static const dark = AppColors(
     isDark: true,
-    bg: Color(0xFF0B1B21),
-    panel: Color(0xFF122B33),
-    raised: Color(0xFF1B3A44),
-    sunken: Color(0xFF081419),
-    border: Color(0x1FDFE8EA),
-    borderStrong: Color(0x40DFE8EA),
-    textPrimary: Color(0xFFF4F6F7),
-    textSecondary: Color(0xFF93A7AE),
-    textMuted: Color(0xFF7D939B),
-    brand: Color(0xFF009090),
-    brandBright: Color(0xFF00B4B4),
-    brandDeep: Color(0xFF187890),
-    brandSoft: Color(0x1F009090),
-    brandBorder: Color(0x59009090),
-    onBrand: Colors.white,
-    orange: Color(0xFFF07830),
-    orangeSoft: Color(0x1FF07830),
-    orangeBorder: Color(0x66F07830),
-    gold: Color(0xFFF0A818),
-    goldSoft: Color(0x1FF0A818),
-    overlay: Color(0xC00B1B21),
+    bg: Color(0xFF0B0F1A),
+    panel: Color(0xFF141B2B),
+    raised: Color(0xFF1B2438),
+    sunken: Color(0x0DFFFFFF),
+    border: Color(0x14FFFFFF),
+    borderStrong: Color(0x1FFFFFFF),
+    textPrimary: Color(0xFFF3F6FF),
+    textSecondary: Color(0xFFC7D0E4),
+    textMuted: Color(0xFF8A96B4),
+    brand: Color(0xFFF5A623),
+    brandBright: Color(0xFFFFC968),
+    brandDeep: Color(0xFF12203A),
+    brandSoft: Color(0x29F5A623),
+    brandBorder: Color(0x4DF5A623),
+    onBrand: Color(0xFF1A1206),
+    orange: Color(0xFFF5A623),
+    orangeSoft: Color(0x24F5A623),
+    orangeBorder: Color(0x52F5A623),
+    gold: Color(0xFFFFC968),
+    goldSoft: Color(0x29F5A623),
+    overlay: Color(0xB803060E),
     danger: Color(0xFFE5484D),
-    dangerText: Color(0xFFFF8A8E),
-    dangerBg: Color(0x1FE5484D),
-    dangerBorder: Color(0x59E5484D),
-    success: Color(0xFF0EA371),
-    successText: Color(0xFF34D399),
-    successBg: Color(0x1F0EA371),
-    successBorder: Color(0x590EA371),
+    dangerText: Color(0xFFFB8F92),
+    dangerBg: Color(0x24E5484D),
+    dangerBorder: Color(0x52E5484D),
+    success: Color(0xFF12B981),
+    successText: Color(0xFF3DDBA9),
+    successBg: Color(0x2412B981),
+    successBorder: Color(0x5212B981),
     violet: Color(0xFF8B5CF6),
-    violetText: Color(0xFFB5A8FF),
+    violetText: Color(0xFFB9A6FF),
+    secondary: Color(0xFF3B6FF6),
+    secondarySoft: Color(0x293B6FF6),
+    nav: Color(0xEB090D15),
+    chrome: Color(0xFF12203A),
   );
 
   static const light = AppColors(
     isDark: false,
-    bg: Color(0xFFF4F6F7),
+    bg: Color(0xFFEAEEF6),
     panel: Color(0xFFFFFFFF),
-    raised: Color(0xFFFFFFFF),
-    sunken: Color(0xFFEDF1F2),
-    border: Color(0x1F304860),
-    borderStrong: Color(0x40304860),
-    textPrimary: Color(0xFF304860),
-    textSecondary: Color(0xFF6B7A88),
-    textMuted: Color(0xFF8A98A4),
-    brand: Color(0xFF009090),
-    brandBright: Color(0xFF00787A),
-    brandDeep: Color(0xFF187890),
-    brandSoft: Color(0x14009090),
-    brandBorder: Color(0x4D009090),
-    onBrand: Colors.white,
-    orange: Color(0xFFD9601C),
-    orangeSoft: Color(0x14F07830),
-    orangeBorder: Color(0x59D9601C),
-    gold: Color(0xFFB57A05),
-    goldSoft: Color(0x1FF0A818),
-    overlay: Color(0x99162026),
-    danger: Color(0xFFCC3238),
-    dangerText: Color(0xFFB3272D),
-    dangerBg: Color(0x14E5484D),
-    dangerBorder: Color(0x47CC3238),
-    success: Color(0xFF0B8259),
-    successText: Color(0xFF086746),
-    successBg: Color(0x140EA371),
-    successBorder: Color(0x470B8259),
-    violet: Color(0xFF6D3FD6),
-    violetText: Color(0xFF5B2FC0),
+    raised: Color(0xFFF4F7FC),
+    sunken: Color(0xFFFFFFFF),
+    border: Color(0x1A121623),
+    borderStrong: Color(0x29121623),
+    textPrimary: Color(0xFF131722),
+    textSecondary: Color(0xFF39424F),
+    textMuted: Color(0xFF616B7A),
+    brand: Color(0xFFF5A623),
+    // Not the flat brand: #F5A623 on white is roughly 1.9:1. #A85F00 is the
+    // web's WCAG-AA gold and the only one that may carry text or a glyph.
+    brandBright: Color(0xFFA85F00),
+    brandDeep: Color(0xFF12203A),
+    brandSoft: Color(0x29F5A623),
+    brandBorder: Color(0x52A85F00),
+    onBrand: Color(0xFF1A1206),
+    orange: Color(0xFFA85F00),
+    orangeSoft: Color(0x24F5A623),
+    orangeBorder: Color(0x4DA85F00),
+    gold: Color(0xFFA85F00),
+    goldSoft: Color(0x29F5A623),
+    overlay: Color(0x80121830),
+    danger: Color(0xFFCB2F37),
+    dangerText: Color(0xFFCB2F37),
+    dangerBg: Color(0x1AE5484D),
+    dangerBorder: Color(0x4DCB2F37),
+    success: Color(0xFF08805A),
+    successText: Color(0xFF08805A),
+    successBg: Color(0x1F12B981),
+    successBorder: Color(0x4D08805A),
+    violet: Color(0xFF6A34DE),
+    violetText: Color(0xFF6A34DE),
+    secondary: Color(0xFF3B6FF6),
+    secondarySoft: Color(0x243B6FF6),
+    nav: Color(0xF5FFFFFF),
+    chrome: Color(0xFF12203A),
   );
 }
+
+/// A themed icon tile: glyph colour, tile tint, tile border.
+///
+/// Port of the web's `tint(hue, isDark)` (app/src/lib/theme.js), which is
+/// itself the guide's `TN` map. The glyph colour flips per theme while the tint
+/// stays in the same family, which is what stops light mode washing out — a
+/// 16%-alpha gold tile with a #FFC968 glyph is invisible on white.
+class AppTint {
+  const AppTint({required this.c, required this.bg, required this.bd});
+
+  /// Glyph / text colour.
+  final Color c;
+
+  /// Tile background tint.
+  final Color bg;
+
+  /// Tile border.
+  final Color bd;
+}
+
+/// The seven hues an icon tile may take. Keyed the same as the web so a screen
+/// can be ported without re-deciding what colour anything is.
+enum TintHue { gold, blue, violet, green, red, sky, neutral }
+
+const Map<TintHue, AppTint> _darkTints = {
+  TintHue.gold: AppTint(c: Color(0xFFFFC968), bg: Color(0x29F5A623), bd: Color(0x4DF5A623)),
+  TintHue.blue: AppTint(c: Color(0xFF8FB0FF), bg: Color(0x293B6FF6), bd: Color(0x4D3B6FF6)),
+  TintHue.violet: AppTint(c: Color(0xFFB9A6FF), bg: Color(0x298B5CF6), bd: Color(0x4D8B5CF6)),
+  TintHue.green: AppTint(c: Color(0xFF3DDBA9), bg: Color(0x2912B981), bd: Color(0x4D12B981)),
+  TintHue.red: AppTint(c: Color(0xFFFB8F92), bg: Color(0x29E5484D), bd: Color(0x4DE5484D)),
+  TintHue.sky: AppTint(c: Color(0xFF7DD3FC), bg: Color(0x290EA5E9), bd: Color(0x4D0EA5E9)),
+  TintHue.neutral: AppTint(c: Color(0xFFC7D0E4), bg: Color(0x14FFFFFF), bd: Color(0x24FFFFFF)),
+};
+
+const Map<TintHue, AppTint> _lightTints = {
+  TintHue.gold: AppTint(c: Color(0xFFA85F00), bg: Color(0x33F5A623), bd: Color(0x59A85F00)),
+  TintHue.blue: AppTint(c: Color(0xFF2450CC), bg: Color(0x243B6FF6), bd: Color(0x522450CC)),
+  TintHue.violet: AppTint(c: Color(0xFF6A34DE), bg: Color(0x248B5CF6), bd: Color(0x526A34DE)),
+  TintHue.green: AppTint(c: Color(0xFF08805A), bg: Color(0x2912B981), bd: Color(0x5208805A)),
+  TintHue.red: AppTint(c: Color(0xFFCB2F37), bg: Color(0x21E5484D), bd: Color(0x4DCB2F37)),
+  TintHue.sky: AppTint(c: Color(0xFF0A78B4), bg: Color(0x260EA5E9), bd: Color(0x4D0A78B4)),
+  TintHue.neutral: AppTint(c: Color(0xFF465065), bg: Color(0x12121623), bd: Color(0x24121623)),
+};
+
+/// tint(hue, isDark) → the tile's three colours.
+AppTint tint(TintHue hue, bool isDark) =>
+    (isDark ? _darkTints : _lightTints)[hue] ?? _darkTints[TintHue.neutral]!;
 
 /// CBT palette statuses — deliberately saturated and identical in both themes.
 ///
@@ -194,14 +280,23 @@ class CbtStatus {
   static const answeredMarkedBorder = Color(0xFF34D399);
 }
 
-/// The bundled stack. Space Grotesk carries display, Inter carries the
+/// The bundled stack. Sora carries display, Plus Jakarta Sans carries the
 /// interface, JetBrains Mono carries every figure that must not reflow as it
-/// changes. Weight 800 is the ceiling and there are no gradient-filled
-/// numerals.
+/// changes, and Noto Sans Devanagari carries हिं. Weight 800 is the ceiling and
+/// there are no gradient-filled numerals.
 class AppFont {
-  static const display = 'SpaceGrotesk';
-  static const ui = 'Inter';
+  static const display = 'Sora';
+  static const ui = 'PlusJakartaSans';
   static const mono = 'JetBrainsMono';
+  static const hindi = 'NotoSansDevanagari';
+
+  /// Appended to every Latin text style, because neither Latin family contains
+  /// a single Devanagari glyph and pubspec has no per-family fallback of its
+  /// own. Without this, one Hindi word inside an English string renders in
+  /// whatever the OEM ships — which is how the same screen ends up looking
+  /// different on Samsung and on Pixel. Costs nothing for Latin text: the
+  /// fallback list is consulted only for codepoints the primary family lacks.
+  static const fallback = <String>[hindi];
 }
 
 /// The type scale, as drawn in the redesign guide. Colour is applied at the
@@ -227,53 +322,124 @@ class AppText {
   static const clockSm = TextStyle(
       fontFamily: AppFont.mono, fontSize: 11, fontWeight: FontWeight.w400, height: 1);
 
+  /// The welcome headline. The one place display type is set this large, and
+  /// the only style that carries the guide's -0.03em tracking.
+  static const hero = TextStyle(
+      fontFamily: AppFont.display,
+      fontFamilyFallback: AppFont.fallback,
+      fontSize: 33,
+      fontWeight: FontWeight.w800,
+      letterSpacing: -0.99,
+      height: 1.08);
+  static const wordmark = TextStyle(
+      fontFamily: AppFont.display,
+      fontFamilyFallback: AppFont.fallback,
+      fontSize: 24,
+      fontWeight: FontWeight.w800,
+      letterSpacing: -0.48,
+      height: 1.1);
+
   static const screenTitle = TextStyle(
       fontFamily: AppFont.display,
+      fontFamilyFallback: AppFont.fallback,
       fontSize: 24,
       fontWeight: FontWeight.w700,
       letterSpacing: -0.2,
       height: 1.2);
   static const cardTitle = TextStyle(
-      fontFamily: AppFont.ui, fontSize: 17, fontWeight: FontWeight.w700, height: 1.3);
+      fontFamily: AppFont.ui,
+      fontFamilyFallback: AppFont.fallback,
+      fontSize: 17,
+      fontWeight: FontWeight.w700,
+      height: 1.3);
   static const cardTitleSm = TextStyle(
-      fontFamily: AppFont.ui, fontSize: 15, fontWeight: FontWeight.w700, height: 1.25);
+      fontFamily: AppFont.ui,
+      fontFamilyFallback: AppFont.fallback,
+      fontSize: 15,
+      fontWeight: FontWeight.w700,
+      height: 1.25);
 
   /// Section heading beside the 3px accent rule.
   static const heading = TextStyle(
-      fontFamily: AppFont.ui, fontSize: 15, fontWeight: FontWeight.w600, height: 1);
+      fontFamily: AppFont.ui,
+      fontFamilyFallback: AppFont.fallback,
+      fontSize: 15,
+      fontWeight: FontWeight.w600,
+      height: 1);
 
   /// Question text. LaTeX-aware.
   static const question = TextStyle(
-      fontFamily: AppFont.ui, fontSize: 16, fontWeight: FontWeight.w400, height: 1.6);
+      fontFamily: AppFont.ui,
+      fontFamilyFallback: AppFont.fallback,
+      fontSize: 16,
+      fontWeight: FontWeight.w400,
+      height: 1.6);
   static const body = TextStyle(
-      fontFamily: AppFont.ui, fontSize: 14, fontWeight: FontWeight.w400, height: 1.55);
+      fontFamily: AppFont.ui,
+      fontFamilyFallback: AppFont.fallback,
+      fontSize: 14,
+      fontWeight: FontWeight.w400,
+      height: 1.55);
   static const bodyStrong = TextStyle(
-      fontFamily: AppFont.ui, fontSize: 14, fontWeight: FontWeight.w600, height: 1.5);
+      fontFamily: AppFont.ui,
+      fontFamilyFallback: AppFont.fallback,
+      fontSize: 14,
+      fontWeight: FontWeight.w600,
+      height: 1.5);
+
+  /// Hindi set on purpose rather than by fallback — the guide's taglines and
+  /// sublines are Devanagari-first, so the family is primary and the metrics
+  /// (which differ from the Latin families) are the ones that lay out the line.
+  static const hindi = TextStyle(
+      fontFamily: AppFont.hindi,
+      fontSize: 13,
+      fontWeight: FontWeight.w600,
+      height: 1.45);
+  static const hindiBody = TextStyle(
+      fontFamily: AppFont.hindi,
+      fontSize: 15,
+      fontWeight: FontWeight.w600,
+      height: 1.5);
 
   /// All-caps eyebrow. 0.08em at 12px is 0.96 logical pixels of tracking.
   static const label = TextStyle(
       fontFamily: AppFont.ui,
+      fontFamilyFallback: AppFont.fallback,
       fontSize: 12,
       fontWeight: FontWeight.w700,
       letterSpacing: 0.96,
       height: 1);
   static const labelSm = TextStyle(
       fontFamily: AppFont.ui,
+      fontFamilyFallback: AppFont.fallback,
       fontSize: 11,
       fontWeight: FontWeight.w700,
       letterSpacing: 0.99,
       height: 1);
 
   static const caption = TextStyle(
-      fontFamily: AppFont.ui, fontSize: 12, fontWeight: FontWeight.w400, height: 1.4);
+      fontFamily: AppFont.ui,
+      fontFamilyFallback: AppFont.fallback,
+      fontSize: 12,
+      fontWeight: FontWeight.w400,
+      height: 1.4);
   static const captionStrong = TextStyle(
-      fontFamily: AppFont.ui, fontSize: 12, fontWeight: FontWeight.w600, height: 1.35);
+      fontFamily: AppFont.ui,
+      fontFamilyFallback: AppFont.fallback,
+      fontSize: 12,
+      fontWeight: FontWeight.w600,
+      height: 1.35);
 
   static const button = TextStyle(
-      fontFamily: AppFont.ui, fontSize: 14.5, fontWeight: FontWeight.w700, height: 1);
+      fontFamily: AppFont.ui,
+      fontFamilyFallback: AppFont.fallback,
+      fontSize: 14.5,
+      fontWeight: FontWeight.w700,
+      height: 1);
 
-  /// 10px, for the four tab labels only.
-  static const tab = TextStyle(fontFamily: AppFont.ui, fontSize: 10, height: 1);
+  /// 10px, for the five tab labels only.
+  static const tab = TextStyle(
+      fontFamily: AppFont.ui, fontFamilyFallback: AppFont.fallback, fontSize: 10, height: 1);
 
   /// Figures inside a sentence, where mono would break the line's colour.
   static const tabularFigures = [FontFeature.tabularFigures()];
@@ -284,6 +450,20 @@ class AppTheme {
   static const radiusMd = 14.0;
   static const radiusLg = 20.0;
   static const radiusPill = 999.0;
+
+  /// The primary call to action. Constant across both themes — a gold button is
+  /// gold at midnight and at noon, and its ink is [AppColors.onBrand], never
+  /// white. Stops are the guide's: the mid stop sits at 55%, not 50%, which is
+  /// what keeps the light end from taking over a wide button.
+  static const goldGradient = <Color>[
+    Color(0xFFFFC968),
+    Color(0xFFF5A623),
+    Color(0xFFE07C0A),
+  ];
+  static const goldGradientStops = <double>[0.0, 0.55, 1.0];
+
+  /// Vajini, and Vajini only. Nothing else in the product is violet→blue.
+  static const violetGradient = <Color>[Color(0xFF8B5CF6), Color(0xFF3B6FF6)];
 
   /// A route push is 180ms and eased out. Anything slower reads as the app
   /// thinking; anything bouncier reads as decoration.

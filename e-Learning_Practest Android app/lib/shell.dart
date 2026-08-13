@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 
+import 'routes.dart';
 import 'screens/home_screen.dart';
 import 'screens/profile_screen.dart';
 import 'screens/results_history_screen.dart';
@@ -97,10 +98,59 @@ class _HomeShellState extends State<HomeShell> {
             ProfileScreen(),
           ],
         ),
+        // Vajini, the AI study companion. A floating action rather than a fifth
+        // tab: the four tabs are places in the app, and Vajini is an action you
+        // take from wherever you are. It is the guide's signature violet→blue
+        // FAB — the one place that gradient appears — matching the standalone.
+        floatingActionButton: const _VajiniFab(),
         bottomNavigationBar: _BottomBar(
           index: _index,
           tabs: _tabs,
           onSelect: _select,
+        ),
+      ),
+    );
+  }
+}
+
+class _VajiniFab extends StatelessWidget {
+  const _VajiniFab();
+
+  @override
+  Widget build(BuildContext context) {
+    return Semantics(
+      button: true,
+      label: 'Ask Vajini',
+      child: Material(
+        color: Colors.transparent,
+        child: InkWell(
+          onTap: () => context.openVajini(),
+          borderRadius: BorderRadius.circular(AppTheme.radiusPill),
+          child: Container(
+            width: 56,
+            height: 56,
+            alignment: Alignment.center,
+            decoration: BoxDecoration(
+              gradient: const LinearGradient(
+                colors: AppTheme.violetGradient,
+                begin: Alignment.topLeft,
+                end: Alignment.bottomRight,
+              ),
+              borderRadius: BorderRadius.circular(AppTheme.radiusPill),
+              boxShadow: const [
+                BoxShadow(
+                  color: Color(0x593B6FF6),
+                  blurRadius: 18,
+                  offset: Offset(0, 8),
+                ),
+              ],
+            ),
+            child: const Icon(
+              Icons.smart_toy_rounded,
+              size: 26,
+              color: Colors.white,
+            ),
+          ),
         ),
       ),
     );
@@ -120,7 +170,11 @@ class _TabSpec {
 /// background pill: a pill is a second shape competing with the icon at the one
 /// size where there is no room for two.
 class _BottomBar extends StatelessWidget {
-  const _BottomBar({required this.index, required this.tabs, required this.onSelect});
+  const _BottomBar({
+    required this.index,
+    required this.tabs,
+    required this.onSelect,
+  });
 
   final int index;
   final List<_TabSpec> tabs;
@@ -158,7 +212,11 @@ class _BottomBar extends StatelessWidget {
 }
 
 class _BarItem extends StatelessWidget {
-  const _BarItem({required this.spec, required this.active, required this.onTap});
+  const _BarItem({
+    required this.spec,
+    required this.active,
+    required this.onTap,
+  });
 
   final _TabSpec spec;
   final bool active;
@@ -187,7 +245,9 @@ class _BarItem extends StatelessWidget {
                   height: 3,
                   decoration: BoxDecoration(
                     color: c.brand,
-                    borderRadius: const BorderRadius.vertical(bottom: Radius.circular(2)),
+                    borderRadius: const BorderRadius.vertical(
+                      bottom: Radius.circular(2),
+                    ),
                   ),
                 ),
               ),
@@ -196,7 +256,11 @@ class _BarItem extends StatelessWidget {
               child: Column(
                 mainAxisSize: MainAxisSize.min,
                 children: [
-                  Icon(active ? spec.activeIcon : spec.icon, size: 24, color: color),
+                  Icon(
+                    active ? spec.activeIcon : spec.icon,
+                    size: 24,
+                    color: color,
+                  ),
                   const SizedBox(height: 5),
                   Text(
                     spec.label,

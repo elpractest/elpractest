@@ -72,13 +72,39 @@ void main() {
     expect(CbtStatus.answeredBg, isNot(AppColors.light.success));
   });
 
-  test('each hue owns exactly one job', () {
+  test('gold is legible wherever it carries meaning', () {
+    // This replaced "each hue owns exactly one job", which asserted
+    // brand != orange != gold. That rule belonged to the teal system; the
+    // current guide has no teal and no orange, and makes gold both the brand
+    // and achievement — so those three being equal is now the design, not a
+    // regression. What the guide put in its place is a contrast rule, because
+    // the flat brand gold is about 1.9:1 on white.
+    expect(AppColors.light.brandBright, isNot(AppColors.light.brand));
+    expect(AppColors.light.gold, isNot(AppColors.light.brand));
+
     for (final palette in [AppColors.dark, AppColors.light]) {
-      // Nothing borrows another's meaning — the single rule that keeps a dense
-      // exam screen legible.
-      expect(palette.brand, isNot(palette.orange));
-      expect(palette.orange, isNot(palette.gold));
-      expect(palette.gold, isNot(palette.brand));
+      // Ink on a gold fill is the guide's dark ink. White is the easy mistake
+      // here and it is unreadable on every stop of the gold gradient.
+      expect(palette.onBrand, const Color(0xFF1A1206));
+      expect(palette.onBrand, isNot(Colors.white));
+    }
+  });
+
+  test('every Latin text style can render Devanagari', () {
+    // Neither Sora nor Plus Jakarta Sans contains a Devanagari glyph. Without
+    // the fallback, one Hindi word in an English string silently renders in
+    // whatever the OEM ships — the failure looks like a font bug on one phone
+    // and nothing at all on another, so it is worth a test.
+    for (final s in [
+      AppText.hero,
+      AppText.screenTitle,
+      AppText.cardTitle,
+      AppText.body,
+      AppText.button,
+      AppText.label,
+      AppText.tab,
+    ]) {
+      expect(s.fontFamilyFallback, contains(AppFont.hindi));
     }
   });
 

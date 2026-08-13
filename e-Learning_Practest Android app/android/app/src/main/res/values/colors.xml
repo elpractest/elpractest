@@ -1,7 +1,12 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <!-- The app's ground. Teal-black, not blue-black: the mark tints its own dark. -->
-    <color name="ic_launcher_background">#0B1B21</color>
+    <!--
+      White, not the app's own dark. The mark's mortarboard and pencil tip are
+      solid black: on a dark plate the icon loses half its silhouette and what
+      is left reads as a stray amber hook. White is also what the guide
+      specifies, and what every in-app mark tile uses.
+    -->
+    <color name="ic_launcher_background">#FFFFFF</color>
     <!-- Same in day and night: the app's default theme is dark. -->
-    <color name="launch_background">#0B1B21</color>
+    <color name="launch_background">#0B0F1A</color>
 </resources>

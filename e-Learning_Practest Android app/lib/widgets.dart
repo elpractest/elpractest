@@ -38,31 +38,67 @@ class BackChip extends StatelessWidget {
   }
 }
 
-/// The mark on its own — mortarboard and laptop, no wordmark.
+/// The mark on its own — mortarboard and pencil-P, no wordmark.
 ///
-/// Full colour in both themes: the artwork's near-white screen carries the
-/// silhouette against the teal-black ground, so it needs no plate behind it.
-/// Plating a transparent mark onto a white box to survive a dark screen is the
-/// one thing the brand rules forbid.
+/// **Plated on white by default, and that is a deliberate reversal of the rule
+/// this comment used to state.** The old rule — never plate a transparent mark
+/// onto a white box just to survive a dark screen — was right about the old
+/// artwork, which was a near-white silhouette that carried itself against the
+/// teal-black ground. It is wrong about this one. The current mark's mortarboard
+/// and pencil tip are solid black, so on the guide's #0B0F1A ground they vanish
+/// and what is left reads as a broken amber hook. Every surface in the guide
+/// draws the mark inside a white rounded tile for exactly this reason, and so
+/// does the launcher icon.
+///
+/// Pass `plated: false` only where the surface behind is already light.
 class BrandMark extends StatelessWidget {
-  const BrandMark({super.key, this.size = 26});
+  const BrandMark({super.key, this.size = 26, this.plated = true, this.radius});
 
+  /// Size of the tile when plated, of the mark itself when not.
   final double size;
+  final bool plated;
+
+  /// Corner radius of the plate. Defaults to the guide's own ratio, which is
+  /// what makes a 38 dp header tile and a 96 dp splash tile read as the same
+  /// shape rather than two different ones.
+  final double? radius;
 
   @override
   Widget build(BuildContext context) {
-    return Image.asset(
+    // 0.77 and 0.29 are the guide's ratios, consistent across all three of its
+    // tile sizes (96/74, 56/42, 38/29).
+    final image = Image.asset(
       'assets/brand/practest-mark.png',
-      width: size,
-      height: size,
+      width: plated ? size * 0.77 : size,
+      height: plated ? size * 0.77 : size,
       fit: BoxFit.contain,
       filterQuality: FilterQuality.medium,
+    );
+
+    if (!plated) return image;
+
+    return Container(
+      width: size,
+      height: size,
+      alignment: Alignment.center,
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(radius ?? size * 0.29),
+      ),
+      child: image,
     );
   }
 }
 
-/// The full lockup. Switches to the knockout variant on dark, where the
-/// wordmark is set in #F4F6F7 and the swoosh in #F07830.
+/// The full lockup — the mark beside the "e-Learning Practest" wordmark.
+///
+/// The knockout variant this used to switch to on dark is gone. It described
+/// the old artwork (wordmark #F4F6F7, swoosh #F07830) and has no equivalent
+/// here: in the new lockup "Practest" is set in solid black, so there is
+/// nothing to knock out of. The guide never puts the lockup on a dark surface
+/// either — it uses a plated [BrandMark] beside a live [BrandWordmark]. Where
+/// this widget does land on dark it plates itself, for the same reason the mark
+/// does.
 class BrandLockup extends StatelessWidget {
   const BrandLockup({super.key, this.width = 220});
 
@@ -71,13 +107,23 @@ class BrandLockup extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final dark = Theme.of(context).brightness == Brightness.dark;
-    return Image.asset(
-      dark
-          ? 'assets/brand/practest-logo-knockout.png'
-          : 'assets/brand/practest-logo.png',
+    final image = Image.asset(
+      'assets/brand/practest-logo.png',
       width: width,
       fit: BoxFit.contain,
       filterQuality: FilterQuality.medium,
+    );
+
+    if (!dark) return image;
+
+    return Container(
+      padding: EdgeInsets.symmetric(
+          horizontal: width * 0.05, vertical: width * 0.035),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(AppTheme.radiusMd),
+      ),
+      child: image,
     );
   }
 }
