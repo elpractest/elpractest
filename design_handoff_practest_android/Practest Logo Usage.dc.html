@@ -1,0 +1,111 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin="">
+<link href="https://fonts.googleapis.com/css2?family=Sora:wght@700;800&family=Plus+Jakarta+Sans:wght@400;600;700;800&family=JetBrains+Mono:wght@400;700&display=swap" rel="stylesheet">
+<style>
+html,body{margin:0;padding:0;background:#05070C}
+*{box-sizing:border-box}
+a{color:#F5A623;text-decoration:none}
+a:hover{color:#FFC968}
+</style>
+</helmet>
+
+<div style="min-height:100vh;background:radial-gradient(120% 70% at 18% 0%,#12203A 0%,#0B0F1A 46%,#05070C 100%);font-family:'Plus Jakarta Sans',system-ui,sans-serif;color:#F3F6FF;padding:64px 24px 96px">
+<div style="max-width:920px;margin:0 auto">
+
+<div style="display:inline-flex;align-items:center;gap:7px;padding:6px 12px;border-radius:999px;background:rgba(18,185,129,.16);border:1px solid rgba(18,185,129,.4);font:700 11px 'Plus Jakarta Sans';letter-spacing:.1em;color:#3DDBA9">YES — WITH ONE DERIVED VARIANT</div>
+
+<h1 style="margin:20px 0 0;font:800 40px/1.08 'Sora',sans-serif;letter-spacing:-.03em;color:#F3F6FF;max-width:18ch">The PNG works. Transparency alone doesn't.</h1>
+
+<p style="margin:18px 0 0;font:400 17px/1.65 'Plus Jakarta Sans';color:#C7D0E4;max-width:66ch">1000×500, genuinely transparent, 95 KB. The problem it doesn't solve: the mortarboard and the word <strong style="color:#F3F6FF">Practest</strong> are solid black, so on the guide's <code style="font-family:'JetBrains Mono',monospace;color:#FFC968">#0B0F1A</code> ground they disappear and all that's left is the amber hook. That is exactly why <code style="font-family:'JetBrains Mono',monospace;color:#FFC968">BrandLockup</code> in your repo plates the logo on a white tile — a workaround for artwork that has only ever existed dark-on-light.</p>
+
+<p style="margin:14px 0 0;font:400 17px/1.65 'Plus Jakarta Sans';color:#C7D0E4;max-width:66ch">So I derived the missing half: a dark-surface variant with the black ink lifted to <code style="font-family:'JetBrains Mono',monospace;color:#FFC968">#F3F6FF</code> and the navy lifted to <code style="font-family:'JetBrains Mono',monospace;color:#FFC968">#8FB0FF</code>, both straight from your palette. The amber is untouched — it already carries itself against dark.</p>
+
+<div style="height:1px;background:rgba(255,255,255,.1);margin:44px 0"></div>
+
+<h2 style="margin:0 0 20px;font:700 13px 'Plus Jakarta Sans';letter-spacing:.12em;color:#8A96B4">SIDE BY SIDE</h2>
+
+<div style="display:grid;grid-template-columns:1fr 1fr;gap:16px">
+  <div>
+    <div style="height:200px;background:#0B0F1A;border:1px solid rgba(255,255,255,.1);border-radius:20px;display:grid;place-items:center;padding:26px"><img src="uploads/e-Learning Practest-Logo.png" alt="Original lockup on dark" style="max-width:100%;max-height:100%;object-fit:contain"></div>
+    <div style="margin-top:10px;font:600 13px 'Plus Jakarta Sans';color:#FB8F92">Original, unplated — half the mark is gone</div>
+  </div>
+  <div>
+    <div style="height:200px;background:#0B0F1A;border:1px solid rgba(255,255,255,.1);border-radius:20px;display:grid;place-items:center;padding:26px"><img src="assets/brand/practest-logo-dark.png" alt="Derived dark lockup" style="max-width:100%;max-height:100%;object-fit:contain"></div>
+    <div style="margin-top:10px;font:600 13px 'Plus Jakarta Sans';color:#3DDBA9">Derived dark variant — reads whole</div>
+  </div>
+  <div>
+    <div style="height:200px;background:#EAEEF6;border:1px solid rgba(255,255,255,.1);border-radius:20px;display:grid;place-items:center;padding:26px"><img src="uploads/e-Learning Practest-Logo.png" alt="Original lockup on light" style="max-width:100%;max-height:100%;object-fit:contain"></div>
+    <div style="margin-top:10px;font:600 13px 'Plus Jakarta Sans';color:#3DDBA9">Original on the light palette — correct as-is</div>
+  </div>
+  <div>
+    <div style="height:200px;background:#0B0F1A;border:1px solid rgba(255,255,255,.1);border-radius:20px;display:grid;place-items:center;padding:26px"><div style="background:#fff;border-radius:20px;padding:16px 22px;display:grid;place-items:center"><img src="uploads/e-Learning Practest-Logo.png" alt="Plated lockup" style="max-height:110px;object-fit:contain"></div></div>
+    <div style="margin-top:10px;font:600 13px 'Plus Jakarta Sans';color:#C7D0E4">Today's plate — works, but a white slab on every dark screen</div>
+  </div>
+</div>
+
+<div style="height:1px;background:rgba(255,255,255,.1);margin:48px 0"></div>
+
+<h2 style="margin:0 0 20px;font:700 13px 'Plus Jakarta Sans';letter-spacing:.12em;color:#8A96B4">IN CONTEXT</h2>
+
+<div style="display:flex;gap:26px;flex-wrap:wrap;align-items:flex-start">
+
+  <div>
+    <div style="width:300px;height:150px;border-radius:20px;border:1px solid rgba(255,255,255,.1);background:linear-gradient(180deg,#12203A,#0B0F1A);padding:20px 18px;display:flex;flex-direction:column;justify-content:space-between">
+      <img src="assets/brand/practest-logo-dark.png" alt="Header lockup" style="height:44px;object-fit:contain;object-position:left">
+      <div style="font:400 12px 'Plus Jakarta Sans';color:#8A96B4">Branded header · chrome #12203A</div>
+    </div>
+    <div style="margin-top:10px;font:600 13px 'Plus Jakarta Sans';color:#C7D0E4">Header — no plate needed</div>
+  </div>
+
+  <div>
+    <div style="width:220px;height:300px;border-radius:24px;border:1px solid rgba(255,255,255,.1);background:radial-gradient(120% 80% at 50% 30%,#16264A 0%,#0B0F1A 55%,#070A12 100%);display:flex;flex-direction:column;align-items:center;justify-content:center;gap:16px">
+      <img src="assets/brand/practest-logo-dark.png" alt="Splash lockup" style="width:150px;object-fit:contain">
+      <div style="font:600 12px 'Noto Sans Devanagari','Plus Jakarta Sans';color:#8FB0FF">Practice to Success</div>
+    </div>
+    <div style="margin-top:10px;font:600 13px 'Plus Jakarta Sans';color:#C7D0E4">Splash — the plate can come off</div>
+  </div>
+
+  <div>
+    <div style="width:220px;height:300px;border-radius:24px;border:1px solid rgba(255,255,255,.1);background:#EAEEF6;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:16px">
+      <img src="uploads/e-Learning Practest-Logo.png" alt="Light splash lockup" style="width:150px;object-fit:contain">
+      <div style="font:600 12px 'Noto Sans Devanagari','Plus Jakarta Sans';color:#2450CC">Practice to Success</div>
+    </div>
+    <div style="margin-top:10px;font:600 13px 'Plus Jakarta Sans';color:#C7D0E4">Light theme — original file</div>
+  </div>
+
+</div>
+
+<div style="height:1px;background:rgba(255,255,255,.1);margin:48px 0"></div>
+
+<h2 style="margin:0 0 20px;font:700 13px 'Plus Jakarta Sans';letter-spacing:.12em;color:#8A96B4">WHERE IT STILL FALLS SHORT</h2>
+
+<div style="display:grid;gap:12px;max-width:70ch">
+  <div style="background:#141B2B;border:1px solid rgba(245,166,35,.32);border-radius:20px;padding:20px 22px">
+    <div style="font:700 15px 'Plus Jakarta Sans';color:#F3F6FF">The mark can't be separated from the wordmark</div>
+    <div style="margin-top:9px;font:400 14.5px/1.6 'Plus Jakarta Sans';color:#9AA6C2">I tried cropping the mortarboard-and-pencil-P out for the 26–40dp header tile. The amber P's descender runs straight through the letters of <em>e-Learning</em>, so any crop takes a slice of the wordmark with it. Your repo's existing <code style="font-family:'JetBrains Mono',monospace;color:#FFC968">practest-mark.png</code> at 1×/2×/3× is still the file to use for the small mark — this lockup can't produce one.</div>
+  </div>
+  <div style="background:#141B2B;border:1px solid rgba(245,166,35,.32);border-radius:20px;padding:20px 22px">
+    <div style="font:700 15px 'Plus Jakarta Sans';color:#F3F6FF">1000px caps the lockup at about 330dp</div>
+    <div style="margin-top:9px;font:400 14.5px/1.6 'Plus Jakarta Sans';color:#9AA6C2">Fine everywhere it currently appears — the widest use is the login card at 200dp, and welcome draws the mark at 40dp. It would not survive a tablet splash at full width, and the launcher icon should keep coming from the vector.</div>
+  </div>
+  <div style="background:#141B2B;border:1px solid rgba(255,255,255,.08);border-radius:20px;padding:20px 22px">
+    <div style="font:700 15px 'Plus Jakarta Sans';color:#F3F6FF">The recolour is a derivation, not artwork</div>
+    <div style="margin-top:9px;font:400 14.5px/1.6 'Plus Jakarta Sans';color:#9AA6C2">I remapped pixels by colour, which is exact for flat fills but softens the thin gold outline around the cap at small sizes. If your designer has the source file, a proper dark export beats this. It is good enough to ship in the meantime.</div>
+  </div>
+</div>
+
+</div>
+</div>
+</x-dc>
+</body>
+</html>

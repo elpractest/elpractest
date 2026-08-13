@@ -5,6 +5,7 @@ import '../boards.dart';
 import '../build_config.dart';
 import '../models.dart';
 import '../notifications.dart';
+import '../practest_guide_widgets.dart';
 import '../promo_banner_carousel.dart';
 import '../resume_memory.dart';
 import '../routes.dart';
@@ -367,17 +368,20 @@ class _HomeScreenState extends State<HomeScreen> {
                 InkWell(
                   onTap: () => context.openSearch(),
                   borderRadius: BorderRadius.circular(AppTheme.radiusPill),
-                  child: SizedBox(
+                  child: const SizedBox(
                     width: 40,
                     height: 40,
+                    // Light glyph: the header is the guide's dark chrome in both
+                    // themes.
                     child: Icon(
                       Icons.search_rounded,
                       size: 22,
-                      color: c.textSecondary,
+                      color: Color(0xFFC7D0E4),
                     ),
                   ),
                 ),
-                const NotificationBell(),
+                const NotificationBell(
+                    color: Color(0xFFC7D0E4), ringColor: Color(0xFF12203A)),
               ],
             ),
           ),
@@ -502,9 +506,10 @@ class _HomeScreenState extends State<HomeScreen> {
           const SizedBox(height: 11),
           ProgressBar(percent: active.progressPercent),
           const SizedBox(height: 13),
-          PrimaryButton(
+          GoldButton(
             label: 'Continue test',
-            fullWidth: true,
+            showIcon: false,
+            dense: true,
             onPressed: () => _resume(active),
           ),
         ],
@@ -569,9 +574,10 @@ class _HomeScreenState extends State<HomeScreen> {
                   showActivationModal(context, onSuccess: _handleEnrolled),
             )
           else
-            PrimaryButton(
+            GoldButton(
               label: 'Start test',
-              fullWidth: true,
+              showIcon: false,
+              dense: true,
               onPressed: () => _startTest(next.id),
             ),
         ],
@@ -700,7 +706,7 @@ class _HomeScreenState extends State<HomeScreen> {
             // Honest routing: there is no per-topic practice endpoint, so this
             // hands the student to the study path rather than pretending to
             // have filtered a question bank by topic.
-            onPressed: () => HomeShell.go(HomeShell.series),
+            onPressed: () => HomeShell.go(HomeShell.tests),
           ),
         ],
       ),
@@ -810,7 +816,7 @@ class _HomeScreenState extends State<HomeScreen> {
       padding: EdgeInsets.zero,
       onTap: () => context.openCourse(course.id),
       child: ClipRRect(
-        borderRadius: BorderRadius.circular(AppTheme.radiusMd),
+        borderRadius: BorderRadius.circular(AppTheme.radiusLg),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
@@ -1018,7 +1024,7 @@ class _HomeScreenState extends State<HomeScreen> {
             SurfacePanel(
               padding: EdgeInsets.zero,
               child: ClipRRect(
-                borderRadius: BorderRadius.circular(AppTheme.radiusMd),
+                borderRadius: BorderRadius.circular(AppTheme.radiusLg),
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [

@@ -1,9 +1,9 @@
-import '../../scaffold.dart';
 import 'package:flutter/material.dart';
 import 'package:url_launcher/url_launcher.dart';
 
 import '../../api_client.dart';
 import '../../models.dart';
+import '../../practest_guide_widgets.dart';
 import '../../widgets.dart';
 
 class RegisterScreen extends StatefulWidget {
@@ -100,13 +100,9 @@ class _RegisterScreenState extends State<RegisterScreen> {
     final c = useColors(context);
 
     if (_success) {
-      return AppScaffold(
-        child: Center(
-          child: SingleChildScrollView(
-            padding: const EdgeInsets.all(16),
-            child: ConstrainedBox(
-              constraints: const BoxConstraints(maxWidth: 460),
-              child: SurfacePanel(
+      return PreAuthScaffold(
+        maxWidth: 460,
+        child: SurfacePanel(
                 padding: const EdgeInsets.all(40),
                 child: Column(
                   children: [
@@ -129,24 +125,16 @@ class _RegisterScreenState extends State<RegisterScreen> {
                   ],
                 ),
               ),
-            ),
-          ),
-        ),
       );
     }
 
-    return AppScaffold(
-      child: Center(
-        child: SingleChildScrollView(
-          padding: const EdgeInsets.all(16),
-          child: ConstrainedBox(
-            constraints: const BoxConstraints(maxWidth: 460),
-            child: SurfacePanel(
+    return PreAuthScaffold(
+      maxWidth: 460,
+      child: SurfacePanel(
               padding: const EdgeInsets.all(32),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.stretch,
                 children: [
-                  const BackChip(),
                   Column(
                     children: [
                       Text('Create Account',
@@ -277,9 +265,9 @@ class _RegisterScreenState extends State<RegisterScreen> {
                           ),
                         ),
                         const SizedBox(height: 20),
-                        PrimaryButton(
-                          label: _submitting ? 'Creating Account...' : 'Create Account',
-                          fullWidth: true,
+                        GoldButton(
+                          label: _submitting ? 'Creating Account…' : 'Create Account',
+                          showIcon: false,
                           loading: _submitting,
                           onPressed: (_submitting || !_agreed) ? null : _submit,
                         ),
@@ -300,9 +288,6 @@ class _RegisterScreenState extends State<RegisterScreen> {
                 ],
               ),
             ),
-          ),
-        ),
-      ),
     );
   }
 }

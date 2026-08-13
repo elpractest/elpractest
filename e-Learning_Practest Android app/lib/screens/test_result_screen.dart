@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 
 import '../api_client.dart';
 import '../models.dart';
+import '../practest_guide_widgets.dart';
 import '../scaffold.dart';
 import '../share_card.dart';
 import '../theme.dart';
@@ -107,8 +108,10 @@ class _TestResultScreenState extends State<TestResultScreen> {
                 : IconButton(
                     tooltip: 'Share',
                     onPressed: _share,
-                    icon: Icon(Icons.ios_share,
-                        size: 20, color: useColors(context).textSecondary),
+                    // The header is the guide's dark chrome in both themes, so
+                    // its trailing glyph is light, not the theme's ink.
+                    icon: const Icon(Icons.ios_share,
+                        size: 20, color: Color(0xFFC7D0E4)),
                   ),
           ),
           Expanded(
@@ -325,10 +328,11 @@ class _VerdictBlock extends StatelessWidget {
               style: AppText.body.copyWith(color: c.textSecondary, fontSize: 14)),
           if (onReview != null) ...[
             const SizedBox(height: 13),
-            PrimaryButton(
+            GoldButton(
               label: 'Review the ${verdict.wrongCount} wrong '
                   '${verdict.wrongCount == 1 ? 'answer' : 'answers'}',
-              fullWidth: true,
+              showIcon: false,
+              dense: true,
               onPressed: onReview,
             ),
           ],

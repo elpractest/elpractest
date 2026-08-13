@@ -1,0 +1,133 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin="">
+<link href="https://fonts.googleapis.com/css2?family=Sora:wght@600;700;800&family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;700;800&family=Noto+Sans+Devanagari:wght@500;600;700&display=swap" rel="stylesheet">
+<style>
+html,body{margin:0;padding:0;background:#05070C}
+*{box-sizing:border-box}
+a{color:#F5A623;text-decoration:none}
+a:hover{color:#FFC968}
+</style>
+</helmet>
+
+<div style="min-height:100vh;background:radial-gradient(120% 70% at 18% 0%,#12203A 0%,#0B0F1A 46%,#05070C 100%);font-family:'Plus Jakarta Sans',system-ui,sans-serif;color:#F3F6FF;padding:64px 24px 96px">
+<div style="max-width:920px;margin:0 auto">
+
+<div style="display:inline-flex;align-items:center;gap:7px;padding:6px 12px;border-radius:999px;background:rgba(245,166,35,.14);border:1px solid rgba(245,166,35,.32);font:700 11px 'Plus Jakarta Sans';letter-spacing:.1em;color:#FFC968">UI GAP AUDIT · ANDROID</div>
+
+<h1 style="margin:20px 0 0;font:800 42px/1.06 'Sora',sans-serif;letter-spacing:-.03em;color:#F3F6FF;text-wrap:balance;max-width:16ch">The tokens landed. The screens didn't.</h1>
+
+<p style="margin:18px 0 0;font:400 17px/1.65 'Plus Jakarta Sans';color:#C7D0E4;max-width:66ch">Your Flutter app is not off-guide because someone used the wrong colours. <code style="font-family:'JetBrains Mono',monospace;font-size:15px;color:#FFC968">lib/theme.dart</code> is a careful, accurate port of the deep-ink + gold system — every hex, every type style, both palettes, the tint map, the CBT palette. The port then stopped after tokens, fonts, brand assets and the splash. Every screen below it still renders the layout that was designed for the old teal system, now wearing gold paint.</p>
+
+<p style="margin:14px 0 0;font:400 17px/1.65 'Plus Jakarta Sans';color:#C7D0E4;max-width:66ch">The repo says so itself. <code style="font-family:'JetBrains Mono',monospace;font-size:15px;color:#FFC968">docs/DESIGN-GUIDE-PORT.md</code> ends with a seven-item <strong style="color:#F3F6FF">Not done</strong> list, and that list is exactly what a student notices.</p>
+
+<div style="height:1px;background:rgba(255,255,255,.1);margin:44px 0"></div>
+
+<h2 style="margin:0 0 20px;font:700 13px 'Plus Jakarta Sans';letter-spacing:.12em;color:#8A96B4">THE THREE-LINE PROOF</h2>
+
+<div style="display:grid;gap:14px">
+  <div style="background:#141B2B;border:1px solid rgba(255,255,255,.08);border-radius:20px;padding:22px 24px">
+    <div style="font:700 15px 'Plus Jakarta Sans';color:#F3F6FF">Declared and referenced by nothing</div>
+    <div style="margin-top:10px;font:400 14.5px/1.6 'Plus Jakarta Sans';color:#9AA6C2"><code style="font-family:'JetBrains Mono',monospace;color:#FFC968">AppTheme.goldGradient</code>, <code style="font-family:'JetBrains Mono',monospace;color:#FFC968">AppText.hero</code>, <code style="font-family:'JetBrains Mono',monospace;color:#FFC968">AppColors.chrome</code> and <code style="font-family:'JetBrains Mono',monospace;color:#FFC968">AppColors.nav</code> exist in theme.dart and appear in zero widgets. Those four tokens are the guide's gold CTA, its 33px display headline, its branded header and its translucent tab bar — four of the five things you see first.</div>
+  </div>
+  <div style="background:#141B2B;border:1px solid rgba(255,255,255,.08);border-radius:20px;padding:22px 24px">
+    <div style="font:700 15px 'Plus Jakarta Sans';color:#F3F6FF">Comments that still describe the old system</div>
+    <div style="margin-top:10px;font:400 14.5px/1.6 'Plus Jakarta Sans';color:#9AA6C2"><code style="font-family:'JetBrains Mono',monospace;color:#FFC968">PrimaryButton</code> in widgets.dart is documented "Solid brand teal, no gradient, no glow" and fills flat <code style="font-family:'JetBrains Mono',monospace;color:#FFC968">#F5A623</code> at 10px radius. <code style="font-family:'JetBrains Mono',monospace;color:#FFC968">ProgressBar</code>: "the gradient is gone." Both are pre-guide decisions that survived the retheme untouched.</div>
+  </div>
+  <div style="background:#141B2B;border:1px solid rgba(255,255,255,.08);border-radius:20px;padding:22px 24px">
+    <div style="font:700 15px 'Plus Jakarta Sans';color:#F3F6FF">Devanagari is bundled and unreachable</div>
+    <div style="margin-top:10px;font:400 14.5px/1.6 'Plus Jakarta Sans';color:#9AA6C2">Noto Sans Devanagari ships in pubspec.yaml and is wired only as a <em>fallback</em>. No Flutter surface ever asks for Hindi, and the EN/हिं toggle the guide puts on every pre-auth screen does not exist in the app at all. The web SPA has both.</div>
+  </div>
+</div>
+
+<div style="height:1px;background:rgba(255,255,255,.1);margin:48px 0"></div>
+
+<h2 style="margin:0 0 6px;font:700 13px 'Plus Jakarta Sans';letter-spacing:.12em;color:#8A96B4">SCREEN BY SCREEN</h2>
+<p style="margin:0 0 24px;font:400 14px 'Plus Jakarta Sans';color:#8A96B4">Severity is how far the built screen sits from the guide, not how hard it is to fix.</p>
+
+<div style="display:grid;gap:12px">
+
+  <div style="background:#141B2B;border:1px solid rgba(229,72,77,.32);border-radius:20px;padding:20px 22px">
+    <div style="display:flex;align-items:baseline;gap:12px;flex-wrap:wrap"><div style="font:700 17px 'Plus Jakarta Sans';color:#F3F6FF">Welcome / onboarding</div><div style="padding:3px 9px;border-radius:6px;background:rgba(229,72,77,.16);border:1px solid rgba(229,72,77,.4);font:700 11px 'Plus Jakarta Sans';letter-spacing:.06em;color:#FB8F92">REBUILD</div><div style="font:400 13px 'JetBrains Mono',monospace;color:#8A96B4">lib/screens/intro_screen.dart</div></div>
+    <div style="margin-top:11px;font:400 14.5px/1.65 'Plus Jakarta Sans';color:#9AA6C2">The largest single gap. The guide draws a 56%-height photographic hero under a four-stop scrim, a plated mark and live wordmark over it, the EN/हिं pill, an <strong style="color:#C7D0E4">EXAM-ACCURATE CBT</strong> eyebrow, a 33px Sora headline at −0.03em, a Devanagari-first subline, two ticked claims, and the gold gradient CTA. The app draws a centred lockup, a 26px screenTitle, six stacked feature cards and a flat button. Different screen, not a restyled one. <strong style="color:#C7D0E4">Blocked on one asset:</strong> a hero photograph, which is not in the repo.</div>
+  </div>
+
+  <div style="background:#141B2B;border:1px solid rgba(229,72,77,.32);border-radius:20px;padding:20px 22px">
+    <div style="display:flex;align-items:baseline;gap:12px;flex-wrap:wrap"><div style="font:700 17px 'Plus Jakarta Sans';color:#F3F6FF">Home dashboard</div><div style="padding:3px 9px;border-radius:6px;background:rgba(229,72,77,.16);border:1px solid rgba(229,72,77,.4);font:700 11px 'Plus Jakarta Sans';letter-spacing:.06em;color:#FB8F92">REBUILD</div><div style="font:400 13px 'JetBrains Mono',monospace;color:#8A96B4">lib/screens/home_screen.dart</div></div>
+    <div style="margin-top:11px;font:400 14.5px/1.65 'Plus Jakarta Sans';color:#9AA6C2">The guide's order is goal selector → promo carousel → four quick-mode tiles → Continue card → Explore-by-exam 8-grid → popular-series carousel → scholarship strip. Only the promo carousel exists, and it is the one part built after the guide — which is why it is also the one part that looks right. The web rebuilt this whole sequence in <code style="font-family:'JetBrains Mono',monospace;color:#FFC968">pages/Dashboard.jsx</code>; port that order.</div>
+  </div>
+
+  <div style="background:#141B2B;border:1px solid rgba(245,166,35,.32);border-radius:20px;padding:20px 22px">
+    <div style="display:flex;align-items:baseline;gap:12px;flex-wrap:wrap"><div style="font:700 17px 'Plus Jakarta Sans';color:#F3F6FF">Navigation shell</div><div style="padding:3px 9px;border-radius:6px;background:rgba(245,166,35,.16);border:1px solid rgba(245,166,35,.4);font:700 11px 'Plus Jakarta Sans';letter-spacing:.06em;color:#FFC968">RESTRUCTURE</div><div style="font:400 13px 'JetBrains Mono',monospace;color:#8A96B4">lib/shell.dart</div></div>
+    <div style="margin-top:11px;font:400 14.5px/1.65 'Plus Jakarta Sans';color:#9AA6C2">Four tabs (Home · Series · Results · Profile) against the guide's five (Home · Tests · Study · Store · Profile). The Vajini FAB is already correct — right violet→blue gradient, right glow. The bar paints on <code style="font-family:'JetBrains Mono',monospace;color:#FFC968">panel</code>; the guide wants the translucent <code style="font-family:'JetBrains Mono',monospace;color:#FFC968">nav</code>. Note the file argues <em>against</em> a fifth tab, and that reasoning was right about the old map — the guide's fifth is a place, not a price tier.</div>
+  </div>
+
+  <div style="background:#141B2B;border:1px solid rgba(245,166,35,.32);border-radius:20px;padding:20px 22px">
+    <div style="display:flex;align-items:baseline;gap:12px;flex-wrap:wrap"><div style="font:700 17px 'Plus Jakarta Sans';color:#F3F6FF">Login / OTP</div><div style="padding:3px 9px;border-radius:6px;background:rgba(245,166,35,.16);border:1px solid rgba(245,166,35,.4);font:700 11px 'Plus Jakarta Sans';letter-spacing:.06em;color:#FFC968">RESTYLE</div><div style="font:400 13px 'JetBrains Mono',monospace;color:#8A96B4">lib/screens/auth/login_screen.dart</div></div>
+    <div style="margin-top:11px;font:400 14.5px/1.65 'Plus Jakarta Sans';color:#9AA6C2">Structurally close — "Welcome back", brand lockup, real 2FA and social logic all present. What's missing is the guide's shell: the radial <code style="font-family:'JetBrains Mono',monospace;color:#FFC968">#12203A</code> ground, the 40dp rounded back tile, the EN/हिं pill, 16px field radii and the gold gradient submit. <strong style="color:#C7D0E4">Keep email + password.</strong> The mockup draws mobile + OTP, but <code style="font-family:'JetBrains Mono',monospace;color:#FFC968">/otp/send</code> sits inside <code style="font-family:'JetBrains Mono',monospace;color:#FFC968">auth:sanctum</code> — it is verification for a signed-in user, not a login. The web made the same call.</div>
+  </div>
+
+  <div style="background:#141B2B;border:1px solid rgba(245,166,35,.32);border-radius:20px;padding:20px 22px">
+    <div style="display:flex;align-items:baseline;gap:12px;flex-wrap:wrap"><div style="font:700 17px 'Plus Jakarta Sans';color:#F3F6FF">Test list · Result · Leaderboard · Profile</div><div style="padding:3px 9px;border-radius:6px;background:rgba(245,166,35,.16);border:1px solid rgba(245,166,35,.4);font:700 11px 'Plus Jakarta Sans';letter-spacing:.06em;color:#FFC968">RESTYLE</div><div style="font:400 13px 'JetBrains Mono',monospace;color:#8A96B4">test_series · test_result · results_history · profile</div></div>
+    <div style="margin-top:11px;font:400 14.5px/1.65 'Plus Jakarta Sans';color:#9AA6C2">These are the screens the primitives fix almost for free. They already use the right tokens; what makes them read as a stock Material app is geometry — 14px cards where the guide draws 20 and 28, 10px buttons where it draws 16, flat fills where it draws the gradient, and Material's rounded icon set where it draws 2.2px lucide strokes. Result additionally wants the score hero set in <code style="font-family:'JetBrains Mono',monospace;color:#FFC968">AppText.scoreHero</code> (42px mono) and subject accuracy bars.</div>
+  </div>
+
+  <div style="background:#141B2B;border:1px solid rgba(18,185,129,.3);border-radius:20px;padding:20px 22px">
+    <div style="display:flex;align-items:baseline;gap:12px;flex-wrap:wrap"><div style="font:700 17px 'Plus Jakarta Sans';color:#F3F6FF">Test player (CBT)</div><div style="padding:3px 9px;border-radius:6px;background:rgba(18,185,129,.16);border:1px solid rgba(18,185,129,.4);font:700 11px 'Plus Jakarta Sans';letter-spacing:.06em;color:#3DDBA9">NEARLY THERE</div><div style="font:400 13px 'JetBrains Mono',monospace;color:#8A96B4">lib/screens/test_taking_screen.dart</div></div>
+    <div style="margin-top:11px;font:400 14.5px/1.65 'Plus Jakarta Sans';color:#9AA6C2">The palette is marked <code style="font-family:'JetBrains Mono',monospace;color:#FFC968">DO NOT EDIT</code> in both codebases and already matches hex for hex. Leave it. One real defect: the countdown still draws in <code style="font-family:'JetBrains Mono',monospace;color:#FFC968">orange</code>, which no longer means anything of its own — the guide draws time-pressure in <code style="font-family:'JetBrains Mono',monospace;color:#FFC968">danger</code>. The repo's own port doc flags this and marks it not done.</div>
+  </div>
+
+  <div style="background:#141B2B;border:1px solid rgba(18,185,129,.3);border-radius:20px;padding:20px 22px">
+    <div style="display:flex;align-items:baseline;gap:12px;flex-wrap:wrap"><div style="font:700 17px 'Plus Jakarta Sans';color:#F3F6FF">Splash</div><div style="padding:3px 9px;border-radius:6px;background:rgba(18,185,129,.16);border:1px solid rgba(18,185,129,.4);font:700 11px 'Plus Jakarta Sans';letter-spacing:.06em;color:#3DDBA9">DONE</div><div style="font:400 13px 'JetBrains Mono',monospace;color:#8A96B4">lib/screens/splash_screen.dart</div></div>
+    <div style="margin-top:11px;font:400 14.5px/1.65 'Plus Jakarta Sans';color:#9AA6C2">Rebuilt to the guide during the token pass, along with the brand assets and launcher icons. It is the proof that the rest is a scope problem, not a capability one.</div>
+  </div>
+
+</div>
+
+<div style="height:1px;background:rgba(255,255,255,.1);margin:48px 0"></div>
+
+<h2 style="margin:0 0 6px;font:700 13px 'Plus Jakarta Sans';letter-spacing:.12em;color:#8A96B4">FOUR PATCHES, WRITTEN AND IN THIS PROJECT</h2>
+<p style="margin:0 0 24px;font:400 14px 'Plus Jakarta Sans';color:#8A96B4">Drop-in Dart. Nothing here touches behaviour, routing, auth or the CBT engine.</p>
+
+<div style="display:grid;gap:12px">
+  <div style="display:flex;gap:18px;align-items:flex-start;background:rgba(255,255,255,.03);border:1px solid rgba(255,255,255,.08);border-radius:16px;padding:18px 20px">
+    <div style="font:800 20px 'JetBrains Mono',monospace;color:#F5A623;line-height:1.2">01</div>
+    <div><div style="font:700 14.5px 'JetBrains Mono',monospace;color:#F3F6FF">dart/practest_guide_widgets.dart</div><div style="margin-top:7px;font:400 14px/1.6 'Plus Jakarta Sans';color:#9AA6C2">The primitives, and the highest-leverage change on the list: <code style="font-family:'JetBrains Mono',monospace;color:#FFC968">GoldButton</code> (the real gradient, 16px, glow), <code style="font-family:'JetBrains Mono',monospace;color:#FFC968">GhostButton</code>, <code style="font-family:'JetBrains Mono',monospace;color:#FFC968">EyebrowPill</code>, <code style="font-family:'JetBrains Mono',monospace;color:#FFC968">ChromeHeader</code>, <code style="font-family:'JetBrains Mono',monospace;color:#FFC968">GuideCard</code>, <code style="font-family:'JetBrains Mono',monospace;color:#FFC968">TickedClaim</code>. Swapping these repaints every screen at once.</div></div>
+  </div>
+  <div style="display:flex;gap:18px;align-items:flex-start;background:rgba(255,255,255,.03);border:1px solid rgba(255,255,255,.08);border-radius:16px;padding:18px 20px">
+    <div style="font:800 20px 'JetBrains Mono',monospace;color:#F5A623;line-height:1.2">02</div>
+    <div><div style="font:700 14.5px 'JetBrains Mono',monospace;color:#F3F6FF">dart/i18n.dart</div><div style="margin-top:7px;font:400 14px/1.6 'Plus Jakarta Sans';color:#9AA6C2">The EN/हिं layer, persisted to SharedPreferences, strings ported from <code style="font-family:'JetBrains Mono',monospace;color:#FFC968">app/src/lib/i18n.js</code> so phone and browser say the same words. Scoped to splash, welcome, login, nav and brand copy; API text stays as the server sends it.</div></div>
+  </div>
+  <div style="display:flex;gap:18px;align-items:flex-start;background:rgba(255,255,255,.03);border:1px solid rgba(255,255,255,.08);border-radius:16px;padding:18px 20px">
+    <div style="font:800 20px 'JetBrains Mono',monospace;color:#F5A623;line-height:1.2">03</div>
+    <div><div style="font:700 14.5px 'JetBrains Mono',monospace;color:#F3F6FF">dart/welcome_screen.dart</div><div style="margin-top:7px;font:400 14px/1.6 'Plus Jakarta Sans';color:#9AA6C2">The welcome screen rebuilt to the guide, replacing intro_screen.dart at the same route. Needs <code style="font-family:'JetBrains Mono',monospace;color:#FFC968">assets/hero/welcome.jpg</code>; falls back to the guide's radial ink until that photograph exists, so it is never broken — but it is not the design until you drop the image in.</div></div>
+  </div>
+  <div style="display:flex;gap:18px;align-items:flex-start;background:rgba(255,255,255,.03);border:1px solid rgba(255,255,255,.08);border-radius:16px;padding:18px 20px">
+    <div style="font:800 20px 'JetBrains Mono',monospace;color:#F5A623;line-height:1.2">04</div>
+    <div><div style="font:700 14.5px 'JetBrains Mono',monospace;color:#F3F6FF">dart/shell_five_tab.dart</div><div style="margin-top:7px;font:400 14px/1.6 'Plus Jakarta Sans';color:#9AA6C2">Five tabs, the <code style="font-family:'JetBrains Mono',monospace;color:#FFC968">nav</code> ground, a flagged Store stub matching the web's, and the lucide glyph name for each tab so the icon swap is mechanical. The four-tab reasoning is kept in the comment rather than deleted.</div></div>
+  </div>
+</div>
+
+<div style="height:1px;background:rgba(255,255,255,.1);margin:48px 0"></div>
+
+<h2 style="margin:0 0 18px;font:700 13px 'Plus Jakarta Sans';letter-spacing:.12em;color:#8A96B4">WHAT I STILL NEED FROM YOU</h2>
+<div style="display:grid;gap:10px;max-width:70ch">
+  <div style="font:400 15px/1.6 'Plus Jakarta Sans';color:#C7D0E4"><strong style="color:#F3F6FF">A hero photograph</strong> for welcome — students or a classroom, roughly 1200×1400, mid-dark so the scrim reads. I can't generate images.</div>
+  <div style="font:400 15px/1.6 'Plus Jakarta Sans';color:#C7D0E4"><strong style="color:#F3F6FF">A decision on the icon set.</strong> The guide's glyphs are lucide at 2.2px stroke; Material has no equivalent. One pubspec line, or ship SVGs.</div>
+  <div style="font:400 15px/1.6 'Plus Jakarta Sans';color:#C7D0E4"><strong style="color:#F3F6FF">Which screen to rewrite next.</strong> Home is the biggest remaining rebuild and the one students spend their time in. Say the word and it's next.</div>
+</div>
+
+</div>
+</div>
+</x-dc>
+</body>
+</html>

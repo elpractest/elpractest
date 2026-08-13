@@ -107,23 +107,14 @@ class BrandLockup extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final dark = Theme.of(context).brightness == Brightness.dark;
-    final image = Image.asset(
-      'assets/brand/practest-logo.png',
+    // On dark, the derived dark-surface lockup carries itself (black ink lifted
+    // to #F3F6FF, navy to #8FB0FF, amber untouched), so the white plate this
+    // used to need is gone. On light, the full-colour lockup as supplied.
+    return Image.asset(
+      dark ? 'assets/brand/practest-logo-dark.png' : 'assets/brand/practest-logo.png',
       width: width,
       fit: BoxFit.contain,
       filterQuality: FilterQuality.medium,
-    );
-
-    if (!dark) return image;
-
-    return Container(
-      padding: EdgeInsets.symmetric(
-          horizontal: width * 0.05, vertical: width * 0.035),
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(AppTheme.radiusMd),
-      ),
-      child: image,
     );
   }
 }
@@ -334,7 +325,7 @@ class SurfacePanel extends StatelessWidget {
     this.onTap,
     this.color,
     this.borderColor,
-    this.borderRadius = AppTheme.radiusMd,
+    this.borderRadius = AppTheme.radiusLg,
   });
 
   final Widget child;
@@ -344,6 +335,11 @@ class SurfacePanel extends StatelessWidget {
   final VoidCallback? onTap;
   final Color? color;
   final Color? borderColor;
+
+  /// The guide's card radius. Was [AppTheme.radiusMd] (14) under the teal
+  /// system; the guide draws its cards at 20, and a 14px card inside a 20/28px
+  /// frame is the single most common reason a correctly-coloured screen still
+  /// reads as "not the design". [GuideCard] shares this radius.
   final double borderRadius;
 
   @override
@@ -782,10 +778,26 @@ class AppHeader extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final c = useColors(context);
+    // The guide's chrome stays deep in BOTH themes — this is the one surface
+    // light mode does not lighten — so the header carries light ink regardless
+    // of theme. These are AppColors.dark's own inks, named here so the row does
+    // not flip to dark ink on the light palette and vanish into the chrome.
+    const headerPrimary = Color(0xFFF3F6FF);
+    const headerSecondary = Color(0xFFC7D0E4);
     return Container(
       padding: const EdgeInsets.fromLTRB(16, 10, 12, 12),
       decoration: BoxDecoration(
-        color: c.bg,
+        // On dark, the chrome fades into the near-black page exactly as the
+        // guide draws it; on light it is a solid chrome band so light ink keeps
+        // its contrast rather than sitting over the fade's pale end.
+        color: c.isDark ? null : c.chrome,
+        gradient: c.isDark
+            ? LinearGradient(
+                begin: Alignment.topCenter,
+                end: Alignment.bottomCenter,
+                colors: [c.chrome, c.bg],
+              )
+            : null,
         border: Border(bottom: BorderSide(color: c.border)),
       ),
       child: Row(
@@ -794,7 +806,7 @@ class AppHeader extends StatelessWidget {
             _IconTap(
               icon: Icons.arrow_back,
               tooltip: 'Back',
-              color: c.textPrimary,
+              color: headerPrimary,
               onTap: () => Navigator.of(context).maybePop(),
             ),
             const SizedBox(width: 6),
@@ -804,7 +816,7 @@ class AppHeader extends StatelessWidget {
           ],
           Expanded(
             child: title == null
-                ? const BrandWordmark()
+                ? const BrandWordmark(color: headerPrimary)
                 : Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     mainAxisSize: MainAxisSize.min,
@@ -813,7 +825,7 @@ class AppHeader extends StatelessWidget {
                         title!,
                         maxLines: 1,
                         overflow: TextOverflow.ellipsis,
-                        style: AppText.cardTitle.copyWith(color: c.textPrimary),
+                        style: AppText.cardTitle.copyWith(color: headerPrimary),
                       ),
                       if (subtitle != null) ...[
                         const SizedBox(height: 3),
@@ -821,7 +833,7 @@ class AppHeader extends StatelessWidget {
                           subtitle!,
                           maxLines: 1,
                           overflow: TextOverflow.ellipsis,
-                          style: AppText.caption.copyWith(color: c.textSecondary),
+                          style: AppText.caption.copyWith(color: headerSecondary),
                         ),
                       ],
                     ],
@@ -835,7 +847,7 @@ class AppHeader extends StatelessWidget {
               child: Text(
                 userName!,
                 overflow: TextOverflow.ellipsis,
-                style: AppText.caption.copyWith(color: c.textSecondary),
+                style: AppText.caption.copyWith(color: headerSecondary),
               ),
             ),
           ],
@@ -844,7 +856,7 @@ class AppHeader extends StatelessWidget {
             _IconTap(
               icon: Icons.logout,
               tooltip: 'Log out',
-              color: c.textSecondary,
+              color: headerSecondary,
               onTap: onLogout!,
             ),
           ],

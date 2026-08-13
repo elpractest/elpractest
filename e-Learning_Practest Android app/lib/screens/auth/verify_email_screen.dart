@@ -1,7 +1,7 @@
-import '../../scaffold.dart';
 import 'package:flutter/material.dart';
 
 import '../../api_client.dart';
+import '../../practest_guide_widgets.dart';
 import '../../widgets.dart';
 import 'auth_routes.dart';
 import 'verify_email_notice_screen.dart';
@@ -65,72 +65,63 @@ class _VerifyEmailScreenState extends State<VerifyEmailScreen> {
   @override
   Widget build(BuildContext context) {
     final c = useColors(context);
-    return AppScaffold(
-      child: Center(
-        child: SingleChildScrollView(
-          padding: const EdgeInsets.all(16),
-          child: ConstrainedBox(
-            constraints: const BoxConstraints(maxWidth: 460),
-            child: SurfacePanel(
-              padding: const EdgeInsets.all(40),
-              child: Column(
-                children: [
-                  if (_status == _VerifyStatus.verifying)
-                    const SizedBox(width: 34, height: 34, child: CircularProgressIndicator(strokeWidth: 3))
-                  else
-                    MedallionIcon(
-                      icon: _status == _VerifyStatus.error
-                          ? Icons.close
-                          : Icons.check_circle,
-                      color: _status == _VerifyStatus.error ? c.danger : c.success,
-                      size: 34,
-                    ),
-                  const SizedBox(height: 16),
-                  Text(
-                    _status == _VerifyStatus.verifying
-                        ? 'Verifying...'
-                        : _status == _VerifyStatus.error
-                            ? 'Verification Failed'
-                            : 'Email Verified!',
-                    style: TextStyle(
-                      fontSize: 24,
-                      fontWeight: FontWeight.w800,
-                      color: _status == _VerifyStatus.error ? c.dangerText : c.brandBright,
-                    ),
-                  ),
-                  const SizedBox(height: 12),
-                  if (_status != _VerifyStatus.verifying) ...[
-                    Text(
-                      _message,
-                      textAlign: TextAlign.center,
-                      style: TextStyle(fontSize: 14, color: c.textSecondary, height: 1.6),
-                    ),
-                    const SizedBox(height: 24),
-                    if (_status == _VerifyStatus.success)
-                      PrimaryButton(
-                        label: 'Continue to Login',
-                        fullWidth: true,
-                        onPressed: () => returnToLogin(context),
-                      )
-                    else ...[
-                      SecondaryButton(
-                        label: 'Resend Verification Email',
-                        fullWidth: true,
-                        onPressed: () => Navigator.of(context).pushReplacement(
-                          MaterialPageRoute(builder: (_) => const VerifyEmailNoticeScreen()),
-                        ),
-                      ),
-                      const SizedBox(height: 12),
-                      TextButton(
-                        onPressed: () => returnToLogin(context),
-                        child: Text('← Back to Login', style: TextStyle(color: c.brandBright)),
-                      ),
-                    ],
-                  ],
-                ],
+    return PreAuthScaffold(
+      maxWidth: 460,
+      child: SurfacePanel(
+        padding: const EdgeInsets.all(40),
+        child: Column(
+          children: [
+            if (_status == _VerifyStatus.verifying)
+              const SizedBox(width: 34, height: 34, child: CircularProgressIndicator(strokeWidth: 3))
+            else
+              MedallionIcon(
+                icon: _status == _VerifyStatus.error ? Icons.close : Icons.check_circle,
+                color: _status == _VerifyStatus.error ? c.danger : c.success,
+                size: 34,
+              ),
+            const SizedBox(height: 16),
+            Text(
+              _status == _VerifyStatus.verifying
+                  ? 'Verifying...'
+                  : _status == _VerifyStatus.error
+                      ? 'Verification Failed'
+                      : 'Email Verified!',
+              style: TextStyle(
+                fontSize: 24,
+                fontWeight: FontWeight.w800,
+                color: _status == _VerifyStatus.error ? c.dangerText : c.brandBright,
               ),
             ),
-          ),
+            const SizedBox(height: 12),
+            if (_status != _VerifyStatus.verifying) ...[
+              Text(
+                _message,
+                textAlign: TextAlign.center,
+                style: TextStyle(fontSize: 14, color: c.textSecondary, height: 1.6),
+              ),
+              const SizedBox(height: 24),
+              if (_status == _VerifyStatus.success)
+                GoldButton(
+                  label: 'Continue to Login',
+                  showIcon: false,
+                  onPressed: () => returnToLogin(context),
+                )
+              else ...[
+                SecondaryButton(
+                  label: 'Resend Verification Email',
+                  fullWidth: true,
+                  onPressed: () => Navigator.of(context).pushReplacement(
+                    MaterialPageRoute(builder: (_) => const VerifyEmailNoticeScreen()),
+                  ),
+                ),
+                const SizedBox(height: 12),
+                TextButton(
+                  onPressed: () => returnToLogin(context),
+                  child: Text('← Back to Login', style: TextStyle(color: c.brandBright)),
+                ),
+              ],
+            ],
+          ],
         ),
       ),
     );

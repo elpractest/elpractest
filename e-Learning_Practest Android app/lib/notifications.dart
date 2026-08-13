@@ -163,7 +163,16 @@ String relativeTime(int epochMs) {
 /// is dismissed — which, because opening that screen marks everything seen,
 /// clears the dot without any shared state between the two.
 class NotificationBell extends StatefulWidget {
-  const NotificationBell({super.key});
+  const NotificationBell({super.key, this.color, this.ringColor});
+
+  /// The bell glyph colour. Defaults to the theme's secondary ink; the branded
+  /// chrome header passes a fixed light ink because the chrome stays dark in
+  /// both themes.
+  final Color? color;
+
+  /// The unread dot's border ring — matches the surface the bell sits on so the
+  /// dot reads as a punch-out. Defaults to the page background.
+  final Color? ringColor;
 
   @override
   State<NotificationBell> createState() => _NotificationBellState();
@@ -205,7 +214,7 @@ class _NotificationBellState extends State<NotificationBell> {
               Icon(
                 Icons.notifications_none_rounded,
                 size: 22,
-                color: c.textSecondary,
+                color: widget.color ?? c.textSecondary,
               ),
               if (_unread > 0)
                 Positioned(
@@ -217,7 +226,7 @@ class _NotificationBellState extends State<NotificationBell> {
                     decoration: BoxDecoration(
                       color: c.danger,
                       shape: BoxShape.circle,
-                      border: Border.all(color: c.bg, width: 1.5),
+                      border: Border.all(color: widget.ringColor ?? c.bg, width: 1.5),
                     ),
                   ),
                 ),

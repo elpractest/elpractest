@@ -1,7 +1,7 @@
-import '../../scaffold.dart';
 import 'package:flutter/material.dart';
 
 import '../../api_client.dart';
+import '../../practest_guide_widgets.dart';
 import '../../widgets.dart';
 import 'auth_routes.dart';
 
@@ -90,114 +90,98 @@ class _ResetPasswordScreenState extends State<ResetPasswordScreen> {
     final c = useColors(context);
 
     if (_success) {
-      return AppScaffold(
-        child: Center(
-          child: SingleChildScrollView(
-            padding: const EdgeInsets.all(16),
-            child: ConstrainedBox(
-              constraints: const BoxConstraints(maxWidth: 460),
-              child: SurfacePanel(
-                padding: const EdgeInsets.all(40),
-                child: Column(
-                  children: [
-                    const MedallionIcon(icon: Icons.lock_reset, size: 34),
-                    const SizedBox(height: 16),
-                    Text('Password Reset!',
-                        style: TextStyle(fontSize: 24, fontWeight: FontWeight.w800, color: c.brandBright)),
-                    const SizedBox(height: 12),
-                    Text(
-                      _successMessage,
-                      textAlign: TextAlign.center,
-                      style: TextStyle(fontSize: 14, color: c.textSecondary, height: 1.6),
-                    ),
-                    const SizedBox(height: 24),
-                    PrimaryButton(
-                      label: 'Continue to Login',
-                      fullWidth: true,
-                      onPressed: () => returnToLogin(context),
-                    ),
-                  ],
-                ),
+      return PreAuthScaffold(
+        maxWidth: 460,
+        child: SurfacePanel(
+          padding: const EdgeInsets.all(40),
+          child: Column(
+            children: [
+              const MedallionIcon(icon: Icons.lock_reset, size: 34),
+              const SizedBox(height: 16),
+              Text('Password Reset!',
+                  style: TextStyle(fontSize: 24, fontWeight: FontWeight.w800, color: c.brandBright)),
+              const SizedBox(height: 12),
+              Text(
+                _successMessage,
+                textAlign: TextAlign.center,
+                style: TextStyle(fontSize: 14, color: c.textSecondary, height: 1.6),
               ),
-            ),
+              const SizedBox(height: 24),
+              GoldButton(
+                label: 'Continue to Login',
+                showIcon: false,
+                onPressed: () => returnToLogin(context),
+              ),
+            ],
           ),
         ),
       );
     }
 
-    return AppScaffold(
-      child: Center(
-        child: SingleChildScrollView(
-          padding: const EdgeInsets.all(16),
-          child: ConstrainedBox(
-            constraints: const BoxConstraints(maxWidth: 460),
-            child: SurfacePanel(
-              padding: const EdgeInsets.all(32),
+    return PreAuthScaffold(
+      maxWidth: 460,
+      child: SurfacePanel(
+        padding: const EdgeInsets.all(32),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            Column(
+              children: [
+                Text('Set a New Password',
+                    style: TextStyle(fontSize: 24, fontWeight: FontWeight.w800, color: c.brandBright)),
+                const SizedBox(height: 8),
+                Text(
+                  'Enter a new password for ${widget.email ?? 'your account'}.',
+                  textAlign: TextAlign.center,
+                  style: TextStyle(fontSize: 13.5, color: c.textSecondary),
+                ),
+              ],
+            ),
+            const SizedBox(height: 24),
+            if (_error.isNotEmpty) ...[
+              ErrorBanner(_error),
+              const SizedBox(height: 16),
+            ],
+            Form(
+              key: _formKey,
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.stretch,
                 children: [
-                  Column(
-                    children: [
-                      Text('Set a New Password',
-                          style: TextStyle(fontSize: 24, fontWeight: FontWeight.w800, color: c.brandBright)),
-                      const SizedBox(height: 8),
-                      Text(
-                        'Enter a new password for ${widget.email ?? 'your account'}.',
-                        textAlign: TextAlign.center,
-                        style: TextStyle(fontSize: 13.5, color: c.textSecondary),
-                      ),
-                    ],
-                  ),
-                  const SizedBox(height: 24),
-                  if (_error.isNotEmpty) ...[
-                    ErrorBanner(_error),
-                    const SizedBox(height: 16),
-                  ],
-                  Form(
-                    key: _formKey,
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.stretch,
-                      children: [
-                        AppTextField(
-                          label: 'New Password *',
-                          controller: _password,
-                          obscure: true,
-                          hint: 'Min 8 chars, mixed case + number',
-                          prefixIcon: Icons.lock_outline,
-                          enabled: !_submitting,
-                          validator: _passwordValidator,
-                        ),
-                        const SizedBox(height: 16),
-                        AppTextField(
-                          label: 'Confirm New Password *',
-                          controller: _passwordConfirm,
-                          obscure: true,
-                          hint: 'Re-enter your new password',
-                          prefixIcon: Icons.lock_outline,
-                          enabled: !_submitting,
-                          validator: (v) => (v == null || v.isEmpty) ? 'Confirm your password' : null,
-                        ),
-                        const SizedBox(height: 20),
-                        PrimaryButton(
-                          label: _submitting ? 'Resetting...' : 'Reset Password',
-                          fullWidth: true,
-                          loading: _submitting,
-                          onPressed: _submitting ? null : _submit,
-                        ),
-                      ],
-                    ),
+                  AppTextField(
+                    label: 'New Password *',
+                    controller: _password,
+                    obscure: true,
+                    hint: 'Min 8 chars, mixed case + number',
+                    prefixIcon: Icons.lock_outline,
+                    enabled: !_submitting,
+                    validator: _passwordValidator,
                   ),
                   const SizedBox(height: 16),
-                  TextButton(
-                    onPressed: _submitting
-                        ? null
-                        : () => returnToLogin(context),
-                    child: Text('← Back to Login', style: TextStyle(color: c.brandBright)),
+                  AppTextField(
+                    label: 'Confirm New Password *',
+                    controller: _passwordConfirm,
+                    obscure: true,
+                    hint: 'Re-enter your new password',
+                    prefixIcon: Icons.lock_outline,
+                    enabled: !_submitting,
+                    validator: (v) => (v == null || v.isEmpty) ? 'Confirm your password' : null,
+                  ),
+                  const SizedBox(height: 20),
+                  GoldButton(
+                    label: _submitting ? 'Resetting…' : 'Reset Password',
+                    showIcon: false,
+                    loading: _submitting,
+                    onPressed: _submitting ? null : _submit,
                   ),
                 ],
               ),
             ),
-          ),
+            const SizedBox(height: 16),
+            TextButton(
+              onPressed: _submitting ? null : () => returnToLogin(context),
+              child: Text('← Back to Login', style: TextStyle(color: c.brandBright)),
+            ),
+          ],
         ),
       ),
     );

@@ -705,11 +705,12 @@ class _TestTakingScreenState extends State<TestTakingScreen> {
 /// Tabular by construction — JetBrains Mono is monospaced, so the digits sit on
 /// a fixed grid and the clock does not shuffle sideways once a second.
 ///
-/// **Under five minutes it pulses on the same orange.** No colour change, no
-/// sound, no modal, no red. A paper is never interrupted, and a countdown that
-/// turns red teaches a student to panic at exactly the moment they most need
-/// not to. One hertz is fast enough to notice in peripheral vision and slow
-/// enough to ignore while reading.
+/// **The countdown is the guide's time colour — [AppColors.danger] — and under
+/// five minutes it pulses on that same colour.** No second escalation: no
+/// sound, no modal, no jump to a redder red. A paper is never interrupted, and
+/// a countdown that changes colour under pressure teaches a student to panic at
+/// exactly the moment they most need not to. One hertz is fast enough to notice
+/// in peripheral vision and slow enough to ignore while reading.
 class _Clock extends StatefulWidget {
   const _Clock({
     required this.seconds,
@@ -782,7 +783,7 @@ class _ClockState extends State<_Clock> with SingleTickerProviderStateMixin {
           crossAxisAlignment: CrossAxisAlignment.end,
           children: [
             Text(_format(widget.seconds),
-                style: AppText.clockLg.copyWith(color: c.orange)),
+                style: AppText.clockLg.copyWith(color: c.danger)),
             if (section != null) ...[
               const SizedBox(height: 4),
               Text('section ${_format(section)}',

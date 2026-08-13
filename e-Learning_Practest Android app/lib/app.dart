@@ -1,9 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
+import 'i18n.dart';
 import 'routes.dart';
 import 'scaffold.dart';
-import 'screens/intro_screen.dart';
+import 'screens/welcome_screen.dart';
 import 'screens/splash_screen.dart';
 import 'session.dart';
 import 'shell.dart';
@@ -18,6 +19,7 @@ class PractestApp extends StatelessWidget {
       providers: [
         ChangeNotifierProvider<ThemeController>.value(value: ThemeController.instance),
         ChangeNotifierProvider<Session>.value(value: Session.instance),
+        ChangeNotifierProvider<I18n>.value(value: I18n.instance),
       ],
       child: Consumer<ThemeController>(
         builder: (context, theme, _) {
@@ -72,8 +74,8 @@ class _RootGateState extends State<RootGate> {
       child: switch (session.status) {
         // Only reachable if a token refresh is in flight; the intro is the
         // honest thing to show while that resolves.
-        AuthStatus.loading => const IntroScreen(key: ValueKey('intro')),
-        AuthStatus.unauthenticated => const IntroScreen(key: ValueKey('intro')),
+        AuthStatus.loading => const WelcomeScreen(key: ValueKey('welcome')),
+        AuthStatus.unauthenticated => const WelcomeScreen(key: ValueKey('welcome')),
         AuthStatus.authenticated => const HomeShell(key: ValueKey('shell')),
       },
     );

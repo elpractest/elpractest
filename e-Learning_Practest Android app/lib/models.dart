@@ -65,6 +65,7 @@ class Batch {
     this.priceInRupees,
     this.startsAt,
     this.endsAt,
+    this.playProductId,
   });
 
   final int id;
@@ -74,6 +75,11 @@ class Batch {
   final String? startsAt;
   final String? endsAt;
 
+  /// The Google Play managed-product id this batch is sold as, or null when the
+  /// batch is not offered through the in-app store (activation-code only). The
+  /// store maps a batch to its Play product through this.
+  final String? playProductId;
+
   factory Batch.fromJson(Map<String, dynamic> json) => Batch(
         id: json['id'] is int ? json['id'] : int.tryParse('${json['id']}') ?? 0,
         name: json['name'],
@@ -81,6 +87,7 @@ class Batch {
         priceInRupees: json['price_in_rupees'],
         startsAt: json['starts_at'],
         endsAt: json['ends_at'],
+        playProductId: json['play_product_id'] as String?,
       );
 }
 

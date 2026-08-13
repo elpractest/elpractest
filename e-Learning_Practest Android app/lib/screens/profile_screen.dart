@@ -4,12 +4,14 @@ import 'package:provider/provider.dart';
 import '../api_client.dart';
 import '../build_config.dart';
 import '../boards.dart';
+import '../i18n.dart';
 import '../models.dart';
 import '../scaffold.dart';
 import '../session.dart';
 import '../theme.dart';
 import '../widgets.dart';
 import 'activation_modal.dart';
+import 'results_history_screen.dart';
 
 /// Profile.
 ///
@@ -84,6 +86,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
   Widget build(BuildContext context) {
     final c = useColors(context);
     final theme = context.watch<ThemeController>();
+    final i18n = context.watch<I18n>();
     final user = context.watch<Session>().user;
 
     return AppScaffold(
@@ -99,6 +102,22 @@ class _ProfileScreenState extends State<ProfileScreen> {
                 padding: const EdgeInsets.fromLTRB(16, 16, 16, 28),
                 children: [
                   _identity(c, user),
+                  const SizedBox(height: 20),
+                  // A second, plainly-named home for past scores — the Study tab
+                  // reaches them too, but a student looking for "my results"
+                  // looks here first.
+                  const SectionHeading('Activity'),
+                  const SizedBox(height: 11),
+                  _group(c, [
+                    SettingRow(
+                      icon: Icons.assignment_turned_in_outlined,
+                      label: 'Test attempts & results',
+                      trailing: Icon(Icons.chevron_right, size: 20, color: c.textMuted),
+                      onTap: () => Navigator.of(context).push(
+                        MaterialPageRoute(builder: (_) => const ResultsHistoryScreen()),
+                      ),
+                    ),
+                  ]),
                   const SizedBox(height: 20),
                   const SectionHeading('Access'),
                   const SizedBox(height: 11),
@@ -149,6 +168,18 @@ class _ProfileScreenState extends State<ProfileScreen> {
                               style: AppText.caption.copyWith(color: c.textSecondary)),
                         ],
                       ),
+                    ),
+                    // The EN/हिं toggle the guide puts on every pre-auth screen,
+                    // brought inside the app — it used to be reachable only from
+                    // welcome and login, so a signed-in student could not switch.
+                    SettingRow(
+                      icon: Icons.translate_rounded,
+                      label: 'Language',
+                      trailing: Text(
+                        i18n.isHindi ? 'हिंदी' : 'English',
+                        style: AppText.captionStrong.copyWith(color: c.brandBright),
+                      ),
+                      onTap: i18n.toggle,
                     ),
                   ]),
                   const SizedBox(height: 20),

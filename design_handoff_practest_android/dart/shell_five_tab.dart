@@ -17,14 +17,11 @@
 // lucide glyph for each tab so the swap is mechanical.
 
 import 'package:flutter/material.dart';
-import 'package:provider/provider.dart';
 
-import 'i18n.dart';
 import 'routes.dart';
 import 'screens/home_screen.dart';
 import 'screens/profile_screen.dart';
-import 'screens/store_screen.dart';
-import 'screens/study_zone_screen.dart';
+import 'screens/results_history_screen.dart';
 import 'screens/test_series_screen.dart';
 import 'theme.dart';
 import 'widgets.dart';
@@ -72,11 +69,11 @@ class _HomeShellState extends State<HomeShell> {
   // lucide equivalents, for when the icon set lands:
   //   home · file-text · graduation-cap · shopping-bag · user
   static const _tabs = <_TabSpec>[
-    _TabSpec('nav.home', Icons.home_outlined, Icons.home_rounded),
-    _TabSpec('nav.tests', Icons.description_outlined, Icons.description_rounded),
-    _TabSpec('nav.study', Icons.school_outlined, Icons.school_rounded),
-    _TabSpec('nav.store', Icons.shopping_bag_outlined, Icons.shopping_bag_rounded),
-    _TabSpec('nav.profile', Icons.person_outline_rounded, Icons.person_rounded),
+    _TabSpec('Home', Icons.home_outlined, Icons.home_rounded),
+    _TabSpec('Tests', Icons.description_outlined, Icons.description_rounded),
+    _TabSpec('Study', Icons.school_outlined, Icons.school_rounded),
+    _TabSpec('Store', Icons.shopping_bag_outlined, Icons.shopping_bag_rounded),
+    _TabSpec('Profile', Icons.person_outline_rounded, Icons.person_rounded),
   ];
 
   void _select(int i) {
@@ -97,8 +94,8 @@ class _HomeShellState extends State<HomeShell> {
           children: const [
             HomeScreen(),
             TestSeriesListScreen(),
-            StudyZoneScreen(),
-            StoreScreen(),
+            ResultsHistoryScreen(), // -> StudyZone once that screen exists
+            StoreStubScreen(),
             ProfileScreen(),
           ],
         ),
@@ -107,6 +104,31 @@ class _HomeShellState extends State<HomeShell> {
         // free-floating leaves the FAB sitting on top of the Study tab's label.
         floatingActionButtonLocation: FloatingActionButtonLocation.endFloat,
         bottomNavigationBar: _BottomBar(index: _index, tabs: _tabs, onSelect: _select),
+      ),
+    );
+  }
+}
+
+/// An explicit, flagged stub — matching the web, which ships the same. Do not
+/// invent a storefront: there is no backend for one.
+class StoreStubScreen extends StatelessWidget {
+  const StoreStubScreen({super.key});
+
+  @override
+  Widget build(BuildContext context) {
+    final c = useColors(context);
+    return Scaffold(
+      backgroundColor: c.bg,
+      body: Center(
+        child: Padding(
+          padding: const EdgeInsets.all(28),
+          child: EmptyState(
+            icon: Icons.shopping_bag_outlined,
+            title: 'Store',
+            message: 'Course purchases are coming soon. Your institute can open '
+                'access now with an activation code.',
+          ),
+        ),
       ),
     );
   }
@@ -149,11 +171,8 @@ class _VajiniFab extends StatelessWidget {
 }
 
 class _TabSpec {
-  const _TabSpec(this.l10nKey, this.icon, this.activeIcon);
-
-  /// An [I18n] key ('nav.home' …), resolved at build time so the labels follow
-  /// the EN/हिं toggle instead of being hardcoded English.
-  final String l10nKey;
+  const _TabSpec(this.label, this.icon, this.activeIcon);
+  final String label;
   final IconData icon;
   final IconData activeIcon;
 }
@@ -211,12 +230,11 @@ class _BarItem extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final c = useColors(context);
-    final label = context.watch<I18n>().t(spec.l10nKey);
     final color = active ? c.brand : c.textSecondary;
     return Semantics(
       button: true,
       selected: active,
-      label: label,
+      label: spec.label,
       child: InkWell(
         onTap: onTap,
         child: Stack(
@@ -244,7 +262,7 @@ class _BarItem extends StatelessWidget {
                   Icon(active ? spec.activeIcon : spec.icon, size: 24, color: color),
                   const SizedBox(height: 5),
                   Text(
-                    label,
+                    spec.label,
                     style: AppText.tab.copyWith(
                       color: color,
                       fontWeight: active ? FontWeight.w600 : FontWeight.w400,
