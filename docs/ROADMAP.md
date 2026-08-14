@@ -2,6 +2,13 @@
 
 > ⚠️ **Superseded (2026-07-20): the canonical plan now lives in `CLAUDE.md` §17**, which also contains verified API contracts, known bugs with prescribed fixes, and builder guardrails. Where the two disagree, §17 wins — it corrects two errors in this file: there is **no** `GET /api/student/results` endpoint (results history needs a new one), and student-facing batch data comes from `GET /api/courses/public` (the per-course batch route is admin-only). This file is kept for long-form phase D–G detail.
 
+> ⚠️ **Deploy target changed — the Phase E/F/G steps below are historical.** They
+> describe a cPanel tarball-over-SSH deployment that has been **fully removed**.
+> Production now deploys to **Coolify (Docker)** — the only authoritative deploy
+> runbook is [`COOLIFY_DEPLOYMENT.md`](COOLIFY_DEPLOYMENT.md). Ignore every
+> cPanel / MySQL / cron / Imunify360 / JetBackup instruction in this file; read
+> it only for the non-deploy phase detail (feature scope, QA, launch checklist).
+
 > Status date: 2026-07-20. Backend test suite: **92 passed / 386 assertions**.
 > This document continues the original build phases (1–7 in `CLAUDE.md` §15). Phases 1–3 and 6 are complete; this roadmap covers everything between "now" and "end users on practest.live".
 

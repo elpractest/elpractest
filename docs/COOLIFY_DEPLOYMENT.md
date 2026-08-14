@@ -1,9 +1,9 @@
 # Coolify deployment — e-Learning Practest
 
-**This is the authoritative deploy runbook.** The cPanel model (root
-`DEPLOYMENT_SETUP.md`, `docs/DEPLOYMENT.md`, `docs/INFRASTRUCTURE.md`) is retired
-— those files describe the old tarball-over-SSH deploy and are kept only for
-history. Trust this file for anything deploy-related.
+**This is the authoritative — and only — deploy runbook.** Practest deploys
+exclusively to Coolify (Docker). The old cPanel tarball-over-SSH model has been
+fully removed from the repo; there is no cPanel dependency anywhere in the build
+or runtime.
 
 ## What runs
 
@@ -115,9 +115,11 @@ COOLIFY_APP_UUID   <the Practest compose app's resource UUID>
 
 ## Rollback
 
-DNS is the switch: repoint the four A records back to the cPanel IP (cPanel is
-left intact until Coolify is proven). Coolify also keeps prior deployments for a
-one-click redeploy. The DB is fresh, so rollback risks no data loss.
+Coolify keeps prior deployments — roll back with a one-click redeploy of the
+previous image from the application's Deployments tab. Because the database is an
+embedded compose service (see *Known follow-up*), a rollback that predates a
+migration can leave schema ahead of code; take a `mariadb-dump` before deploying
+anything with migrations so you can restore if you roll code back.
 
 ## Known follow-up — database backups
 

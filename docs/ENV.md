@@ -14,20 +14,21 @@ This document provides a comprehensive reference of all environment variables ac
 | `APP_DEBUG` | Verbose debug mode | `true` | `false` | Framework (Must be `false` in prod) |
 | `APP_URL` | API root base URL | `http://localhost:8000` | `https://api.practest.live` | Infrastructure |
 | `FRONTEND_URL` | React SPA base URL | `http://localhost:3000` | `https://app.practest.live` | Infrastructure |
-| `DB_CONNECTION` | Database driver | `sqlite` | `mysql` | Local SQLite / MySQL 8 |
-| `DB_HOST` | Database host | `127.0.0.1` | `127.0.0.1` | cPanel MySQL |
-| `DB_DATABASE` | Database name | `database.sqlite` | `cpaneluser_practest` | cPanel MySQL |
-| `DB_USERNAME` | Database user | `null` | `cpaneluser_dbuser` | cPanel MySQL |
-| `DB_PASSWORD` | Database password | `null` | `StrongPassword123` | cPanel MySQL |
+| `DB_CONNECTION` | Database driver | `sqlite` | `mysql` | Local SQLite / MariaDB 10.6 |
+| `DB_HOST` | Database host | `127.0.0.1` | `mariadb` | Compose service name (internal Docker network) |
+| `DB_DATABASE` | Database name | `database.sqlite` | `practest` | Must match `mariadb` service env |
+| `DB_USERNAME` | Database user | `null` | `practest` | Must match `mariadb` service env |
+| `DB_PASSWORD` | Database password | `null` | `StrongPassword123` | Set in Coolify env |
+| `DB_ROOT_PASSWORD` | MariaDB root password | — | `StrongRootPassword123` | Coolify env (used by the `mariadb` service only) |
 | `SESSION_DOMAIN` | Cookie domain | `.practest.live` | `.practest.live` | Preceded with `.` for root & subdomains |
 | `SANCTUM_STATEFUL_DOMAINS` | SPA domains allowed stateful cookies | `app.practest.live,localhost:3000` | `app.practest.live` | Sanctum CSRF protection |
 | `CORS_ALLOWED_ORIGINS` | Allowed CORS origins | `http://localhost:3000` | `https://app.practest.live,https://practest.live,https://www.practest.live` | Required for Astro contact form & public course fetch |
-| `MAIL_MAILER` | Mail driver | `log` | `smtp` | cPanel Webmail / SMTP |
-| `MAIL_SCHEME` | Transport encryption scheme | `null` | `smtps` | `smtps` for SSL port 465 |
-| `MAIL_HOST` | SMTP server host | `127.0.0.1` | `sgp.centreserver.com` | cPanel Mail Server |
-| `MAIL_PORT` | SMTP server port | `2525` | `465` | SSL Port 465 |
-| `MAIL_USERNAME` | SMTP account user | `null` | `noreply@practest.live` | cPanel Email Account |
-| `MAIL_PASSWORD` | SMTP account pass | `null` | `(cpanel_email_password)` | Set in cPanel Email Accounts |
+| `MAIL_MAILER` | Mail driver | `log` | `smtp` | `log` until a real provider is set (SES / Brevo / SMTP) |
+| `MAIL_SCHEME` | Transport encryption scheme | `null` | `smtps` | `smtps` for SSL port 465 (provider-dependent) |
+| `MAIL_HOST` | SMTP server host | `127.0.0.1` | `smtp.provider.com` | Transactional email provider |
+| `MAIL_PORT` | SMTP server port | `2525` | `465` | Provider SSL port |
+| `MAIL_USERNAME` | SMTP account user | `null` | `noreply@practest.live` | Provider mailbox / API user |
+| `MAIL_PASSWORD` | SMTP account pass | `null` | `(provider_password)` | Set in Coolify env |
 | `MAIL_FROM_ADDRESS` | Sender email address | `"noreply@practest.live"` | `"noreply@practest.live"` | Domain MX/SPF/DKIM verified |
 | `GOOGLE_CLIENT_ID` | OAuth Client ID | `""` | `xyz.apps.googleusercontent.com` | Google Cloud Console |
 | `GOOGLE_CLIENT_SECRET` | OAuth Secret | `""` | `GOCSPX-secret` | Google Cloud Console |

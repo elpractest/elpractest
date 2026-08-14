@@ -185,13 +185,13 @@ refuses to start again (exit 255) until you delete them.
 1. **Nothing has been verified against production.** No build has ever pointed at
    `api.practest.live`. Login → course → start test → submit → result needs a real
    run on a device before this goes anywhere near Play.
-2. **Imunify360 bot-protection on the cPanel host** answers non-browser clients
-   with `403 {"message":"Access denied by Imunify360 bot-protection…"}`. It fired
-   for every request from a machine on Cloudflare WARP, regardless of user agent.
-   Ordinary mobile traffic will most likely pass, but this has **not** been
-   proven, and it is exactly the failure mode that would make the app look broken
-   for a subset of users. The app now sends `User-Agent: PractestApp/1.0.0
-   (Android)` so the host has something stable to whitelist.
+2. **Host is Coolify (Traefik), not the old cPanel/Imunify360 box.** The former
+   host's Imunify360 bot-protection used to 403 non-browser clients; that host is
+   retired, so the concern is gone. The app still sends a stable
+   `User-Agent: PractestApp/1.0.0 (Android)` — good practice for server-side
+   rate-limiting and log separation from the web SPA. Cloudflare is still in
+   front of `api.practest.live`, so if any WAF/Bot-Fight rule ever challenges
+   mobile traffic, whitelist that user agent at the Cloudflare edge.
 3. **The app is untracked in git.** `git status` shows the whole directory as
    untracked. About 55 files / 0.6 MB would be added; `build/` and `.dart_tool/`
    are correctly excluded.

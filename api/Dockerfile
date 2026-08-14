@@ -6,8 +6,8 @@
 # Build context is the REPO ROOT, so a single docker-compose context can build
 # every service. All application paths below are therefore prefixed with api/.
 #
-# This image replaces the cPanel deploy model entirely: composer runs HERE, in
-# the build, not on the server (CloudLinux used to kill it). vendor/ is baked in.
+# Composer runs HERE, in the build — never on the server. vendor/ is baked into
+# the image, so production has no composer step and no build-time surprises.
 #
 # Base: serversideup/php — Laravel-tuned, s6-managed nginx+php-fpm, with an
 # AUTORUN_* contract that runs migrate / optimize / storage:link at boot.

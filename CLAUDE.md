@@ -8,7 +8,7 @@
 
 - **App name**: e-Learning Practest
 - **Primary domain**: `practest.live` (already added to Cloudflare, DNS proxied)
-- **Hosting**: cPanel (confirmed available: SSH/Terminal, Git Version Control, MultiPHP Manager with PHP 8.3, Cron Jobs, Node.js App via Passenger, JetBackup, Imunify360/ModSecurity)
+- **Hosting**: Coolify (Docker). One compose application (`docker-compose.coolify.yml`) builds `web`, `app`, `api`, `worker` + an embedded MariaDB; Traefik terminates TLS and routes each domain. See `docs/COOLIFY_DEPLOYMENT.md`. (There is no cPanel dependency — that model was fully removed.)
 - **Product type**: a **website**, not a web-app — public marketing/SEO pages must be static HTML; only the logged-in area behaves like an app
 - **Audience**: aspirants preparing for Indian one-day and banking/government exams — SSC CGL, SBI PO, SBI Clerk, IBPS/RRB, UPSC, State PCS
 - **Core differentiator**: a fast, accurate, exam-pattern-accurate computer-based test (CBT) series engine
@@ -22,8 +22,8 @@ Do not deviate from this split without flagging it first:
 1. **Public marketing site** — Astro (static export, zero client-side JS by default). Covers Landing, About, Contact, Courses listing, Course detail. This is what gets indexed by Google and used for Meta/Google Ads landing pages.
 2. **Authenticated app** — React 18 + Vite, client-side rendered SPA. Covers all three dashboards (Super-Admin, Admin, Student) and the test-taking engine. Never indexed (blocked via `robots.txt`).
 3. **Backend API** — Laravel 11 on PHP 8.3, stateless REST API, Laravel Sanctum for SPA auth.
-4. **Database** — MySQL 8.
-5. No persistent Node.js server required in production. The Node.js App feature in cPanel exists as a fallback option only — do not depend on it unless explicitly told to.
+4. **Database** — MariaDB 10.6 (embedded compose service; MySQL-compatible).
+5. No persistent Node.js server in production. The frontends are built to static assets inside their Docker images and served by nginx; Node never runs at runtime.
 
 ### Subdomain layout (all on `practest.live`, via Cloudflare)
 
@@ -48,8 +48,10 @@ e-Learning_Practest/
 ├── app/                    # React + Vite SPA
 │   └── src/pages, components, store, api
 ├── docs/                   # deployment + env docs
-├── deploy/                 # cPanel deploy scripts, .htaccess templates
-└── tools/                  # local composer.phar (dev convenience, not deployed)
+├── docker-compose.coolify.yml  # the one Coolify application (web/app/api/worker/mariadb)
+├── api/Dockerfile          # Laravel image (composer runs in-build)
+├── app/Dockerfile          # SPA → nginx
+└── web/Dockerfile          # Astro → nginx
 ```
 
 ---
@@ -236,7 +238,7 @@ Site name · logo · favicon · primary/accent color · footer text · social li
 4. **React SPA dashboards** — Student, Admin, Super-Admin
 5. **Astro public site** — Landing, About, Contact, Courses, Course detail, full SEO pass
 6. **Payment gateway (behind toggle) + Ads/Analytics wiring**
-7. **Deployment** — Git-based deploy to cPanel, `.htaccess` for SPA routing, Cloudflare SSL/cache rules, cron for Laravel scheduler
+7. **Deployment** — Coolify (Docker): `docker-compose.coolify.yml` builds all services; Traefik routes each domain and terminates TLS; the `worker` container drains the queue and runs the scheduler. See `docs/COOLIFY_DEPLOYMENT.md`.
 
 ---
 
@@ -252,9 +254,9 @@ Site name · logo · favicon · primary/accent color · footer text · social li
 
 ## Local dev environment notes (this machine)
 
-- PHP 8.2.29 at `C:\Users\thevi\AppData\Local\...\PHP.PHP.8.2\php.exe` (production is PHP 8.3 — Laravel 11 supports both)
-- Composer: local phar at `tools/composer.phar` → run as `php tools/composer.phar <cmd>`
-- No local MySQL — local dev + tests use **SQLite**; production uses MySQL 8. Migrations must stay compatible with both.
+- PHP 8.2.29 locally (production image is PHP 8.3 — Laravel 11 supports both)
+- Composer: install it locally (`composer` on PATH) or use the Docker `test` build stage which runs the suite in the exact production PHP.
+- No local MySQL — local dev + tests use **SQLite**; production uses **MariaDB 10.6**. Migrations must stay compatible with both (CI runs the suite on MariaDB to catch the gaps SQLite hides).
 - Run API tests: `cd api; php artisan test`
 - Local API server: `cd api; php artisan serve` (port 8000)
 
@@ -304,7 +306,7 @@ cd app; npm run dev
 cd web; npm run dev
 ```
 
-- Composer: `php tools/composer.phar <cmd>` (local PHP is 8.2, prod is 8.3 — both fine for Laravel 11).
+- Composer: use `composer <cmd>` locally (local PHP is 8.2, the prod image is 8.3 — both fine for Laravel 11).
 - **Email verification / password reset links in dev**: `MAIL_MAILER=log` → look in `api/storage/logs/laravel.log`.
 - **OTP in dev**: no `MSG91_AUTH_KEY` set → `Msg91Service` logs `MSG91 OTP [DEV MODE]: Phone=…, OTP=…` to the same log (verified in `api/app/Services/Msg91Service.php`).
 - **reCAPTCHA in dev**: `VerifyRecaptcha` middleware skips itself when `RECAPTCHA_SECRET_KEY` is empty and in the `testing` env — so local flows work without keys, but the SPA must still *send* `recaptcha_token` when a site key is configured (read `api/app/Http/Middleware/VerifyRecaptcha.php` before touching this).
@@ -327,8 +329,8 @@ cd web; npm run dev
 - **B** — student discovery/activation/LMS UI: browse courses, request activation (proof upload), redeem code, course outline, lesson player + progress, results history, dashboard upgrade
 - **C** — Astro: About page, domain fix, SEO/CWV pass, `web/.env.example`
 - **D** — integration hardening + scripted QA
-- **E** — deploy scaffolding (`deploy/`, `docs/`) — E1 (first commit) is **done**
-- **F** — cPanel production deployment
+- **E** — deploy scaffolding (`docker-compose.coolify.yml`, Dockerfiles, `docs/`) — **done**
+- **F** — Coolify production deployment
 - **G** — launch validation + post-launch ops
 
 ## 17.2 Verified API contracts (build the UI against exactly this)
@@ -440,25 +442,25 @@ Also: add `VITE_RECAPTCHA_SITE_KEY=` to `app/.env.example`; keep the vite dev pr
 
 **Status:** Completed in Part 1 (2026-07-20). `DevDemoSeeder` created and verified. Full E2E QA loop executed and passed. `VerifyEmail` StrictMode fix + score field fixes applied. `QA-SCRIPT.md` marked PASS. Backend 101 tests pass, SPA & Web builds clean.
 
-## 17.8 Phase E — Deploy scaffolding (E1 done)
+## 17.8 Phase E — Deploy scaffolding (done)
 
-- `deploy/.htaccess-api` (deny dotfiles, front-controller), `deploy/.htaccess-app` (SPA history fallback), `deploy/.htaccess-web` (static cache headers).
-- `deploy/deploy-api.sh`: `composer install --no-dev --optimize-autoloader`, `migrate --force`, `config:cache`, `route:cache`, `view:cache`, `storage:link`, `queue:restart`.
-- `docs/DEPLOYMENT.md` (cPanel runbook, written while executing Phase F) + `docs/ENV.md` (every var × three apps, dev vs prod, which dashboard issues each key).
-- Build strategy: build frontends **locally** with prod env values and deploy the `dist/` artifacts (git deploy branch or upload) — keeps production Node-free per §2.5.
+- `docker-compose.coolify.yml` — the single Coolify application: `web` (Astro→nginx), `app` (SPA→nginx), `api` (Laravel, serversideup fpm+nginx), `worker` (queue:work), `mariadb` (embedded 10.6). Traefik assigns each domain and terminates TLS.
+- `api/Dockerfile`, `app/Dockerfile`, `web/Dockerfile` — composer and the Vite/Astro builds run **inside** the image build, so production is Node-free and has no server-side composer step. Frontend `VITE_*`/`PUBLIC_*` values are build args.
+- `docs/COOLIFY_DEPLOYMENT.md` (authoritative runbook) + `docs/ENV.md` (every var × three apps) + `api/.env.production.example` (the env set in Coolify).
 
-## 17.9 Phase F — cPanel production deployment (runbook skeleton)
+## 17.9 Phase F — Coolify production deployment (runbook skeleton)
 
-1. Subdomains/docroots: root+`www` → Astro `dist`; `app.` → SPA `dist`; `api.` → Laravel `public/` (app dir outside any docroot).
-2. MySQL 8 DB + user. Production `.env`: `APP_ENV=production`, `APP_DEBUG=false`, fresh `APP_KEY`, DB creds, `SESSION_DOMAIN=.practest.live`, `SESSION_SECURE_COOKIE=true`, `SANCTUM_STATEFUL_DOMAINS=app.practest.live`, **`CORS_ALLOWED_ORIGINS=https://app.practest.live,https://practest.live,https://www.practest.live`** (the Astro contact form + course fetch call the API from the root domain — forgetting those origins breaks the public site), `FRONTEND_URL=https://app.practest.live`, mail/MSG91/reCAPTCHA/Razorpay live values.
-3. `php artisan migrate --force`; seed roles + Super-Admin via `SUPER_ADMIN_*` (per §"Read this first": `thevinstitution@gmail.com`). Never dev seeders in prod.
-4. **Two cron entries** (both required): `* * * * * php artisan schedule:run` (auto-submit) and `* * * * * php artisan queue:work --stop-when-empty --max-time=55` — **analytics is a queued job; without the queue cron students never get results**.
-5. Cloudflare: DNS for `app.`/`api.` proxied, SSL **Full (strict)**, cache-everything on the static site, **bypass cache on `api.*`**, exempt `/api/webhooks/razorpay` from WAF/Bot-Fight challenges.
-6. Third-party prod config: OAuth redirect URIs `https://api.practest.live/api/auth/{provider}/callback` in Google/Facebook consoles; MSG91 live key + DLT-approved template (start DLT approval early — it has lead time); reCAPTCHA v3 keys registered for `practest.live` **and** `app.practest.live`; SMTP decision (cPanel mail vs Brevo/SES); Razorpay live keys + webhook `https://api.practest.live/api/webhooks/razorpay` + `RAZORPAY_WEBHOOK_SECRET`.
-7. Imunify360/ModSecurity: watch for false positives on JSON POSTs (CSV import, answer autosave); whitelist specific rule IDs, don't disable. JetBackup covers DB + `storage/` daily.
-8. `robots.txt` on `app.` disallows everything.
+Full detail in `docs/COOLIFY_DEPLOYMENT.md`. In brief:
 
-**Acceptance:** three hosts on HTTPS; `php artisan about` shows cached config; a real email, OTP, and queued job all observably work.
+1. Coolify project `practest` → Docker Compose application from this repo, branch `main`, compose file `docker-compose.coolify.yml`. Assign domains per service: `web`→`practest.live`+`www`, `app`→`app.practest.live`, `api`→`api.practest.live`.
+2. Set env in Coolify (see `.env.production.example`): a stable `APP_KEY`, `DB_PASSWORD`/`DB_ROOT_PASSWORD`, `SESSION_DOMAIN=.practest.live`, `SESSION_SECURE_COOKIE=true`, `SANCTUM_STATEFUL_DOMAINS=app.practest.live`, **`CORS_ALLOWED_ORIGINS=https://app.practest.live,https://practest.live,https://www.practest.live`** (the Astro contact form + course fetch call the API from the root domain), `FRONTEND_URL`, `SUPER_ADMIN_*`, and any mail/MSG91/reCAPTCHA/Razorpay live values. Turn OFF Coolify auto-deploy-on-push — CI is the deploy gate.
+3. Migrations autorun at container boot (`AUTORUN_LARAVEL_MIGRATION`). Seed roles + Super-Admin **once** from a Coolify terminal on the `api` container: `php artisan db:seed --force`. Never dev seeders in prod.
+4. The queue is drained by the always-on `worker` container (`queue:work`) and the scheduler runs there too — **no cron to configure**. (This is the failure that silently withheld results on the old host; the compose worker removes it.)
+5. Cloudflare: DNS for `practest.live`/`www`/`app`/`api` proxied at the Coolify host IP, SSL **Full (strict)**, cache-everything on the static site, **bypass cache on `api.*`**, exempt `/api/webhooks/razorpay` from WAF/Bot-Fight challenges.
+6. Third-party prod config: OAuth redirect URIs `https://api.practest.live/api/auth/{provider}/callback` in Google/Facebook consoles; MSG91 live key + DLT-approved template (start DLT approval early — it has lead time); reCAPTCHA v3 keys registered for `practest.live` **and** `app.practest.live`; a transactional mail provider (SES/Brevo/SMTP); Razorpay live keys + webhook `https://api.practest.live/api/webhooks/razorpay` + `RAZORPAY_WEBHOOK_SECRET`.
+7. `robots.txt` on `app.` disallows everything.
+
+**Acceptance:** three hosts on HTTPS; `/api/up` 200 and `/api/admin/test-series` 401; a real email, OTP, and queued job all observably work.
 
 ## 17.10 Phase G — Launch validation & post-launch
 
@@ -467,8 +469,8 @@ Also: add `VITE_RECAPTCHA_SITE_KEY=` to `app/.env.example`; keep the vite dev pr
 3. Search Console: verify, submit sitemap; confirm `app.`/`api.` unindexed.
 4. Enter GTM/GA4/Pixel IDs in Super-Admin settings; tags fire only post-consent (Consent Mode v2); verify the §11 conversion events.
 5. Content seeding (operator): real courses/batches/question CSVs, one published mock per flagship exam.
-6. Ops baseline: uptime monitors + `/up` health route, log rotation, one **tested** JetBackup restore, weekly `queue:failed` check.
-7. Soft launch with one real batch before ad spend; watch audit logs, failed jobs, Imunify blocks for a week.
+6. Ops baseline: uptime monitors + `/up` health route, a **tested** restore of the nightly `mariadb-dump` (the DB is an embedded compose service — see the backup follow-up in `docs/COOLIFY_DEPLOYMENT.md`), weekly `queue:failed` check.
+7. Soft launch with one real batch before ad spend; watch audit logs and failed jobs for a week.
 
 ## 17.11 Decisions
 

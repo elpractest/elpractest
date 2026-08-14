@@ -14,9 +14,9 @@ const String apiBaseUrl = String.fromEnvironment(
 );
 
 /// Sent on every request. Without this, Dio identifies itself as
-/// `Dart/3.x (dart:io)`, which the API host's Imunify360 bot-protection treats
-/// as automation. A stable, identifiable agent is also what you whitelist or
-/// rate-limit against server-side.
+/// `Dart/3.x (dart:io)`. A stable, identifiable agent is what the API is
+/// rate-limited/observed against server-side, and it keeps the app's traffic
+/// distinguishable from the web SPA in logs.
 const String userAgent = 'PractestApp/1.0.0 (Android)';
 
 class ApiException implements Exception {

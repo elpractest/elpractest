@@ -1,6 +1,3 @@
-# Local dev tooling (not deployed)
-tools/composer.phar
-
 # Local SQLite dev databases
 api/database/*.sqlite
 api/database/*.sqlite-journal
