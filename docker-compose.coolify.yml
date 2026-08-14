@@ -42,6 +42,7 @@ x-api-env: &api-env
   CACHE_STORE: database
   # ── Feature-gated integrations: pass through if set in Coolify, else inert ──
   MAIL_MAILER: ${MAIL_MAILER:-log}
+  MAIL_SCHEME: ${MAIL_SCHEME:-}
   MAIL_HOST: ${MAIL_HOST:-127.0.0.1}
   MAIL_PORT: ${MAIL_PORT:-2525}
   MAIL_USERNAME: ${MAIL_USERNAME:-}
@@ -49,8 +50,10 @@ x-api-env: &api-env
   MAIL_FROM_ADDRESS: ${MAIL_FROM_ADDRESS:-noreply@practest.live}
   GOOGLE_CLIENT_ID: ${GOOGLE_CLIENT_ID:-}
   GOOGLE_CLIENT_SECRET: ${GOOGLE_CLIENT_SECRET:-}
+  GOOGLE_REDIRECT_URI: ${GOOGLE_REDIRECT_URI:-https://api.practest.live/api/auth/google/callback}
   FACEBOOK_CLIENT_ID: ${FACEBOOK_CLIENT_ID:-}
   FACEBOOK_CLIENT_SECRET: ${FACEBOOK_CLIENT_SECRET:-}
+  FACEBOOK_REDIRECT_URI: ${FACEBOOK_REDIRECT_URI:-https://api.practest.live/api/auth/facebook/callback}
   MSG91_AUTH_KEY: ${MSG91_AUTH_KEY:-}
   MSG91_TEMPLATE_ID: ${MSG91_TEMPLATE_ID:-}
   RAZORPAY_KEY_ID: ${RAZORPAY_KEY_ID:-}
