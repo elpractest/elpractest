@@ -2,16 +2,40 @@ import 'dart:async';
 import 'dart:io';
 
 import 'package:dio/dio.dart';
+import 'package:flutter/foundation.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 /// API base URL. Override at build time for production:
 ///   flutter build apk --dart-define=API_BASE_URL=https://api.practest.live/api
 /// Default targets the Laravel dev server as seen from an Android emulator
-/// (10.0.2.2 == host loopback).
+/// (10.0.2.2 == host loopback). Use build-release.ps1 / build-release.sh, which
+/// bake the live URL, for anything shipped.
 const String apiBaseUrl = String.fromEnvironment(
   'API_BASE_URL',
   defaultValue: 'http://10.0.2.2:8000/api',
 );
+
+/// Fail loudly if a RELEASE build was produced without the production API URL.
+///
+/// Forgetting `--dart-define=API_BASE_URL=...` leaves the dev-loopback default
+/// baked in, which reaches nothing on a real device — a silent, hard-to-diagnose
+/// failure that looks like the whole app is broken. In release mode we would
+/// rather crash immediately at startup with an actionable message than ship a
+/// dead app. Debug/profile builds are unaffected (the dev default is correct
+/// there).
+void assertProductionApiUrl() {
+  final looksLikeDev = apiBaseUrl.startsWith('http://') ||
+      apiBaseUrl.contains('10.0.2.2') ||
+      apiBaseUrl.contains('localhost') ||
+      apiBaseUrl.contains('127.0.0.1');
+  if (kReleaseMode && looksLikeDev) {
+    throw StateError(
+      'Release build points at a dev API URL ($apiBaseUrl). Rebuild with '
+      '--dart-define=API_BASE_URL=https://api.practest.live/api — or just run '
+      'build-release.ps1 / build-release.sh, which bake it in.',
+    );
+  }
+}
 
 /// Sent on every request. Without this, Dio identifies itself as
 /// `Dart/3.x (dart:io)`. A stable, identifiable agent is what the API is

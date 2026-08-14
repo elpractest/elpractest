@@ -83,17 +83,26 @@ const String apiBaseUrl = String.fromEnvironment(
   'API_BASE_URL', defaultValue: 'http://10.0.2.2:8000/api');
 ```
 
-**The default is a dev server and it is baked into the binary.** Forgetting the
-define does not fail the build — it produces an app that silently cannot reach
-anything. The release APK found in `build/` on 2026-08-10 had
-`http://192.168.0.100:8000/api` compiled in, i.e. someone's LAN. Always pass:
+The default is a dev server (correct for the emulator). Forgetting the define on
+a **release** used to silently produce a dead app pointed at the loopback. Two
+guards now prevent that:
+
+1. **`assertProductionApiUrl()`** runs first thing in `main()` — a release build
+   whose baked URL is `http://…`, `10.0.2.2`, `localhost` or `127.0.0.1`
+   **throws at startup** with an actionable message instead of failing silently.
+2. **`build-release.ps1` / `build-release.sh`** bake the live URL for you, so a
+   shipped artifact can't be built without it.
+
+Always ship via the scripts, or pass the define by hand:
 
 ```
 --dart-define=API_BASE_URL=https://api.practest.live/api
 ```
 
 To confirm after the fact, unzip the artifact and grep the AOT snapshot:
-`lib/arm64-v8a/libapp.so` contains the URL as a plain string.
+`lib/arm64-v8a/libapp.so` contains the URL as a plain string. Verified 2026-08-14:
+a release APK built via the script contains `https://api.practest.live/api` and
+not the dev default.
 
 ### `ENABLE_IN_APP_PURCHASE`
 
@@ -143,7 +152,14 @@ a Google-side key reset. Then copy `android/key.properties.example` to
 `android/key.properties` and fill it in — both the file and `*.jks` are
 git-ignored.
 
-### Build
+### Build — use the scripts (they bake the live API URL)
+
+```
+./build-release.ps1          # -> app-release.aab   (upload to Google Play)
+./build-release.ps1 -Format apk   # -> app-release.apk  (side-load / device test)
+```
+(`build-release.sh [aab|apk]` on POSIX; both honor `$FLUTTER_BIN` and warn if
+`key.properties` is missing.) Equivalent by hand:
 
 ```
 flutter build appbundle --release --dart-define=API_BASE_URL=https://api.practest.live/api
