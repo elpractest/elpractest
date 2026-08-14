@@ -633,7 +633,7 @@ class TrailingBadge extends StatelessWidget {
   }
 }
 
-class AppTextField extends StatelessWidget {
+class AppTextField extends StatefulWidget {
   const AppTextField({
     super.key,
     required this.label,
@@ -672,40 +672,64 @@ class AppTextField extends StatelessWidget {
   final FormFieldValidator<String>? validator;
 
   @override
+  State<AppTextField> createState() => _AppTextFieldState();
+}
+
+class _AppTextFieldState extends State<AppTextField> {
+  // For obscured (password) fields, this drives the show/hide eye toggle.
+  late bool _obscured = widget.obscure;
+
+  @override
   Widget build(BuildContext context) {
     final c = useColors(context);
     return FormField<String>(
-      validator: validator,
-      initialValue: controller.text,
+      validator: widget.validator,
+      initialValue: widget.controller.text,
       builder: (field) {
         final hasError = field.hasError && field.errorText != null;
         return Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Text(label, style: AppText.captionStrong.copyWith(color: c.textSecondary)),
+            Text(widget.label, style: AppText.captionStrong.copyWith(color: c.textSecondary)),
             const SizedBox(height: 6),
             TextField(
-              controller: controller,
-              enabled: enabled,
-              obscureText: obscure,
-              keyboardType: keyboardType,
-              maxLength: maxLength,
-              textCapitalization: textCapitalization,
-              textInputAction: textInputAction,
-              textAlign: textAlign ?? TextAlign.start,
-              autocorrect: autocorrect,
+              controller: widget.controller,
+              enabled: widget.enabled,
+              obscureText: _obscured,
+              keyboardType: widget.keyboardType,
+              maxLength: widget.maxLength,
+              textCapitalization: widget.textCapitalization,
+              textInputAction: widget.textInputAction,
+              textAlign: widget.textAlign ?? TextAlign.start,
+              autocorrect: widget.autocorrect,
               style: AppText.body.copyWith(color: c.textPrimary, fontSize: 15),
               onChanged: (v) {
                 field.didChange(v);
-                onChanged?.call(v);
+                widget.onChanged?.call(v);
               },
-              onSubmitted: onSubmitted,
+              onSubmitted: widget.onSubmitted,
               decoration: InputDecoration(
                 counterText: '',
-                hintText: hint,
-                prefixIcon:
-                    prefixIcon != null ? Icon(prefixIcon, size: 18, color: c.textSecondary) : null,
-                errorText: hasError ? field.errorText : errorText,
+                hintText: widget.hint,
+                prefixIcon: widget.prefixIcon != null
+                    ? Icon(widget.prefixIcon, size: 18, color: c.textSecondary)
+                    : null,
+                // Password fields get a tap-to-reveal eye toggle.
+                suffixIcon: widget.obscure
+                    ? IconButton(
+                        splashRadius: 20,
+                        icon: Icon(
+                          _obscured ? Icons.visibility_off_outlined : Icons.visibility_outlined,
+                          size: 20,
+                          color: c.textSecondary,
+                        ),
+                        tooltip: _obscured ? 'Show password' : 'Hide password',
+                        onPressed: widget.enabled
+                            ? () => setState(() => _obscured = !_obscured)
+                            : null,
+                      )
+                    : null,
+                errorText: hasError ? field.errorText : widget.errorText,
                 errorStyle: AppText.caption.copyWith(color: c.dangerText),
               ),
             ),

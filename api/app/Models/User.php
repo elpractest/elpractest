@@ -21,6 +21,23 @@ class User extends Authenticatable implements MustVerifyEmail
     }
 
     /**
+     * Send the email-verification notification on the queue, so a mail-transport
+     * failure never 500s registration or leaves a half-created user.
+     */
+    public function sendEmailVerificationNotification(): void
+    {
+        $this->notify(new \App\Notifications\QueuedVerifyEmail());
+    }
+
+    /**
+     * Send the password-reset notification on the queue for the same reason.
+     */
+    public function sendPasswordResetNotification($token): void
+    {
+        $this->notify(new \App\Notifications\QueuedResetPassword($token));
+    }
+
+    /**
      * The attributes that are mass assignable.
      *
      * @var list<string>

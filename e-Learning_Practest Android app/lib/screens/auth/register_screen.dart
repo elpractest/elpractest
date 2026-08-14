@@ -61,6 +61,11 @@ class _RegisterScreenState extends State<RegisterScreen> {
       _fieldErrors.clear();
     });
     if (!_formKey.currentState!.validate()) return;
+    if (!_agreed) {
+      setState(() => _globalError =
+          'Please accept the Terms of Service and Privacy Policy to continue.');
+      return;
+    }
     if (_password.text != _passwordConfirm.text) {
       setState(() => _fieldErrors['password_confirmation'] = 'Passwords do not match.');
       return;
@@ -269,7 +274,9 @@ class _RegisterScreenState extends State<RegisterScreen> {
                           label: _submitting ? 'Creating Account…' : 'Create Account',
                           showIcon: false,
                           loading: _submitting,
-                          onPressed: (_submitting || !_agreed) ? null : _submit,
+                          // Keep the button tappable so an un-ticked Terms box
+                          // yields a clear error instead of a dead button.
+                          onPressed: _submitting ? null : _submit,
                         ),
                       ],
                     ),
