@@ -87,7 +87,7 @@ export default function AdminActivations() {
     setError('');
     setSuccess('');
     try {
-      await api.post(`/api/admin/activation-requests/${selectedReq.id}/reject`, { admin_notes: notes });
+      await api.post(`/api/admin/activation-requests/${selectedReq.id}/reject`, { reason: notes });
       setSuccess('Request rejected successfully.');
       setSelectedReq(null);
       fetchRequests();
