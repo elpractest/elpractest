@@ -146,12 +146,18 @@ class FcmNotificationTest extends TestCase
         config()->set('services.fcm.credentials', null);
         $this->assertFalse($svc->enabled());
 
-        // Raw JSON pasted into the env var → enabled (the Coolify path).
-        config()->set('services.fcm.credentials_json', json_encode([
+        $sa = json_encode([
             'client_email' => 'sa@practest-24732.iam.gserviceaccount.com',
             'private_key' => 'PRIVATE',
             'project_id' => 'practest-24732',
-        ]));
+        ]);
+
+        // Raw JSON pasted into the env var → enabled.
+        config()->set('services.fcm.credentials_json', $sa);
+        $this->assertTrue($svc->enabled());
+
+        // Base64-encoded (single-line, env-safe) → also enabled.
+        config()->set('services.fcm.credentials_json', base64_encode($sa));
         $this->assertTrue($svc->enabled());
     }
 }

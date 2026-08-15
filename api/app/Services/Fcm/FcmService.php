@@ -94,12 +94,31 @@ class FcmService
         Log::warning('FCM rejected a message', ['status' => $status, 'reason' => $reason]);
     }
 
-    /** The raw service-account JSON from the env var, or null if not set. */
+    /**
+     * The service-account JSON from the env var, or null if not set.
+     *
+     * Accepts either the raw JSON or a base64-encoded blob. Base64 is the
+     * recommended form for env-only hosts (Coolify): the raw JSON is multi-line
+     * (the private_key is full of newlines), which breaks single-line env-var
+     * fields; base64 collapses it to one safe line.
+     */
     private function rawJson(): ?string
     {
-        $json = config('services.fcm.credentials_json');
+        $value = config('services.fcm.credentials_json');
+        if (! is_string($value) || trim($value) === '') {
+            return null;
+        }
+        $value = trim($value);
 
-        return (is_string($json) && trim($json) !== '') ? $json : null;
+        // Raw JSON starts with '{'. Anything else, try base64 → JSON.
+        if (! str_starts_with(ltrim($value), '{')) {
+            $decoded = base64_decode($value, true);
+            if ($decoded !== false && str_starts_with(ltrim($decoded), '{')) {
+                return $decoded;
+            }
+        }
+
+        return $value;
     }
 
     /** The service-account JSON file path, or null if unset/missing. */

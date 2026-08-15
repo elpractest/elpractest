@@ -45,8 +45,10 @@ return [
 
     // ── Firebase Cloud Messaging (FCM v1.1 push) ───────────────────
     // Service-account credentials for FCM HTTP v1. Provide EITHER:
-    //   FIREBASE_CREDENTIALS_JSON — the whole service-account JSON pasted in as
-    //     one env var (easiest on Coolify / env-only hosts), OR
+    //   FIREBASE_CREDENTIALS_JSON — the service-account JSON in one env var.
+    //     Prefer BASE64 of the JSON: the raw JSON is multi-line (its private_key
+    //     is full of newlines) and breaks single-line env fields (Coolify). The
+    //     service accepts either base64 or raw. OR
     //   FIREBASE_CREDENTIALS — an absolute path to the JSON file on disk.
     // The raw JSON wins if both are set. NEVER commit the key. When neither is
     // set the fcm channel no-ops (mirrors GooglePlayController) so the code
