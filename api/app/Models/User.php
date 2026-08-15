@@ -91,6 +91,21 @@ class User extends Authenticatable implements MustVerifyEmail
         return $this->hasMany(OtpVerification::class);
     }
 
+    public function deviceTokens(): HasMany
+    {
+        return $this->hasMany(DeviceToken::class);
+    }
+
+    /**
+     * FCM v1.1 — route the `fcm` notification channel to this user's device
+     * tokens. Returns the raw token strings; an empty list means the fcm
+     * channel is skipped in the notification's via(). See docs/FCM_V1.1_SCOPE.md.
+     */
+    public function routeNotificationForFcm(): array
+    {
+        return $this->deviceTokens()->pluck('token')->all();
+    }
+
     public function enrollments(): HasMany
     {
         return $this->hasMany(Enrollment::class);

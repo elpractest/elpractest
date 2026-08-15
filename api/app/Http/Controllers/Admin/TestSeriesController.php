@@ -110,6 +110,19 @@ class TestSeriesController extends Controller
 
         AuditService::log('test_series.published', $series, $oldData, $series->toArray());
 
+        // Fan a "new test series" notification out to enrolled students of the
+        // series' course. No course → no audience, so skip silently.
+        if ($series->course_id) {
+            \App\Jobs\FanOutContentNotification::dispatch(
+                'series',
+                $series->id,
+                $series->title,
+                $series->course_id,
+                null,
+                $series->id,
+            );
+        }
+
         return response()->json([
             'message' => 'Test series published successfully.',
             'series' => $series,

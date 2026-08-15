@@ -43,6 +43,16 @@ return [
         'redirect' => env('FACEBOOK_REDIRECT_URI', '/api/auth/facebook/callback'),
     ],
 
+    // ── Firebase Cloud Messaging (FCM v1.1 push) ───────────────────
+    // Path to the Firebase service-account JSON (HTTP v1 + OAuth). Store the
+    // file as a server secret/volume; NEVER commit it. When unset the fcm
+    // channel no-ops (mirrors GooglePlayController) so the code deploys safely
+    // before the secret lands. See docs/FCM_V1.1_SCOPE.md.
+    'fcm' => [
+        'credentials' => env('FIREBASE_CREDENTIALS'), // absolute path to service-account.json
+        'project_id' => env('FIREBASE_PROJECT_ID'),
+    ],
+
     // ── MSG91 OTP ──────────────────────────────────────────────────
 
     'msg91' => [

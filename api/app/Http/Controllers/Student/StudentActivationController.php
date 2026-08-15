@@ -116,6 +116,16 @@ class StudentActivationController extends Controller
             ], $e->getCode() ?: 422);
         }
 
+        // Notify the student (in-app feed + push) now that enrollment committed.
+        $code = ActivationCode::with(['course', 'batch'])->where('code', $codeStr)->first();
+        if ($code && $code->course) {
+            $user->notify(new \App\Notifications\EnrolledInCourse(
+                $code->course->title,
+                $code->batch?->name,
+                $code->course_id,
+            ));
+        }
+
         return response()->json([
             'message' => 'Activation code redeemed successfully. You are now enrolled in the course.',
         ]);

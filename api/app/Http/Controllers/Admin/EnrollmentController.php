@@ -59,6 +59,12 @@ class EnrollmentController extends Controller
 
         AuditService::log('enrollment.created', $enrollment, null, $enrollment->toArray());
 
+        \App\Models\User::find($enrollment->user_id)?->notify(new \App\Notifications\EnrolledInCourse(
+            $batch->course->title,
+            $batch->name,
+            $enrollment->course_id,
+        ));
+
         return response()->json([
             'message' => 'Student enrolled successfully.',
             'enrollment' => $enrollment,

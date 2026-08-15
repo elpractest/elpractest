@@ -214,6 +214,17 @@ Route::middleware('auth:sanctum')->group(function () {
         // back to the older endpoints, so the two can ship independently.
         Route::get('home-summary', [\App\Http\Controllers\Student\StudentHomeController::class, 'summary']);
 
+        // FCM v1.1 — device push tokens (registered by the Flutter app on
+        // login / token-refresh, removed on logout). See docs/FCM_V1.1_SCOPE.md.
+        Route::post('device-tokens', [\App\Http\Controllers\Student\DeviceTokenController::class, 'store']);
+        Route::delete('device-tokens', [\App\Http\Controllers\Student\DeviceTokenController::class, 'destroy']);
+
+        // FCM v1.1 — in-app notifications feed (Laravel `database` channel).
+        Route::get('notifications', [\App\Http\Controllers\Student\NotificationController::class, 'index']);
+        Route::get('notifications/unread-count', [\App\Http\Controllers\Student\NotificationController::class, 'unreadCount']);
+        Route::post('notifications/read-all', [\App\Http\Controllers\Student\NotificationController::class, 'markAllRead']);
+        Route::post('notifications/{id}/read', [\App\Http\Controllers\Student\NotificationController::class, 'markRead']);
+
         // Vajini — AI study companion (RAG over course content). Throttled to
         // protect the OpenAI key/cost; degrades to 503 when unconfigured.
         Route::post('vajini/chat', [\App\Http\Controllers\Student\VajiniController::class, 'chat'])

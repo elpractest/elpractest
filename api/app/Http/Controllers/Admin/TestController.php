@@ -217,6 +217,21 @@ class TestController extends Controller
 
         AuditService::log('test.published', $test, $oldValue, $test->toArray());
 
+        // Fan a "new mock added" notification out to enrolled students. Course
+        // comes from the test or, failing that, its series. No course → no
+        // audience, so skip silently.
+        $courseId = $test->course_id ?? $test->testSeries?->course_id;
+        if ($courseId) {
+            \App\Jobs\FanOutContentNotification::dispatch(
+                'test',
+                $test->id,
+                $test->title,
+                $courseId,
+                $test->batch_id,
+                $test->test_series_id,
+            );
+        }
+
         return response()->json([
             'message' => 'Test published successfully.',
             'test' => $test,

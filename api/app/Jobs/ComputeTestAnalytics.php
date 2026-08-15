@@ -130,5 +130,16 @@ class ComputeTestAnalytics implements ShouldQueue
                 'topic_breakdown' => $topicBreakdown,
             ]
         );
+
+        // The result now exists — notify the student (in-app feed + push).
+        $session->loadMissing(['user', 'test']);
+        if ($session->user && $session->test) {
+            $session->user->notify(new \App\Notifications\ResultReady(
+                $session->id,
+                $session->test->title,
+                round($totalScore, 2),
+                round($maxScore, 2),
+            ));
+        }
     }
 }

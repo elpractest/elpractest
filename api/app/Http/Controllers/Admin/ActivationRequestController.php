@@ -108,6 +108,13 @@ class ActivationRequestController extends Controller
             ], $e->getCode() ?: 422);
         }
 
+        // Notify the student (in-app feed + push) after the enrollment commits.
+        $activationRequest->user?->notify(new \App\Notifications\ActivationApproved(
+            $batch->course->title,
+            $batch->name,
+            $batch->course_id,
+        ));
+
         return response()->json([
             'message' => 'Request approved and student enrolled successfully.',
         ]);
@@ -138,6 +145,12 @@ class ActivationRequestController extends Controller
         ]);
 
         AuditService::log('activation_request.rejected', $activationRequest, $oldValue, $activationRequest->toArray());
+
+        $activationRequest->user?->notify(new \App\Notifications\ActivationRejected(
+            $activationRequest->batch->course->title,
+            $activationRequest->batch->name,
+            $request->reason,
+        ));
 
         return response()->json([
             'message' => 'Request rejected successfully.',
