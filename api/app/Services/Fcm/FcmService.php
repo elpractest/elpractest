@@ -23,12 +23,10 @@ class FcmService
     private const SCOPE = 'https://www.googleapis.com/auth/firebase.messaging';
     private const TOKEN_CACHE_KEY = 'fcm_access_token';
 
-    /** Is FCM configured on this environment? */
+    /** Is FCM configured on this environment? (raw JSON env var or a file path) */
     public function enabled(): bool
     {
-        $path = config('services.fcm.credentials');
-
-        return is_string($path) && $path !== '' && is_file($path);
+        return $this->rawJson() !== null || $this->credentialsPath() !== null;
     }
 
     /**
@@ -96,13 +94,39 @@ class FcmService
         Log::warning('FCM rejected a message', ['status' => $status, 'reason' => $reason]);
     }
 
-    /** Read + decode the service-account JSON, or null on any problem. */
-    private function serviceAccount(): ?array
+    /** The raw service-account JSON from the env var, or null if not set. */
+    private function rawJson(): ?string
+    {
+        $json = config('services.fcm.credentials_json');
+
+        return (is_string($json) && trim($json) !== '') ? $json : null;
+    }
+
+    /** The service-account JSON file path, or null if unset/missing. */
+    private function credentialsPath(): ?string
     {
         $path = config('services.fcm.credentials');
-        $json = @file_get_contents($path);
-        if ($json === false) {
-            return null;
+
+        return (is_string($path) && $path !== '' && is_file($path)) ? $path : null;
+    }
+
+    /**
+     * Read + decode the service-account JSON, or null on any problem. Prefers the
+     * raw JSON env var; falls back to the file path.
+     */
+    private function serviceAccount(): ?array
+    {
+        $json = $this->rawJson();
+
+        if ($json === null) {
+            $path = $this->credentialsPath();
+            if ($path === null) {
+                return null;
+            }
+            $json = @file_get_contents($path);
+            if ($json === false) {
+                return null;
+            }
         }
 
         $sa = json_decode($json, true);

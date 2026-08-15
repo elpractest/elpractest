@@ -48,12 +48,14 @@ user's token strings). **Stubbed** in this pass.
 
 ## 4. Config & secrets (FCM HTTP v1 — NOT legacy server keys)
 
-- Package: **`laravel-notification-channels/fcm`** (wraps `kreait/firebase-php`,
-  HTTP v1 + OAuth). Legacy server keys are deprecated — do not use them.
-- `config/services.php` → `fcm` block (**stubbed**) reads a **service-account JSON
-  path** from `FIREBASE_CREDENTIALS`. Store the JSON as a server secret/volume;
-  **never commit it** (same discipline as prior leaked-cred cleanup).
-- The channel guards on config presence → returns without sending when unset
+- **Built dependency-free** (no `kreait`/notification-channels package): `FcmService`
+  mints the OAuth token from the service account with PHP's `openssl` (RS256 JWT) and
+  sends over Laravel's `Http`. Legacy server keys are deprecated — not used.
+- `config/services.php` → `fcm` block takes the service-account credentials as EITHER
+  `FIREBASE_CREDENTIALS_JSON` (the whole JSON pasted into one env var — easiest on
+  Coolify) **or** `FIREBASE_CREDENTIALS` (a path to the JSON file); raw JSON wins if
+  both are set. Plus `FIREBASE_PROJECT_ID`. **Never commit the key.**
+- The channel guards on config presence → returns without sending when neither is set
   (GooglePlay pattern). Deploying the backend before the secret lands is safe.
 
 ## 5. Endpoints to add (student group)

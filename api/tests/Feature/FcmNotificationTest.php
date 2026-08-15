@@ -136,4 +136,22 @@ class FcmNotificationTest extends TestCase
         $this->assertContains('database', $channels);
         $this->assertContains(FcmChannel::class, $channels);
     }
+
+    public function test_fcm_is_enabled_by_raw_json_env_var_or_a_file_path(): void
+    {
+        $svc = app(\App\Services\Fcm\FcmService::class);
+
+        // Neither set → disabled (channel no-ops, safe to deploy).
+        config()->set('services.fcm.credentials_json', null);
+        config()->set('services.fcm.credentials', null);
+        $this->assertFalse($svc->enabled());
+
+        // Raw JSON pasted into the env var → enabled (the Coolify path).
+        config()->set('services.fcm.credentials_json', json_encode([
+            'client_email' => 'sa@practest-24732.iam.gserviceaccount.com',
+            'private_key' => 'PRIVATE',
+            'project_id' => 'practest-24732',
+        ]));
+        $this->assertTrue($svc->enabled());
+    }
 }

@@ -29,9 +29,9 @@ deploy-safe: the backend FCM sender no-ops until `FIREBASE_CREDENTIALS` is set.
 
 Three things, all required before a real push reaches a phone:
 1. Push `deploy/coolify` → deploys the notifications backend (+ reject fix).
-2. Put the Firebase **service-account JSON** on the Coolify server and set
-   `FIREBASE_CREDENTIALS` (path) + `FIREBASE_PROJECT_ID=practest-24732` on the api
-   container.
+2. On the api container, set `FIREBASE_CREDENTIALS_JSON` (paste the whole
+   service-account JSON) + `FIREBASE_PROJECT_ID=practest-24732`. (Alternatively mount
+   the JSON as a file and point `FIREBASE_CREDENTIALS` at its path.)
 3. Ship a **release** app build (`--dart-define=API_BASE_URL=https://api.practest.live/api`,
    via build-release.ps1/.sh).
 

@@ -44,12 +44,16 @@ return [
     ],
 
     // ── Firebase Cloud Messaging (FCM v1.1 push) ───────────────────
-    // Path to the Firebase service-account JSON (HTTP v1 + OAuth). Store the
-    // file as a server secret/volume; NEVER commit it. When unset the fcm
-    // channel no-ops (mirrors GooglePlayController) so the code deploys safely
-    // before the secret lands. See docs/FCM_V1.1_SCOPE.md.
+    // Service-account credentials for FCM HTTP v1. Provide EITHER:
+    //   FIREBASE_CREDENTIALS_JSON — the whole service-account JSON pasted in as
+    //     one env var (easiest on Coolify / env-only hosts), OR
+    //   FIREBASE_CREDENTIALS — an absolute path to the JSON file on disk.
+    // The raw JSON wins if both are set. NEVER commit the key. When neither is
+    // set the fcm channel no-ops (mirrors GooglePlayController) so the code
+    // deploys safely before the secret lands. See docs/FCM_V1.1_SCOPE.md.
     'fcm' => [
-        'credentials' => env('FIREBASE_CREDENTIALS'), // absolute path to service-account.json
+        'credentials_json' => env('FIREBASE_CREDENTIALS_JSON'), // raw service-account JSON
+        'credentials' => env('FIREBASE_CREDENTIALS'),           // …or a path to it
         'project_id' => env('FIREBASE_PROJECT_ID'),
     ],
 
