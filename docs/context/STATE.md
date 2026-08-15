@@ -23,6 +23,13 @@ deploy-safe: the backend FCM sender no-ops until `FIREBASE_CREDENTIALS` is set.
   push taps deep-link via a web→Flutter route mapper. `flutter analyze` clean; debug
   APK builds with Firebase compiled in.
 - Activation-reject 422 fix (`7fce39a`).
+- **Native Google sign-in (step 4):** `POST /mobile/social/google` verifies a
+  Google ID token (dependency-free, Google tokeninfo) and issues a Sanctum bearer
+  via a shared `SocialAuthService` (reused by the web callback); `/settings/public`
+  now exposes `google_client_id`; the Flutter login button does native
+  `google_sign_in` → exchange → `Session.mobileGoogleLogin`. Suite 146 pass; analyze
+  clean; release APK builds. NOT Firebase Auth. **Committed?** see git log; still
+  UNPUSHED with the rest.
 - Scope: [docs/FCM_V1.1_SCOPE.md](../FCM_V1.1_SCOPE.md).
 
 ## Next step
@@ -44,6 +51,12 @@ Three things, all required before a real push reaches a phone:
   account); the Flutter client compiles/builds but token-registration and tap
   deep-link are unproven on a device; the two backend migrations have never run on
   prod; the reject fix and the server-feed path are unproven against a live session.
+- **Google login needs 3 setup steps to actually work on a device** (code is done):
+  (a) super-admin enables `social_login_enabled` in White-Label Settings so the
+  button shows; (b) `GOOGLE_CLIENT_ID` env set on the api container (the web OAuth
+  client — same one web login uses); (c) the app's signing **SHA-1** registered on
+  the Android OAuth client in the Firebase project, then re-download
+  `google-services.json`. Debug/release builds have different SHA-1s.
 - **Zero-mock-data launch is not done.** The web app shows demo content because
   `USE_DEMO_DATA` defaults true AND the DB has no published content — not a bug. Seed
   courses/tests/series/banners via `/admin/dashboard`, then set

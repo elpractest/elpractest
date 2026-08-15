@@ -899,6 +899,7 @@ class PublicSettings {
     this.siteName,
     this.primaryColor,
     this.accentColor,
+    this.googleClientId,
   });
 
   final bool paymentGatewayEnabled;
@@ -907,6 +908,10 @@ class PublicSettings {
   final String? siteName;
   final String? primaryColor;
   final String? accentColor;
+
+  /// The Google OAuth *web* client id, used as google_sign_in's serverClientId
+  /// so the ID token's audience matches what the backend verifies.
+  final String? googleClientId;
 
   factory PublicSettings.fromJson(Map<String, dynamic>? json) {
     if (json == null) return const PublicSettings();
@@ -922,6 +927,7 @@ class PublicSettings {
       siteName: json['site_name']?.toString(),
       primaryColor: json['primary_color']?.toString(),
       accentColor: json['accent_color']?.toString(),
+      googleClientId: json['google_client_id']?.toString(),
     );
   }
 }

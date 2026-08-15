@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:google_sign_in/google_sign_in.dart';
 import 'package:provider/provider.dart';
 import 'package:url_launcher/url_launcher.dart';
 
@@ -29,6 +30,7 @@ class _LoginScreenState extends State<LoginScreen> {
   bool _adminWebOnly = false;
   String _error = '';
   bool _socialEnabled = false;
+  String? _googleClientId;
 
   @override
   void initState() {
@@ -40,7 +42,12 @@ class _LoginScreenState extends State<LoginScreen> {
     try {
       final data = await ApiClient.instance.get('/settings/public');
       final settings = PublicSettings.fromJson(data['settings'] as Map<String, dynamic>?);
-      if (mounted) setState(() => _socialEnabled = settings.socialLoginEnabled);
+      if (mounted) {
+        setState(() {
+          _socialEnabled = settings.socialLoginEnabled;
+          _googleClientId = settings.googleClientId;
+        });
+      }
     } catch (_) {
       // ignore — social buttons simply stay hidden
     }
@@ -80,8 +87,73 @@ class _LoginScreenState extends State<LoginScreen> {
   }
 
   Future<void> _socialLogin(String provider) async {
+    if (provider == 'google') {
+      await _googleLogin();
+      return;
+    }
+    // Facebook is still the web redirect (native flow not implemented). It logs
+    // into the web app rather than this bearer-token app; kept for parity.
     final uri = Uri.parse('$apiBaseUrl/auth/$provider/redirect');
     await launchUrl(uri, mode: LaunchMode.externalApplication);
+  }
+
+  /// Native Google sign-in: get an ID token on-device, exchange it for a bearer
+  /// token at /mobile/social/google. serverClientId must be the web OAuth client
+  /// id (from /settings/public) so the token's audience matches the backend.
+  Future<void> _googleLogin() async {
+    final clientId = _googleClientId;
+    if (clientId == null || clientId.isEmpty) {
+      setState(() => _error = 'Google sign-in is not configured.');
+      return;
+    }
+
+    setState(() {
+      _submitting = true;
+      _error = '';
+      _emailUnverified = false;
+      _adminWebOnly = false;
+    });
+
+    // Capture context-bound objects before the async gaps below.
+    final session = context.read<Session>();
+    final navigator = Navigator.of(context);
+
+    try {
+      final gsi = GoogleSignIn(serverClientId: clientId, scopes: const ['email', 'profile']);
+      await gsi.signOut(); // force the account chooser instead of silent reuse
+      final account = await gsi.signIn();
+      if (account == null) {
+        if (mounted) setState(() => _submitting = false); // user cancelled
+        return;
+      }
+
+      final auth = await account.authentication;
+      final idToken = auth.idToken;
+      if (idToken == null || idToken.isEmpty) {
+        throw ApiException(null, 'Could not get a Google token. Please try again.');
+      }
+
+      await session.mobileGoogleLogin(idToken);
+      if (mounted) {
+        navigator.popUntil((route) => route.isFirst);
+      }
+    } on ApiException catch (e) {
+      if (!mounted) return;
+      setState(() {
+        _submitting = false;
+        if (e.statusCode == 403 && e.message.contains('web dashboard')) {
+          _adminWebOnly = true;
+        } else {
+          _error = e.message.isEmpty ? 'Google sign-in failed. Please try again.' : e.message;
+        }
+      });
+    } catch (_) {
+      if (!mounted) return;
+      setState(() {
+        _submitting = false;
+        _error = 'Google sign-in failed. Please try again.';
+      });
+    }
   }
 
   @override

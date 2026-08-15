@@ -59,6 +59,19 @@ class Session extends ChangeNotifier {
     notifyListeners();
   }
 
+  /// Native Google sign-in: exchange a Google ID token for a bearer token.
+  /// Throws [ApiException] on failure (e.g. admin_web_only). Mirrors mobileLogin.
+  Future<void> mobileGoogleLogin(String idToken) async {
+    final data = await ApiClient.instance.post('/mobile/social/google', body: {
+      'id_token': idToken,
+    });
+    await ApiClient.instance.storeToken(data['token'] as String);
+    _user = User.fromJson(data['user'] as Map<String, dynamic>);
+    _status = AuthStatus.authenticated;
+    PushService.instance.registerToken();
+    notifyListeners();
+  }
+
   Future<void> logout() async {
     // Remove this device's push token while the bearer is still set.
     await PushService.instance.unregisterToken();
