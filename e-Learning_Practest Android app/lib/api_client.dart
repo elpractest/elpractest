@@ -194,6 +194,15 @@ class ApiClient {
       _throw(e);
     }
   }
+
+  Future<void> delete(String path, {Map<String, dynamic>? body}) async {
+    try {
+      await _dio.delete(path, data: body,
+        options: Options(contentType: Headers.jsonContentType));
+    } on DioException catch (e) {
+      _throw(e);
+    }
+  }
 }
 
 /// Safely extract a JSON array from a decoded response body that may be

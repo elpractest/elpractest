@@ -2,6 +2,7 @@ import 'package:flutter/foundation.dart';
 
 import 'api_client.dart';
 import 'models.dart';
+import 'push_service.dart';
 
 enum AuthStatus { loading, unauthenticated, authenticated }
 
@@ -53,10 +54,14 @@ class Session extends ChangeNotifier {
     await ApiClient.instance.storeToken(data['token'] as String);
     _user = User.fromJson(data['user'] as Map<String, dynamic>);
     _status = AuthStatus.authenticated;
+    // Register this device for push now that we hold a bearer token.
+    PushService.instance.registerToken();
     notifyListeners();
   }
 
   Future<void> logout() async {
+    // Remove this device's push token while the bearer is still set.
+    await PushService.instance.unregisterToken();
     try {
       await ApiClient.instance.postRaw('/mobile/logout');
     } catch (_) {

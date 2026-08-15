@@ -1,0 +1,39 @@
+{
+  "project_info": {
+    "project_number": "688814926066",
+    "project_id": "practest-24732",
+    "storage_bucket": "practest-24732.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:688814926066:android:82989ff85083e15bae086b",
+        "android_client_info": {
+          "package_name": "com.practest.practest_app"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "688814926066-1b0pv343gn2lv6v9l3ltvfdtpqdef0ui.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyCdMEhyPQdgq8OnJmBSjvRwKt_EflV-xUw"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": [
+            {
+              "client_id": "688814926066-1b0pv343gn2lv6v9l3ltvfdtpqdef0ui.apps.googleusercontent.com",
+              "client_type": 3
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

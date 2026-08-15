@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
 import 'i18n.dart';
+import 'push_service.dart';
 import 'routes.dart';
 import 'scaffold.dart';
 import 'screens/welcome_screen.dart';
@@ -26,6 +27,8 @@ class PractestApp extends StatelessWidget {
           return MaterialApp(
             title: 'Practest',
             debugShowCheckedModeBanner: false,
+            navigatorKey: appNavigatorKey, // lets push taps deep-link
+
             // `theme` is Flutter's LIGHT slot and `darkTheme` its dark one.
             // These were crossed once, so ThemeMode.dark resolved to the light
             // palette and the toggle did the opposite of what its icon said.

@@ -6,37 +6,44 @@ _Last updated: 2026-08-15_
 
 ## In flight
 
-**FCM push + in-app notifications, v1.1 (steps 1–2)** — **committed on
-`deploy/coolify`, UNPUSHED, not deployed.** A push to `deploy/coolify` is the prod
-deploy. All deploy-safe: the FCM sender no-ops until `FIREBASE_CREDENTIALS` is set.
+**FCM push + in-app notifications, v1.1** — **committed on `deploy/coolify`,
+UNPUSHED, not deployed.** A push to `deploy/coolify` is the prod deploy. All
+deploy-safe: the backend FCM sender no-ops until `FIREBASE_CREDENTIALS` is set.
 
-- Backend (`c1aa786` stale-test fix, `794f051` FCM): device-token + in-app feed
-  endpoints, `FcmService` (dependency-free HTTP v1, prunes dead tokens), channel,
-  6 notifications wired into 7 triggers, chunked fan-out job. Suite 139 pass.
-- Frontend feed wiring: `app/src/lib/notifications.js` now consumes
-  `GET /student/notifications` (server-authoritative, server-tracked unread), with an
-  automatic fallback to the old client-derived feed if the endpoint 404s. Takes
-  effect on the next `app/` rebuild. Lint + `vite build` clean.
-- Activation-reject 422 fix (`7fce39a`, `AdminActivations.jsx`) — reject now posts
-  `{reason}` not `{admin_notes}`.
+- Backend (`c1aa786`, `794f051`): device-token + in-app feed endpoints, `FcmService`
+  (dependency-free HTTP v1, prunes dead tokens), channel, 6 notifications wired into
+  7 triggers, chunked fan-out job. Suite 139 pass.
+- Frontend feed (`251c7f6`): `app/src/lib/notifications.js` consumes
+  `GET /student/notifications` with a fallback to the old client-derived feed if the
+  endpoint 404s. Needs an `app/` rebuild to take effect.
+- **Flutter client (step 5):** `google-services.json` placed (project
+  `practest-24732`), google-services Gradle plugin wired, `firebase_core` +
+  `firebase_messaging` added, `PushService` registers the token on
+  login/app-open/refresh and removes it on logout, `POST_NOTIFICATIONS` permission,
+  push taps deep-link via a web→Flutter route mapper. `flutter analyze` clean; debug
+  APK builds with Firebase compiled in.
+- Activation-reject 422 fix (`7fce39a`).
 - Scope: [docs/FCM_V1.1_SCOPE.md](../FCM_V1.1_SCOPE.md).
 
 ## Next step
 
-Push `deploy/coolify` to deploy (ships backend + reject fix; the frontend feed change
-needs an `app/` rebuild/redeploy). Then set `FIREBASE_CREDENTIALS`+`FIREBASE_PROJECT_ID`
-on the Coolify server and do the Flutter client: register the token to
-`/student/device-tokens`, delete on logout, deep-link on tap via `data.route`.
+Three things, all required before a real push reaches a phone:
+1. Push `deploy/coolify` → deploys the notifications backend (+ reject fix).
+2. Put the Firebase **service-account JSON** on the Coolify server and set
+   `FIREBASE_CREDENTIALS` (path) + `FIREBASE_PROJECT_ID=practest-24732` on the api
+   container.
+3. Ship a **release** app build (`--dart-define=API_BASE_URL=https://api.practest.live/api`,
+   via build-release.ps1/.sh).
 
 ## Open / blocked
 
 - **Nothing blocked.** Owner decisions: when to push/deploy; whether to add Google
   login now (native `google_sign_in` → verify → Sanctum, doc step 4, NOT built; do
   **not** add Firebase Auth).
-- **Never verified live:** no real FCM device send (no service account configured);
-  the two new migrations have never run on prod; the reject fix and the server-feed
-  path are unproven against a live session (against current prod the frontend uses
-  only the *fallback* path, since the backend endpoint isn't deployed yet).
+- **Never verified live:** no real FCM device send (backend undeployed + no service
+  account); the Flutter client compiles/builds but token-registration and tap
+  deep-link are unproven on a device; the two backend migrations have never run on
+  prod; the reject fix and the server-feed path are unproven against a live session.
 - **Zero-mock-data launch is not done.** The web app shows demo content because
   `USE_DEMO_DATA` defaults true AND the DB has no published content — not a bug. Seed
   courses/tests/series/banners via `/admin/dashboard`, then set
@@ -44,6 +51,7 @@ on the Coolify server and do the Flutter client: register the token to
 
 ## Prod facts worth not re-deriving
 
+- Firebase project: **`practest-24732`**. Android package: `com.practest.practest_app`.
 - Admin panel is the SPA at **`/admin/dashboard`** (one tabbed page). **Super-admin
   is a superset of admin** — no separate login needed.
 - Seeded accounts: super-admin `thevinstitution@gmail.com`, admin
@@ -51,7 +59,7 @@ on the Coolify server and do the Flutter client: register the token to
   one if unused). Student test acct: `vmedics.ps@gmail.com` (anant).
 - **Store rule:** a course lists in the Store only when `Course.is_published=true`
   AND it has an `is_active` batch with `price_paise` set.
-- Release APK (all signup fixes): 63.4 MB at
-  `e-Learning_Practest Android app/build/app/outputs/flutter-apk/app-release.apk`.
-- Backend tests run on sqlite `:memory:`, `QUEUE_CONNECTION=sync` — notifications
-  fire synchronously in tests, FCM channel no-ops (no creds). Full suite: 139 pass.
+- Mobile auth = Sanctum bearer via `/mobile/login`; token in `shared_preferences`
+  (`auth_token`). API base already includes `/api`; app paths are like
+  `/student/device-tokens`.
+- Backend tests run on sqlite `:memory:`, `QUEUE_CONNECTION=sync`. Full suite: 139 pass.

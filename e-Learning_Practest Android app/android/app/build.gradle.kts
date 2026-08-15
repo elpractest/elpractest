@@ -4,6 +4,8 @@ plugins {
     id("com.android.application")
     // The Flutter Gradle Plugin must be applied after the Android and Kotlin Gradle plugins.
     id("dev.flutter.flutter-gradle-plugin")
+    // Firebase (FCM). Applied last; reads android/app/google-services.json.
+    id("com.google.gms.google-services")
 }
 
 // Upload-key credentials, kept out of git — see android/key.properties.example.

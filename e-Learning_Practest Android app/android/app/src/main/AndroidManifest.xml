@@ -1,6 +1,8 @@
 <manifest xmlns:android="http://schemas.android.com/apk/res/android">
     <!-- Required for the app to reach the API (release builds don't inherit the debug manifest's permission). -->
     <uses-permission android:name="android.permission.INTERNET"/>
+    <!-- FCM push: Android 13+ requires this for the notification runtime prompt. -->
+    <uses-permission android:name="android.permission.POST_NOTIFICATIONS"/>
     <application
         android:label="Practest"
         android:name="${applicationName}"
