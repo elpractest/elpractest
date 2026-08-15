@@ -91,6 +91,11 @@ class SettingsController extends Controller
             return [$setting->key => $setting->typed_value];
         });
 
+        // The Google OAuth client id is not secret (it ships in every web page's
+        // sign-in button); the mobile app needs it as google_sign_in's
+        // serverClientId so its ID-token audience matches what the backend checks.
+        $settings = $settings->put('google_client_id', config('services.google.client_id'));
+
         return response()->json(['settings' => $settings]);
     }
 }

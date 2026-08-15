@@ -48,36 +48,14 @@ class SocialAuthController extends Controller
             return redirect(config('app.frontend_url') . '/login?error=social_failed');
         }
 
-        // Check if this social account is already linked
-        $socialAccount = SocialAccount::where('provider', $provider)
-            ->where('provider_id', $socialUser->getId())
-            ->first();
-
-        if ($socialAccount) {
-            // Existing social account — log in
-            $user = $socialAccount->user;
-        } else {
-            // Check if a user with this email already exists
-            $user = User::where('email', $socialUser->getEmail())->first();
-
-            if (! $user) {
-                // Create new user (social signup = auto-verified email)
-                $user = User::create([
-                    'name' => $socialUser->getName() ?? $socialUser->getNickname() ?? 'User',
-                    'email' => $socialUser->getEmail(),
-                    'email_verified_at' => now(),
-                    'avatar' => $socialUser->getAvatar(),
-                ]);
-
-                $user->assignRole('student');
-            }
-
-            // Link social account to user
-            $user->socialAccounts()->create([
-                'provider' => $provider,
-                'provider_id' => $socialUser->getId(),
-            ]);
-        }
+        // Shared with the mobile native flow so the two rails can't drift.
+        $user = app(\App\Services\SocialAuthService::class)->findOrCreate(
+            $provider,
+            $socialUser->getId(),
+            $socialUser->getEmail(),
+            $socialUser->getName() ?? $socialUser->getNickname(),
+            $socialUser->getAvatar(),
+        );
 
         Auth::login($user);
         // Regenerate only when a session is actually bound to the request. The

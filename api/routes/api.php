@@ -59,6 +59,11 @@ Route::get('/auth/{provider}/callback', [SocialAuthController::class, 'callback'
 Route::post('/mobile/login', [\App\Http\Controllers\Auth\MobileAuthController::class, 'login'])
     ->middleware('throttle:login');
 
+// Mobile native Google sign-in — verifies a Google ID token and issues a bearer
+// token. Public (pre-auth), same throttle as login.
+Route::post('/mobile/social/google', [\App\Http\Controllers\Auth\MobileSocialAuthController::class, 'google'])
+    ->middleware('throttle:login');
+
 // Contact form — reCAPTCHA middleware
 Route::post('/contact', [ContactController::class, 'store'])
     ->middleware('recaptcha');
