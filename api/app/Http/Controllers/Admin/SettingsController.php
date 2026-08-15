@@ -94,7 +94,9 @@ class SettingsController extends Controller
         // The Google OAuth client id is not secret (it ships in every web page's
         // sign-in button); the mobile app needs it as google_sign_in's
         // serverClientId so its ID-token audience matches what the backend checks.
-        $settings = $settings->put('google_client_id', config('services.google.client_id'));
+        // Prefer the mobile-specific client (Firebase project's web client).
+        $googleClientId = config('services.google.mobile_client_id') ?: config('services.google.client_id');
+        $settings = $settings->put('google_client_id', $googleClientId);
 
         return response()->json(['settings' => $settings]);
     }

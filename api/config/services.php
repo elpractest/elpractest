@@ -35,6 +35,12 @@ return [
         'client_id' => env('GOOGLE_CLIENT_ID'),
         'client_secret' => env('GOOGLE_CLIENT_SECRET'),
         'redirect' => env('GOOGLE_REDIRECT_URI', '/api/auth/google/callback'),
+        // The mobile app's native google_sign_in needs a WEB client id from the
+        // SAME Firebase project as google-services.json, which can differ from
+        // the web-login client above. Set GOOGLE_MOBILE_CLIENT_ID to it; the app
+        // uses it as serverClientId and the backend verifies the token audience
+        // against it. Falls back to client_id when unset.
+        'mobile_client_id' => env('GOOGLE_MOBILE_CLIENT_ID'),
     ],
 
     'facebook' => [

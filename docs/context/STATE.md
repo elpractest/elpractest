@@ -51,12 +51,13 @@ Three things, all required before a real push reaches a phone:
   account); the Flutter client compiles/builds but token-registration and tap
   deep-link are unproven on a device; the two backend migrations have never run on
   prod; the reject fix and the server-feed path are unproven against a live session.
-- **Google login needs 3 setup steps to actually work on a device** (code is done):
-  (a) super-admin enables `social_login_enabled` in White-Label Settings so the
-  button shows; (b) `GOOGLE_CLIENT_ID` env set on the api container (the web OAuth
-  client — same one web login uses); (c) the app's signing **SHA-1** registered on
-  the Android OAuth client in the Firebase project, then re-download
-  `google-services.json`. Debug/release builds have different SHA-1s.
+- **Google login — final config (code done + deployed once pushed):** web login's
+  `GOOGLE_CLIENT_ID` is `904862810932-…` (a DIFFERENT Google project). Mobile needs
+  the Firebase project's (`practest-24732` / `688814926066`) web client, so it's
+  decoupled: set **`GOOGLE_MOBILE_CLIENT_ID` = `688814926066-1b0pv343gn2lv6v9l3ltvfdtpqdef0ui.apps.googleusercontent.com`**
+  on the api container (new key; leave `GOOGLE_CLIENT_ID` alone). `social_login_enabled`
+  is already ON; SHA-1 `E1:F1:54:75:9E:E5:F2:5A:9B:BC:50:88:9A:35:C8:25:C2:03:6E:4E`
+  is registered. Debug/release share the debug key's SHA-1 (no release keystore yet).
 - **Zero-mock-data launch is not done.** The web app shows demo content because
   `USE_DEMO_DATA` defaults true AND the DB has no published content — not a bug. Seed
   courses/tests/series/banners via `/admin/dashboard`, then set

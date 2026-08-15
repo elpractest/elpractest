@@ -42,9 +42,10 @@ class MobileSocialAuthController extends Controller
         $claims = $resp->json();
 
         // The token MUST be minted for our OAuth client, or anyone's Google token
-        // would log in. google_sign_in must use GOOGLE_CLIENT_ID as its
-        // serverClientId so the audience matches.
-        $expectedAud = config('services.google.client_id');
+        // would log in. google_sign_in uses this same id as its serverClientId so
+        // the audience matches. Prefer the mobile-specific client (the Firebase
+        // project's web client); fall back to the web-login client.
+        $expectedAud = config('services.google.mobile_client_id') ?: config('services.google.client_id');
         if (! $expectedAud || ($claims['aud'] ?? null) !== $expectedAud) {
             return response()->json(['message' => 'This token was not issued for Practest.'], 401);
         }

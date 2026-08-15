@@ -103,4 +103,21 @@ class MobileGoogleAuthTest extends TestCase
             ->assertOk()
             ->assertJsonPath('settings.google_client_id', self::AUD);
     }
+
+    public function test_mobile_client_id_overrides_the_web_login_client(): void
+    {
+        // Web login uses one client; mobile (Firebase project) uses another.
+        config()->set('services.google.client_id', 'web-login.apps.googleusercontent.com');
+        config()->set('services.google.mobile_client_id', self::AUD);
+
+        // The app is handed the MOBILE client id, not the web-login one.
+        $this->getJson('/api/settings/public')
+            ->assertJsonPath('settings.google_client_id', self::AUD);
+
+        // A token minted for the mobile client is accepted even though it differs
+        // from the web-login GOOGLE_CLIENT_ID. (Rejection of a wrong audience is
+        // covered by test_token_for_a_different_audience_is_rejected.)
+        $this->fakeTokenInfo(['aud' => self::AUD]);
+        $this->postJson('/api/mobile/social/google', ['id_token' => 'x'])->assertOk();
+    }
 }
