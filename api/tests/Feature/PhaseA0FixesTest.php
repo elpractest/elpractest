@@ -5,8 +5,8 @@ namespace Tests\Feature;
 use App\Models\Batch;
 use App\Models\Course;
 use App\Models\User;
-use Illuminate\Auth\Notifications\ResetPassword;
-use Illuminate\Auth\Notifications\VerifyEmail;
+use App\Notifications\QueuedResetPassword;
+use App\Notifications\QueuedVerifyEmail;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\Notification;
@@ -52,7 +52,7 @@ class PhaseA0FixesTest extends TestCase
             'email' => 'resetme@example.com',
         ])->assertOk();
 
-        Notification::assertSentTo($user, ResetPassword::class, function ($notification) use ($user) {
+        Notification::assertSentTo($user, QueuedResetPassword::class, function ($notification) use ($user) {
             $url = $notification->toMail($user)->actionUrl;
             $frontendUrl = config('app.frontend_url');
 
@@ -81,7 +81,7 @@ class PhaseA0FixesTest extends TestCase
 
         $user = User::where('email', 'verifyme@example.com')->first();
 
-        Notification::assertSentTo($user, VerifyEmail::class, function ($notification) use ($user) {
+        Notification::assertSentTo($user, QueuedVerifyEmail::class, function ($notification) use ($user) {
             $url = $notification->toMail($user)->actionUrl;
             $frontendUrl = config('app.frontend_url');
 
