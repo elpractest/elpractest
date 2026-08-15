@@ -1,17 +1,20 @@
 /* ============================================================
-   Derived notifications feed.
+   Notifications feed.
    ------------------------------------------------------------
-   The app has no notifications backend, so this synthesises a real,
-   useful feed from data the student already has:
+   Authoritative source is the server feed (GET /student/notifications),
+   which carries every event the backend raises — activation approved/
+   rejected, result ready, new mock/series, enrolment — plus server-tracked
+   read state (unread_count).
+
+   If that endpoint isn't reachable (e.g. the FCM/notifications backend
+   hasn't been deployed yet → 404), we fall back to the OLD client-derived
+   feed synthesised from data the student already has:
      • submitted results  → "Result ready"  (/api/student/results)
-     • activation requests → approved / rejected updates
-                             (/api/student/activation-requests)
-   Unread state is tracked locally: the newest item's timestamp is
-   compared against the last time the user opened the Notifications
-   screen (persisted in localStorage). No new API calls beyond the two
-   existing student endpoints.
+     • activation requests → approved / rejected (/api/student/activation-requests)
+   The two never run together, so there are no duplicates: server feed when
+   available, derived feed only as a fallback.
    ============================================================ */
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useRef } from 'react';
 import api from '../api';
 
 const SEEN_KEY = 'practest-notif-seen';
@@ -21,6 +24,16 @@ function ts(v) {
   return d && !isNaN(d.getTime()) ? d.getTime() : 0;
 }
 
+/* ---- Authoritative: server feed ---- */
+async function fetchServerFeed() {
+  const { data } = await api.get('/api/student/notifications');
+  return {
+    items: Array.isArray(data?.notifications) ? data.notifications : [],
+    unread: Number(data?.unread_count) || 0,
+  };
+}
+
+/* ---- Fallback: client-derived feed (only when the server feed 404s) ---- */
 function deriveResults(results = []) {
   return results.slice(0, 15).map((r) => ({
     id: `result-${r.session_id}`,
@@ -56,7 +69,7 @@ function deriveActivations(requests = []) {
     });
 }
 
-export async function fetchNotifications() {
+async function fetchDerivedFeed() {
   const [resultsRes, activationRes] = await Promise.allSettled([
     api.get('/api/student/results'),
     api.get('/api/student/activation-requests'),
@@ -91,24 +104,49 @@ export function useNotifications() {
   const [items, setItems] = useState([]);
   const [loading, setLoading] = useState(true);
   const [unread, setUnread] = useState(0);
+  const modeRef = useRef('server'); // 'server' | 'derived'
 
   useEffect(() => {
     let alive = true;
-    fetchNotifications()
-      .then((list) => {
+
+    (async () => {
+      try {
+        const feed = await fetchServerFeed();
         if (!alive) return;
-        setItems(list);
-        const seen = readSeen();
-        setUnread(list.filter((n) => n.time > seen).length);
-      })
-      .catch(() => {})
-      .finally(() => alive && setLoading(false));
+        modeRef.current = 'server';
+        setItems(feed.items);
+        setUnread(feed.unread);
+      } catch {
+        // Endpoint not deployed yet (404) or failed → derived fallback.
+        modeRef.current = 'derived';
+        try {
+          const list = await fetchDerivedFeed();
+          if (!alive) return;
+          setItems(list);
+          const seen = readSeen();
+          setUnread(list.filter((n) => n.time > seen).length);
+        } catch {
+          if (alive) {
+            setItems([]);
+            setUnread(0);
+          }
+        }
+      } finally {
+        if (alive) setLoading(false);
+      }
+    })();
+
     return () => { alive = false; };
   }, []);
 
   const markSeen = useCallback(() => {
-    markAllSeen();
     setUnread(0);
+    if (modeRef.current === 'server') {
+      // Server-authoritative: opening the screen marks everything read.
+      api.post('/api/student/notifications/read-all').catch(() => {});
+    } else {
+      markAllSeen();
+    }
   }, []);
 
   return { items, loading, unread, markSeen };

@@ -6,44 +6,40 @@ _Last updated: 2026-08-15_
 
 ## In flight
 
-**FCM push + in-app notifications, v1.1 (steps 1–2)** — code-complete on the
-working tree, **uncommitted, not deployed**. All backend, all deploy-safe: the
-FCM sender no-ops until `FIREBASE_CREDENTIALS` is set, so it can ship ahead of the
-secret and the Flutter work.
+**FCM push + in-app notifications, v1.1 (steps 1–2)** — **committed on
+`deploy/coolify`, UNPUSHED, not deployed.** A push to `deploy/coolify` is the prod
+deploy. All deploy-safe: the FCM sender no-ops until `FIREBASE_CREDENTIALS` is set.
 
-- Migrations `device_tokens` + `notifications`, `DeviceToken` model, `services.fcm`
-  config, `User::deviceTokens()`/`routeNotificationForFcm()`.
-- Endpoints: `POST/DELETE /student/device-tokens`, `GET /student/notifications`
-  (+`/unread-count`, `/read-all`, `/{id}/read`).
-- `FcmService` (dependency-free: openssl RS256 JWT + `Http`, prunes dead tokens),
-  `FcmChannel`, `FcmNotification` base, 6 notifications, `FanOutContentNotification`
-  job, wired into 7 triggers.
+- Backend (`c1aa786` stale-test fix, `794f051` FCM): device-token + in-app feed
+  endpoints, `FcmService` (dependency-free HTTP v1, prunes dead tokens), channel,
+  6 notifications wired into 7 triggers, chunked fan-out job. Suite 139 pass.
+- Frontend feed wiring: `app/src/lib/notifications.js` now consumes
+  `GET /student/notifications` (server-authoritative, server-tracked unread), with an
+  automatic fallback to the old client-derived feed if the endpoint 404s. Takes
+  effect on the next `app/` rebuild. Lint + `vite build` clean.
+- Activation-reject 422 fix (`7fce39a`, `AdminActivations.jsx`) — reject now posts
+  `{reason}` not `{admin_notes}`.
 - Scope: [docs/FCM_V1.1_SCOPE.md](../FCM_V1.1_SCOPE.md).
-
-**Activation-reject fix** (`app/src/pages/AdminActivations.jsx`) — frontend sent
-`{admin_notes}` but the backend validates `{reason}` → every reject was a 422.
-One-word fix, uncommitted. Ships with the next `app/` build.
 
 ## Next step
 
-Commit the FCM work (backend) + the reject fix (frontend) as separate commits.
-Then either: set `FIREBASE_CREDENTIALS`+`FIREBASE_PROJECT_ID` on the Coolify server
-and do the Flutter client (register token, deep-link on tap), **or** point the
-frontend `fetchNotifications()` at `GET /api/student/notifications` so server-only
-events (new mock, enrolment) show in-app.
+Push `deploy/coolify` to deploy (ships backend + reject fix; the frontend feed change
+needs an `app/` rebuild/redeploy). Then set `FIREBASE_CREDENTIALS`+`FIREBASE_PROJECT_ID`
+on the Coolify server and do the Flutter client: register the token to
+`/student/device-tokens`, delete on logout, deep-link on tap via `data.route`.
 
 ## Open / blocked
 
-- **Nothing blocked.** Owner decisions: when to deploy; whether to add Google login
-  now (native `google_sign_in` → verify → Sanctum, scoped in the doc as step 4, NOT
-  built; do **not** add Firebase Auth).
-- **Never verified live:** no real FCM send (no service account configured); the two
-  new migrations have never run on prod; the reject fix is unproven against a live
-  admin session; the in-app feed endpoint has no frontend consumer yet (feed is
-  still client-derived in `lib/notifications.js`).
+- **Nothing blocked.** Owner decisions: when to push/deploy; whether to add Google
+  login now (native `google_sign_in` → verify → Sanctum, doc step 4, NOT built; do
+  **not** add Firebase Auth).
+- **Never verified live:** no real FCM device send (no service account configured);
+  the two new migrations have never run on prod; the reject fix and the server-feed
+  path are unproven against a live session (against current prod the frontend uses
+  only the *fallback* path, since the backend endpoint isn't deployed yet).
 - **Zero-mock-data launch is not done.** The web app shows demo content because
-  `USE_DEMO_DATA` defaults true AND the DB has no published content — not a bug.
-  Seed courses/tests/series/banners via `/admin/dashboard`, then set
+  `USE_DEMO_DATA` defaults true AND the DB has no published content — not a bug. Seed
+  courses/tests/series/banners via `/admin/dashboard`, then set
   `VITE_USE_DEMO_DATA=false` and rebuild `app/`.
 
 ## Prod facts worth not re-deriving
