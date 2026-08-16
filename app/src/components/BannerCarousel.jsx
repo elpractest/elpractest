@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import api from '../api';
+import Carousel from './Carousel';
 import { USE_DEMO_DATA, demoBanners } from '../lib/demoData';
 
 /**
@@ -44,7 +45,11 @@ export default function BannerCarousel({ onDemoCta }) {
   if (items.length === 0) return null;
 
   return (
-    <div style={{ display: 'flex', gap: '13px', overflowX: 'auto', padding: '4px 18px', scrollSnapType: 'x mandatory' }}>
+    <Carousel
+      ariaLabel="Promotions"
+      autoPlay
+      trackStyle={{ display: 'flex', gap: '13px', overflowX: 'auto', padding: '4px 18px', scrollSnapType: 'x mandatory' }}
+    >
       {items.map((b) => (
         <div
           key={b.id}
@@ -71,6 +76,6 @@ export default function BannerCarousel({ onDemoCta }) {
           </div>
         </div>
       ))}
-    </div>
+    </Carousel>
   );
 }

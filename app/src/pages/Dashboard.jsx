@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import api from '../api';
 import Icon from '../components/Icon';
 import BannerCarousel from '../components/BannerCarousel';
+import Carousel from '../components/Carousel';
 import StudentCheckout from './StudentCheckout';
 import ActivationModal from './ActivationModal';
 import { useTheme } from '../lib/theme';
@@ -230,7 +231,7 @@ export default function Dashboard({ user }) {
       {/* ---- Popular test series ---- */}
       <div style={{ margin: '26px 0 0' }}>
         {sectionHead('Popular test series', 'View all', () => navigate('/student/test-series'))}
-        <div className="dash-popular">
+        <Carousel trackClassName="dash-popular" ariaLabel="Popular test series">
           {popular.map((c, i) => (
             <div key={c.id || i} onClick={() => openCourse(c)} className="dash-popular-card" style={{ cursor: 'pointer', borderRadius: '20px', background: 'var(--card)', border: '1px solid var(--line)', boxShadow: 'var(--cardsh)', overflow: 'hidden' }}>
               <div style={{ position: 'relative', height: '132px', background: c.grad }}>
@@ -250,7 +251,7 @@ export default function Dashboard({ user }) {
               </div>
             </div>
           ))}
-        </div>
+        </Carousel>
       </div>
 
       {/* ---- Scholarship strip ---- */}
