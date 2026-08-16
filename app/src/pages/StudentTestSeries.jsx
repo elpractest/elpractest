@@ -44,6 +44,15 @@ export default function StudentTestSeries() {
 
   return (
     <div style={{ padding: '16px 18px 24px', animation: 'fade-in .35s ease both' }}>
+      <style>{`
+        .sts-list { display: flex; flex-direction: column; gap: 14px; }
+        @media (min-width: 640px) {
+          .sts-list { display: grid; grid-template-columns: repeat(2, 1fr); align-items: start; }
+        }
+        @media (min-width: 1024px) {
+          .sts-list { grid-template-columns: repeat(3, 1fr); }
+        }
+      `}</style>
       <h1 style={{ margin: '0 0 4px', font: '800 24px var(--font-display)', color: 'var(--tx)', letterSpacing: '-.02em' }}>Test series</h1>
       <p style={{ margin: '0 0 16px', font: '500 13px var(--font-body)', color: 'var(--muted)' }}>Pick your exam, then a pack</p>
 
@@ -58,7 +67,7 @@ export default function StudentTestSeries() {
       {loading ? (
         <div style={{ color: 'var(--muted)', padding: '24px 0' }}>Loading test series…</div>
       ) : (
-        <div style={{ display: 'flex', flexDirection: 'column', gap: '14px' }}>
+        <div className="sts-list">
           {filtered.map((c, i) => (
             <div key={c.id || i} onClick={() => open(c)} style={{ cursor: 'pointer', borderRadius: '20px', background: 'var(--card)', border: '1px solid var(--line)', boxShadow: 'var(--cardsh)', overflow: 'hidden' }}>
               <div style={{ display: 'flex' }}>

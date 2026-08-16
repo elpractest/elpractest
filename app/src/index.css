@@ -675,6 +675,43 @@ select.form-input option { background: var(--card); color: var(--tx); }
 }
 .nav-sidebar-brand { display: none; }
 
+/* 640–1023px — tablet tier: the same bottom bar becomes a fixed, icon-only
+   left rail (64px, no labels). Middle state between the phone bar and the
+   ≥1024px sidebar — same 5 tabs + the Vajini FAB, zero new nav items. */
+@media (min-width: 640px) and (max-width: 1023px) {
+  .app-shell { flex-direction: row; }
+  .app-shell-body {
+    flex: 1;
+    min-width: 0;
+    margin-left: 64px;
+    display: flex;
+    flex-direction: column;
+  }
+  .app-main { padding-bottom: 40px; }
+
+  .bottom-nav {
+    top: 0; bottom: 0; right: auto;
+    width: 64px;
+    flex-direction: column;
+    align-items: stretch;
+    justify-content: flex-start;
+    gap: 6px;
+    padding: 16px 8px;
+    border-top: none;
+    border-right: 1px solid var(--line);
+    background: var(--card);
+  }
+  .nav-item {
+    flex: none;
+    justify-content: center;
+    padding: 12px 0;
+    border-radius: var(--radius-sm);
+  }
+  .nav-item span { display: none; }
+  .nav-item.active { background: var(--accent-soft); }
+  .fab-ai { left: 12px; right: auto; bottom: 20px; }
+}
+
 /* ============================================================
    THEME TOGGLE — floating fallback (still present app-wide)
    ============================================================ */

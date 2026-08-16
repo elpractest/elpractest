@@ -26,6 +26,11 @@ export default function StudyZone() {
 
   return (
     <div style={{ padding: '18px 18px 8px', animation: 'fade-in .35s ease both' }}>
+      <style>{`
+        .study-tiles { display: grid; grid-template-columns: repeat(2, 1fr); gap: 12px; }
+        @media (min-width: 640px) { .study-tiles { grid-template-columns: repeat(3, 1fr); } }
+        @media (min-width: 1024px) { .study-tiles { grid-template-columns: repeat(4, 1fr); } }
+      `}</style>
       <h1 style={{ margin: '0 0 4px', font: '800 24px var(--font-display)', color: 'var(--tx)', letterSpacing: '-.02em' }}>{t('study.title')}</h1>
       <p style={{ margin: '0 0 18px', font: '500 13px var(--font-body)', color: 'var(--muted)' }}>{t('study.subtitle')}</p>
 
@@ -39,7 +44,7 @@ export default function StudyZone() {
         ))}
       </div>
 
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(160px, 1fr))', gap: '12px' }}>
+      <div className="study-tiles">
         {tiles.map((t) => {
           const tc = tint(t.hue);
           return (

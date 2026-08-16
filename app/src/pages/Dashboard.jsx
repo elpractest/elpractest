@@ -115,6 +115,17 @@ export default function Dashboard({ user }) {
 
   return (
     <div style={{ padding: '16px 0 24px' }}>
+      <style>{`
+        .dash-popular { display: flex; gap: 14px; overflow-x: auto; padding: 0 18px 6px; scroll-snap-type: x mandatory; }
+        .dash-popular-card { flex: none; width: 262px; scroll-snap-align: start; }
+        @media (min-width: 640px) {
+          .dash-popular { display: grid; grid-template-columns: repeat(2, 1fr); overflow: visible; }
+          .dash-popular-card { width: auto; }
+        }
+        @media (min-width: 1024px) {
+          .dash-popular { grid-template-columns: repeat(3, 1fr); }
+        }
+      `}</style>
       {/* ---- Your goal ---- */}
       <div style={{
         margin: '0 18px', display: 'flex', alignItems: 'center', gap: '12px', padding: '14px 15px', borderRadius: '14px',
@@ -219,9 +230,9 @@ export default function Dashboard({ user }) {
       {/* ---- Popular test series ---- */}
       <div style={{ margin: '26px 0 0' }}>
         {sectionHead('Popular test series', 'View all', () => navigate('/student/test-series'))}
-        <div style={{ display: 'flex', gap: '14px', overflowX: 'auto', padding: '0 18px 6px', scrollSnapType: 'x mandatory' }}>
+        <div className="dash-popular">
           {popular.map((c, i) => (
-            <div key={c.id || i} onClick={() => openCourse(c)} style={{ cursor: 'pointer', flex: 'none', width: '262px', borderRadius: '20px', background: 'var(--card)', border: '1px solid var(--line)', boxShadow: 'var(--cardsh)', overflow: 'hidden', scrollSnapAlign: 'start' }}>
+            <div key={c.id || i} onClick={() => openCourse(c)} className="dash-popular-card" style={{ cursor: 'pointer', borderRadius: '20px', background: 'var(--card)', border: '1px solid var(--line)', boxShadow: 'var(--cardsh)', overflow: 'hidden' }}>
               <div style={{ position: 'relative', height: '132px', background: c.grad }}>
                 {c.tag && <span style={{ position: 'absolute', top: '10px', left: '10px', font: '800 10px var(--font-body)', letterSpacing: '.08em', color: '#fff', background: 'rgba(8,12,20,.6)', backdropFilter: 'blur(6px)', padding: '4px 9px', borderRadius: '999px' }}>{c.tag}</span>}
                 {c.lang && <span style={{ position: 'absolute', top: '10px', right: '10px', font: '700 10px var(--font-hindi)', color: '#0B0F1A', background: '#FFC968', padding: '4px 9px', borderRadius: '999px' }}>{c.lang}</span>}
