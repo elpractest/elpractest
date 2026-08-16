@@ -22,7 +22,10 @@ export default function AdminActivationCodes() {
   const fetchCodes = async () => {
     try {
       const res = await api.get('/api/admin/activation-codes');
-      setCodes(res.data);
+      // Endpoint returns a Laravel paginator envelope ({ data: [...], ... }); reading
+      // res.data directly left `codes` as an object, so codes.map(...) in render threw
+      // "e.map is not a function" and crashed the page. Normalise to the row array.
+      setCodes(Array.isArray(res.data) ? res.data : (res.data?.data ?? []));
     } catch (e) {
       setError('Failed to fetch activation codes.');
     } finally {
