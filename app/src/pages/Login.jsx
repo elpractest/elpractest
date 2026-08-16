@@ -2,10 +2,16 @@ import React, { useState, useEffect } from 'react';
 import { useNavigate, Link, useSearchParams } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import api from '../api';
-import logoMark from '../assets/logo-mark.png';
+import { useTheme } from '../lib/theme';
+// The full lockup, exactly as the Android login screen shows it: the owner's
+// artwork on light, its dark-surface derivative (black ink lifted to #F3F6FF,
+// navy to #8FB0FF, amber untouched) on dark.
+import logoFull from '../assets/logo-full.png';
+import logoFullDark from '../assets/logo-full-dark.png';
 
 export default function Login({ setUser }) {
   const { t, i18n } = useTranslation();
+  const { isDark } = useTheme();
   const isHindi = i18n.language.startsWith('hi');
   const toggleLang = () => i18n.changeLanguage(isHindi ? 'en' : 'hi');
   const [email, setEmail] = useState('');
@@ -89,9 +95,11 @@ export default function Login({ setUser }) {
 
       <div className="glass-panel" style={{ width: '100%', maxWidth: '420px', padding: '40px', display: 'flex', flexDirection: 'column', gap: '24px' }}>
         <div style={{ textAlign: 'center', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '16px' }}>
-          <span className="brand-mark" style={{ width: '58px', height: '58px', borderRadius: '16px' }}>
-            <img src={logoMark} alt="Practest" style={{ width: '44px', height: '44px', objectFit: 'contain' }} />
-          </span>
+          <img
+            src={isDark ? logoFullDark : logoFull}
+            alt="e-Learning Practest"
+            style={{ width: '200px', maxWidth: '100%', height: 'auto', objectFit: 'contain' }}
+          />
           <div>
             <h2 style={{ margin: '0 0 6px 0', fontSize: '1.75rem', fontWeight: 800, fontFamily: 'var(--font-display)', color: 'var(--tx)', letterSpacing: '-0.02em' }}>{t('login.welcome')}</h2>
             <p style={{ margin: 0, color: 'var(--muted)', fontSize: '0.9rem' }}>{t('login.subtitle')}</p>
