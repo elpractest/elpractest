@@ -51,9 +51,18 @@ Route::post('/forgot-password', [PasswordResetController::class, 'forgotPassword
     ->middleware('throttle:password-reset');
 Route::post('/reset-password', [PasswordResetController::class, 'resetPassword']);
 
-// Social auth — Google + Facebook
+// Social auth — Google + Facebook.
+// The provider callback is a top-level browser navigation coming FROM the
+// provider (accounts.google.com), so Sanctum's stateful-frontend detection
+// never fires for it and no session is started. That meant Auth::login() in the
+// callback wrote to a session that was never persisted — no auth cookie was set,
+// and the SPA's first /api/me came back 401 (bouncing the user back to sign-in).
+// Give the callback the full `web` group so StartSession runs and the login
+// cookie is actually issued (shared across *.practest.live via SESSION_DOMAIN).
+// The redirect stays stateless (Socialite ->stateless(); it needs no session).
 Route::get('/auth/{provider}/redirect', [SocialAuthController::class, 'redirect']);
-Route::get('/auth/{provider}/callback', [SocialAuthController::class, 'callback']);
+Route::get('/auth/{provider}/callback', [SocialAuthController::class, 'callback'])
+    ->middleware('web');
 
 // Mobile app (Capacitor) — bearer-token login; same throttle as web login
 Route::post('/mobile/login', [\App\Http\Controllers\Auth\MobileAuthController::class, 'login'])
