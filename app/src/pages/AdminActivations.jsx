@@ -22,8 +22,16 @@ export default function AdminActivations() {
   const fetchRequests = async () => {
     setLoading(true);
     try {
-      const res = await api.get('/api/admin/activation-requests');
-      setRequests(res.data);
+      // Scope to the actionable queue: this panel only ever verifies PENDING
+      // requests, and without the filter recent approved/rejected rows push older
+      // pending ones off the (unpaginated-in-UI) first page of 15.
+      const res = await api.get('/api/admin/activation-requests', { params: { status: 'pending' } });
+      // The endpoint returns a Laravel paginator envelope ({ data: [...], ... }),
+      // not a bare array. Reading res.data directly left `requests` as an object,
+      // so `requests.map(...)` in render threw "e.map is not a function" and the
+      // whole queue crashed. Normalise to the row array, tolerant of either shape.
+      const rows = Array.isArray(res.data) ? res.data : (res.data?.data ?? []);
+      setRequests(rows);
     } catch (err) {
       setError('Failed to fetch activation requests.');
     } finally {
