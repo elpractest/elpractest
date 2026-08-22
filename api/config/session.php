@@ -169,7 +169,10 @@ return [
     |
     */
 
-    'secure' => env('SESSION_SECURE_COOKIE'),
+    // Fail safe: default to Secure in production even if the env var is unset,
+    // so a forgotten Coolify variable can't silently ship a non-Secure cookie.
+    // Local/testing stays false so plain-HTTP `next dev` still receives it.
+    'secure' => env('SESSION_SECURE_COOKIE', env('APP_ENV') === 'production'),
 
     /*
     |--------------------------------------------------------------------------

@@ -42,7 +42,8 @@ Route::get('/login', function () {
 })->name('login');
 
 // Email verification
-Route::post('/email/resend', [AuthController::class, 'resendVerification']);
+Route::post('/email/resend', [AuthController::class, 'resendVerification'])
+    ->middleware('throttle:email-resend');
 Route::get('/email/verify/{id}/{hash}', [AuthController::class, 'verifyEmail'])
     ->name('verification.verify');
 

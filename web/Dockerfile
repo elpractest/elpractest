@@ -27,5 +27,6 @@ RUN npm run build
 ########## Stage 2: serve the static dist #####################################
 FROM nginx:alpine AS web
 COPY web/nginx.conf /etc/nginx/conf.d/default.conf
+COPY web/security-headers.conf /etc/nginx/snippets/security-headers.conf
 COPY --from=build /app/dist /usr/share/nginx/html
 EXPOSE 80

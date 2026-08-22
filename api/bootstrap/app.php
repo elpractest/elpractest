@@ -17,6 +17,11 @@ return Application::configure(basePath: dirname(__DIR__))
     ->withMiddleware(function (Middleware $middleware): void {
         $middleware->statefulApi();
 
+        // Security headers on every API response (nosniff, frame-deny, CSP).
+        $middleware->api(append: [
+            \App\Http\Middleware\SecurityHeaders::class,
+        ]);
+
         $middleware->alias([
             'role' => \Spatie\Permission\Middleware\RoleMiddleware::class,
             'permission' => \Spatie\Permission\Middleware\PermissionMiddleware::class,
@@ -53,6 +58,18 @@ return Application::configure(basePath: dirname(__DIR__))
             return Limit::perMinutes(10, 3)->by($phone)->response(function () {
                 return response()->json([
                     'message' => 'Too many OTP requests. Please wait before trying again.',
+                ], 429);
+            });
+        });
+
+        // Email verification resend: 3/hour per email. Parity with
+        // password-reset — without it the endpoint enables mail-bombing a
+        // victim's inbox and timing-based user enumeration.
+        RateLimiter::for('email-resend', function (Request $request) {
+            $email = strtolower($request->input('email', $request->ip()));
+            return Limit::perHour(3)->by($email)->response(function () {
+                return response()->json([
+                    'message' => 'Too many requests. Please try again later.',
                 ], 429);
             });
         });

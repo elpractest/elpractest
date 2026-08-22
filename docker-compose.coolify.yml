@@ -35,6 +35,10 @@ x-api-env: &api-env
   DB_PASSWORD: ${DB_PASSWORD}
   SESSION_DRIVER: database
   SESSION_DOMAIN: ${SESSION_DOMAIN:-.practest.live}
+  # TLS terminates at Traefik, so the origin request is HTTP — but the browser
+  # only ever talks HTTPS, so the cookie must carry Secure. Defaults true here;
+  # config/session.php also fails safe to Secure when APP_ENV=production.
+  SESSION_SECURE_COOKIE: ${SESSION_SECURE_COOKIE:-true}
   SANCTUM_STATEFUL_DOMAINS: ${SANCTUM_STATEFUL_DOMAINS:-app.practest.live}
   CORS_ALLOWED_ORIGINS: ${CORS_ALLOWED_ORIGINS:-https://app.practest.live}
   FRONTEND_URL: ${FRONTEND_URL:-https://app.practest.live}
