@@ -83,6 +83,21 @@ export default function AdminTestSeries() {
     }
   };
 
+  // Open the Create/Edit modal pre-filled for an existing series.
+  const openEditModal = (series) => {
+    setEditingSeries(series);
+    setFormData({
+      title: series.title || '',
+      exam_category: series.exam_category || 'SSC',
+      course_id: series.course_id || '',
+      description: series.description || '',
+      sort_order: series.sort_order ?? 0,
+    });
+    setError('');
+    setSuccess('');
+    setShowCreateModal(true);
+  };
+
   const handlePublishToggle = async (series) => {
     setSaving(true);
     setError('');
@@ -335,6 +350,13 @@ export default function AdminTestSeries() {
                   📌 Assign
                 </button>
                 <button
+                  onClick={() => openEditModal(series)}
+                  className="btn-secondary"
+                  style={{ padding: '8px 12px', fontSize: '0.82rem', fontWeight: 600 }}
+                >
+                  ✏️ Edit
+                </button>
+                <button
                   onClick={() => handlePublishToggle(series)}
                   className="btn-secondary"
                   style={{ padding: '8px 12px', fontSize: '0.82rem' }}
@@ -415,7 +437,7 @@ export default function AdminTestSeries() {
             </div>
 
             <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '12px', marginTop: '12px' }}>
-              <button type="button" onClick={() => setShowCreateModal(false)} className="btn-secondary" style={{ padding: '10px 18px' }}>
+              <button type="button" onClick={() => { setShowCreateModal(false); setEditingSeries(null); }} className="btn-secondary" style={{ padding: '10px 18px' }}>
                 Cancel
               </button>
               <button type="submit" disabled={saving} className="btn-primary" style={{ padding: '10px 20px', fontWeight: 700 }}>
