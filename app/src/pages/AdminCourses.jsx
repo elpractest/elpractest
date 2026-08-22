@@ -41,7 +41,16 @@ export default function AdminCourses() {
   
   // Forms states
   const [showCourseForm, setShowCourseForm] = useState(false);
-  const [courseForm, setCourseForm] = useState({ id: null, title: '', slug: '', description: '', exam_category: '', sort_order: 0 });
+  /* `mode` is REQUIRED by the API. It used to be missing from this form, which
+     made every create 422 with "The mode field is required." — the form could
+     not create a course at all. `is_published` is here for the same reason the
+     Publish button below exists: /courses/public only returns published
+     courses, so a course with no way to publish never reaches the website. */
+  const emptyCourseForm = {
+    id: null, title: '', slug: '', description: '', exam_category: 'SSC',
+    mode: 'hybrid', sort_order: 0, is_published: false,
+  };
+  const [courseForm, setCourseForm] = useState(emptyCourseForm);
   
   const [showModuleForm, setShowModuleForm] = useState(false);
   const [moduleForm, setModuleForm] = useState({ id: null, title: '', sort_order: 0 });
@@ -87,19 +96,37 @@ export default function AdminCourses() {
   const handleCourseSubmit = async (e) => {
     e.preventDefault();
     setError('');
+    // Send only what the endpoint validates. An empty slug is dropped rather
+    // than sent blank, so the server derives one from the title.
+    const payload = {
+      title: courseForm.title,
+      description: courseForm.description,
+      exam_category: courseForm.exam_category,
+      mode: courseForm.mode,
+      sort_order: Number(courseForm.sort_order) || 0,
+      is_published: !!courseForm.is_published,
+      ...(courseForm.slug ? { slug: courseForm.slug } : {}),
+    };
+
     try {
       if (courseForm.id) {
         // Update
-        await api.put(`/api/admin/courses/${courseForm.id}`, courseForm);
+        await api.put(`/api/admin/courses/${courseForm.id}`, payload);
       } else {
         // Create
-        await api.post('/api/admin/courses', courseForm);
+        await api.post('/api/admin/courses', payload);
       }
       setShowCourseForm(false);
-      setCourseForm({ id: null, title: '', slug: '', description: '', exam_category: '', sort_order: 0 });
+      setCourseForm(emptyCourseForm);
       fetchCourses();
     } catch (err) {
-      setError(err.response?.data?.message || 'Error saving course.');
+      // 422s carry per-field reasons; a bare "Error saving course" hid exactly
+      // the message that would have explained this form's own missing field.
+      const errors = err.response?.data?.errors;
+      setError(
+        errors ? Object.values(errors).flat().join(' ')
+               : (err.response?.data?.message || 'Error saving course.')
+      );
     }
   };
 
@@ -160,6 +187,24 @@ export default function AdminCourses() {
     }
   };
 
+  /* Publish is what puts a course on the public site: /courses/public returns
+     published courses only. There was no way to set it from this panel, so a
+     course built here could never appear there. The API already accepted the
+     field — only the control was missing. */
+  const togglePublished = async (course) => {
+    setError('');
+    try {
+      await api.put(`/api/admin/courses/${course.id}`, { is_published: !course.is_published });
+      await fetchCourses();
+      if (selectedCourse?.id === course.id) {
+        const fresh = await api.get(`/api/admin/courses/${course.id}`);
+        setSelectedCourse(fresh.data);
+      }
+    } catch (err) {
+      setError(err.response?.data?.message || 'Could not change the publish state.');
+    }
+  };
+
   const deleteLesson = async (lessonId) => {
     if (!window.confirm('Are you sure you want to delete this lesson?')) return;
     try {
@@ -181,7 +226,7 @@ export default function AdminCourses() {
         </div>
         <button 
           onClick={() => {
-            setCourseForm({ id: null, title: '', slug: '', description: '', exam_category: 'SSC', sort_order: 0 });
+            setCourseForm(emptyCourseForm);
             setShowCourseForm(true);
           }} 
           className="btn-primary"
@@ -227,17 +272,34 @@ export default function AdminCourses() {
                       alignItems: 'center'
                     }}
                   >
-                    <div>
-                      <div style={{ fontWeight: 600, color: 'var(--text-primary)' }}>{course.title}</div>
+                    <div style={{ minWidth: 0 }}>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexWrap: 'wrap' }}>
+                        <span style={{ fontWeight: 600, color: 'var(--text-primary)' }}>{course.title}</span>
+                        <span style={{
+                          fontSize: '0.68rem', fontWeight: 700, padding: '3px 8px', borderRadius: '20px',
+                          background: course.is_published ? 'var(--success-bg)' : 'var(--surface-2)',
+                          color: course.is_published ? 'var(--success)' : 'var(--text-secondary)',
+                        }}>
+                          {course.is_published ? 'Published' : 'Draft'}
+                        </span>
+                      </div>
                       <div style={{ fontSize: '0.8rem', color: 'var(--text-secondary)', marginTop: '4px' }}>
                         {course.exam_category} • {course.modules_count || 0} Modules • {course.lessons_count || 0} Lessons
                       </div>
                     </div>
-                    <div style={{ display: 'flex', gap: '8px' }}>
-                      <button 
+                    <div style={{ display: 'flex', gap: '8px', alignItems: 'center', flex: 'none' }}>
+                      <button
+                        onClick={(e) => { e.stopPropagation(); togglePublished(course); }}
+                        className={course.is_published ? 'btn-secondary' : 'btn-primary'}
+                        style={{ padding: '5px 12px', fontSize: '0.72rem' }}
+                        title={course.is_published ? 'Remove from the public site' : 'Show on the public site'}
+                      >
+                        {course.is_published ? 'Unpublish' : 'Publish'}
+                      </button>
+                      <button
                         onClick={(e) => {
                           e.stopPropagation();
-                          setCourseForm(course);
+                          setCourseForm({ ...emptyCourseForm, ...course });
                           setShowCourseForm(true);
                         }}
                         style={{ background: 'transparent', border: 'none', cursor: 'pointer', fontSize: '1.1rem' }}
@@ -485,12 +547,61 @@ export default function AdminCourses() {
                   onChange={(e) => setCourseForm({ ...courseForm, exam_category: e.target.value })} 
                   className="form-input"
                 >
+                  {/* These are the only five the API accepts. "Railways" and
+                      "Other" used to be offered here and 422'd on save, and
+                      UPSC / State PCS could not be chosen at all. */}
                   <option value="SSC">SSC</option>
                   <option value="Banking">Banking</option>
-                  <option value="Railways">Railways</option>
-                  <option value="Other">Other</option>
+                  <option value="RRB">RRB (Railways)</option>
+                  <option value="UPSC">UPSC</option>
+                  <option value="State PCS">State PCS</option>
                 </select>
               </div>
+
+              <div style={{ display: 'flex', gap: '12px' }}>
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '6px', flex: 1 }}>
+                  <label style={{ fontSize: '0.85rem', color: 'var(--text-secondary)' }}>Delivery Mode</label>
+                  <select
+                    value={courseForm.mode}
+                    onChange={(e) => setCourseForm({ ...courseForm, mode: e.target.value })}
+                    className="form-input"
+                    required
+                  >
+                    <option value="hybrid">Hybrid (online + offline)</option>
+                    <option value="online">Online</option>
+                    <option value="offline">Offline</option>
+                    <option value="live">Live</option>
+                    <option value="recorded">Recorded</option>
+                  </select>
+                </div>
+
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '6px', width: '120px' }}>
+                  <label style={{ fontSize: '0.85rem', color: 'var(--text-secondary)' }}>Sort Order</label>
+                  <input
+                    type="number"
+                    min="0"
+                    value={courseForm.sort_order}
+                    onChange={(e) => setCourseForm({ ...courseForm, sort_order: e.target.value })}
+                    className="form-input"
+                  />
+                </div>
+              </div>
+
+              <label style={{ display: 'flex', alignItems: 'flex-start', gap: '10px', cursor: 'pointer' }}>
+                <input
+                  type="checkbox"
+                  checked={!!courseForm.is_published}
+                  onChange={(e) => setCourseForm({ ...courseForm, is_published: e.target.checked })}
+                  style={{ marginTop: '3px' }}
+                />
+                <span style={{ fontSize: '0.85rem', color: 'var(--text-primary)' }}>
+                  Publish to the public website
+                  <span style={{ display: 'block', fontSize: '0.75rem', color: 'var(--text-secondary)', marginTop: '2px' }}>
+                    Only published courses appear on practest.live — and only their
+                    active batches that have a price set.
+                  </span>
+                </span>
+              </label>
 
               <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '12px', marginTop: '10px' }}>
                 <button type="button" onClick={() => setShowCourseForm(false)} className="btn-secondary" style={{ padding: '8px 16px', fontSize: '0.9rem' }}>Cancel</button>

@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
+use App\Http\Controllers\PublicCourseController;
 use App\Http\Requests\Admin\StoreCourseRequest;
 use App\Http\Requests\Admin\UpdateCourseRequest;
 use App\Http\Requests\Admin\StoreCourseModuleRequest;
@@ -14,6 +15,7 @@ use App\Services\AuditService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Str;
+use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Storage;
 
 class CourseCRUDController extends Controller
@@ -33,15 +35,20 @@ class CourseCRUDController extends Controller
     public function store(StoreCourseRequest $request): JsonResponse
     {
         $data = $request->validated();
-        
-        // Auto-generate unique slug
-        $slug = Str::slug($data['title']);
-        $originalSlug = $slug;
-        $count = 1;
-        while (Course::where('slug', $slug)->exists()) {
-            $slug = "{$originalSlug}-" . $count++;
+
+        // A slug typed by the editor wins; the field is validated unique, so it
+        // cannot collide. Otherwise derive one from the title and de-duplicate.
+        // (This used to discard whatever was typed, contradicting the form's own
+        // "auto-generated if left blank" hint.)
+        if (empty($data['slug'])) {
+            $slug = Str::slug($data['title']);
+            $originalSlug = $slug;
+            $count = 1;
+            while (Course::where('slug', $slug)->exists()) {
+                $slug = "{$originalSlug}-" . $count++;
+            }
+            $data['slug'] = $slug;
         }
-        $data['slug'] = $slug;
 
         // Handle thumbnail upload
         if ($request->hasFile('thumbnail')) {
@@ -52,6 +59,9 @@ class CourseCRUDController extends Controller
         $course = Course::create($data);
 
         AuditService::log('course.created', $course, null, $course->toArray());
+
+        // The public catalogue is cached; drop it so this shows up at once.
+        Cache::forget(PublicCourseController::CACHE_KEY);
 
         return response()->json([
             'message' => 'Course created successfully.',
@@ -94,6 +104,9 @@ class CourseCRUDController extends Controller
 
         AuditService::log('course.updated', $course, $oldValue, $course->toArray());
 
+        // The public catalogue is cached; drop it so this shows up at once.
+        Cache::forget(PublicCourseController::CACHE_KEY);
+
         return response()->json([
             'message' => 'Course updated successfully.',
             'course' => $course,
@@ -115,6 +128,9 @@ class CourseCRUDController extends Controller
         $course->delete();
 
         AuditService::log('course.deleted', null, $oldValue, null);
+
+        // The public catalogue is cached; drop it so this shows up at once.
+        Cache::forget(PublicCourseController::CACHE_KEY);
 
         return response()->json([
             'message' => 'Course deleted successfully.',
@@ -243,6 +259,9 @@ class CourseCRUDController extends Controller
         }
 
         AuditService::log('course.updated', $course, $oldValue, $course->toArray());
+
+        // The public catalogue is cached; drop it so this shows up at once.
+        Cache::forget(PublicCourseController::CACHE_KEY);
 
         return response()->json([
             'message' => 'Banner uploaded successfully.',

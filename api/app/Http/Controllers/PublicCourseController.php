@@ -9,11 +9,18 @@ use Illuminate\Support\Facades\Cache;
 class PublicCourseController extends Controller
 {
     /**
+     * The admin side forgets this key whenever a course or batch changes, so a
+     * publish is visible at once instead of up to five minutes later. Referenced
+     * there rather than re-typed, so the two cannot drift apart.
+     */
+    public const CACHE_KEY = 'public_courses_catalog';
+
+    /**
      * Display a listing of published courses with active priced batches.
      */
     public function index(): JsonResponse
     {
-        $courses = Cache::remember('public_courses_catalog', 300, function () {
+        $courses = Cache::remember(self::CACHE_KEY, 300, function () {
             return Course::where('is_published', true)
                 ->with(['batches' => function ($query) {
                     $query->where('is_active', true)->whereNotNull('price_paise');

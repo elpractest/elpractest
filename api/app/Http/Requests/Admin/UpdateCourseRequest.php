@@ -21,11 +21,14 @@ class UpdateCourseRequest extends FormRequest
             'slug' => ['nullable', 'string', 'max:255', 'unique:courses,slug,' . $courseId],
             'description' => ['sometimes', 'required', 'string'],
             'short_description' => ['nullable', 'string', 'max:1000'],
-            'mode' => ['sometimes', 'required', 'string', 'in:live,recorded,hybrid'],
+            // See StoreCourseRequest: 'online'/'offline' are the schema's own
+            // values, kept accepted so rows that predate the rule stay editable.
+            'mode' => ['sometimes', 'required', 'string', 'in:online,offline,hybrid,live,recorded'],
             'syllabus' => ['nullable', 'array'],
             'faq' => ['nullable', 'array'],
             'exam_category' => ['sometimes', 'required', 'string', 'in:SSC,Banking,RRB,UPSC,State PCS'],
             'thumbnail' => ['nullable', 'image', 'max:2048'],
+            'sort_order' => ['nullable', 'integer', 'min:0'],
             'is_published' => ['boolean'],
         ];
     }

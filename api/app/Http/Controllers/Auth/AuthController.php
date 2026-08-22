@@ -69,6 +69,14 @@ class AuthController extends Controller
         $needs2FA = $user->hasAnyRole(['super-admin', 'admin']);
         $needs2FASetup = $needs2FA && ! $user->google2fa_enabled;
 
+        // LOCAL DEV ONLY — mirrors the guard in Ensure2FAVerified: when the local
+        // 2FA bypass flag is on, report no 2FA so the SPA lands straight on the
+        // console. Never fires outside APP_ENV=local. Revert with that middleware.
+        if (app()->environment('local') && env('LOCAL_2FA_BYPASS', false)) {
+            $needs2FA = false;
+            $needs2FASetup = false;
+        }
+
         return response()->json([
             'message' => 'Login successful.',
             'user' => $this->userResponse($user),

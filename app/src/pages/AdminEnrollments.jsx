@@ -17,7 +17,7 @@ export default function AdminEnrollments() {
 
   // Batch Form State
   const [showBatchForm, setShowBatchForm] = useState(false);
-  const [batchForm, setBatchForm] = useState({ id: null, name: '', max_students: '', starts_at: '', ends_at: '', is_active: true, price_paise: null });
+  const [batchForm, setBatchForm] = useState({ id: null, name: '', max_students: '', starts_at: '', ends_at: '', is_active: true, price_paise: null, play_product_id: '' });
 
   // Enrollment Form State
   const [showEnrollForm, setShowEnrollForm] = useState(false);
@@ -136,6 +136,9 @@ export default function AdminEnrollments() {
         ends_at: batchForm.ends_at || null,
         is_active: batchForm.is_active,
         price_paise: batchForm.price_paise !== null && batchForm.price_paise !== undefined ? parseInt(batchForm.price_paise) : null,
+        // Blank means "no Play product", which must be null and not '' — the
+        // column is unique, and two empty strings would collide.
+        play_product_id: batchForm.play_product_id?.trim() ? batchForm.play_product_id.trim() : null,
       };
 
       if (batchForm.id) {
@@ -220,7 +223,7 @@ export default function AdminEnrollments() {
           <div style={{ display: 'flex', gap: '12px' }}>
             <button 
               onClick={() => {
-                setBatchForm({ id: null, name: '', max_students: '', starts_at: '', ends_at: '', is_active: true, price_paise: null });
+                setBatchForm({ id: null, name: '', max_students: '', starts_at: '', ends_at: '', is_active: true, price_paise: null, play_product_id: '' });
                 setShowBatchForm(true);
               }} 
               className="btn-secondary"
@@ -626,6 +629,27 @@ export default function AdminEnrollments() {
                   step="any"
                   placeholder="Leave empty for free / manual-only"
                 />
+              </div>
+
+              {/* The Android app resolves a Play purchase back to a batch by
+                  this id alone. It had no field here at all, so in-app purchase
+                  could only be configured by writing to the database by hand. */}
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
+                <label style={{ fontSize: '0.85rem', color: 'var(--text-secondary)' }}>Google Play Product ID (Optional)</label>
+                <input
+                  type="text"
+                  value={batchForm.play_product_id || ''}
+                  onChange={(e) => setBatchForm({ ...batchForm, play_product_id: e.target.value })}
+                  className="form-input"
+                  placeholder="e.g. ssc_cgl_2026_tier1"
+                  autoCapitalize="none"
+                  spellCheck={false}
+                />
+                <span style={{ fontSize: '0.75rem', color: 'var(--text-secondary)' }}>
+                  Must match the in-app product id in the Play Console exactly. Leave
+                  blank unless this batch is sold inside the Android app — the web
+                  checkout uses the price above, not this.
+                </span>
               </div>
 
               <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px' }}>

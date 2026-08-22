@@ -5,6 +5,7 @@ import ThemeToggle from './components/ThemeToggle';
 import StudentShell from './components/StudentShell';
 import Login from './pages/Login';
 import Welcome from './pages/Welcome';
+import AdminCoursesVerify from './pages/AdminEnrollments';
 import Register from './pages/Register';
 import VerifyEmailNotice from './pages/VerifyEmailNotice';
 import VerifyEmail from './pages/VerifyEmail';

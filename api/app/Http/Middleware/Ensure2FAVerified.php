@@ -18,6 +18,14 @@ class Ensure2FAVerified
 {
     public function handle(Request $request, Closure $next): Response
     {
+        // LOCAL DEV ONLY — skip the 2FA gate so the admin console can be reviewed
+        // without enrolling an authenticator. Guarded by BOTH the local environment
+        // AND an explicit flag, so it can never weaken a deployed/staging instance.
+        // Revert: delete this block (and the LOCAL_2FA_BYPASS line in api/.env).
+        if (app()->environment('local') && env('LOCAL_2FA_BYPASS', false)) {
+            return $next($request);
+        }
+
         $user = $request->user();
 
         if (! $user || ! $user->hasAnyRole(['super-admin', 'admin'])) {
