@@ -26,14 +26,19 @@ runs migrations + `artisan optimize` + `storage:link` at boot (serversideup
 ## First-time setup in Coolify
 
 1. **Project** → new project `practest`, environment `production`.
-2. **Application** → *Docker Compose* → source = this GitHub repo, branch `main`,
-   compose file `docker-compose.coolify.yml`.
+2. **Application** → *Docker Compose* → source = this GitHub repo, branch
+   `deploy/coolify`, compose file `docker-compose.coolify.yml`. The tracked
+   branch **must** be `deploy/coolify`: Coolify builds from its own configured
+   branch regardless of what triggers the deploy, so pointing it at `main`
+   (which is stale) would ship the wrong code.
 3. **Domains** — set per service: `api` → `api.practest.live`, `app` →
    `app.practest.live`, `web` → `practest.live` and `www.practest.live`.
 4. **Environment variables** (below). `APP_KEY` is generated once and must stay
    stable — regenerating it invalidates every session and encrypted value.
-5. **Turn OFF auto-deploy-on-push.** Deploys are gated by CI (see *CI*), so the
-   only path to prod is a green `api-tests` run.
+5. **Turn OFF Coolify's own auto-deploy-on-push.** Deploys are gated by CI (see
+   *CI*), so the only path to prod is a green `api-tests` run on `deploy/coolify`
+   — which then calls Coolify's deploy API. Coolify's built-in webhook deploy
+   would bypass that gate, so keep it off.
 6. Deploy. Watch the build logs; all five containers should go healthy.
 
 ### Required env (set in Coolify)
@@ -104,14 +109,19 @@ banner in admin (proves the `public` disk + `storage:link`).
 ## CI (the deploy gate)
 
 `.github/workflows/ci.yml`: `api-tests` (Laravel suite on MariaDB 10.6) is the
-gate. On a green push to `main` the `deploy` job calls the Coolify deploy API.
-Set these repo secrets:
+gate. On a green push to `deploy/coolify` the `deploy` job calls the Coolify
+deploy API. Until the three secrets below are set, the `deploy` job skips
+cleanly (green) — so auto-deploy is dormant, not broken, until you configure it.
+Set these repo secrets (needs repo **admin**):
 
 ```
 COOLIFY_URL        https://<coolify-host>       (no trailing slash)
 COOLIFY_TOKEN      <a Coolify API token>
 COOLIFY_APP_UUID   <the Practest compose app's resource UUID>
 ```
+
+Set them via the GitHub UI (Settings → Secrets and variables → Actions) or the
+CLI, e.g. `gh secret set COOLIFY_URL --repo elpractest/elpractest`.
 
 ## Rollback
 

@@ -2,9 +2,10 @@ name: CI
 
 # ---------------------------------------------------------------------------
 # Deploy model: COOLIFY (Docker). The old cPanel tarball-upload + SSH deploy is
-# retired. On a green push to main, this workflow asks Coolify to redeploy; the
-# Coolify host builds the images from docker-compose.coolify.yml (api, worker,
-# app, web) and rolls them out behind Traefik. api-tests remains the gate.
+# retired. On a green push to deploy/coolify (the deploy branch), this workflow
+# asks Coolify to redeploy; the Coolify host builds the images from
+# docker-compose.coolify.yml (api, worker, app, web) and rolls them out behind
+# Traefik. api-tests remains the gate.
 #
 # MariaDB 10.6 (NOT MySQL 8) matches production: migrations that pass on
 # SQLite/MySQL can still fail on MariaDB (the ->after() gotcha), and this job is
@@ -14,15 +15,20 @@ name: CI
 #   COOLIFY_URL       base URL of the Coolify instance, no trailing slash
 #   COOLIFY_TOKEN     a Coolify API token (sent as Bearer)
 #   COOLIFY_APP_UUID  the Practest compose application's resource UUID
-# Coolify's own auto-deploy-on-push must be OFF so this test gate is the only
-# path to production.
+# Until those three are set the deploy step skips cleanly (green, not red).
+#
+# Two Coolify-side settings must also match this model:
+#   1. The Coolify app's tracked git branch must be `deploy/coolify` (it builds
+#      from its own configured branch, regardless of what triggered the deploy).
+#   2. Coolify's own auto-deploy-on-push must stay OFF, so this test gate is the
+#      only path to production.
 # ---------------------------------------------------------------------------
 
 on:
   push:
-    branches: [main, develop]
+    branches: [deploy/coolify, main, develop]
   pull_request:
-    branches: [main]
+    branches: [deploy/coolify, main]
   workflow_dispatch:
 
 concurrency:
@@ -101,15 +107,25 @@ jobs:
   deploy:
     name: Trigger Coolify deploy
     needs: [api-tests]
-    if: github.ref == 'refs/heads/main' && (github.event_name == 'push' || github.event_name == 'workflow_dispatch')
+    if: github.ref == 'refs/heads/deploy/coolify' && (github.event_name == 'push' || github.event_name == 'workflow_dispatch')
     runs-on: ubuntu-latest
+    env:
+      COOLIFY_URL: ${{ secrets.COOLIFY_URL }}
+      COOLIFY_TOKEN: ${{ secrets.COOLIFY_TOKEN }}
+      COOLIFY_APP_UUID: ${{ secrets.COOLIFY_APP_UUID }}
     steps:
       - name: Ask Coolify to redeploy
         run: |
           set -euo pipefail
+          # Skip cleanly (green) until the three secrets are configured, so this
+          # job never red-Xs a push before auto-deploy is wired up.
+          if [ -z "${COOLIFY_URL}" ] || [ -z "${COOLIFY_TOKEN}" ] || [ -z "${COOLIFY_APP_UUID}" ]; then
+            echo "Coolify secrets not set — skipping deploy trigger."
+            exit 0
+          fi
           code=$(curl -sS -o /tmp/resp -w '%{http_code}' -X POST \
-            "${{ secrets.COOLIFY_URL }}/api/v1/deploy?uuid=${{ secrets.COOLIFY_APP_UUID }}&force=false" \
-            -H "Authorization: Bearer ${{ secrets.COOLIFY_TOKEN }}")
+            "${COOLIFY_URL}/api/v1/deploy?uuid=${COOLIFY_APP_UUID}&force=false" \
+            -H "Authorization: Bearer ${COOLIFY_TOKEN}")
           echo "Coolify responded: $code"
           cat /tmp/resp || true
           echo
