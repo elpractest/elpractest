@@ -1,0 +1,279 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+
+<helmet>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Sora:wght@600;700;800&family=Plus+Jakarta+Sans:wght@500;600;700;800&family=JetBrains+Mono:wght@700&display=swap" rel="stylesheet">
+  <style>
+    body{margin:0;background:#05070c;}
+    a{color:#ffc968}
+    a:hover{color:#ffd98a}
+  </style>
+</helmet>
+
+<div style="font-family:'Plus Jakarta Sans',system-ui,sans-serif;background:#0b0f1a;color:#f3f6ff;min-height:100vh;">
+
+  <div style="max-width:1040px;margin:0 auto;padding:56px 32px 32px;">
+    <div style="display:inline-flex;align-items:center;gap:8px;padding:6px 12px;border-radius:999px;background:rgba(245,166,35,.14);border:1px solid rgba(245,166,35,.3);font:800 11px 'Plus Jakarta Sans';letter-spacing:.08em;color:#ffc968;">FOR CLAUDE CODE — APPLY TO app/src/</div>
+    <h1 style="font:800 38px/1.15 Sora;letter-spacing:-.02em;margin:16px 0 10px;">Web app ↔ Flutter app — one design, both themes</h1>
+    <p style="font:600 15px/1.6 'Plus Jakarta Sans';color:#c7d0e4;max-width:72ch;margin:0 0 18px;">
+      Checked both codebases directly: <code style="background:#1b2438;padding:2px 6px;border-radius:6px;">app/src/index.css</code> (web) and
+      <code style="background:#1b2438;padding:2px 6px;border-radius:6px;">lib/theme.dart</code> (Flutter) already share the exact same tokens —
+      same hex values, same dark/light pairs, same Sora + Plus Jakarta Sans + JetBrains Mono stack, same CBT status colours. That part is not the gap.
+    </p>
+    <div style="padding:16px 18px;border-radius:16px;background:rgba(229,72,77,.1);border:1px solid rgba(229,72,77,.28);margin-bottom:6px;">
+      <div style="font:800 12px 'Plus Jakarta Sans';color:#fb8f92;margin-bottom:4px;">WHERE THEY ACTUALLY DIVERGE</div>
+      <div style="font:600 13px/1.6;color:#f3f6ff;">
+        1) Icons — the phone app draws Material glyphs (filled home/description/school/bag/person + a sparkle FAB); the web draws lucide-style
+        stroke icons (home/target/book‑open/shopping‑bag/user + a bot‑face FAB). 2) Screen layout — the phone's Welcome, Login, Home, Vajini,
+        Notifications, Search and Store screens are still mid‑port to this design system (per the repo's own <code style="background:#1b2438;padding:1px 5px;border-radius:5px;">DESIGN-GUIDE-PORT.md</code>);
+        the web is the finished reference for those screens, not the other way round. 3) Responsiveness — the web has no tablet‑specific layout,
+        only a phone view and a ≥1024px sidebar; the phone app, being native, always fills its one screen size correctly.
+      </div>
+    </div>
+    <p style="font:600 13px/1.6;color:#8a96b4;max-width:72ch;margin:10px 0 0;">
+      So "full similarity in both day and night mode" below means: same icon glyphs, same colour tokens rendered identically in dark AND light
+      on every real screen, and a genuine phone → tablet → desktop responsive system on the web — with zero new buttons, fields or features.
+    </p>
+  </div>
+
+  <!-- ============ TOKEN PARITY ============ -->
+  <div style="max-width:1040px;margin:0 auto;padding:24px 32px;">
+    <h2 style="font:800 22px Sora;letter-spacing:-.02em;margin:0 0 4px;">1 · Token parity (already true — verified against both files)</h2>
+    <p style="font:600 13px;color:#8a96b4;margin:0 0 18px;">Same swatches, both themes, side by side. Web keeps these var names; nothing here is new.</p>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;">
+      <div style="background:#0b0f1a;border:1px solid rgba(255,255,255,.1);border-radius:16px;padding:18px;">
+        <div style="font:800 11px;letter-spacing:.08em;color:#ffc968;margin-bottom:12px;">DARK — --bg #0B0F1A</div>
+        <div style="display:flex;gap:8px;flex-wrap:wrap;">
+          <div style="width:70px;height:52px;border-radius:10px;background:#141b2b;border:1px solid rgba(255,255,255,.08);"></div>
+          <div style="width:70px;height:52px;border-radius:10px;background:#1b2438;border:1px solid rgba(255,255,255,.08);"></div>
+          <div style="width:70px;height:52px;border-radius:10px;background:linear-gradient(135deg,#ffc968,#f5a623 55%,#e07c0a);"></div>
+          <div style="width:70px;height:52px;border-radius:10px;background:#3b6ff6;"></div>
+          <div style="width:70px;height:52px;border-radius:10px;background:#8b5cf6;"></div>
+        </div>
+        <div style="font:600 11px 'JetBrains Mono';color:#8a96b4;margin-top:10px;">card · card2 · brand grad · secondary · violet</div>
+      </div>
+      <div style="background:#eaeef6;border:1px solid rgba(18,22,35,.1);border-radius:16px;padding:18px;">
+        <div style="font:800 11px;letter-spacing:.08em;color:#a85f00;margin-bottom:12px;">LIGHT — --bg #EAEEF6</div>
+        <div style="display:flex;gap:8px;flex-wrap:wrap;">
+          <div style="width:70px;height:52px;border-radius:10px;background:#ffffff;border:1px solid rgba(18,22,35,.12);"></div>
+          <div style="width:70px;height:52px;border-radius:10px;background:#f4f7fc;border:1px solid rgba(18,22,35,.12);"></div>
+          <div style="width:70px;height:52px;border-radius:10px;background:linear-gradient(135deg,#ffc968,#f5a623 55%,#e07c0a);"></div>
+          <div style="width:70px;height:52px;border-radius:10px;background:#2450cc;"></div>
+          <div style="width:70px;height:52px;border-radius:10px;background:#6a34de;"></div>
+        </div>
+        <div style="font:600 11px 'JetBrains Mono';color:#616b7a;margin-top:10px;">card · card2 · brand grad (constant) · secondary · violet</div>
+      </div>
+    </div>
+    <p style="font:600 12px;color:#64748b;margin-top:12px;">Header stays deep‑ink chrome (#12203A→#0B0F1A) in <em>both</em> themes on both platforms — that's intentional in both files, not a bug to fix.</p>
+  </div>
+
+  <!-- ============ ICON + FAB FIX ============ -->
+  <div style="max-width:1040px;margin:0 auto;padding:24px 32px;">
+    <h2 style="font:800 22px Sora;letter-spacing:-.02em;margin:0 0 4px;">2 · Nav icon set — make the phone match the web (not the reverse)</h2>
+    <p style="font:600 13px;color:#8a96b4;margin:0 0 18px;">Web's <code style="background:#1b2438;padding:1px 5px;border-radius:5px;">Icon.jsx</code> already draws the correct glyphs — keep it exactly as-is. This row is the reference for the Flutter side.</p>
+    <div style="background:#141b2b;border:1px solid rgba(255,255,255,.08);border-radius:20px;padding:20px;display:flex;justify-content:space-between;gap:8px;flex-wrap:wrap;">
+      <div style="display:flex;flex-direction:column;align-items:center;gap:6px;color:#ffc968;"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 9.5 12 3l9 6.5V20a1 1 0 0 1-1 1h-5v-6H9v6H4a1 1 0 0 1-1-1z"></path></svg><span style="font:700 10px;">Home</span></div>
+      <div style="display:flex;flex-direction:column;align-items:center;gap:6px;color:#8a96b4;"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"></circle><circle cx="12" cy="12" r="6"></circle><circle cx="12" cy="12" r="2"></circle></svg><span style="font:700 10px;">Tests</span></div>
+      <div style="display:flex;flex-direction:column;align-items:center;gap:6px;color:#8a96b4;"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 4h6a3 3 0 0 1 3 3v13a2.5 2.5 0 0 0-2.5-2.5H4z"></path><path d="M20 4h-6a3 3 0 0 0-3 3v13a2.5 2.5 0 0 1 2.5-2.5H20z"></path></svg><span style="font:700 10px;">Study</span></div>
+      <div style="display:flex;flex-direction:column;align-items:center;gap:6px;color:#8a96b4;"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 2 3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4z"></path><path d="M3 6h18"></path><path d="M16 10a4 4 0 0 1-8 0"></path></svg><span style="font:700 10px;">Store</span></div>
+      <div style="display:flex;flex-direction:column;align-items:center;gap:6px;color:#8a96b4;"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M19 21v-2a4 4 0 0 0-4-4H9a4 4 0 0 0-4 4v2"></path><circle cx="12" cy="7" r="4"></circle></svg><span style="font:700 10px;">Profile</span></div>
+      <div style="width:52px;height:52px;border-radius:18px;background:linear-gradient(135deg,#8b5cf6,#3b6ff6);display:grid;place-items:center;"><svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="4" y="8" width="16" height="11" rx="4.5"></rect><path d="M12 3.6V8"></path><circle cx="12" cy="3" r="1.3" fill="white" stroke="none"></circle><circle cx="9.4" cy="13" r="1.25" fill="white" stroke="none"></circle><circle cx="14.6" cy="13" r="1.25" fill="white" stroke="none"></circle><path d="M9.7 15.8c1.4 1 3.2 1 4.6 0"></path></svg></div>
+    </div>
+    <p style="font:600 12px;color:#64748b;margin-top:10px;">Flutter's <code style="background:#1b2438;padding:1px 5px;border-radius:5px;">shell.dart</code> currently ships Material's home/description/school/bag/person + a sparkle FAB — swap to this exact glyph set (a lucide package, or SVG) for true cross‑platform parity. Web needs no change here.</p>
+  </div>
+
+  <!-- ============ RESPONSIVE TIERS ============ -->
+  <div style="max-width:1040px;margin:0 auto;padding:24px 32px;">
+    <h2 style="font:800 22px Sora;letter-spacing:-.02em;margin:0 0 4px;">3 · Web responsive tiers — phone / tablet / desktop, same 5 tabs</h2>
+    <p style="font:600 13px;color:#8a96b4;margin:0 0 20px;">Today the web jumps straight from a phone layout to a 1024px sidebar. Tablet gets an icon‑rail — new nav shape, zero new nav items.</p>
+    <div style="display:flex;gap:24px;flex-wrap:wrap;align-items:flex-start;">
+      <div>
+        <div style="width:280px;height:140px;border-radius:20px;background:#0b0f1a;border:1px solid rgba(255,255,255,.1);position:relative;overflow:hidden;">
+          <div style="position:absolute;left:0;right:0;bottom:0;display:flex;padding:10px 6px 14px;background:rgba(9,13,21,.92);border-top:1px solid rgba(255,255,255,.08);">
+            <div style="flex:1;display:flex;flex-direction:column;align-items:center;gap:4px;color:#ffc968;"><span style="width:16px;height:16px;border-radius:5px;background:#ffc968;"></span><span style="font:700 8px;">Home</span></div>
+            <div style="flex:1;display:flex;flex-direction:column;align-items:center;gap:4px;color:#8a96b4;"><span style="width:16px;height:16px;border-radius:5px;border:1.5px solid #8a96b4;"></span><span style="font:700 8px;">Tests</span></div>
+            <div style="flex:1;display:flex;flex-direction:column;align-items:center;gap:4px;color:#8a96b4;"><span style="width:16px;height:16px;border-radius:5px;border:1.5px solid #8a96b4;"></span><span style="font:700 8px;">Study</span></div>
+            <div style="flex:1;display:flex;flex-direction:column;align-items:center;gap:4px;color:#8a96b4;"><span style="width:16px;height:16px;border-radius:5px;border:1.5px solid #8a96b4;"></span><span style="font:700 8px;">Store</span></div>
+            <div style="flex:1;display:flex;flex-direction:column;align-items:center;gap:4px;color:#8a96b4;"><span style="width:16px;height:16px;border-radius:5px;border:1.5px solid #8a96b4;"></span><span style="font:700 8px;">Profile</span></div>
+          </div>
+          <span style="position:absolute;right:12px;bottom:60px;width:36px;height:36px;border-radius:13px;background:linear-gradient(135deg,#8b5cf6,#3b6ff6);"></span>
+        </div>
+        <div style="font:700 11px 'JetBrains Mono';color:#64748b;margin-top:8px;">&lt;640px — unchanged</div>
+      </div>
+      <div>
+        <div style="width:320px;height:140px;border-radius:16px;background:#0b0f1a;border:1px solid rgba(255,255,255,.1);display:flex;overflow:hidden;">
+          <div style="width:60px;background:#141b2b;border-right:1px solid rgba(255,255,255,.08);display:flex;flex-direction:column;align-items:center;gap:14px;padding:14px 0;">
+            <span style="width:28px;height:28px;border-radius:9px;background:rgba(245,166,35,.16);border:1px solid rgba(245,166,35,.3);"></span>
+            <span style="width:22px;height:22px;border-radius:8px;border:1.5px solid #8a96b4;"></span>
+            <span style="width:22px;height:22px;border-radius:8px;border:1.5px solid #8a96b4;"></span>
+            <span style="width:22px;height:22px;border-radius:8px;border:1.5px solid #8a96b4;margin-top:auto;"></span>
+          </div>
+          <div style="flex:1;padding:12px;">
+            <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;">
+              <div style="height:40px;border-radius:10px;background:#141b2b;"></div>
+              <div style="height:40px;border-radius:10px;background:#141b2b;"></div>
+              <div style="height:40px;border-radius:10px;background:#141b2b;"></div>
+              <div style="height:40px;border-radius:10px;background:#141b2b;"></div>
+            </div>
+          </div>
+        </div>
+        <div style="font:700 11px 'JetBrains Mono';color:#64748b;margin-top:8px;">640–1023px — new: icon‑only rail + 2‑col grid</div>
+      </div>
+      <div>
+        <div style="width:360px;height:140px;border-radius:14px;background:#0b0f1a;border:1px solid rgba(255,255,255,.1);display:flex;overflow:hidden;">
+          <div style="width:100px;background:#141b2b;border-right:1px solid rgba(255,255,255,.08);padding:12px 10px;display:flex;flex-direction:column;gap:8px;">
+            <div style="display:flex;align-items:center;gap:8px;padding:6px 8px;border-radius:8px;background:rgba(245,166,35,.16);"><span style="width:12px;height:12px;border-radius:4px;background:#ffc968;"></span><span style="font:700 9px;color:#ffc968;">Home</span></div>
+            <div style="display:flex;align-items:center;gap:8px;padding:6px 8px;"><span style="width:12px;height:12px;border-radius:4px;border:1.5px solid #8a96b4;"></span><span style="font:700 9px;color:#8a96b4;">Tests</span></div>
+          </div>
+          <div style="flex:1;padding:12px;">
+            <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;">
+              <div style="height:56px;border-radius:10px;background:#141b2b;"></div>
+              <div style="height:56px;border-radius:10px;background:#141b2b;"></div>
+              <div style="height:56px;border-radius:10px;background:#141b2b;"></div>
+            </div>
+          </div>
+        </div>
+        <div style="font:700 11px 'JetBrains Mono';color:#64748b;margin-top:8px;">≥1024px — unchanged sidebar + 3‑col grid</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ============ DASHBOARD — DARK vs LIGHT ============ -->
+  <div style="max-width:1040px;margin:0 auto;padding:24px 32px;">
+    <h2 style="font:800 22px Sora;letter-spacing:-.02em;margin:0 0 4px;">4 · Dashboard.jsx — identical structure, both themes</h2>
+    <p style="font:600 13px;color:#8a96b4;margin:0 0 18px;">Your‑goal card → promo carousel → quick modes → continue card → popular series. Same cards, same data, theme swap only.</p>
+    <div style="display:flex;gap:24px;flex-wrap:wrap;">
+      <div>
+        <div style="width:280px;height:540px;border-radius:30px;border:7px solid #1b2438;overflow:hidden;background:#0b0f1a;padding:14px;">
+          <div style="display:flex;align-items:center;gap:10px;padding:10px 12px;border-radius:14px;background:linear-gradient(120deg,rgba(59,111,246,.16),rgba(139,92,246,.1));border:1px solid rgba(139,150,255,.2);margin-bottom:12px;">
+            <span style="width:24px;height:24px;border-radius:8px;background:rgba(59,111,246,.22);"></span>
+            <div style="flex:1;"><div style="font:600 8px;color:#8fb0ff;">YOUR GOAL</div><div style="font:700 11px;color:#f3f6ff;">SSC CGL 2026</div></div>
+          </div>
+          <div style="height:64px;border-radius:16px;background:linear-gradient(120deg,#3A2A08,#1A1206);margin-bottom:12px;"></div>
+          <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:8px;margin-bottom:14px;">
+            <div style="height:48px;border-radius:12px;background:#141b2b;"></div><div style="height:48px;border-radius:12px;background:#141b2b;"></div>
+            <div style="height:48px;border-radius:12px;background:#141b2b;"></div><div style="height:48px;border-radius:12px;background:#141b2b;"></div>
+          </div>
+          <div style="font:700 13px Sora;color:#f3f6ff;margin-bottom:8px;">Popular test series</div>
+          <div style="display:flex;gap:10px;">
+            <div style="width:140px;height:120px;border-radius:16px;background:#141b2b;flex:none;"></div>
+            <div style="width:140px;height:120px;border-radius:16px;background:#141b2b;flex:none;"></div>
+          </div>
+        </div>
+        <div style="font:700 11px 'JetBrains Mono';color:#64748b;margin-top:8px;">Dark — #0B0F1A ground</div>
+      </div>
+      <div>
+        <div style="width:280px;height:540px;border-radius:30px;border:7px solid #d7deec;overflow:hidden;background:#eaeef6;padding:14px;">
+          <div style="display:flex;align-items:center;gap:10px;padding:10px 12px;border-radius:14px;background:linear-gradient(120deg,rgba(59,111,246,.1),rgba(139,92,246,.07));border:1px solid rgba(59,111,246,.26);margin-bottom:12px;">
+            <span style="width:24px;height:24px;border-radius:8px;background:rgba(59,111,246,.14);"></span>
+            <div style="flex:1;"><div style="font:600 8px;color:#2450cc;">YOUR GOAL</div><div style="font:700 11px;color:#131722;">SSC CGL 2026</div></div>
+          </div>
+          <div style="height:64px;border-radius:16px;background:linear-gradient(120deg,#3A2A08,#1A1206);margin-bottom:12px;"></div>
+          <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:8px;margin-bottom:14px;">
+            <div style="height:48px;border-radius:12px;background:#ffffff;box-shadow:0 6px 18px -8px rgba(24,36,64,.18);"></div><div style="height:48px;border-radius:12px;background:#ffffff;box-shadow:0 6px 18px -8px rgba(24,36,64,.18);"></div>
+            <div style="height:48px;border-radius:12px;background:#ffffff;box-shadow:0 6px 18px -8px rgba(24,36,64,.18);"></div><div style="height:48px;border-radius:12px;background:#ffffff;box-shadow:0 6px 18px -8px rgba(24,36,64,.18);"></div>
+          </div>
+          <div style="font:700 13px Sora;color:#131722;margin-bottom:8px;">Popular test series</div>
+          <div style="display:flex;gap:10px;">
+            <div style="width:140px;height:120px;border-radius:16px;background:#ffffff;box-shadow:0 6px 18px -8px rgba(24,36,64,.18);flex:none;"></div>
+            <div style="width:140px;height:120px;border-radius:16px;background:#ffffff;box-shadow:0 6px 18px -8px rgba(24,36,64,.18);flex:none;"></div>
+          </div>
+        </div>
+        <div style="font:700 11px 'JetBrains Mono';color:#131722;margin-top:8px;">Light — #EAEEF6 ground, same layout</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ============ CBT ROOM — LOCKED LIGHT SURFACE ON BOTH ============ -->
+  <div style="max-width:1040px;margin:0 auto;padding:24px 32px;">
+    <h2 style="font:800 22px Sora;letter-spacing:-.02em;margin:0 0 4px;">5 · CBT test room — deliberately light in BOTH themes</h2>
+    <p style="font:600 13px;color:#8a96b4;margin:0 0 18px;">Both codebases force this to a light exam surface regardless of app theme — status colours are locked and must stay pixel‑identical to the current build.</p>
+    <div style="background:#eef1f7;border-radius:18px;padding:18px;display:flex;gap:18px;flex-wrap:wrap;align-items:center;">
+      <div style="display:flex;gap:6px;">
+        <span style="width:34px;height:34px;border-radius:8px 8px 8px 0;background:#64748b;color:#fff;display:grid;place-items:center;font:800 11px 'JetBrains Mono';">1</span>
+        <span style="width:34px;height:34px;border-radius:8px 8px 8px 0;background:#e5484d;color:#fff;display:grid;place-items:center;font:800 11px 'JetBrains Mono';">2</span>
+        <span style="width:34px;height:34px;border-radius:8px 8px 8px 0;background:#0ea371;color:#fff;display:grid;place-items:center;font:800 11px 'JetBrains Mono';">3</span>
+        <span style="width:34px;height:34px;border-radius:8px 8px 8px 0;background:#8b5cf6;color:#fff;display:grid;place-items:center;font:800 11px 'JetBrains Mono';">4</span>
+        <span style="width:34px;height:34px;border-radius:8px 8px 8px 0;background:#8b5cf6;border:2.5px solid #34d399;color:#fff;display:grid;place-items:center;font:800 11px 'JetBrains Mono';">5</span>
+      </div>
+      <div style="font:700 12px;color:#39424f;">not visited · not answered · answered · marked · answered+marked — DO NOT EDIT, both apps agree already</div>
+    </div>
+  </div>
+
+  <!-- ============ ADMIN CONSOLE MODERNIZATION ============ -->
+  <div style="max-width:1040px;margin:0 auto;padding:24px 32px 64px;">
+    <h2 style="font:800 22px Sora;letter-spacing:-.02em;margin:0 0 4px;">6 · Admin console — bring onto the same tokens + make responsive</h2>
+    <p style="font:600 13px/1.6;color:#8a96b4;margin:0 0 18px;max-width:72ch;">
+      <code style="background:#1b2438;padding:1px 5px;border-radius:5px;">AdminDashboard.jsx</code> already reads the shared CSS variables (--panel-bg-solid, --accent-color, --text-secondary…) but keeps a fixed 280px
+      sidebar (no tablet/phone layout) and an emoji character for every nav row and status glyph instead of the lucide
+      <code style="background:#1b2438;padding:1px 5px;border-radius:5px;">Icon</code> set the rest of the app uses. Zero emoji anywhere in the admin console after this — exact 1:1 swap, same 12 nav rows, same CSV‑import bar, same logout:
+    </p>
+    <div style="background:#141b2b;border:1px solid rgba(255,255,255,.08);border-radius:16px;padding:16px 18px;margin-bottom:16px;">
+      <table style="width:100%;border-collapse:collapse;font:600 12.5px 'Plus Jakarta Sans';color:#c7d0e4;">
+        <tr style="border-bottom:1px solid rgba(255,255,255,.08);"><td style="padding:8px 8px 8px 0;color:#8a96b4;font:800 10px;letter-spacing:.06em;">NAV ROW / ELEMENT (was an emoji)</td><td style="padding:8px 0;color:#8a96b4;font:800 10px;letter-spacing:.06em;">→ ICON.JSX NAME</td></tr>
+        <tr><td style="padding:9px 8px 9px 0;display:flex;align-items:center;gap:9px;"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#ffc968" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 4h6a3 3 0 0 1 3 3v13a2.5 2.5 0 0 0-2.5-2.5H4z"></path><path d="M20 4h-6a3 3 0 0 0-3 3v13a2.5 2.5 0 0 1 2.5-2.5H20z"></path></svg>Courses &amp; Syllabus</td><td style="padding:9px 0;color:#ffc968;">book-open</td></tr>
+        <tr><td style="padding:9px 8px 9px 0;display:flex;align-items:center;gap:9px;"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#ffc968" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20h9"></path><path d="M16.5 3.5a2.12 2.12 0 0 1 3 3L7 19l-4 1 1-4Z"></path></svg>Question Bank</td><td style="padding:9px 0;color:#ffc968;">edit</td></tr>
+        <tr><td style="padding:9px 8px 9px 0;display:flex;align-items:center;gap:9px;"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#ffc968" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M15.477 12.89 17 22l-5-3-5 3 1.523-9.11"></path><circle cx="12" cy="8" r="6"></circle></svg>Tests Manager</td><td style="padding:9px 0;color:#ffc968;">award</td></tr>
+        <tr><td style="padding:9px 8px 9px 0;display:flex;align-items:center;gap:9px;"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#ffc968" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"></circle><circle cx="12" cy="12" r="6"></circle><circle cx="12" cy="12" r="2"></circle></svg>Test Series Builder</td><td style="padding:9px 0;color:#ffc968;">target</td></tr>
+        <tr><td style="padding:9px 8px 9px 0;display:flex;align-items:center;gap:9px;"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#ffc968" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M19 21v-2a4 4 0 0 0-4-4H9a4 4 0 0 0-4 4v2"></path><circle cx="12" cy="7" r="4"></circle></svg>Batches &amp; Enrollments</td><td style="padding:9px 0;color:#ffc968;">user (grouped)</td></tr>
+        <tr><td style="padding:9px 8px 9px 0;display:flex;align-items:center;gap:9px;"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#ffc968" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"></circle><polyline points="12 6 12 12 16 14"></polyline></svg>Activation Requests</td><td style="padding:9px 0;color:#ffc968;">clock</td></tr>
+        <tr><td style="padding:9px 8px 9px 0;display:flex;align-items:center;gap:9px;"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#ffc968" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M2.586 17.414A2 2 0 0 0 2 18.828V21a1 1 0 0 0 1 1h3a1 1 0 0 0 1-1v-1a1 1 0 0 1 1-1h1a1 1 0 0 0 1-1v-1a1 1 0 0 1 1-1h.172a2 2 0 0 0 1.414-.586l.814-.814a6.5 6.5 0 1 0-4-4z"></path></svg>Activation Codes</td><td style="padding:9px 0;color:#ffc968;">key</td></tr>
+        <tr><td style="padding:9px 8px 9px 0;display:flex;align-items:center;gap:9px;"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#ffc968" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 3v18h18"></path><path d="M18 17V9"></path><path d="M13 17V5"></path><path d="M8 17v-3"></path></svg>Results Dashboard</td><td style="padding:9px 0;color:#ffc968;">chart</td></tr>
+        <tr><td style="padding:9px 8px 9px 0;display:flex;align-items:center;gap:9px;"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#ffc968" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9.937 15.5A2 2 0 0 0 8.5 14.063l-6.135-1.582a.5.5 0 0 1 0-.962L8.5 9.936A2 2 0 0 0 9.937 8.5l1.582-6.135a.5.5 0 0 1 .963 0L14.063 8.5A2 2 0 0 0 15.5 9.937l6.135 1.581a.5.5 0 0 1 0 .964L15.5 14.063a2 2 0 0 0-1.437 1.437l-1.582 6.135a.5.5 0 0 1-.963 0z"></path></svg>"Platform Governance" label</td><td style="padding:9px 0;color:#ffc968;">sparkles</td></tr>
+        <tr><td style="padding:9px 8px 9px 0;display:flex;align-items:center;gap:9px;"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#ffc968" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"></circle><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"></path></svg>White‑Label Settings</td><td style="padding:9px 0;color:#ffc968;">settings</td></tr>
+        <tr><td style="padding:9px 8px 9px 0;display:flex;align-items:center;gap:9px;"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#ffc968" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7Z"></path><path d="M14 2v4a2 2 0 0 0 2 2h4"></path></svg>Home Banners</td><td style="padding:9px 0;color:#ffc968;">file</td></tr>
+        <tr><td style="padding:9px 8px 9px 0;display:flex;align-items:center;gap:9px;"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#ffc968" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 14a1 1 0 0 1-.78-1.63l9.9-10.2a.5.5 0 0 1 .86.46l-1.92 6.02A1 1 0 0 0 13 10h7a1 1 0 0 1 .78 1.63l-9.9 10.2a.5.5 0 0 1-.86-.46l1.92-6.02A1 1 0 0 0 11 14z"></path></svg>Admin Accounts &amp; Onboarding</td><td style="padding:9px 0;color:#ffc968;">zap</td></tr>
+        <tr><td style="padding:9px 8px 9px 0;display:flex;align-items:center;gap:9px;"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#ffc968" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7Z"></path><path d="M14 2v4a2 2 0 0 0 2 2h4"></path></svg>System Audit Logs</td><td style="padding:9px 0;color:#ffc968;">file</td></tr>
+        <tr><td style="padding:9px 8px 9px 0;">CSV import bar — pending / success / partial‑fail states</td><td style="padding:9px 0;color:#ffc968;">clock / check-circle / alert</td></tr>
+        <tr><td style="padding:9px 8px 9px 0;display:flex;align-items:center;gap:9px;"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#ffc968" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 6 6 18"></path><path d="m6 6 12 12"></path></svg>Dismiss CSV bar</td><td style="padding:9px 0;color:#ffc968;">x</td></tr>
+      </table>
+    </div>
+    <p style="font:600 13px;color:#8a96b4;margin:0 0 20px;">Every icon on the right already exists in <code style="background:#1b2438;padding:1px 5px;border-radius:5px;">app/src/components/Icon.jsx</code> — this is a like‑for‑like swap, not new iconography.</p>
+    <p style="font:600 13px/1.6;color:#8a96b4;margin:0 0 18px;max-width:72ch;">Sidebar shape: grouped sections under small uppercase muted labels, plain 18px line icons (not colour tiles), generous row height and spacing, active row = a soft accent‑tinted background with a thin left accent bar — no filled icon backgrounds. Same 12 items, same 3 groups (main / super‑admin governance split as today), on Practest's own tokens in both themes.</p>
+    <div style="display:flex;gap:24px;flex-wrap:wrap;align-items:flex-start;">
+      <div>
+        <div style="width:270px;border-radius:16px;background:#ffffff;border:1px solid rgba(18,22,35,.08);box-shadow:0 6px 18px -8px rgba(24,36,64,.12);padding:18px 14px;">
+          <div style="font:800 10px 'Plus Jakarta Sans';letter-spacing:.1em;color:#8a96b4;padding:0 10px 10px;">MAIN</div>
+          <div style="display:flex;align-items:center;gap:12px;padding:11px 12px;border-radius:11px;background:var(--accent-soft, rgba(245,166,35,.12));position:relative;margin-bottom:2px;">
+            <span style="position:absolute;left:0;top:8px;bottom:8px;width:3px;border-radius:2px;background:#f5a623;"></span>
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#a85f00" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="7" rx="1"></rect><rect x="14" y="3" width="7" height="7" rx="1"></rect><rect x="14" y="14" width="7" height="7" rx="1"></rect><rect x="3" y="14" width="7" height="7" rx="1"></rect></svg>
+            <span style="font:700 13.5px 'Plus Jakarta Sans';color:#131722;">Courses &amp; Syllabus</span>
+          </div>
+          <div style="display:flex;align-items:center;gap:12px;padding:11px 12px;"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#616b7a" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20h9"></path><path d="M16.5 3.5a2.12 2.12 0 0 1 3 3L7 19l-4 1 1-4Z"></path></svg><span style="font:600 13.5px 'Plus Jakarta Sans';color:#39424f;">Question Bank</span></div>
+          <div style="display:flex;align-items:center;gap:12px;padding:11px 12px;"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#616b7a" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"></circle><circle cx="12" cy="12" r="6"></circle><circle cx="12" cy="12" r="2"></circle></svg><span style="font:600 13.5px 'Plus Jakarta Sans';color:#39424f;">Tests Manager</span></div>
+          <div style="display:flex;align-items:center;gap:12px;padding:11px 12px;"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#616b7a" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 3v18h18"></path><path d="M18 17V9"></path><path d="M13 17V5"></path><path d="M8 17v-3"></path></svg><span style="font:600 13.5px 'Plus Jakarta Sans';color:#39424f;">Results Dashboard</span></div>
+
+          <div style="font:800 10px 'Plus Jakarta Sans';letter-spacing:.1em;color:#8a96b4;padding:16px 10px 10px;">GOVERNANCE</div>
+          <div style="display:flex;align-items:center;gap:12px;padding:11px 12px;"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#616b7a" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"></circle><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"></path></svg><span style="font:600 13.5px 'Plus Jakarta Sans';color:#39424f;">White‑Label Settings</span></div>
+          <div style="display:flex;align-items:center;gap:12px;padding:11px 12px;"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#616b7a" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"></circle><path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"></path><path d="M12 17h.01"></path></svg><span style="font:600 13.5px 'Plus Jakarta Sans';color:#39424f;">Audit Logs</span></div>
+        </div>
+        <div style="font:700 11px 'JetBrains Mono';color:#64748b;margin-top:8px;">Desktop, light theme — grouped sections, line icons, soft accent + left bar on the active row (dark theme: same shape, dark surfaces)</div>
+      </div>
+      <div>
+        <div style="width:200px;height:220px;border-radius:14px;background:#0b0f1a;border:1px solid rgba(255,255,255,.1);position:relative;overflow:hidden;">
+          <div style="padding:12px;"><div style="height:8px;width:60%;border-radius:4px;background:rgba(255,255,255,.1);margin-bottom:10px;"></div><div style="height:50px;border-radius:12px;background:#141b2b;margin-bottom:8px;"></div><div style="height:50px;border-radius:12px;background:#141b2b;"></div></div>
+          <div style="position:absolute;left:0;right:0;bottom:0;display:flex;padding:8px 4px;background:rgba(9,13,21,.92);border-top:1px solid rgba(255,255,255,.08);">
+            <div style="flex:1;display:flex;flex-direction:column;align-items:center;gap:3px;color:#ffc968;"><span style="width:12px;height:12px;border-radius:4px;background:#ffc968;"></span></div>
+            <div style="flex:1;display:flex;flex-direction:column;align-items:center;gap:3px;color:#8a96b4;"><span style="width:12px;height:12px;border-radius:4px;border:1.5px solid #8a96b4;"></span></div>
+            <div style="flex:1;display:flex;flex-direction:column;align-items:center;gap:3px;color:#8a96b4;"><span style="width:12px;height:12px;border-radius:4px;border:1.5px solid #8a96b4;"></span></div>
+            <div style="flex:1;display:flex;flex-direction:column;align-items:center;gap:3px;color:#8a96b4;"><span style="width:12px;height:12px;border-radius:4px;border:1.5px solid #8a96b4;"></span></div>
+          </div>
+        </div>
+        <div style="font:700 11px 'JetBrains Mono';color:#64748b;margin-top:8px;">Phone/tablet — new: sidebar collapses to the student app's own bottom‑nav pattern (same 12 items behind a "More" tab)</div>
+      </div>
+    </div>
+  </div>
+
+</div>
+
+</x-dc>
+</body>
+</html>
