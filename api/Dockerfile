@@ -72,9 +72,15 @@ FROM serversideup/php:8.3-cli AS worker
 USER root
 RUN install-php-extensions gd intl bcmath gmp exif
 COPY --from=vendor --chown=www-data:www-data /var/www/html /var/www/html
+# The worker recycles itself hourly (--max-time). Supervising that recycle in
+# here rather than letting the container exit keeps Docker's RestartCount at 0 —
+# Coolify stops an application (and prunes its images) once RestartCount reaches
+# max_restart_count, and cannot tell a clean recycle from a crash. See the
+# script header for the outage this prevents.
+COPY --chmod=0755 api/docker/queue-worker.sh /usr/local/bin/queue-worker
 USER www-data
 WORKDIR /var/www/html
 # The worker never migrates or caches — the web service owns that.
 ENV AUTORUN_ENABLED=false \
     PHP_OPCACHE_ENABLE=1
-CMD ["php", "artisan", "queue:work", "--tries=3", "--max-time=3600", "--sleep=3", "--rest=1"]
+CMD ["queue-worker", "php", "artisan", "queue:work", "--tries=3", "--max-time=3600", "--sleep=3", "--rest=1"]
