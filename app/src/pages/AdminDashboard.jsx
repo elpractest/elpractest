@@ -13,6 +13,7 @@ import AdminActivations from './AdminActivations';
 import AdminActivationCodes from './AdminActivationCodes';
 import AdminResults from './AdminResults';
 import AdminResultDetail from './AdminResultDetail';
+import AdminCohortAnalytics from './AdminCohortAnalytics';
 import SuperAdminSettings from './SuperAdminSettings';
 import SuperAdminOnboarding from './SuperAdminOnboarding';
 import SuperAdminAuditLogs from './SuperAdminAuditLogs';
@@ -29,6 +30,7 @@ const MAIN_NAV = [
   { id: 'activations', label: 'Activation Requests', icon: 'clock' },
   { id: 'codes', label: 'Activation Codes', icon: 'key' },
   { id: 'results', label: 'Results Dashboard', icon: 'chart' },
+  { id: 'cohort', label: 'Cohort Analytics', icon: 'target' },
 ];
 const GOV_NAV = [
   { id: 'settings', label: 'White-Label Settings', icon: 'settings' },
@@ -189,6 +191,8 @@ export default function AdminDashboard({ user, setUser }) {
             }}
           />
         );
+      case 'cohort':
+        return <AdminCohortAnalytics />;
       case 'result_detail':
         return (
           <AdminResultDetail

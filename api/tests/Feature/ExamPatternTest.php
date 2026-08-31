@@ -405,6 +405,100 @@ class ExamPatternTest extends TestCase
         $this->assertSame(2, $rankOf($b)['rank']);
     }
 
+    // ── The exam pattern is settable THROUGH THE API ────────────────────────
+
+    /**
+     * Regression: the migration, the model and the scoring all understood
+     * cut-offs and qualifying sections, but TestController never wrote them, so
+     * they were only reachable by touching the model directly. Everything an
+     * admin can configure has to survive a round trip through the API.
+     */
+    public function test_exam_pattern_persists_through_the_create_endpoint(): void
+    {
+        $q1 = $this->makeQuestion('English');
+        $q2 = $this->makeQuestion('CSAT');
+
+        $response = $this->actingAsAdmin()->postJson('/api/admin/tests', [
+            'title' => 'SSC CGL Tier I',
+            'course_id' => $this->course->id,
+            'type' => 'mock',
+            'duration_seconds' => 3600,
+            'cutoff_marks' => 1.5,
+            'shuffle_questions' => true,
+            'shuffle_options' => true,
+            'shift_group' => 'cgl-2026',
+            'shift_label' => 'morning',
+            'normalization_method' => 'equipercentile',
+            'sections' => [
+                [
+                    'title' => 'English',
+                    'duration_seconds' => 1800,
+                    'cutoff_marks' => 0.5,
+                    'question_ids' => [$q1->id],
+                ],
+                [
+                    'title' => 'CSAT',
+                    'duration_seconds' => 1800,
+                    'cutoff_marks' => 0.25,
+                    'is_qualifying' => true,
+                    'question_ids' => [$q2->id],
+                ],
+            ],
+        ]);
+
+        $response->assertStatus(201);
+        $test = Test::latest('id')->firstOrFail();
+
+        $this->assertEquals(1.5, (float) $test->cutoff_marks);
+        $this->assertTrue($test->shuffle_questions);
+        $this->assertTrue($test->shuffle_options);
+        $this->assertSame('cgl-2026', $test->shift_group);
+        $this->assertSame('equipercentile', $test->normalization_method);
+
+        $sections = $test->sections()->orderBy('sort_order')->get();
+        $this->assertEquals(0.5, (float) $sections[0]->cutoff_marks);
+        $this->assertFalse($sections[0]->is_qualifying);
+        $this->assertEquals(0.25, (float) $sections[1]->cutoff_marks);
+        $this->assertTrue($sections[1]->is_qualifying, 'the qualifying flag must survive the round trip');
+    }
+
+    public function test_exam_pattern_can_be_edited_through_the_update_endpoint(): void
+    {
+        $q = $this->makeQuestion();
+        $test = $this->makeTest(['cutoff_marks' => 5, 'shuffle_questions' => false]);
+        $this->addSection($test, 'S1', [$q]);
+
+        $this->actingAsAdmin()->putJson("/api/admin/tests/{$test->id}", [
+            'title' => $test->title,
+            'type' => 'mock',
+            'duration_seconds' => 3600,
+            'cutoff_marks' => 2.25,
+            'shuffle_questions' => true,
+            'sections' => [
+                ['title' => 'S1', 'cutoff_marks' => 1, 'is_qualifying' => true, 'question_ids' => [$q->id]],
+            ],
+        ])->assertOk();
+
+        $test->refresh();
+        $this->assertEquals(2.25, (float) $test->cutoff_marks);
+        $this->assertTrue($test->shuffle_questions);
+
+        $section = $test->sections()->firstOrFail();
+        $this->assertEquals(1.0, (float) $section->cutoff_marks);
+        $this->assertTrue($section->is_qualifying);
+    }
+
+    public function test_an_out_of_range_cutoff_percentage_is_rejected(): void
+    {
+        $q = $this->makeQuestion();
+
+        $this->actingAsAdmin()->postJson('/api/admin/tests', [
+            'title' => 'Bad', 'course_id' => $this->course->id, 'type' => 'mock',
+            'duration_seconds' => 3600, 'cutoff_percentage' => 140,
+            'sections' => [['title' => 'S1', 'question_ids' => [$q->id]]],
+        ])->assertStatus(422)->assertJsonValidationErrors('cutoff_percentage');
+    }
+
     // ── helpers ─────────────────────────────────────────────────────────────
 
     /**

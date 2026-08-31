@@ -47,6 +47,9 @@ export default function TestResult() {
   const [analytic, setAnalytic] = useState(null);
   const [rank, setRank] = useState(1);
   const [percentile, setPercentile] = useState(100.0);
+  // Strict published ordering, tie-broken on accuracy then time. Different from
+  // `rank`, which is standard competition ranking and lets equal scores tie.
+  const [meritRank, setMeritRank] = useState(null);
   const [answers, setAnswers] = useState([]);
 
   useEffect(() => {
@@ -56,6 +59,7 @@ export default function TestResult() {
         setAnalytic(res.data.analytic || {});
         setRank(res.data.rank || 1);
         setPercentile(res.data.percentile !== undefined ? res.data.percentile : 100.0);
+        setMeritRank(res.data.merit_rank ?? null);
         setAnswers(res.data.answers || []);
       })
       .catch((err) => setError(err.response?.data?.message || 'Failed to fetch test results.'))
@@ -85,7 +89,33 @@ export default function TestResult() {
         correct: analytic.correct_count || 0, wrong: analytic.incorrect_count || 0, skipped: analytic.unanswered_count || 0,
         time: analytic.time_spent_formatted || '—', title: analytic.test_title || 'Your scorecard',
       };
-  const bars = demoResultBars; // representative subject breakdown (see RESTYLE_NOTES)
+  // Subject bars from the REAL analytics. This used to render demoResultBars on
+  // every scorecard, including real sessions, so a student saw a breakdown of a
+  // paper they never sat. Demo mode still gets the sample.
+  const realBars = (() => {
+    const breakdown = analytic?.subject_breakdown;
+    if (!breakdown || typeof breakdown !== 'object') return [];
+    const hues = ['blue', 'green', 'gold', 'red', 'violet'];
+    return Object.entries(breakdown).map(([k, v], i) => {
+      const attempted = (v.correct || 0) + (v.incorrect || 0);
+      return {
+        k,
+        pct: attempted > 0 ? Math.round((v.correct / attempted) * 100) : 0,
+        hue: hues[i % hues.length],
+        detail: `${v.correct || 0}/${attempted} · ${v.unanswered || 0} blank`,
+      };
+    });
+  })();
+  const bars = isDemo ? demoResultBars : realBars;
+
+  // Exam-pattern results. Null qualified means the paper set no bar at all,
+  // which must not render as a failure.
+  const sectionBreakdown = isDemo ? [] : (analytic?.section_breakdown || []);
+  const isQualified = isDemo ? null : (analytic?.is_qualified ?? null);
+  const meritScore = isDemo ? null : (analytic?.merit_score != null ? parseFloat(analytic.merit_score) : null);
+  const normalizedScore = isDemo ? null : (analytic?.normalized_score != null ? parseFloat(analytic.normalized_score) : null);
+  const hasQualifyingSection = sectionBreakdown.some((sec) => sec.is_qualifying);
+  const fmt = (n) => (Math.round(Number(n) * 100) / 100);
 
   const R = 56, C = 2 * Math.PI * R;
   const verdict = pct >= 80 ? 'Excellent — top 4%! 🎯' : pct >= 60 ? 'Good effort — keep pushing 💪' : 'Keep practising 📚';
@@ -122,14 +152,42 @@ export default function TestResult() {
         </div>
         <div style={{ font: '800 18px var(--font-display)', color: '#FFC968', marginTop: '14px' }}>{verdict}</div>
         <div style={{ font: '600 12px var(--font-body)', color: 'var(--muted)', marginTop: '3px' }}>{vm.title}</div>
+
+        {isQualified !== null && (
+          <div
+            style={{
+              marginTop: '12px', padding: '6px 16px', borderRadius: '999px',
+              font: '800 12px var(--font-body)',
+              background: isQualified ? 'var(--success-bg)' : 'var(--danger-bg)',
+              color: isQualified ? 'var(--success)' : 'var(--danger)',
+            }}
+          >
+            {isQualified ? 'QUALIFIED' : 'NOT QUALIFIED'}
+          </div>
+        )}
+
+        {normalizedScore !== null && (
+          <div style={{ font: '600 11.5px var(--font-body)', color: 'var(--muted)', marginTop: '8px' }}>
+            Normalised across shifts: <strong style={{ color: 'var(--tx)' }}>{fmt(normalizedScore)}</strong>
+          </div>
+        )}
       </div>
 
       {/* Rank / percentile / accuracy */}
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3,1fr)', gap: '10px', marginTop: '14px' }}>
-        {statCard(vm.rank, 'All-India rank', 'gold')}
+        {/* Merit rank is the strict published order; `rank` lets equal scores
+            share a place, which is what a percentile is computed against. */}
+        {statCard(meritRank !== null ? `${meritRank}` : vm.rank, meritRank !== null ? 'Merit rank' : 'Batch rank', 'gold')}
         {statCard(vm.percentile, 'Percentile', 'blue')}
         {statCard(vm.accuracy, 'Accuracy', 'green')}
       </div>
+
+      {hasQualifyingSection && meritScore !== null && (
+        <div style={{ marginTop: '10px', padding: '11px 14px', borderRadius: '14px', background: 'var(--card)', border: '1px solid var(--line)', font: '600 12px var(--font-body)', color: 'var(--muted)' }}>
+          Merit score <strong style={{ color: 'var(--tx)' }}>{fmt(meritScore)}</strong> — qualifying
+          sections must be cleared but their marks are excluded from the merit list.
+        </div>
+      )}
 
       {/* Correct / wrong / skipped / time */}
       <div style={{ display: 'flex', gap: '16px', marginTop: '14px', padding: '15px 16px', borderRadius: '16px', background: 'var(--card)', border: '1px solid var(--line)' }}>
@@ -139,15 +197,80 @@ export default function TestResult() {
         {countCell(vm.time, 'Time', 'var(--tx2)', true)}
       </div>
 
+      {/* Sectional performance against each cut-off */}
+      {sectionBreakdown.length > 0 && (
+        <>
+          <h2 style={{ margin: '22px 0 12px', font: '700 16px var(--font-display)', color: 'var(--tx)' }}>Section-wise result</h2>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
+            {sectionBreakdown.map((sec) => {
+              const pctOf = sec.max_score > 0 ? Math.max(0, Math.min(100, (sec.score / sec.max_score) * 100)) : 0;
+              const barred = sec.cutoff_marks != null;
+              return (
+                <div
+                  key={sec.section_id}
+                  style={{
+                    padding: '14px 16px', borderRadius: '16px', background: 'var(--card)',
+                    border: `1px solid ${barred ? (sec.cleared ? 'var(--success)' : 'var(--danger)') : 'var(--line)'}`,
+                  }}
+                >
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: '10px', flexWrap: 'wrap' }}>
+                    <span style={{ font: '700 13.5px var(--font-display)', color: 'var(--tx)' }}>
+                      {sec.title}
+                      {sec.is_qualifying && (
+                        <span style={{ marginLeft: '8px', font: '700 10px var(--font-body)', color: 'var(--muted)' }}>QUALIFYING ONLY</span>
+                      )}
+                    </span>
+                    <span style={{ font: '800 13px var(--font-mono)', color: 'var(--tx)' }}>
+                      {fmt(sec.score)} / {fmt(sec.max_score)}
+                    </span>
+                  </div>
+
+                  <div style={{ position: 'relative', height: '8px', borderRadius: '999px', background: 'var(--surf)', overflow: 'visible', marginTop: '9px' }}>
+                    <div style={{ height: '100%', borderRadius: '999px', width: `${pctOf}%`, background: sec.cleared ? 'var(--success)' : 'var(--danger)' }} />
+                    {/* The bar the candidate had to clear, drawn where it falls. */}
+                    {barred && sec.max_score > 0 && (
+                      <span
+                        title={`Cut-off ${sec.cutoff_marks}`}
+                        style={{
+                          position: 'absolute', top: '-3px', bottom: '-3px', width: '2px', background: 'var(--tx)',
+                          left: `${Math.max(0, Math.min(100, (sec.cutoff_marks / sec.max_score) * 100))}%`,
+                        }}
+                      />
+                    )}
+                  </div>
+
+                  <div style={{ marginTop: '8px', font: '600 11px var(--font-body)', color: 'var(--muted)' }}>
+                    {sec.correct} correct · {sec.incorrect} wrong · {sec.unanswered} blank
+                    {barred && (
+                      <strong style={{ marginLeft: '8px', color: sec.cleared ? 'var(--success)' : 'var(--danger)' }}>
+                        {sec.cleared ? 'Cleared' : 'Missed'} cut-off {fmt(sec.cutoff_marks)}
+                      </strong>
+                    )}
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        </>
+      )}
+
       {/* Subject-wise accuracy */}
       <h2 style={{ margin: '22px 0 12px', font: '700 16px var(--font-display)', color: 'var(--tx)' }}>Subject-wise accuracy</h2>
       <div style={{ display: 'flex', flexDirection: 'column', gap: '14px' }}>
+        {bars.length === 0 && (
+          <p style={{ font: '600 12px var(--font-body)', color: 'var(--muted)', margin: 0 }}>
+            No subject breakdown recorded for this attempt.
+          </p>
+        )}
         {bars.map((b) => {
           const c = tint(b.hue).c;
           return (
             <div key={b.k}>
               <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '6px' }}>
-                <span style={{ font: '600 12.5px var(--font-body)', color: 'var(--tx2)' }}>{b.k}</span>
+                <span style={{ font: '600 12.5px var(--font-body)', color: 'var(--tx2)' }}>
+                  {b.k}
+                  {b.detail && <span style={{ font: '600 10.5px var(--font-body)', color: 'var(--muted)', marginLeft: '7px' }}>{b.detail}</span>}
+                </span>
                 <span style={{ font: '800 12px var(--font-mono)', color: c }}>{b.pct}%</span>
               </div>
               <div style={{ height: '8px', borderRadius: '999px', background: 'var(--surf)', overflow: 'hidden' }}>

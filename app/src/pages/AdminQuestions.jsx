@@ -56,6 +56,13 @@ export default function AdminQuestions({ csvState, triggerCsvImport, csvJobId })
   const [topic, setTopic] = useState('');
   const [difficulty, setDifficulty] = useState('');
   const [search, setSearch] = useState('');
+  // Review queue + item-health filters.
+  const [status, setStatus] = useState('');
+  const [flaggedOnly, setFlaggedOnly] = useState(false);
+  // Item analysis for one question, fetched on demand.
+  const [analysis, setAnalysis] = useState(null);
+  const [analysisFor, setAnalysisFor] = useState(null);
+  const [analysisLoading, setAnalysisLoading] = useState(false);
 
   // Drag and Drop CSV file state
   const [dragOver, setDragOver] = useState(false);
@@ -89,7 +96,10 @@ export default function AdminQuestions({ csvState, triggerCsvImport, csvJobId })
         subject,
         topic,
         difficulty,
-        search
+        search,
+        status,
+        // Server-side filter for items whose measured stats look wrong.
+        ...(flaggedOnly ? { flagged: 1 } : {}),
       };
       const res = await api.get('/api/admin/questions', { params });
       setQuestions(res.data.data);
@@ -103,7 +113,38 @@ export default function AdminQuestions({ csvState, triggerCsvImport, csvJobId })
 
   useEffect(() => {
     fetchQuestions();
-  }, [page, subject, topic, difficulty]);
+  }, [page, subject, topic, difficulty, status, flaggedOnly]);
+
+  /**
+   * Move a question through review. Approving is the only transition that lets
+   * it into a published test, and it is recorded against the reviewer.
+   */
+  const reviewQuestion = async (questionId, nextStatus) => {
+    setError(''); setSuccess('');
+    try {
+      await api.post(`/api/admin/questions/${questionId}/review`, { status: nextStatus });
+      setSuccess(`Question marked ${nextStatus.replace('_', ' ')}.`);
+      fetchQuestions();
+    } catch (err) {
+      setError(err.response?.data?.message || 'Failed to update review status.');
+    }
+  };
+
+  /** Difficulty, discrimination and distractor breakdown, from real attempts. */
+  const openAnalysis = async (question) => {
+    setAnalysisFor(question);
+    setAnalysis(null);
+    setAnalysisLoading(true);
+    try {
+      const res = await api.get(`/api/admin/questions/${question.id}/item-analysis`);
+      setAnalysis(res.data.analysis);
+    } catch (err) {
+      setError('Failed to load item analysis.');
+      setAnalysisFor(null);
+    } finally {
+      setAnalysisLoading(false);
+    }
+  };
 
   const handleSearchSubmit = (e) => {
     e.preventDefault();
@@ -379,6 +420,23 @@ export default function AdminQuestions({ csvState, triggerCsvImport, csvJobId })
                 <option value="hard">Hard</option>
               </select>
             </div>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
+              <label style={{ fontSize: '0.8rem', color: 'var(--text-secondary)' }}>Review status</label>
+              <select value={status} onChange={(e) => { setPage(1); setStatus(e.target.value); }} className="form-input" style={{ padding: '8px 12px', fontSize: '0.9rem' }}>
+                <option value="">All</option>
+                <option value="pending_review">Pending review</option>
+                <option value="approved">Approved</option>
+                <option value="rejected">Rejected</option>
+                <option value="draft">Draft</option>
+                <option value="retired">Retired</option>
+              </select>
+            </div>
+            <div style={{ display: 'flex', alignItems: 'flex-end', paddingBottom: '8px' }}>
+              <label style={{ display: 'inline-flex', alignItems: 'center', gap: '6px', fontSize: '0.85rem', cursor: 'pointer' }} title="Items whose measured statistics suggest a problem">
+                <input type="checkbox" checked={flaggedOnly} onChange={(e) => { setPage(1); setFlaggedOnly(e.target.checked); }} />
+                Needs attention
+              </label>
+            </div>
             <div style={{ gridColumn: 'span 3', display: 'flex', gap: '12px' }}>
               <input 
                 type="text" 
@@ -404,17 +462,19 @@ export default function AdminQuestions({ csvState, triggerCsvImport, csvJobId })
               <th style={{ padding: '12px 16px' }}>Difficulty</th>
               <th style={{ padding: '12px 16px' }}>Question Text (Preview)</th>
               <th style={{ padding: '12px 16px' }}>Marks (Negative)</th>
+              <th style={{ padding: '12px 16px' }}>Review</th>
+              <th style={{ padding: '12px 16px' }}>Item health</th>
               <th style={{ padding: '12px 16px', textAlign: 'right' }}>Actions</th>
             </tr>
           </thead>
           <tbody>
             {loading ? (
               <tr>
-                <td colSpan={5} style={{ textAlign: 'center', padding: '40px', color: 'var(--text-secondary)' }}>Loading question bank...</td>
+                <td colSpan={7} style={{ textAlign: 'center', padding: '40px', color: 'var(--text-secondary)' }}>Loading question bank...</td>
               </tr>
             ) : questions.length === 0 ? (
               <tr>
-                <td colSpan={5} style={{ textAlign: 'center', padding: '40px', color: 'var(--text-secondary)' }}>No questions match filters.</td>
+                <td colSpan={7} style={{ textAlign: 'center', padding: '40px', color: 'var(--text-secondary)' }}>No questions match filters.</td>
               </tr>
             ) : (
               questions.map((q) => (
@@ -446,8 +506,42 @@ export default function AdminQuestions({ csvState, triggerCsvImport, csvJobId })
                     <span style={{ fontWeight: 'bold', color: 'var(--success)' }}>+{q.marks}</span>
                     <span style={{ fontSize: '0.8rem', color: 'var(--danger)', marginLeft: '6px' }}>-{q.negative_marks}</span>
                   </td>
+                  <td style={{ padding: '16px' }}>
+                    <span style={{
+                      fontSize: '0.72rem', fontWeight: 'bold', padding: '2px 8px', borderRadius: '4px',
+                      textTransform: 'uppercase', whiteSpace: 'nowrap',
+                      background: q.status === 'approved' ? 'var(--success-bg)' : q.status === 'rejected' ? 'var(--danger-bg)' : 'var(--warning-bg)',
+                      color: q.status === 'approved' ? 'var(--success)' : q.status === 'rejected' ? 'var(--danger)' : 'var(--warning)',
+                    }}>
+                      {(q.status || 'approved').replace('_', ' ')}
+                    </span>
+                    {q.status !== 'approved' && (
+                      <button onClick={() => reviewQuestion(q.id, 'approved')} className="btn-secondary" style={{ padding: '2px 8px', fontSize: '0.7rem', marginTop: '6px', display: 'block' }}>Approve</button>
+                    )}
+                    {q.status !== 'rejected' && (
+                      <button onClick={() => reviewQuestion(q.id, 'rejected')} className="btn-secondary" style={{ padding: '2px 8px', fontSize: '0.7rem', marginTop: '4px', display: 'block' }}>Reject</button>
+                    )}
+                  </td>
+                  <td style={{ padding: '16px', fontSize: '0.78rem' }}>
+                    {q.stats_sample_size >= 30 ? (
+                      <>
+                        <div>p = {Number(q.difficulty_index).toFixed(2)}</div>
+                        {/* A NEGATIVE discrimination index means the strong
+                            candidates got it wrong — nearly always a wrong key. */}
+                        <div style={{ color: q.discrimination_index < 0 ? 'var(--danger)' : q.discrimination_index < 0.15 ? 'var(--warning)' : 'var(--success)', fontWeight: 700 }}>
+                          {q.discrimination_index < 0 ? 'check key' : `r = ${Number(q.discrimination_index).toFixed(2)}`}
+                        </div>
+                        <div style={{ color: 'var(--text-secondary)' }}>n = {q.stats_sample_size}</div>
+                      </>
+                    ) : (
+                      <span style={{ color: 'var(--text-secondary)' }}>
+                        {q.stats_sample_size ? `n = ${q.stats_sample_size}` : 'no attempts'}
+                      </span>
+                    )}
+                  </td>
                   <td style={{ padding: '16px', textAlign: 'right' }}>
                     <div style={{ display: 'flex', gap: '12px', justifyContent: 'flex-end' }}>
+                      <button onClick={() => openAnalysis(q)} style={{ background: 'transparent', border: 'none', cursor: 'pointer', fontSize: '1rem' }} title="Item analysis">📊</button>
                       <button onClick={() => handleEditClick(q)} style={{ background: 'transparent', border: 'none', cursor: 'pointer', fontSize: '1rem' }} title="Edit">✏️</button>
                       <button onClick={() => handleDeleteClick(q.id)} style={{ background: 'transparent', border: 'none', cursor: 'pointer', fontSize: '1rem' }} title="Deactivate">🗑️</button>
                     </div>
@@ -483,6 +577,92 @@ export default function AdminQuestions({ csvState, triggerCsvImport, csvJobId })
           </div>
         )}
       </div>
+
+      {/* Item analysis modal — measured, not asserted */}
+      {analysisFor && (
+        <div
+          onClick={() => setAnalysisFor(null)}
+          style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, background: 'var(--overlay)', display: 'flex', justifyContent: 'center', alignItems: 'center', zIndex: 1100, padding: '20px' }}
+        >
+          <div className="glass-panel" onClick={(e) => e.stopPropagation()} style={{ width: '100%', maxWidth: '620px', maxHeight: '85vh', overflowY: 'auto', padding: '26px' }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: '16px', marginBottom: '12px' }}>
+              <h3 style={{ margin: 0, fontWeight: 800 }}>Item analysis</h3>
+              <button onClick={() => setAnalysisFor(null)} style={{ background: 'transparent', border: 'none', cursor: 'pointer', fontSize: '1.1rem' }}>✕</button>
+            </div>
+            <p style={{ margin: '0 0 16px', fontSize: '0.82rem', color: 'var(--text-secondary)' }}>
+              <span dangerouslySetInnerHTML={renderMath(analysisFor.question_text.substring(0, 160))} />
+            </p>
+
+            {analysisLoading ? (
+              <p style={{ color: 'var(--text-secondary)' }}>Computing from raw attempts…</p>
+            ) : !analysis ? (
+              <p style={{ color: 'var(--text-secondary)' }}>This question has no recorded attempts yet.</p>
+            ) : (
+              <>
+                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: '12px', marginBottom: '18px' }}>
+                  <Metric label="Difficulty (p)" value={analysis.difficulty_index == null ? '—' : Number(analysis.difficulty_index).toFixed(2)} hint="Share answering correctly" />
+                  <Metric
+                    label="Discrimination (r)"
+                    value={analysis.discrimination_index == null ? '—' : Number(analysis.discrimination_index).toFixed(2)}
+                    hint="Strong vs weak separation"
+                    danger={analysis.discrimination_index != null && analysis.discrimination_index < 0}
+                  />
+                  <Metric label="Sample" value={analysis.sample_size} hint={`${analysis.skipped_count} left blank`} />
+                </div>
+
+                {analysis.flags && analysis.flags.length > 0 && (
+                  <div style={{ marginBottom: '18px', display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
+                    {analysis.flags.map((f) => (
+                      <span key={f} style={{
+                        fontSize: '0.72rem', fontWeight: 700, padding: '3px 9px', borderRadius: '4px',
+                        background: f === 'negative_discrimination' ? 'var(--danger-bg)' : 'var(--warning-bg)',
+                        color: f === 'negative_discrimination' ? 'var(--danger)' : 'var(--warning)',
+                      }}>
+                        {f.replace(/_/g, ' ')}
+                      </span>
+                    ))}
+                  </div>
+                )}
+
+                {analysis.flags?.includes('negative_discrimination') && (
+                  <p style={{ margin: '0 0 16px', padding: '10px 12px', borderRadius: '6px', background: 'var(--danger-bg)', color: 'var(--danger)', fontSize: '0.8rem', fontWeight: 600 }}>
+                    The candidates who scored well overall were MORE likely to get this one wrong.
+                    In practice that means the answer key is wrong or the stem is ambiguous.
+                  </p>
+                )}
+
+                <h4 style={{ margin: '0 0 8px', fontWeight: 700, fontSize: '0.9rem' }}>Option breakdown</h4>
+                <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '0.82rem' }}>
+                  <thead>
+                    <tr style={{ borderBottom: '1px solid var(--border-color)', color: 'var(--text-secondary)' }}>
+                      <th style={{ padding: '6px 8px', textAlign: 'left' }}>Option</th>
+                      <th style={{ padding: '6px 8px', textAlign: 'right' }}>Chosen</th>
+                      <th style={{ padding: '6px 8px', textAlign: 'right' }}>Share</th>
+                      <th style={{ padding: '6px 8px', textAlign: 'right' }}>Mean ability</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {analysis.distractors.map((d) => (
+                      <tr key={d.option_id} style={{ borderBottom: '1px solid var(--surface-2)' }}>
+                        <td style={{ padding: '7px 8px', fontWeight: d.is_correct ? 700 : 400, color: d.is_correct ? 'var(--success)' : 'inherit' }}>
+                          {d.label.toUpperCase()}{d.is_correct ? ' ✓' : ''}
+                        </td>
+                        <td style={{ padding: '7px 8px', textAlign: 'right' }}>{d.chosen_count}</td>
+                        <td style={{ padding: '7px 8px', textAlign: 'right' }}>{Math.round(d.chosen_share * 100)}%</td>
+                        <td style={{ padding: '7px 8px', textAlign: 'right' }}>{d.mean_ability == null ? '—' : `${d.mean_ability}%`}</td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+                <p style={{ margin: '10px 0 0', fontSize: '0.75rem', color: 'var(--text-secondary)' }}>
+                  A distractor chosen by the highest-ability candidates is defective. One chosen by
+                  nobody is a wasted slot.
+                </p>
+              </>
+            )}
+          </div>
+        </div>
+      )}
 
       {/* Single Question Creator/Editor Form modal */}
       {showForm && (
@@ -632,6 +812,17 @@ export default function AdminQuestions({ csvState, triggerCsvImport, csvJobId })
         </div>
       )}
 
+    </div>
+  );
+}
+
+/** One measured statistic with its plain-language meaning underneath. */
+function Metric({ label, value, hint, danger }) {
+  return (
+    <div style={{ padding: '10px 12px', borderRadius: '8px', background: 'var(--surface-1)', border: '1px solid var(--border-color)' }}>
+      <div style={{ fontSize: '0.72rem', color: 'var(--text-secondary)' }}>{label}</div>
+      <div style={{ fontSize: '1.15rem', fontWeight: 800, color: danger ? 'var(--danger)' : 'var(--text-primary)' }}>{value}</div>
+      <div style={{ fontSize: '0.68rem', color: 'var(--text-secondary)' }}>{hint}</div>
     </div>
   );
 }
