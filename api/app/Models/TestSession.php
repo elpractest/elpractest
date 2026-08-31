@@ -19,6 +19,8 @@ class TestSession extends Model
         'is_auto_submitted',
         'current_section_index',
         'section_started_at',
+        'question_order',
+        'option_order',
     ];
 
     protected function casts(): array
@@ -29,6 +31,8 @@ class TestSession extends Model
             'is_auto_submitted' => 'boolean',
             'current_section_index' => 'integer',
             'section_started_at' => 'datetime',
+            'question_order' => 'array',
+            'option_order' => 'array',
         ];
     }
 
@@ -212,7 +216,25 @@ class TestSession extends Model
     }
 
     /**
-     * Get the batch-scoped rank and percentile for this session.
+     * Batch-scoped rank, percentile and merit rank for this session.
+     *
+     * THREE different numbers, because they answer three different questions:
+     *
+     *   rank        standard competition ranking on score alone (1, 1, 3). Two
+     *               candidates on the same marks genuinely share a rank.
+     *   percentile  share of the cohort at or below this score. Must be computed
+     *               on score alone - that is what a percentile means.
+     *   merit_rank  the strict, no-ties merit list an exam body actually
+     *               publishes, resolved by the tie-break chain below.
+     *
+     * Tie-break order (the common Indian govt-exam convention):
+     *   1. higher merit score
+     *   2. fewer wrong answers  - accuracy beats volume
+     *   3. less time taken
+     *   4. user id, purely so the ordering is deterministic rather than random
+     *
+     * Merit uses merit_score when the paper has qualifying sections, so a
+     * qualifying paper cannot lift anyone up the published list.
      */
     public function getRankAndPercentile(): array
     {
@@ -221,6 +243,7 @@ class TestSession extends Model
             return [
                 'rank' => 1,
                 'percentile' => 100.00,
+                'merit_rank' => 1,
             ];
         }
 
@@ -249,7 +272,14 @@ class TestSession extends Model
                 'ta.total_score',
                 'e.batch_id',
                 DB::raw('RANK() OVER (PARTITION BY e.batch_id ORDER BY ta.total_score DESC) as cohort_rank'),
-                DB::raw('(1 - PERCENT_RANK() OVER (PARTITION BY e.batch_id ORDER BY ta.total_score DESC)) * 100 as cohort_percentile')
+                DB::raw('(1 - PERCENT_RANK() OVER (PARTITION BY e.batch_id ORDER BY ta.total_score DESC)) * 100 as cohort_percentile'),
+                DB::raw(
+                    'ROW_NUMBER() OVER (PARTITION BY e.batch_id ORDER BY '
+                    . 'COALESCE(ta.merit_score, ta.total_score) DESC, '
+                    . 'ta.incorrect_count ASC, '
+                    . 'ta.total_time_seconds ASC, '
+                    . 'ts.user_id ASC) as cohort_merit_rank'
+                )
             );
 
         $ranking = DB::table(DB::raw("({$scoresQuery->toSql()}) as ranked"))
@@ -260,10 +290,12 @@ class TestSession extends Model
         // Safe fallback in case of no cohort data
         $rank = $ranking ? (int)$ranking->cohort_rank : 1;
         $percentile = $ranking ? (float)$ranking->cohort_percentile : 100.00;
+        $meritRank = $ranking ? (int)$ranking->cohort_merit_rank : 1;
 
         return [
             'rank' => $rank,
             'percentile' => $percentile,
+            'merit_rank' => $meritRank,
         ];
     }
 }

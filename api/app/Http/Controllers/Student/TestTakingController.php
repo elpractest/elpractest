@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Student;
 
 use App\Http\Controllers\Controller;
+use App\Http\Requests\Student\SaveAnswerRequest;
 use App\Jobs\ComputeTestAnalytics;
 use App\Models\Enrollment;
 use App\Models\Question;
@@ -88,6 +89,14 @@ class TestTakingController extends Controller
 
         // 3. Start new session
         $session = DB::transaction(function () use ($user, $test) {
+            $sections = $test->sections()->with('questions.options')->orderBy('sort_order')->get();
+
+            // Draw THIS candidate's paper order once, and persist it. It has to be
+            // stored rather than recomputed per request: the palette, a resume
+            // after a crash and the results review all have to show the same
+            // order the candidate actually sat.
+            [$questionOrder, $optionOrder] = $this->drawCandidatePaper($test, $sections);
+
             $session = TestSession::create([
                 'user_id' => $user->id,
                 'test_id' => $test->id,
@@ -95,16 +104,14 @@ class TestTakingController extends Controller
                 'duration_seconds' => $test->duration_seconds,
                 'current_section_index' => 0,
                 'section_started_at' => now(),
+                'question_order' => $questionOrder,
+                'option_order' => $optionOrder,
             ]);
 
-            // Pre-create all test answers in order across sections
-            $sections = $test->sections()->orderBy('sort_order')->get();
-            $sortOrder = 0;
-
+            // Pre-create every answer row up front, so saving an answer is always
+            // an UPDATE and the palette can report "not visited" from row one.
             foreach ($sections as $section) {
-                // Get section questions ordered by pivot sort_order
-                $questions = $section->questions;
-                foreach ($questions as $question) {
+                foreach ($section->questions as $question) {
                     TestAnswer::create([
                         'test_session_id' => $session->id,
                         'question_id' => $question->id,
@@ -146,7 +153,7 @@ class TestTakingController extends Controller
     /**
      * Save/autosave answer response.
      */
-    public function saveAnswer(Request $request, TestSession $session, int $questionId): JsonResponse
+    public function saveAnswer(SaveAnswerRequest $request, TestSession $session, int $questionId): JsonResponse
     {
         if ($session->user_id !== $request->user()->id) {
             return response()->json(['message' => 'Unauthorized.'], 403);
@@ -198,8 +205,10 @@ class TestTakingController extends Controller
             return response()->json(['message' => 'Answer row not initialized.'], 404);
         }
 
+        // `selected_option_id` is validated by SaveAnswerRequest to belong to THIS
+        // question, so a foreign option id can never be stored.
         $answer->update([
-            'selected_option_id' => $request->selected_option_id,
+            'selected_option_id' => $request->input('selected_option_id'),
             'is_visited' => true,
             'answered_at' => now(),
             'time_spent_seconds' => $request->input('time_spent_seconds', $answer->time_spent_seconds),
@@ -360,6 +369,7 @@ class TestTakingController extends Controller
         $rankAndPercentile = $session->getRankAndPercentile();
         $rank = $rankAndPercentile['rank'];
         $percentile = $rankAndPercentile['percentile'];
+        $meritRank = $rankAndPercentile['merit_rank'];
 
         // Fetch question-by-question review key
         $answers = TestAnswer::where('test_session_id', $session->id)
@@ -390,6 +400,7 @@ class TestTakingController extends Controller
             'analytic' => $analytic,
             'rank' => $rank,
             'percentile' => $percentile,
+            'merit_rank' => $meritRank,
             'answers' => $answers,
         ]);
     }
@@ -422,6 +433,8 @@ class TestTakingController extends Controller
                     'accuracy_percentage' => $analytic ? $analytic->accuracy_percentage : 0,
                     'rank' => $rankAndPercentile['rank'],
                     'percentile' => $rankAndPercentile['percentile'],
+                    'merit_rank' => $rankAndPercentile['merit_rank'],
+                    'is_qualified' => $analytic ? $analytic->is_qualified : null,
                     'time_taken_seconds' => $analytic ? $analytic->total_time_seconds : 0,
                 ];
             });
@@ -442,7 +455,10 @@ class TestTakingController extends Controller
 
         $session->reconcileSectionTiming();
 
-        $answers = TestAnswer::where('test_session_id', $session->id)->get();
+        $answers = $this->inCandidateOrder(
+            $session,
+            TestAnswer::where('test_session_id', $session->id)->get()
+        );
 
         $palette = $answers->map(function ($ans) {
             $status = 'not_visited';
@@ -470,14 +486,28 @@ class TestTakingController extends Controller
     private function sessionStateResponse(TestSession $session, string $message): JsonResponse
     {
         $session->load('test.sections.questions.options');
-        
-        $sections = $session->test->sections->map(function ($section) {
+
+        $questionOrder = $session->question_order ?? [];
+        $optionOrder = $session->option_order ?? [];
+
+        $sections = $session->test->sections->map(function ($section) use ($questionOrder, $optionOrder) {
+            $questions = $this->applyOrder(
+                $section->questions,
+                $questionOrder[(string) $section->id] ?? null
+            );
+
             return [
                 'id' => $section->id,
                 'title' => $section->title,
                 'duration_seconds' => $section->duration_seconds,
                 'sort_order' => $section->sort_order,
-                'questions' => $section->questions->map(function ($q) {
+                // Sectional bar is shown to the candidate; a real CBT states it
+                // in the instructions, and it changes how you allocate time.
+                'cutoff_marks' => $section->cutoff_marks,
+                'is_qualifying' => (bool) $section->is_qualifying,
+                'questions' => $questions->values()->map(function ($q) use ($optionOrder) {
+                    $options = $this->applyOrder($q->options, $optionOrder[(string) $q->id] ?? null);
+
                     return [
                         'id' => $q->id,
                         'subject' => $q->subject,
@@ -488,7 +518,7 @@ class TestTakingController extends Controller
                         'marks' => $q->marks,
                         'negative_marks' => $q->negative_marks,
                         // Options excluding is_correct for cheating prevention
-                        'options' => $q->options->map(fn($o) => [
+                        'options' => $options->values()->map(fn($o) => [
                             'id' => $o->id,
                             'label' => $o->label,
                             'option_text' => $o->option_text,
@@ -515,5 +545,87 @@ class TestTakingController extends Controller
             'sections' => $sections,
             'answers' => $answers,
         ]);
+    }
+
+    /**
+     * Draw one candidate's paper: the question order within each section and the
+     * option order within each question.
+     *
+     * Questions are only ever shuffled WITHIN a section - sections are the exam
+     * structure (English, then Quant), and moving a question across them would
+     * change the paper, not just its order.
+     *
+     * @return array{0: array<string, int[]>, 1: array<string, int[]>}
+     */
+    private function drawCandidatePaper(Test $test, $sections): array
+    {
+        $questionOrder = [];
+        $optionOrder = [];
+
+        foreach ($sections as $section) {
+            $ids = $section->questions->pluck('id')->all();
+            if ($test->shuffle_questions) {
+                shuffle($ids);
+            }
+            $questionOrder[(string) $section->id] = $ids;
+
+            if ($test->shuffle_options) {
+                foreach ($section->questions as $question) {
+                    $optionIds = $question->options->pluck('id')->all();
+                    shuffle($optionIds);
+                    $optionOrder[(string) $question->id] = $optionIds;
+                }
+            }
+        }
+
+        // Null (not an empty array) when nothing was shuffled, so "author order"
+        // stays distinguishable from "shuffled and happened to match".
+        return [
+            $test->shuffle_questions ? $questionOrder : null,
+            $test->shuffle_options && $optionOrder !== [] ? $optionOrder : null,
+        ];
+    }
+
+    /**
+     * Re-order a collection of models to match a stored list of ids.
+     *
+     * Anything not named in the stored order keeps its natural position at the
+     * end, so a question added to a test after a candidate started still appears
+     * rather than vanishing from their paper.
+     */
+    private function applyOrder($models, ?array $orderedIds)
+    {
+        if (!$orderedIds) {
+            return $models;
+        }
+
+        $position = array_flip($orderedIds);
+        $fallback = count($orderedIds);
+
+        return $models->sortBy(fn($m) => $position[$m->id] ?? $fallback)->values();
+    }
+
+    /**
+     * Sort answer rows into the candidate's paper order, so the palette indices
+     * line up with the questions as that candidate sees them.
+     */
+    private function inCandidateOrder(TestSession $session, $answers)
+    {
+        $order = $session->question_order;
+        if (!$order) {
+            return $answers;
+        }
+
+        $flat = [];
+        foreach ($session->test->sections()->orderBy('sort_order')->pluck('id') as $sectionId) {
+            foreach ($order[(string) $sectionId] ?? [] as $qid) {
+                $flat[] = $qid;
+            }
+        }
+
+        $position = array_flip($flat);
+        $fallback = count($flat);
+
+        return $answers->sortBy(fn($a) => $position[$a->question_id] ?? $fallback)->values();
     }
 }

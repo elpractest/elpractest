@@ -6,6 +6,7 @@ use App\Http\Controllers\Controller;
 use App\Http\Requests\Admin\StoreQuestionRequest;
 use App\Http\Requests\Admin\UpdateQuestionRequest;
 use App\Jobs\ImportQuestionsJob;
+use App\Services\ItemAnalysisService;
 use App\Models\Question;
 use App\Models\QuestionOption;
 use App\Services\AuditService;
@@ -38,6 +39,22 @@ class QuestionController extends Controller
 
         if ($request->filled('exam_tag')) {
             $query->whereJsonContains('exam_tags', $request->exam_tag);
+        }
+
+        if ($request->filled('status')) {
+            $query->byStatus($request->status);
+        }
+
+        // Reviewers need to find the broken items, not scroll for them. A
+        // negative discrimination index is the single highest-value filter in
+        // the whole admin: those are the questions whose key is probably wrong.
+        if ($request->boolean('flagged')) {
+            $query->where('stats_sample_size', '>=', Question::MIN_STATS_SAMPLE)
+                  ->where(function ($q) {
+                      $q->where('discrimination_index', '<', 0.15)
+                        ->orWhere('difficulty_index', '>', 0.95)
+                        ->orWhere('difficulty_index', '<', 0.15);
+                  });
         }
 
         if ($request->filled('search')) {
@@ -169,7 +186,13 @@ class QuestionController extends Controller
     {
         $request->validate([
             'file' => ['required', 'file', 'mimes:csv,txt', 'max:10240'], // Max 10MB
+            // Opt-out for a trusted, already-proofed batch. Absent = review queue.
+            'auto_approve' => ['nullable', 'boolean'],
         ]);
+
+        $status = $request->boolean('auto_approve')
+            ? Question::STATUS_APPROVED
+            : Question::STATUS_PENDING;
 
         $file = $request->file('file');
 
@@ -201,11 +224,12 @@ class QuestionController extends Controller
         ], 3600);
 
         // Dispatch queued job
-        ImportQuestionsJob::dispatch($tempPath, $jobUuid, $request->user()->id);
+        ImportQuestionsJob::dispatch($tempPath, $jobUuid, $request->user()->id, $status);
 
         return response()->json([
             'message' => 'Question import has been queued.',
             'job_id' => $jobUuid,
+            'import_status' => $status,
         ]);
     }
 
@@ -223,5 +247,54 @@ class QuestionController extends Controller
         }
 
         return response()->json($status);
+    }
+
+    /**
+     * Move a question through the review workflow.
+     *
+     * Approving is the only transition that lets a question reach a candidate,
+     * and it is recorded with a reviewer and a timestamp so a bad key can be
+     * traced back to who signed it off.
+     */
+    public function review(Request $request, Question $question): JsonResponse
+    {
+        $validated = $request->validate([
+            'status' => ['required', 'string', 'in:' . implode(',', Question::STATUSES)],
+            'review_note' => ['nullable', 'string', 'max:2000'],
+        ]);
+
+        $oldValue = $question->toArray();
+
+        $question->update([
+            'status' => $validated['status'],
+            'review_note' => $validated['review_note'] ?? null,
+            'reviewed_by' => $request->user()->id,
+            'reviewed_at' => now(),
+        ]);
+
+        AuditService::log('question.reviewed', $question, $oldValue, $question->toArray());
+
+        return response()->json([
+            'message' => "Question marked {$validated['status']}.",
+            'question' => $question->fresh('options'),
+        ]);
+    }
+
+    /**
+     * Item analysis for one question, computed live from raw attempt data:
+     * difficulty index, point-biserial discrimination and distractor breakdown.
+     */
+    public function itemAnalysis(Question $question, ItemAnalysisService $service): JsonResponse
+    {
+        $analysis = $service->analyse($question->id);
+
+        if ($analysis === null) {
+            return response()->json([
+                'message' => 'This question has no recorded attempts yet.',
+                'analysis' => null,
+            ]);
+        }
+
+        return response()->json(['analysis' => $analysis]);
     }
 }

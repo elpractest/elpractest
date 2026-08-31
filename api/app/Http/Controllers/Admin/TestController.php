@@ -212,6 +212,30 @@ class TestController extends Controller
             ], 422);
         }
 
+        // Review gate. A question that has not cleared review must not reach a
+        // candidate: a wrong answer key discovered after the fact cannot be
+        // un-marked, it can only be re-scored, and by then the candidate has
+        // already made decisions on a false premise.
+        $unreviewed = [];
+        foreach ($test->sections as $section) {
+            foreach ($section->questions as $question) {
+                if ($question->status !== Question::STATUS_APPROVED || !$question->is_active) {
+                    $unreviewed[] = [
+                        'question_id' => $question->id,
+                        'status' => $question->status,
+                        'is_active' => (bool) $question->is_active,
+                    ];
+                }
+            }
+        }
+
+        if ($unreviewed !== []) {
+            return response()->json([
+                'message' => count($unreviewed) . ' question(s) in this test have not been approved.',
+                'unapproved_questions' => $unreviewed,
+            ], 422);
+        }
+
         $oldValue = $test->toArray();
         $test->update(['is_published' => true]);
 

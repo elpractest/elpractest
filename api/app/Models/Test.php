@@ -25,6 +25,13 @@ class Test extends Model
         'available_from',
         'available_until',
         'created_by',
+        'cutoff_marks',
+        'cutoff_percentage',
+        'shuffle_questions',
+        'shuffle_options',
+        'shift_group',
+        'shift_label',
+        'normalization_method',
     ];
 
     protected function casts(): array
@@ -37,6 +44,10 @@ class Test extends Model
             'is_published' => 'boolean',
             'available_from' => 'datetime',
             'available_until' => 'datetime',
+            'cutoff_marks' => 'decimal:2',
+            'cutoff_percentage' => 'decimal:2',
+            'shuffle_questions' => 'boolean',
+            'shuffle_options' => 'boolean',
         ];
     }
 
@@ -105,5 +116,35 @@ class Test extends Model
     public function isTimed(): bool
     {
         return $this->duration_seconds !== null && $this->duration_seconds > 0;
+    }
+
+    /** Any sectional timer set means the paper runs section-by-section. */
+    public function hasSectionalTiming(): bool
+    {
+        return $this->sections->contains(fn ($s) => $s->hasSectionalTiming());
+    }
+
+    /**
+     * Overall qualifying bar in absolute marks, or null when there is none.
+     * Absolute marks take precedence over the percentage when both are set.
+     */
+    public function overallCutoffMarks(): ?float
+    {
+        if ($this->cutoff_marks !== null) {
+            return (float) $this->cutoff_marks;
+        }
+        if ($this->cutoff_percentage !== null && $this->total_marks !== null) {
+            return round((float) $this->total_marks * (float) $this->cutoff_percentage / 100, 2);
+        }
+        return null;
+    }
+
+    /** Sibling sittings of the same exam, for cross-shift normalisation. */
+    public function shiftSiblings()
+    {
+        if (!$this->shift_group) {
+            return static::query()->whereRaw('1 = 0');
+        }
+        return static::query()->where('shift_group', $this->shift_group);
     }
 }

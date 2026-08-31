@@ -15,7 +15,34 @@ class TestSection extends Model
         'title',
         'sort_order',
         'duration_seconds',
+        'cutoff_marks',
+        'cutoff_percentage',
+        'is_qualifying',
     ];
+
+    protected function casts(): array
+    {
+        return [
+            'cutoff_marks' => 'decimal:2',
+            'cutoff_percentage' => 'decimal:2',
+            'is_qualifying' => 'boolean',
+        ];
+    }
+
+    /**
+     * Sectional bar in absolute marks given the section maximum, or null when
+     * the section has no bar. Absolute marks win over the percentage.
+     */
+    public function cutoffMarksFor(float $sectionMaxMarks): ?float
+    {
+        if ($this->cutoff_marks !== null) {
+            return (float) $this->cutoff_marks;
+        }
+        if ($this->cutoff_percentage !== null) {
+            return round($sectionMaxMarks * (float) $this->cutoff_percentage / 100, 2);
+        }
+        return null;
+    }
 
     public function hasSectionalTiming(): bool
     {

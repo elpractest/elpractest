@@ -1,5 +1,6 @@
 <?php
 
+use App\Http\Controllers\Admin\CohortAnalyticsController;
 use App\Http\Controllers\Admin\QuestionController;
 use App\Http\Controllers\Admin\SettingsController;
 use App\Http\Controllers\Admin\TestController;
@@ -123,14 +124,26 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::middleware(['role:admin|super-admin', '2fa.verified'])->prefix('admin')->group(function () {
 
         // Question bank
-        Route::apiResource('questions', QuestionController::class);
+        // NOTE: the two static `questions/import*` paths are declared BEFORE the
+        // apiResource so `questions/{question}` cannot swallow them.
         Route::post('questions/import', [QuestionController::class, 'import']);
         Route::get('questions/import/{jobId}/status', [QuestionController::class, 'importStatus']);
+        Route::apiResource('questions', QuestionController::class);
+
+        // Review workflow + item analysis (difficulty, discrimination, distractors)
+        Route::post('questions/{question}/review', [QuestionController::class, 'review']);
+        Route::get('questions/{question}/item-analysis', [QuestionController::class, 'itemAnalysis']);
 
         // Test management
         Route::apiResource('tests', TestController::class);
         Route::post('tests/{test}/publish', [TestController::class, 'publish']);
         Route::post('tests/{test}/unpublish', [TestController::class, 'unpublish']);
+
+        // Cohort analytics (owner view) - read-only derivations, no new tables
+        Route::get('batches/{batch}/analytics', [CohortAnalyticsController::class, 'batchAnalytics']);
+        Route::get('batches/{batch}/students-progress', [CohortAnalyticsController::class, 'studentsProgress']);
+        Route::get('tests/{test}/leaderboard', [CohortAnalyticsController::class, 'testLeaderboard']);
+        Route::get('test-series/{series}/leaderboard', [CohortAnalyticsController::class, 'seriesLeaderboard']);
 
         // Course outlines
         Route::apiResource('courses', CourseCRUDController::class);
