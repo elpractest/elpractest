@@ -22,8 +22,14 @@ class PromoBannerCarousel extends StatefulWidget {
 }
 
 class _PromoBannerCarouselState extends State<PromoBannerCarousel> {
-  static const double _height = 168;
-  final PageController _controller = PageController(viewportFraction: 0.92);
+  /// Banner art is authored at 16:9 (1920×1080) — the same ratio the web
+  /// carousel and the course cards use, so one upload crops identically on
+  /// every surface. The height is derived from the real slot width rather than
+  /// pinned, which is what held this at ~2.14:1 before.
+  static const double _ratio = 16 / 9;
+  static const double _viewportFraction = 0.92;
+  static const double _cardGap = 5;
+  final PageController _controller = PageController(viewportFraction: _viewportFraction);
   int _page = 0;
 
   @override
@@ -50,18 +56,27 @@ class _PromoBannerCarouselState extends State<PromoBannerCarousel> {
 
     return Column(
       children: [
-        SizedBox(
-          height: _height,
-          child: PageView.builder(
-            controller: _controller,
-            itemCount: banners.length,
-            onPageChanged: (i) => setState(() => _page = i),
-            padEnds: banners.length > 1,
-            itemBuilder: (context, i) => Padding(
-              padding: EdgeInsets.symmetric(horizontal: banners.length > 1 ? 5 : 0),
-              child: _card(banners[i]),
-            ),
-          ),
+        LayoutBuilder(
+          builder: (context, constraints) {
+            // PageView needs a bounded height, so resolve the card's real width
+            // first (viewport slice minus the inter-card gutter) and take 9/16
+            // of it. Keeps the art at 16:9 on every screen size.
+            final gutter = banners.length > 1 ? _cardGap * 2 : 0.0;
+            final cardWidth = constraints.maxWidth * _viewportFraction - gutter;
+            return SizedBox(
+              height: cardWidth / _ratio,
+              child: PageView.builder(
+                controller: _controller,
+                itemCount: banners.length,
+                onPageChanged: (i) => setState(() => _page = i),
+                padEnds: banners.length > 1,
+                itemBuilder: (context, i) => Padding(
+                  padding: EdgeInsets.symmetric(horizontal: banners.length > 1 ? _cardGap : 0.0),
+                  child: _card(banners[i]),
+                ),
+              ),
+            );
+          },
         ),
         if (banners.length > 1) ...[
           const SizedBox(height: 10),
@@ -106,7 +121,7 @@ class _PromoBannerCarouselState extends State<PromoBannerCarousel> {
         img,
         fit: BoxFit.cover,
         width: double.infinity,
-        height: _height,
+        height: double.infinity,
         errorBuilder: (context, _, __) => gradient,
         loadingBuilder: (context, child, progress) => progress == null ? child : gradient,
       );

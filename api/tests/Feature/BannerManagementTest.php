@@ -60,7 +60,7 @@ class BannerManagementTest extends TestCase
     public function test_super_admin_can_upload_a_banner_image(): void
     {
         $banner = Banner::create(['title' => 'Promo']);
-        $file = UploadedFile::fake()->image('promo.jpg', 1200, 400);
+        $file = UploadedFile::fake()->image('promo.jpg', 1920, 1080);
 
         $response = $this->asSuperAdmin()
             ->postJson("/api/super-admin/banners/{$banner->id}/image", ['image' => $file]);
@@ -95,6 +95,38 @@ class BannerManagementTest extends TestCase
         $this->asSuperAdmin()
             ->postJson("/api/super-admin/banners/{$banner->id}/image", ['image' => $file])
             ->assertStatus(422);
+    }
+
+    /**
+     * Every banner surface (student carousel, Android carousel, admin preview)
+     * renders 16:9, so a differently-shaped upload has to be refused here
+     * rather than silently centre-cropped on the student's home screen.
+     */
+    public function test_image_upload_rejects_a_non_16_9_image(): void
+    {
+        $banner = Banner::create(['title' => 'Promo']);
+
+        $this->asSuperAdmin()
+            ->postJson("/api/super-admin/banners/{$banner->id}/image", [
+                'image' => UploadedFile::fake()->image('square.jpg', 1200, 1200),
+            ])
+            ->assertStatus(422)
+            ->assertJsonValidationErrors('image');
+
+        $this->assertNull($banner->fresh()->image_path);
+    }
+
+    /** Correctly shaped but too small to survive a 2x phone display. */
+    public function test_image_upload_rejects_an_undersized_16_9_image(): void
+    {
+        $banner = Banner::create(['title' => 'Promo']);
+
+        $this->asSuperAdmin()
+            ->postJson("/api/super-admin/banners/{$banner->id}/image", [
+                'image' => UploadedFile::fake()->image('small.jpg', 640, 360),
+            ])
+            ->assertStatus(422)
+            ->assertJsonValidationErrors('image');
     }
 
     public function test_public_endpoint_returns_only_active_banners_in_order(): void

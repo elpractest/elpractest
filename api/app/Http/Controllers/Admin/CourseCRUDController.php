@@ -244,8 +244,17 @@ class CourseCRUDController extends Controller
      */
     public function uploadBanner(Request $request, Course $course): JsonResponse
     {
+        // Same 16:9 contract as the promo banners — this image is rendered in
+        // the marketing course card and the admin preview, both of which are
+        // now 16:9 boxes. See BannerController::uploadImage for why the message
+        // names an exact size.
         $request->validate([
-            'banner' => ['required', 'image', 'max:2048', 'mimes:jpeg,png,webp,gif'],
+            'banner' => [
+                'required', 'image', 'max:2048', 'mimes:jpeg,png,webp,gif',
+                'dimensions:ratio=16/9,min_width=1280',
+            ],
+        ], [
+            'banner.dimensions' => 'The banner must be exactly 16:9 and at least 1280px wide — 1920x1080 is the recommended size.',
         ]);
 
         $oldValue = $course->toArray();

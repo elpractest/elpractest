@@ -27,7 +27,8 @@ class UpdateCourseRequest extends FormRequest
             'syllabus' => ['nullable', 'array'],
             'faq' => ['nullable', 'array'],
             'exam_category' => ['sometimes', 'required', 'string', 'in:SSC,Banking,RRB,UPSC,State PCS'],
-            'thumbnail' => ['nullable', 'image', 'max:2048'],
+            // Kept byte-identical to StoreCourseRequest — see the note there.
+            'thumbnail' => ['nullable', 'image', 'max:2048', 'mimes:jpeg,png,jpg,webp', 'dimensions:ratio=16/9,min_width=640'],
             'sort_order' => ['nullable', 'integer', 'min:0'],
             'is_published' => ['boolean'],
         ];

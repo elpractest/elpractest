@@ -342,7 +342,7 @@ export default function AdminCourses() {
               {/* Course Title Details & Banner Image */}
               <div style={{ borderBottom: '1px solid var(--border-color)', paddingBottom: '20px', display: 'flex', flexDirection: 'column', gap: '20px' }}>
                 {selectedCourse.banner_url ? (
-                  <div style={{ position: 'relative', width: '100%', height: '180px', borderRadius: '8px', overflow: 'hidden', border: '1px solid var(--border-color)' }}>
+                  <div style={{ position: 'relative', width: '100%', aspectRatio: '16 / 9', borderRadius: '8px', overflow: 'hidden', border: '1px solid var(--border-color)' }}>
                     <img src={selectedCourse.banner_url} alt="Course Banner" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
                     <button 
                       onClick={triggerBannerUpload}

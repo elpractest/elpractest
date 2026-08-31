@@ -55,13 +55,16 @@ export default function BannerCarousel({ onDemoCta }) {
           key={b.id}
           onClick={() => (b.demo ? onDemoCta?.() : go(b.cta_url))}
           style={{
-            flex: 'none', width: '296px', height: '150px', borderRadius: '20px', scrollSnapAlign: 'start',
+            flex: 'none', width: '296px', aspectRatio: '16 / 9', borderRadius: '20px', scrollSnapAlign: 'start',
             position: 'relative', overflow: 'hidden', cursor: 'pointer',
             background: b.grad, border: '1px solid var(--line2)',
           }}
         >
+          {/* Full-bleed at 16:9 — the same crop the Android carousel and the
+              course cards get, so one 1920×1080 upload serves every surface.
+              The scrim below keeps the left column legible over the art. */}
           {b.image_url && (
-            <div style={{ position: 'absolute', right: 0, top: 0, bottom: 0, width: '50%', backgroundImage: `url(${b.image_url})`, backgroundSize: 'cover', backgroundPosition: 'center' }} />
+            <div style={{ position: 'absolute', inset: 0, backgroundImage: `url(${b.image_url})`, backgroundSize: 'cover', backgroundPosition: 'center' }} />
           )}
           <div style={{ position: 'absolute', inset: 0, background: `linear-gradient(90deg,${b.scrim} 0%,${b.scrim} 52%,transparent 100%)`, pointerEvents: 'none' }} />
           <div style={{ position: 'absolute', inset: '0 34% 0 0', padding: '18px 16px 18px 20px', display: 'flex', flexDirection: 'column', pointerEvents: 'none' }}>

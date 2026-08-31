@@ -48,7 +48,7 @@ class CourseBannerUploadTest extends TestCase
 
     public function test_admin_can_upload_banner_to_course(): void
     {
-        $file = UploadedFile::fake()->image('banner.jpg', 1200, 400);
+        $file = UploadedFile::fake()->image('banner.jpg', 1920, 1080);
 
         // Act: call upload banner route
         $response = $this->actingAs($this->admin)
@@ -70,7 +70,7 @@ class CourseBannerUploadTest extends TestCase
 
     public function test_super_admin_can_upload_banner_to_any_course(): void
     {
-        $file = UploadedFile::fake()->image('banner.png', 1200, 400);
+        $file = UploadedFile::fake()->image('banner.png', 1920, 1080);
 
         $response = $this->actingAs($this->superAdmin)
             ->withSession(['2fa_verified' => true])
@@ -99,7 +99,7 @@ class CourseBannerUploadTest extends TestCase
         $response->assertStatus(422);
 
         // 2. Too large file (e.g. 5MB)
-        $fileLarge = UploadedFile::fake()->image('large.jpg')->size(5000); // 5000kb
+        $fileLarge = UploadedFile::fake()->image('large.jpg', 1920, 1080)->size(5000); // 5000kb
 
         $response = $this->actingAs($this->admin)
             ->withSession(['2fa_verified' => true])
@@ -108,6 +108,24 @@ class CourseBannerUploadTest extends TestCase
             ]);
 
         $response->assertStatus(422);
+    }
+
+    /**
+     * The course card and the admin preview are both 16:9 boxes, so a banner
+     * of another shape is refused at upload instead of being centre-cropped.
+     */
+    public function test_non_16_9_banner_is_rejected(): void
+    {
+        $response = $this->actingAs($this->admin)
+            ->withSession(['2fa_verified' => true])
+            ->postJson("/api/admin/courses/{$this->course->id}/banner", [
+                'banner' => UploadedFile::fake()->image('tall.jpg', 1080, 1920),
+            ]);
+
+        $response->assertStatus(422)->assertJsonValidationErrors('banner');
+
+        $this->course->refresh();
+        $this->assertNull($this->course->banner_image_path);
     }
 
     public function test_public_courses_api_returns_banner_url(): void

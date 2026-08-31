@@ -78,8 +78,21 @@ class BannerController extends Controller
     /** Upload / replace a banner image. */
     public function uploadImage(Request $request, Banner $banner): JsonResponse
     {
+        // 16:9 is the ratio every banner surface renders at — the student
+        // carousel, the Android carousel and the admin preview. Enforcing it
+        // here rejects a bad crop at upload instead of letting it be discovered
+        // on the student home screen.
+        //
+        // Laravel's ratio check is near-exact (its tolerance is ~1/avg-dimension,
+        // so 1600x901 already fails), which is why the message names a concrete
+        // size rather than asking for "roughly 16:9".
         $request->validate([
-            'image' => ['required', 'image', 'mimes:jpeg,png,jpg,webp,gif', 'max:2048'],
+            'image' => [
+                'required', 'image', 'mimes:jpeg,png,jpg,webp,gif', 'max:2048',
+                'dimensions:ratio=16/9,min_width=1280',
+            ],
+        ], [
+            'image.dimensions' => 'The banner must be exactly 16:9 and at least 1280px wide — 1920x1080 is the recommended size.',
         ]);
 
         $old = $banner->toArray();

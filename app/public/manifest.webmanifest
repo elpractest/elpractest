@@ -1,0 +1,15 @@
+{
+  "name": "Practest",
+  "short_name": "Practest",
+  "description": "Mock tests, CBT practice and all-India rank percentile for SSC, Banking, Railways and UPSC aspirants.",
+  "start_url": "/",
+  "scope": "/",
+  "display": "standalone",
+  "orientation": "portrait",
+  "background_color": "#0b0f1a",
+  "theme_color": "#0b0f1a",
+  "icons": [
+    { "src": "/brand/mark-192.png", "sizes": "192x192", "type": "image/png", "purpose": "any" },
+    { "src": "/brand/mark-512.png", "sizes": "512x512", "type": "image/png", "purpose": "any" }
+  ]
+}

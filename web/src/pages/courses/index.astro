@@ -67,7 +67,7 @@ const apiUrl = import.meta.env.PUBLIC_API_URL || 'http://localhost:8000';
 
         return `
           <div class="glass-panel glass-panel-hover course-card" style="padding: 0; display: flex; flex-direction: column; overflow: hidden;">
-            <div style="position: relative; width: 100%; height: 180px; overflow: hidden; border-bottom: 1px solid var(--border-color);">
+            <div style="position: relative; width: 100%; aspect-ratio: 16 / 9; overflow: hidden; border-bottom: 1px solid var(--border-color);">
               <img src="${course.banner_url || '/images/course-placeholder.svg'}" alt="${escapeHtml(course.title)}" style="width: 100%; height: 100%; object-fit: cover;" />
               <div class="course-badge" style="position: absolute; top: 16px; right: 16px; background: rgba(0, 0, 0, 0.75); color: #fff; border: 1px solid rgba(255, 255, 255, 0.15); border-radius: 4px; font-size: 0.75rem; font-weight: 700; padding: 4px 10px; margin: 0;">${course.exam_category || 'General'}</div>
             </div>

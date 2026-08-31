@@ -24,7 +24,9 @@ class StoreCourseRequest extends FormRequest
             'syllabus' => ['nullable', 'array'],
             'faq' => ['nullable', 'array'],
             'exam_category' => ['required', 'string', 'in:SSC,Banking,RRB,UPSC,State PCS'],
-            'thumbnail' => ['nullable', 'image', 'max:2048'], // Max 2MB
+            // 16:9 so one piece of art crops cleanly into both the thumbnail
+            // and the course banner. Max 2MB.
+            'thumbnail' => ['nullable', 'image', 'max:2048', 'mimes:jpeg,png,jpg,webp', 'dimensions:ratio=16/9,min_width=640'],
             'slug' => ['nullable', 'string', 'max:255', 'unique:courses,slug'],
             'sort_order' => ['nullable', 'integer', 'min:0'],
             'is_published' => ['boolean'],

@@ -308,6 +308,20 @@ const faqSchema = (course?.faq && Array.isArray(course.faq) && course.faq.length
   .course-header-banner {
     padding: 40px;
     position: relative;
+    /* Deliberately NOT a hard 16:9. The banner here is a background under a
+       ~95%-opaque gradient — texture behind the title, not the subject — and a
+       true 16:9 box at container width would be ~675px of mostly empty dark.
+       A min-height gives it a predictable floor instead, so the panel no longer
+       changes height purely with the length of the course title. The 16:9 the
+       art is authored at is honoured where the image is actually seen: the
+       course cards and the admin preview. */
+    /* Scales with the viewport so it doesn't letterbox on a wide monitor, and
+       still can't collapse on a short title. No align-items: children keep the
+       full-width stretch they had as blocks. */
+    min-height: clamp(240px, 26vw, 420px);
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
     background: linear-gradient(135deg, rgba(17, 25, 40, 0.9) 0%, rgba(99, 102, 241, 0.08) 100%);
   }
 

@@ -26,7 +26,7 @@ function BannerRow({ banner, onEdit, onDelete, onUploaded }) {
       });
       onUploaded(banner.id, res.data.image_url);
     } catch (err) {
-      alert(err.response?.data?.message || 'Image upload failed (must be an image ≤ 2MB).');
+      alert(err.response?.data?.message || 'Image upload failed. Use a 16:9 image (1920×1080) under 2MB.');
     } finally {
       setBusy(false);
       if (fileRef.current) fileRef.current.value = '';
@@ -35,7 +35,9 @@ function BannerRow({ banner, onEdit, onDelete, onUploaded }) {
 
   return (
     <div className="glass-panel" style={{ padding: '14px', display: 'flex', gap: '14px', alignItems: 'center', opacity: banner.is_active ? 1 : 0.6 }}>
-      <div style={{ width: '120px', height: '68px', borderRadius: '10px', flex: 'none', overflow: 'hidden', background: banner.image_url ? `center/cover url(${banner.image_url})` : 'linear-gradient(120deg,#12203A,#0B1830)', display: 'grid', placeItems: 'center' }}>
+      {/* 16:9, matching what students actually see — a preview at any other
+          ratio would show a crop the student app never renders. */}
+      <div style={{ width: '120px', aspectRatio: '16 / 9', borderRadius: '10px', flex: 'none', overflow: 'hidden', background: banner.image_url ? `center/cover url(${banner.image_url})` : 'linear-gradient(120deg,#12203A,#0B1830)', display: 'grid', placeItems: 'center' }}>
         {!banner.image_url && <Icon name="upload" size={18} style={{ color: 'rgba(255,255,255,.6)' }} />}
       </div>
       <div style={{ flex: 1, minWidth: 0 }}>
@@ -154,7 +156,7 @@ export default function SuperAdminBanners() {
             <button className="btn-primary" onClick={save} disabled={saving}>{saving ? 'Saving…' : 'Save banner'}</button>
             <button className="btn-secondary" onClick={() => { setForm(null); setError(''); }}>Cancel</button>
           </div>
-          {form.id && <p style={{ margin: 0, fontSize: '0.78rem', color: 'var(--text-secondary)' }}>Tip: save first, then use the “Image” button on the row to upload/replace the picture.</p>}
+          {form.id && <p style={{ margin: 0, fontSize: '0.78rem', color: 'var(--text-secondary)' }}>Tip: save first, then use the “Image” button on the row to upload/replace the picture. Use a <strong>16:9 image — 1920×1080</strong>, under 2MB. Keep the subject on the right; the left third sits under the text.</p>}
         </div>
       )}
 
