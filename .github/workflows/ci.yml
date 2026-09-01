@@ -1,34 +1,50 @@
 name: CI
 
 # ---------------------------------------------------------------------------
-# Deploy model: COOLIFY (Docker). The old cPanel tarball-upload + SSH deploy is
-# retired. On a green push to deploy/coolify (the deploy branch), this workflow
-# asks Coolify to redeploy; the Coolify host builds the images from
-# docker-compose.coolify.yml (api, worker, app, web) and rolls them out behind
-# Traefik. api-tests remains the gate.
+# Deploy model: PROMOTION BRANCH. No deploy credential exists anywhere in CI.
+#
+#   push to `main` → api-tests → (only if green) this workflow fast-forwards
+#   `deploy/coolify` to that exact commit → Coolify's GitHub App webhook sees
+#   the branch move and rebuilds api/worker/app/web behind Traefik.
+#
+# So `main` is the trunk you push to, and **`deploy/coolify` is a release
+# pointer that only this workflow moves**. The gate is structural: the branch
+# Coolify watches cannot advance unless the tests passed, because nothing else
+# advances it. Coolify's own auto-deploy stays ON — that is what makes the
+# promotion take effect, and it is safe precisely because the branch is CI-owned.
+#
+# Why not have CI call Coolify's deploy API instead? That needs a Coolify API
+# token in repo secrets. This needs no secret at all — the promotion push uses
+# the automatic GITHUB_TOKEN. (The previous model did call that API, and its
+# three COOLIFY_* secrets were never actually set, so the job logged "skipping"
+# and exited green for months while Coolify's webhook did the real, UNGATED
+# deploy. A skip-when-unconfigured branch in a deploy job hides exactly that, so
+# this one has none: if the promotion cannot happen, the job goes red.)
+#
+# The promotion push is deliberately NOT --force. If `deploy/coolify` ever holds
+# a commit `main` does not, GitHub rejects the push and this job fails loudly
+# instead of discarding it. Fix that by merging it back into main, never by
+# forcing.
 #
 # MariaDB 10.6 (NOT MySQL 8) matches production: migrations that pass on
 # SQLite/MySQL can still fail on MariaDB (the ->after() gotcha), and this job is
 # the gate that catches that.
 #
-# Required repo secrets for the deploy job (set after the Coolify app exists):
-#   COOLIFY_URL       base URL of the Coolify instance, no trailing slash
-#   COOLIFY_TOKEN     a Coolify API token (sent as Bearer)
-#   COOLIFY_APP_UUID  the Practest compose application's resource UUID
-# Until those three are set the deploy step skips cleanly (green, not red).
-#
-# Two Coolify-side settings must also match this model:
-#   1. The Coolify app's tracked git branch must be `deploy/coolify` (it builds
-#      from its own configured branch, regardless of what triggered the deploy).
-#   2. Coolify's own auto-deploy-on-push must stay OFF, so this test gate is the
-#      only path to production.
+# Coolify-side settings this model depends on:
+#   1. The Coolify app's tracked git branch must stay `deploy/coolify` (it
+#      builds its own configured branch, whatever triggered the deploy).
+#   2. A direct push to `deploy/coolify` bypasses the gate entirely — protect
+#      that branch so only this workflow can move it.
 # ---------------------------------------------------------------------------
 
 on:
   push:
-    branches: [deploy/coolify, main, develop]
+    # deploy/coolify is listed so a direct (gate-bypassing) push still gets
+    # tested and is visibly attributable. CI's own promotion push uses
+    # GITHUB_TOKEN, which by design does not trigger a further workflow run.
+    branches: [main, develop, deploy/coolify]
   pull_request:
-    branches: [deploy/coolify, main]
+    branches: [main, deploy/coolify]
   workflow_dispatch:
 
 concurrency:
@@ -104,29 +120,27 @@ jobs:
       - name: Run tests
         run: php artisan test --env=testing
 
-  deploy:
-    name: Trigger Coolify deploy
+  promote:
+    name: Promote main → deploy/coolify
     needs: [api-tests]
-    if: github.ref == 'refs/heads/deploy/coolify' && (github.event_name == 'push' || github.event_name == 'workflow_dispatch')
+    if: github.ref == 'refs/heads/main' && (github.event_name == 'push' || github.event_name == 'workflow_dispatch')
     runs-on: ubuntu-latest
-    env:
-      COOLIFY_URL: ${{ secrets.COOLIFY_URL }}
-      COOLIFY_TOKEN: ${{ secrets.COOLIFY_TOKEN }}
-      COOLIFY_APP_UUID: ${{ secrets.COOLIFY_APP_UUID }}
+    permissions:
+      # The one privilege this workflow needs: move the release pointer.
+      contents: write
     steps:
-      - name: Ask Coolify to redeploy
+      - uses: actions/checkout@v4
+        with:
+          # Full history: pushing a ref from a shallow clone can be refused with
+          # "shallow update not allowed". checkout also persists GITHUB_TOKEN as
+          # the credential, which is what authorises the push below.
+          fetch-depth: 0
+
+      - name: Fast-forward deploy/coolify to the tested commit
         run: |
           set -euo pipefail
-          # Skip cleanly (green) until the three secrets are configured, so this
-          # job never red-Xs a push before auto-deploy is wired up.
-          if [ -z "${COOLIFY_URL}" ] || [ -z "${COOLIFY_TOKEN}" ] || [ -z "${COOLIFY_APP_UUID}" ]; then
-            echo "Coolify secrets not set — skipping deploy trigger."
-            exit 0
-          fi
-          code=$(curl -sS -o /tmp/resp -w '%{http_code}' -X POST \
-            "${COOLIFY_URL}/api/v1/deploy?uuid=${COOLIFY_APP_UUID}&force=false" \
-            -H "Authorization: Bearer ${COOLIFY_TOKEN}")
-          echo "Coolify responded: $code"
-          cat /tmp/resp || true
-          echo
-          [ "$code" = "200" ] || { echo "::error::Coolify deploy trigger failed (HTTP $code)"; exit 1; }
+          # Push the exact SHA the tests ran against — not "main", which could
+          # have moved while the suite was running.
+          echo "Promoting ${GITHUB_SHA} to deploy/coolify"
+          git push origin "${GITHUB_SHA}:refs/heads/deploy/coolify"
+          echo "Promoted. Coolify's webhook now rebuilds from deploy/coolify."
