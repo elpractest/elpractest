@@ -89,6 +89,23 @@ return Application::configure(basePath: dirname(__DIR__))
             return Limit::perMinute(60)->by($request->user()?->id ?: $request->ip());
         });
 
+        // Starting a test: 10/min per student.
+        //
+        // Deliberately tighter than the general 60/min. This is the most
+        // expensive student write path (a session plus one row per question),
+        // and on a scheduled mock every candidate hits it inside the same
+        // couple of minutes. A legitimate candidate calls it once — an
+        // in-progress test resumes rather than starting a second session — so
+        // 10 leaves plenty of room for a flaky connection and retries while
+        // stopping one stuck client from hammering the spike.
+        RateLimiter::for('test-start', function (Request $request) {
+            return Limit::perMinute(10)->by($request->user()?->id ?: $request->ip())->response(function () {
+                return response()->json([
+                    'message' => 'Too many attempts to start a test. Please wait a moment and try again.',
+                ], 429);
+            });
+        });
+
         // Vajini chat: 20/min per student. Each request is an OpenAI call, so
         // this caps runaway cost from a hammered composer without hurting a
         // normal back-and-forth.

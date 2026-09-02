@@ -88,8 +88,12 @@ class TestTakingController extends Controller
         }
 
         // 3. Start new session
-        $session = DB::transaction(function () use ($user, $test) {
-            $sections = $test->sections()->with('questions.options')->orderBy('sort_order')->get();
+        $sections = null;
+        $session = DB::transaction(function () use ($user, $test, &$sections) {
+            // `questions.passage` is eager-loaded here as well as options: the
+            // response below renders passages, and without it each question
+            // would lazy-load its own — trading 4 queries for one per question.
+            $sections = $test->sections()->with(['questions.options', 'questions.passage'])->orderBy('sort_order')->get();
 
             // Draw THIS candidate's paper order once, and persist it. It has to be
             // stored rather than recomputed per request: the palette, a resume
@@ -110,20 +114,46 @@ class TestTakingController extends Controller
 
             // Pre-create every answer row up front, so saving an answer is always
             // an UPDATE and the palette can report "not visited" from row one.
+            //
+            // ONE batched insert, not one per question. A scheduled mock is a
+            // synchronised spike — every candidate presses Start within the same
+            // couple of minutes — and per-row creates made this endpoint cost
+            // ~1 query per question (112 for a 100-question paper, i.e. 224,000
+            // queries for a 2,000-candidate mock). Batched it is ~13 regardless
+            // of paper length. Timestamps are set explicitly because a plain
+            // insert() bypasses the model's automatic ones.
+            $now = now();
+            $rows = [];
             foreach ($sections as $section) {
                 foreach ($section->questions as $question) {
-                    TestAnswer::create([
+                    $rows[] = [
                         'test_session_id' => $session->id,
                         'question_id' => $question->id,
                         'is_marked_for_review' => false,
                         'is_visited' => false,
                         'time_spent_seconds' => 0,
-                    ]);
+                        'created_at' => $now,
+                        'updated_at' => $now,
+                    ];
+                }
+            }
+
+            if ($rows !== []) {
+                // Chunked so a very long paper cannot exceed max_allowed_packet.
+                foreach (array_chunk($rows, 500) as $chunk) {
+                    TestAnswer::insert($chunk);
                 }
             }
 
             return $session;
         });
+
+        // Hand the paper we just loaded straight to the response instead of
+        // letting it re-query tests + sections + questions + options a second
+        // time — on a synchronised mock start that doubled the heaviest reads
+        // in the whole request for no new information.
+        $test->setRelation('sections', $sections);
+        $session->setRelation('test', $test);
 
         return $this->sessionStateResponse($session, 'Test started successfully.');
     }
@@ -508,7 +538,10 @@ class TestTakingController extends Controller
      */
     private function sessionStateResponse(TestSession $session, string $message): JsonResponse
     {
-        $session->load('test.sections.questions.options', 'test.sections.questions.passage');
+        // loadMissing, not load: `start()` has already loaded the whole paper
+        // and hands it over, so this re-queries nothing there. `resume()` passes
+        // nothing, so it still loads everything it needs.
+        $session->loadMissing('test.sections.questions.options', 'test.sections.questions.passage');
 
         $questionOrder = $session->question_order ?? [];
         $optionOrder = $session->option_order ?? [];

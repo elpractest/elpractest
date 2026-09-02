@@ -264,7 +264,9 @@ Route::middleware('auth:sanctum')->group(function () {
 
         // Test taking
         Route::get('tests', [TestTakingController::class, 'availableTests']);
-        Route::post('tests/{test}/start', [TestTakingController::class, 'start']);
+        // Tighter than the global 60/min — see the 'test-start' limiter.
+        Route::post('tests/{test}/start', [TestTakingController::class, 'start'])
+            ->middleware('throttle:test-start');
         Route::get('tests/sessions/{session}', [TestTakingController::class, 'resume']);
         Route::put('tests/sessions/{session}/answers/{question}', [TestTakingController::class, 'saveAnswer']);
         Route::put('tests/sessions/{session}/answers/{question}/review', [TestTakingController::class, 'toggleReview']);
