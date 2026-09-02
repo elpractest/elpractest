@@ -106,6 +106,23 @@ class User extends Authenticatable implements MustVerifyEmail
         return $this->deviceTokens()->pluck('token')->all();
     }
 
+    /**
+     * Route the WhatsApp channel to this user's number.
+     *
+     * VERIFIED numbers only. An unverified number is just something somebody
+     * typed — it may well belong to a stranger, and messaging it would be both
+     * a privacy leak and money spent reaching the wrong person. Null skips the
+     * channel entirely (see FcmNotification::via()).
+     */
+    public function routeNotificationForWhatsApp(): ?string
+    {
+        if ($this->phone_verified_at === null || empty($this->phone)) {
+            return null;
+        }
+
+        return $this->phone;
+    }
+
     public function enrollments(): HasMany
     {
         return $this->hasMany(Enrollment::class);

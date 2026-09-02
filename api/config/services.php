@@ -65,12 +65,36 @@ return [
         'project_id' => env('FIREBASE_PROJECT_ID'),
     ],
 
-    // ── MSG91 OTP ──────────────────────────────────────────────────
+    // ── MSG91 OTP + WhatsApp ───────────────────────────────────────
 
     'msg91' => [
         'auth_key' => env('MSG91_AUTH_KEY'),
         'template_id' => env('MSG91_TEMPLATE_ID'),
         'sender_id' => env('MSG91_SENDER_ID', 'PRACTEST'),
+
+        // WhatsApp Business, on the same MSG91 account as the OTP above.
+        //
+        // Template NAMES, not text: WhatsApp only permits pre-approved
+        // templates for business-initiated messages, and the approved name
+        // lives in the institute's own Meta account — so it is configured,
+        // never hard-coded. A blank name skips that one message; a blank
+        // integrated_number makes the whole channel inert, so this deploys
+        // safely long before Meta approval comes through.
+        //
+        // Body variables each template must declare, in order:
+        //   activation_approved : {course}
+        //   result_ready        : {test}, {score}, {total}
+        //   test_reminder       : {test}, {minutes}
+        'whatsapp' => [
+            'integrated_number' => env('MSG91_WHATSAPP_NUMBER'),
+            'language' => env('MSG91_WHATSAPP_LANGUAGE', 'en'),
+            'country_code' => env('MSG91_WHATSAPP_COUNTRY_CODE', '91'),
+            'templates' => [
+                'activation_approved' => env('MSG91_WA_TEMPLATE_ACTIVATION', ''),
+                'result_ready' => env('MSG91_WA_TEMPLATE_RESULT', ''),
+                'test_reminder' => env('MSG91_WA_TEMPLATE_REMINDER', ''),
+            ],
+        ],
     ],
 
     // ── Razorpay (behind feature toggle) ───────────────────────────

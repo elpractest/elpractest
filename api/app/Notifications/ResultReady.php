@@ -13,10 +13,16 @@ class ResultReady extends FcmNotification
     ) {
     }
 
+    /** Trailing zeros make a score read like a machine wrote it. */
+    private function trim(float $value): string
+    {
+        return rtrim(rtrim(number_format($value, 2, '.', ''), '0'), '.');
+    }
+
     protected function payload(): array
     {
-        $score = rtrim(rtrim(number_format($this->score, 2, '.', ''), '0'), '.');
-        $total = rtrim(rtrim(number_format($this->total, 2, '.', ''), '0'), '.');
+        $score = $this->trim($this->score);
+        $total = $this->trim($this->total);
 
         return [
             'type' => 'result',
@@ -25,6 +31,19 @@ class ResultReady extends FcmNotification
             'hue' => 'green',
             'icon' => 'check-circle',
             'route' => "/tests/{$this->sessionId}/result",
+        ];
+    }
+
+    /**
+     * Worth a WhatsApp: the score is the thing a candidate actually waits for
+     * after sitting a mock, and it is what pulls them back in to review the
+     * analytics. See FcmNotification::via() for why this is opt-in.
+     */
+    public function toWhatsApp(object $notifiable): array
+    {
+        return [
+            'template' => config('services.msg91.whatsapp.templates.result_ready'),
+            'variables' => [$this->testTitle, $this->trim($this->score), $this->trim($this->total)],
         ];
     }
 }

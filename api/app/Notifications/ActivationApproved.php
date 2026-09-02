@@ -25,4 +25,17 @@ class ActivationApproved extends FcmNotification
             'route' => "/courses/{$this->courseId}/outline",
         ];
     }
+
+    /**
+     * Worth a WhatsApp: the candidate has been waiting on a human to check
+     * their payment proof, and until this lands they cannot use what they paid
+     * for. See FcmNotification::via() for why this is opt-in per notification.
+     */
+    public function toWhatsApp(object $notifiable): array
+    {
+        return [
+            'template' => config('services.msg91.whatsapp.templates.activation_approved'),
+            'variables' => [$this->courseTitle],
+        ];
+    }
 }
