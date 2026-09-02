@@ -77,6 +77,14 @@ class PaymentController extends Controller
                 ], 422);
             }
 
+            // Per-user cap, checked separately so the student is told which
+            // limit they hit rather than a blanket "no longer valid".
+            if (!$coupon->isValidForUser($user->id)) {
+                return response()->json([
+                    'message' => 'You have already used this coupon.',
+                ], 422);
+            }
+
             $discount = $coupon->calculateDiscount($price);
         }
 
@@ -184,6 +192,13 @@ class PaymentController extends Controller
             return response()->json([
                 'valid' => false,
                 'message' => 'This coupon is no longer valid.',
+            ], 422);
+        }
+
+        if (!$coupon->isValidForUser($request->user()->id)) {
+            return response()->json([
+                'valid' => false,
+                'message' => 'You have already used this coupon.',
             ], 422);
         }
 

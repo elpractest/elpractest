@@ -20,6 +20,7 @@ export default function Profile({ user, onLogout }) {
     { label: t('profile.testSeries'), hue: 'gold', icon: 'target', to: '/student/test-series' },
     { label: t('profile.redeem'), hue: 'blue', icon: 'key', to: '/dashboard' },
     { label: t('profile.study'), hue: 'violet', icon: 'book-open', to: '/study' },
+    { label: t('profile.receipts'), hue: 'sky', icon: 'file', to: '/receipts' },
     { label: t('profile.help'), hue: 'sky', icon: 'help-circle', todo: true },
     { label: t('profile.settings'), hue: 'neutral', icon: 'settings', todo: true },
   ];

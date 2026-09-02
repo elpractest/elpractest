@@ -290,7 +290,7 @@ export default function Dashboard({ user }) {
         <ActivationModal user={user} onClose={() => setShowActivationModal(false)} onSuccess={handleEnrolled} />
       )}
       {checkoutBatch && (
-        <StudentCheckout batch={checkoutBatch} onClose={() => setCheckoutBatch(null)} onEnrolled={handleEnrolled} />
+        <StudentCheckout batch={checkoutBatch} user={user} onClose={() => setCheckoutBatch(null)} onEnrolled={handleEnrolled} />
       )}
     </div>
   );

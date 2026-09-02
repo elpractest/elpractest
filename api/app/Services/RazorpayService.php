@@ -35,6 +35,26 @@ class RazorpayService
     }
 
     /**
+     * Refund a captured payment, in full or in part.
+     *
+     * Razorpay is the source of truth: this only asks for the refund. The
+     * local payment/enrolment state is settled by the caller and confirmed
+     * again by the `refund.processed` webhook, so a refund initiated in the
+     * Razorpay dashboard lands in exactly the same place as one initiated here.
+     *
+     * @param  int|null  $amountPaise  null refunds the full captured amount.
+     */
+    public function refund(string $razorpayPaymentId, ?int $amountPaise = null): array
+    {
+        $attributes = $amountPaise !== null ? ['amount' => $amountPaise] : [];
+
+        return $this->api->payment
+            ->fetch($razorpayPaymentId)
+            ->refund($attributes)
+            ->toArray();
+    }
+
+    /**
      * Verifies the signature returned by Razorpay Checkout's client-side
      * handler callback.
      *

@@ -16,11 +16,16 @@ use Symfony\Component\HttpFoundation\Response;
  * same names here just produces duplicate/conflicting headers rather than
  * overriding them. So this middleware owns only the CSP.
  *
- * The API only ever returns JSON (or redirects/files), never a rendered HTML
- * document, so a maximally-tight CSP is safe: `default-src 'none'` +
- * `frame-ancestors 'none'` means even if a response were somehow interpreted
- * as a document it can load nothing and be framed nowhere. frame-ancestors is
- * the authoritative anti-framing control regardless of the nginx SAMEORIGIN.
+ * The API returns JSON (or redirects/files) almost everywhere, so a
+ * maximally-tight CSP is safe: `default-src 'none'` + `frame-ancestors 'none'`
+ * means even if a response were somehow interpreted as a document it can load
+ * nothing and be framed nowhere. frame-ancestors is the authoritative
+ * anti-framing control regardless of the nginx SAMEORIGIN.
+ *
+ * The one exception is the printable invoice (Student\InvoiceController::show),
+ * which is a real HTML document and needs its own styles. It sets its own,
+ * still-strict nonce-based policy — hence the `has()` check below, which lets a
+ * route opt out deliberately instead of this loosening the default for everyone.
  */
 class SecurityHeaders
 {

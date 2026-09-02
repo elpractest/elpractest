@@ -32,6 +32,13 @@ export default function AdminEnrollments() {
   const [paymentsLastPage, setPaymentsLastPage] = useState(1);
   const [loadingPayments, setLoadingPayments] = useState(false);
 
+  // Refund flow — always behind a confirmation, since it moves real money and
+  // (for a full refund) takes the student's access away.
+  const [refundTarget, setRefundTarget] = useState(null);
+  const [refundAmount, setRefundAmount] = useState('');
+  const [refundReason, setRefundReason] = useState('');
+  const [refunding, setRefunding] = useState(false);
+
   // Fetch all courses on mount
   const fetchCourses = async () => {
     try {
@@ -89,6 +96,31 @@ export default function AdminEnrollments() {
       setError('Failed to fetch payment history.');
     } finally {
       setLoadingPayments(false);
+    }
+  };
+
+  // Raise a refund with Razorpay. A blank amount means the full captured
+  // amount; a smaller amount is a partial refund, which keeps the student's
+  // access (they still paid for part of the course).
+  const submitRefund = async () => {
+    if (!refundTarget) return;
+    setRefunding(true);
+    setError('');
+    try {
+      const payload = {};
+      if (refundAmount !== '') payload.amount = Math.round(parseFloat(refundAmount) * 100);
+      if (refundReason.trim()) payload.reason = refundReason.trim();
+
+      const res = await api.post(`/api/admin/payments/${refundTarget.id}/refund`, payload);
+      setSuccess(res.data.message || 'Refund raised.');
+      setRefundTarget(null);
+      setRefundAmount('');
+      setRefundReason('');
+      fetchPayments(paymentsPage);
+    } catch (err) {
+      setError(err.response?.data?.message || 'Refund failed.');
+    } finally {
+      setRefunding(false);
     }
   };
 
@@ -492,17 +524,19 @@ export default function AdminEnrollments() {
                 <th style={{ padding: '12px 16px' }}>Amount</th>
                 <th style={{ padding: '12px 16px' }}>Coupon</th>
                 <th style={{ padding: '12px 16px' }}>Status</th>
+                <th style={{ padding: '12px 16px' }}>Invoice</th>
                 <th style={{ padding: '12px 16px' }}>Date</th>
+                <th style={{ padding: '12px 16px', textAlign: 'right' }}>Actions</th>
               </tr>
             </thead>
             <tbody>
               {loadingPayments ? (
                 <tr>
-                  <td colSpan={7} style={{ textAlign: 'center', padding: '40px', color: 'var(--text-secondary)' }}>Loading transactions...</td>
+                  <td colSpan={9} style={{ textAlign: 'center', padding: '40px', color: 'var(--text-secondary)' }}>Loading transactions...</td>
                 </tr>
               ) : payments.length === 0 ? (
                 <tr>
-                  <td colSpan={7} style={{ textAlign: 'center', padding: '40px', color: 'var(--text-secondary)' }}>No payment records found.</td>
+                  <td colSpan={9} style={{ textAlign: 'center', padding: '40px', color: 'var(--text-secondary)' }}>No payment records found.</td>
                 </tr>
               ) : (
                 payments.map((p) => (
@@ -545,8 +579,30 @@ export default function AdminEnrollments() {
                         {p.status}
                       </span>
                     </td>
+                    <td style={{ padding: '16px', fontSize: '0.8rem' }}>
+                      {p.invoice ? (
+                        <span title={p.invoice.is_tax_invoice ? 'Tax invoice' : 'Payment receipt'} style={{ color: 'var(--text-secondary)' }}>
+                          {p.invoice.invoice_number}
+                        </span>
+                      ) : (
+                        <span style={{ color: 'var(--text-secondary)' }}>—</span>
+                      )}
+                    </td>
                     <td style={{ padding: '16px', color: 'var(--text-secondary)' }}>
                       {new Date(p.created_at).toLocaleString()}
+                    </td>
+                    <td style={{ padding: '16px', textAlign: 'right' }}>
+                      {p.status === 'paid' && p.razorpay_payment_id ? (
+                        <button
+                          onClick={() => setRefundTarget(p)}
+                          className="btn-secondary"
+                          style={{ padding: '4px 12px', fontSize: '0.78rem' }}
+                        >
+                          Refund
+                        </button>
+                      ) : (
+                        <span style={{ color: 'var(--text-secondary)', fontSize: '0.8rem' }}>—</span>
+                      )}
                     </td>
                   </tr>
                 ))
@@ -793,6 +849,60 @@ export default function AdminEnrollments() {
                 <button type="submit" className="btn-primary" style={{ padding: '8px 20px', fontSize: '0.9rem' }} disabled={!selectedStudent}>Enroll</button>
               </div>
             </form>
+          </div>
+        </div>
+      )}
+
+      {/* Refund confirmation */}
+      {refundTarget && (
+        <div style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, background: 'var(--overlay)', display: 'flex', justifyContent: 'center', alignItems: 'center', zIndex: 1100, padding: '20px' }}>
+          <div className="glass-panel" style={{ width: '100%', maxWidth: '460px', padding: '26px', display: 'flex', flexDirection: 'column', gap: '16px' }}>
+            <h3 style={{ margin: 0, fontWeight: 800, fontSize: '1.15rem' }}>Refund this payment?</h3>
+
+            <div style={{ fontSize: '0.88rem', color: 'var(--text-secondary)', lineHeight: 1.55 }}>
+              <div><strong style={{ color: 'var(--text-primary)' }}>{refundTarget.user?.name}</strong> — {refundTarget.batch?.course?.title}</div>
+              <div>Captured: <strong style={{ color: 'var(--text-primary)' }}>₹{refundTarget.amount / 100}</strong></div>
+            </div>
+
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
+              <label style={{ fontSize: '0.8rem', color: 'var(--text-secondary)' }}>Amount to refund (₹)</label>
+              <input
+                type="number" step="0.01" min="0.01" max={refundTarget.amount / 100}
+                value={refundAmount}
+                onChange={(e) => setRefundAmount(e.target.value)}
+                placeholder={`Full refund — ₹${refundTarget.amount / 100}`}
+                className="form-input" style={{ padding: '8px 12px' }}
+              />
+              <span style={{ fontSize: '0.75rem', color: 'var(--text-secondary)' }}>
+                Leave blank to refund in full. A full refund also withdraws course access; a partial refund leaves it in place.
+              </span>
+            </div>
+
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
+              <label style={{ fontSize: '0.8rem', color: 'var(--text-secondary)' }}>Reason (recorded in the audit log)</label>
+              <input
+                type="text" value={refundReason}
+                onChange={(e) => setRefundReason(e.target.value)}
+                placeholder="e.g. Duplicate payment"
+                className="form-input" style={{ padding: '8px 12px' }}
+              />
+            </div>
+
+            <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '12px', marginTop: '4px' }}>
+              <button
+                type="button" disabled={refunding}
+                onClick={() => { setRefundTarget(null); setRefundAmount(''); setRefundReason(''); }}
+                className="btn-secondary" style={{ padding: '8px 16px', fontSize: '0.9rem' }}
+              >
+                Cancel
+              </button>
+              <button
+                type="button" onClick={submitRefund} disabled={refunding}
+                className="btn-primary" style={{ padding: '8px 20px', fontSize: '0.9rem' }}
+              >
+                {refunding ? 'Refunding…' : 'Refund'}
+              </button>
+            </div>
           </div>
         </div>
       )}

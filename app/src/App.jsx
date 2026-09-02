@@ -15,6 +15,7 @@ import ResetPassword from './pages/ResetPassword';
 import CourseOutline from './pages/CourseOutline';
 import LessonPlayer from './pages/LessonPlayer';
 import ResultsHistory from './pages/ResultsHistory';
+import Receipts from './pages/Receipts';
 import Dashboard from './pages/Dashboard';
 import TestTaking from './pages/TestTaking';
 import TestResult from './pages/TestResult';
@@ -190,6 +191,12 @@ function AppContent({ user, setUser, loading }) {
         <Route path="/results" element={
           <StudentGuard user={user} loading={loading}>
             {shell(<ResultsHistory />)}
+          </StudentGuard>
+        } />
+
+        <Route path="/receipts" element={
+          <StudentGuard user={user} loading={loading}>
+            {shell(<Receipts />)}
           </StudentGuard>
         } />
 

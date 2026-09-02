@@ -12,6 +12,8 @@ import { trackEvent } from "../lib/analytics";
  *   batch      { id, name, price_paise, course: { title } }
  *   onClose    () => void
  *   onEnrolled (result) => void   // called after a successful enrollment
+ *   user       optional { name, email, phone } — prefills Razorpay checkout.
+ *              Omitted is fine; Razorpay just asks for the details itself.
  */
 
 function formatRupees(paise) {
@@ -22,7 +24,7 @@ function formatRupees(paise) {
   });
 }
 
-export default function StudentCheckout({ batch, onClose, onEnrolled }) {
+export default function StudentCheckout({ batch, onClose, onEnrolled, user }) {
   const [couponCode, setCouponCode] = useState("");
 
   // Fire GTM InitiateCheckout on modal mount
@@ -106,6 +108,27 @@ export default function StudentCheckout({ batch, onClose, onEnrolled }) {
         currency: order.currency,
         name: batch.course?.title || batch.name,
         description: `Enrollment — ${batch.name}`,
+        // UPI is the default rail in India — most students expect to scan and
+        // pay, not type a card number. Surfacing it as the first block (rather
+        // than behind "Other payment methods") measurably shortens checkout.
+        // Cards/netbanking/wallets still appear underneath via show_default_blocks.
+        config: {
+          display: {
+            blocks: {
+              upi: {
+                name: "Pay by UPI",
+                instruments: [{ method: "upi" }],
+              },
+            },
+            sequence: ["block.upi"],
+            preferences: { show_default_blocks: true },
+          },
+        },
+        prefill: {
+          name: user?.name || undefined,
+          email: user?.email || undefined,
+          contact: user?.phone || undefined,
+        },
         handler: async (response) => {
           try {
             const verifyRes = await api.post("/api/student/checkout/verify", {
@@ -151,7 +174,7 @@ export default function StudentCheckout({ batch, onClose, onEnrolled }) {
       setError(err.response?.data?.message || err.message || "Could not start checkout. Please try again.");
       setPayLoading(false);
     }
-  }, [batch, couponState, couponCode, onEnrolled]);
+  }, [batch, couponState, couponCode, onEnrolled, user]);
 
   if (status === "success") {
     return (

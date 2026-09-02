@@ -35,13 +35,17 @@ class PaymentEnrollmentService
      * one commits, then sees status = 'paid' and returns immediately
      * instead of creating a second enrollment.
      *
-     * @return array{payment: Payment, enrollment: ?Enrollment, already_processed: bool}
+     * @return array{payment: Payment, enrollment: ?Enrollment, already_processed: bool, invoice?: ?\App\Models\Invoice}
      *
      * @throws BatchCapacityExceededException
      */
+    public function __construct(
+        protected InvoiceService $invoices,
+    ) {}
+
     public function confirmAndEnroll(int $paymentId, ?string $razorpayPaymentId = null, ?string $razorpaySignature = null): array
     {
-        return DB::transaction(function () use ($paymentId, $razorpayPaymentId, $razorpaySignature) {
+        $result = DB::transaction(function () use ($paymentId, $razorpayPaymentId, $razorpaySignature) {
             $payment = Payment::where('id', $paymentId)->lockForUpdate()->firstOrFail();
 
             if ($payment->status === 'paid') {
@@ -79,7 +83,26 @@ class PaymentEnrollmentService
             $payment->save();
 
             if ($payment->coupon_id) {
-                Coupon::where('id', $payment->coupon_id)->increment('times_used');
+                // Claim a slot ATOMICALLY rather than blindly incrementing: the
+                // validity check happened back at checkout, so without the
+                // condition here every in-flight checkout could push a
+                // limited coupon past max_uses.
+                $claimed = Coupon::where('id', $payment->coupon_id)
+                    ->where(function ($q) {
+                        $q->whereNull('max_uses')->orWhereColumn('times_used', '<', 'max_uses');
+                    })
+                    ->increment('times_used');
+
+                if ($claimed === 0) {
+                    // The pool emptied while this student was paying. They have
+                    // already been charged, so they get their enrolment — a
+                    // handful of extra redemptions is a far smaller problem than
+                    // taking money and refusing access. Logged so it is visible.
+                    \Illuminate\Support\Facades\Log::warning(
+                        "Coupon {$payment->coupon_id} exceeded max_uses; honouring paid payment {$payment->id}."
+                    );
+                    Coupon::where('id', $payment->coupon_id)->increment('times_used');
+                }
             }
 
             $enrollment = Enrollment::updateOrCreate(
@@ -108,5 +131,18 @@ class PaymentEnrollmentService
                 'already_processed' => false,
             ];
         });
+
+        // Deliberately AFTER the transaction commits, and non-fatal: the
+        // student has paid and is enrolled by this point, and no receipt
+        // problem may ever undo that. issueFor() is idempotent, so a failure
+        // here can simply be re-run later.
+        try {
+            $result['invoice'] = $this->invoices->issueFor($result['payment']);
+        } catch (\Throwable $e) {
+            report($e);
+            $result['invoice'] = null;
+        }
+
+        return $result;
     }
 }

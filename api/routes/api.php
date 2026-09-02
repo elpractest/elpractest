@@ -198,6 +198,7 @@ Route::middleware('auth:sanctum')->group(function () {
 
         // Payments
         Route::get('payments', [\App\Http\Controllers\Admin\PaymentHistoryController::class, 'index']);
+        Route::post('payments/{payment}/refund', [\App\Http\Controllers\Admin\PaymentHistoryController::class, 'refund']);
 
     });
 
@@ -297,6 +298,10 @@ Route::middleware('auth:sanctum')->group(function () {
         Route::post('checkout/create-order', [\App\Http\Controllers\Student\PaymentController::class, 'createOrder']);
         Route::post('checkout/verify', [\App\Http\Controllers\Student\PaymentController::class, 'verifyPayment']);
         Route::post('checkout/validate-coupon', [\App\Http\Controllers\Student\PaymentController::class, 'validateCoupon']);
+
+        // Receipts / tax invoices for the student's own payments.
+        Route::get('invoices', [\App\Http\Controllers\Student\InvoiceController::class, 'index']);
+        Route::get('invoices/{invoice}', [\App\Http\Controllers\Student\InvoiceController::class, 'show']);
 
         // Payments — Google Play Billing rail (the Android in-app store). Server
         // validates the purchase token before granting; inert (503) until a

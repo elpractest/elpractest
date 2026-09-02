@@ -37,6 +37,17 @@ class DefaultSettingsSeeder extends Seeder
             ['key' => 'ga4_measurement_id', 'value' => '', 'group' => 'analytics'],
             ['key' => 'meta_pixel_id', 'value' => '', 'group' => 'analytics'],
 
+            // ── Invoicing / GST ──────────────────────────────────
+            // Blank GSTIN = the institute is not GST-registered, so payments
+            // produce a plain receipt rather than a tax invoice.
+            ['key' => 'invoice_seller_name', 'value' => '', 'group' => 'invoicing'],
+            ['key' => 'invoice_seller_address', 'value' => '', 'group' => 'invoicing'],
+            ['key' => 'invoice_gstin', 'value' => '', 'group' => 'invoicing'],
+            ['key' => 'invoice_seller_state', 'value' => '', 'group' => 'invoicing'],
+            ['key' => 'invoice_sac_code', 'value' => '998431', 'group' => 'invoicing'],
+            ['key' => 'invoice_gst_rate', 'value' => '18', 'group' => 'invoicing'],
+            ['key' => 'invoice_number_prefix', 'value' => 'INV', 'group' => 'invoicing'],
+
             // ── Feature Flags ────────────────────────────────────
             ['key' => 'payment_gateway_enabled', 'value' => 'false', 'group' => 'features'],
             ['key' => 'social_login_enabled', 'value' => 'false', 'group' => 'features'],

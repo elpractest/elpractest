@@ -117,6 +117,7 @@ export default function SuperAdminSettings() {
           { id: 'branding', label: '🎨 Branding & Theme' },
           { id: 'contact', label: '📞 Contact & Social' },
           { id: 'seo', label: '🔍 SEO & Analytics' },
+          { id: 'invoicing', label: '🧾 Invoicing & GST' },
           { id: 'features', label: '⚡ Feature Toggles' },
         ].map((subTab) => (
           <button
@@ -445,6 +446,113 @@ export default function SuperAdminSettings() {
                 />
               </div>
             </div>
+          </div>
+        )}
+
+        {/* INVOICING & GST SUB-TAB */}
+        {activeSubTab === 'invoicing' && (
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '24px' }}>
+            <div>
+              <h3 style={{ margin: '0 0 6px 0', fontSize: '1rem', fontWeight: 700, color: 'var(--text-primary)' }}>Receipts & tax invoices</h3>
+              <p style={{ margin: 0, fontSize: '0.85rem', color: 'var(--text-secondary)', lineHeight: 1.6 }}>
+                These details are printed on every receipt. <strong>Leave the GSTIN blank if the institute is not
+                GST-registered</strong> — students then get a plain payment receipt, which is the correct document.
+                Fill the GSTIN in and each payment produces a proper tax invoice with the GST split out.
+                Details are snapshotted onto each invoice when it is issued, so changing them here never
+                rewrites receipts already given to students.
+              </p>
+            </div>
+
+            <div>
+              <label style={{ display: 'block', fontSize: '0.85rem', fontWeight: 600, color: 'var(--text-secondary)', marginBottom: '8px', textTransform: 'uppercase', letterSpacing: '0.5px' }}>
+                Legal / billing name
+              </label>
+              <input
+                type="text" className="form-input"
+                value={settings.invoice_seller_name || ''}
+                onChange={(e) => handleTextChange('invoice_seller_name', e.target.value)}
+                placeholder="e.g. Thevi Institution Pvt Ltd"
+              />
+            </div>
+
+            <div>
+              <label style={{ display: 'block', fontSize: '0.85rem', fontWeight: 600, color: 'var(--text-secondary)', marginBottom: '8px', textTransform: 'uppercase', letterSpacing: '0.5px' }}>
+                Billing address
+              </label>
+              <textarea
+                className="form-input" rows={3}
+                value={settings.invoice_seller_address || ''}
+                onChange={(e) => handleTextChange('invoice_seller_address', e.target.value)}
+                placeholder="Street, City, State, PIN"
+              />
+            </div>
+
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '20px' }}>
+              <div>
+                <label style={{ display: 'block', fontSize: '0.85rem', fontWeight: 600, color: 'var(--text-secondary)', marginBottom: '8px', textTransform: 'uppercase', letterSpacing: '0.5px' }}>
+                  GSTIN
+                </label>
+                <input
+                  type="text" className="form-input"
+                  value={settings.invoice_gstin || ''}
+                  onChange={(e) => handleTextChange('invoice_gstin', e.target.value)}
+                  placeholder="Blank = not GST-registered"
+                />
+              </div>
+              <div>
+                <label style={{ display: 'block', fontSize: '0.85rem', fontWeight: 600, color: 'var(--text-secondary)', marginBottom: '8px', textTransform: 'uppercase', letterSpacing: '0.5px' }}>
+                  State
+                </label>
+                <input
+                  type="text" className="form-input"
+                  value={settings.invoice_seller_state || ''}
+                  onChange={(e) => handleTextChange('invoice_seller_state', e.target.value)}
+                  placeholder="e.g. Karnataka"
+                />
+              </div>
+            </div>
+
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: '20px' }}>
+              <div>
+                <label style={{ display: 'block', fontSize: '0.85rem', fontWeight: 600, color: 'var(--text-secondary)', marginBottom: '8px', textTransform: 'uppercase', letterSpacing: '0.5px' }}>
+                  GST rate (%)
+                </label>
+                <input
+                  type="number" step="0.01" min="0" className="form-input"
+                  value={settings.invoice_gst_rate ?? ''}
+                  onChange={(e) => handleTextChange('invoice_gst_rate', e.target.value)}
+                  placeholder="18"
+                />
+              </div>
+              <div>
+                <label style={{ display: 'block', fontSize: '0.85rem', fontWeight: 600, color: 'var(--text-secondary)', marginBottom: '8px', textTransform: 'uppercase', letterSpacing: '0.5px' }}>
+                  SAC code
+                </label>
+                <input
+                  type="text" className="form-input"
+                  value={settings.invoice_sac_code || ''}
+                  onChange={(e) => handleTextChange('invoice_sac_code', e.target.value)}
+                  placeholder="998431"
+                />
+              </div>
+              <div>
+                <label style={{ display: 'block', fontSize: '0.85rem', fontWeight: 600, color: 'var(--text-secondary)', marginBottom: '8px', textTransform: 'uppercase', letterSpacing: '0.5px' }}>
+                  Invoice prefix
+                </label>
+                <input
+                  type="text" className="form-input"
+                  value={settings.invoice_number_prefix || ''}
+                  onChange={(e) => handleTextChange('invoice_number_prefix', e.target.value)}
+                  placeholder="INV"
+                />
+              </div>
+            </div>
+
+            <p style={{ margin: 0, fontSize: '0.8rem', color: 'var(--text-secondary)' }}>
+              Prices are treated as GST-inclusive: a ₹1,180 course at 18% is recorded as ₹1,000 + ₹180 tax,
+              so students are never charged more than the price they saw. Numbering runs sequentially per
+              financial year, e.g. <code>INV/2026-27/0001</code>.
+            </p>
           </div>
         )}
 
