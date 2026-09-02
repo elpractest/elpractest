@@ -18,9 +18,12 @@ class LmsController extends Controller
      */
     public function myCourses(): JsonResponse
     {
-        $courses = Course::whereHas('enrollments', function ($query) {
-            $query->where('user_id', auth()->id())->active();
-        })->get();
+        // Reads entitlements, not enrolments. A course bought as part of a
+        // bundle still creates an enrolment when the course has an active batch,
+        // but a course with no batch yet would otherwise be paid for and
+        // invisible.
+        $courses = Course::whereIn('id', app(\App\Services\EntitlementService::class)->courseIds(auth()->user()))
+            ->get();
 
         return response()->json($courses);
     }
@@ -30,14 +33,12 @@ class LmsController extends Controller
      */
     public function courseOutline(Course $course): JsonResponse
     {
-        $isEnrolled = Enrollment::where('user_id', auth()->id())
-            ->where('course_id', $course->id)
-            ->active()
-            ->exists();
+        $hasAccess = app(\App\Services\EntitlementService::class)
+            ->hasCourse(auth()->user(), $course->id);
 
-        if (!$isEnrolled) {
+        if (!$hasAccess) {
             return response()->json([
-                'message' => 'You are not enrolled in this course or your enrollment has expired.',
+                'message' => 'You are not enrolled in this course or your access has expired.',
             ], 403);
         }
 

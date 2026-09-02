@@ -41,6 +41,7 @@ class PaymentEnrollmentService
      */
     public function __construct(
         protected InvoiceService $invoices,
+        protected EntitlementService $entitlements,
     ) {}
 
     public function confirmAndEnroll(int $paymentId, ?string $razorpayPaymentId = null, ?string $razorpaySignature = null): array
@@ -53,6 +54,47 @@ class PaymentEnrollmentService
                     'payment' => $payment,
                     'enrollment' => Enrollment::where('payment_id', $payment->id)->first(),
                     'already_processed' => true,
+                ];
+            }
+
+            // Product rail: a course, series or bundle purchase. It shares this
+            // method deliberately -- the row locking, the coupon claim, the
+            // conversion event and the invoice below are the parts that are hard
+            // to get right, and duplicating them for a second rail is how the two
+            // would drift. Only the grant itself differs.
+            if ($payment->product_id !== null) {
+                $this->claimCoupon($payment);
+
+                $payment->status = 'paid';
+                if ($razorpayPaymentId) {
+                    $payment->razorpay_payment_id = $razorpayPaymentId;
+                }
+                if ($razorpaySignature) {
+                    $payment->razorpay_signature = $razorpaySignature;
+                }
+                $payment->save();
+
+                $product = \App\Models\Product::with('items')->findOrFail($payment->product_id);
+                $granted = $this->entitlements->grantProduct(
+                    $payment->user,
+                    $product,
+                    \App\Models\Entitlement::SOURCE_PAYMENT,
+                    $payment,
+                );
+
+                \App\Services\AuditService::log('payment.captured', $payment, null, $payment->toArray());
+                \App\Jobs\SendConversionEvents::dispatch($payment);
+
+                return [
+                    'payment' => $payment,
+                    // A product purchase may create an enrolment as a side effect
+                    // (a course product places the buyer in a cohort), so the
+                    // existing response shape still resolves.
+                    'enrollment' => $granted->firstWhere('enrollment_id', '!=', null)
+                        ? Enrollment::find($granted->firstWhere('enrollment_id', '!=', null)->enrollment_id)
+                        : null,
+                    'entitlements' => $granted,
+                    'already_processed' => false,
                 ];
             }
 
@@ -82,28 +124,7 @@ class PaymentEnrollmentService
             }
             $payment->save();
 
-            if ($payment->coupon_id) {
-                // Claim a slot ATOMICALLY rather than blindly incrementing: the
-                // validity check happened back at checkout, so without the
-                // condition here every in-flight checkout could push a
-                // limited coupon past max_uses.
-                $claimed = Coupon::where('id', $payment->coupon_id)
-                    ->where(function ($q) {
-                        $q->whereNull('max_uses')->orWhereColumn('times_used', '<', 'max_uses');
-                    })
-                    ->increment('times_used');
-
-                if ($claimed === 0) {
-                    // The pool emptied while this student was paying. They have
-                    // already been charged, so they get their enrolment — a
-                    // handful of extra redemptions is a far smaller problem than
-                    // taking money and refusing access. Logged so it is visible.
-                    \Illuminate\Support\Facades\Log::warning(
-                        "Coupon {$payment->coupon_id} exceeded max_uses; honouring paid payment {$payment->id}."
-                    );
-                    Coupon::where('id', $payment->coupon_id)->increment('times_used');
-                }
-            }
+            $this->claimCoupon($payment);
 
             $enrollment = Enrollment::updateOrCreate(
                 [
@@ -144,5 +165,37 @@ class PaymentEnrollmentService
         }
 
         return $result;
+    }
+
+    /**
+     * Claim a coupon slot ATOMICALLY rather than blindly incrementing: the
+     * validity check happened back at checkout, so without the condition here
+     * every in-flight checkout could push a limited coupon past max_uses.
+     *
+     * Shared by both rails so a product purchase can never redeem a coupon the
+     * batch rail would have refused, or vice versa.
+     */
+    private function claimCoupon(Payment $payment): void
+    {
+        if (!$payment->coupon_id) {
+            return;
+        }
+
+        $claimed = Coupon::where('id', $payment->coupon_id)
+            ->where(function ($q) {
+                $q->whereNull('max_uses')->orWhereColumn('times_used', '<', 'max_uses');
+            })
+            ->increment('times_used');
+
+        if ($claimed === 0) {
+            // The pool emptied while this student was paying. They have already
+            // been charged, so they get their access -- a handful of extra
+            // redemptions is a far smaller problem than taking money and
+            // refusing what was bought. Logged so it is visible.
+            \Illuminate\Support\Facades\Log::warning(
+                "Coupon {$payment->coupon_id} exceeded max_uses; honouring paid payment {$payment->id}."
+            );
+            Coupon::where('id', $payment->coupon_id)->increment('times_used');
+        }
     }
 }

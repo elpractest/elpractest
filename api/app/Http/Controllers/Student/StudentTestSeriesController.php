@@ -19,19 +19,11 @@ class StudentTestSeriesController extends Controller
     {
         $user = $request->user();
 
-        // Get active batch IDs for enrolled student
-        $activeBatchIds = Enrollment::active()
-            ->where('user_id', $user->id)
-            ->pluck('batch_id')
-            ->toArray();
-
-        // Find series assigned via assignments table
-        $assignedSeriesIds = Assignment::where('is_active', true)
-            ->whereIn('batch_id', $activeBatchIds)
-            ->where('assignable_type', TestSeries::class)
-            ->pluck('assignable_id')
-            ->unique()
-            ->toArray();
+        // Both routes in: a series bought outright (or inside a bundle), and a
+        // series assigned to a batch the student is enrolled in. Before the
+        // product rail only the second existed, which is why a series could not
+        // be sold on its own.
+        $assignedSeriesIds = app(\App\Services\EntitlementService::class)->seriesIds($user);
 
         // Query published test series
         $seriesList = TestSeries::with(['course:id,title'])
@@ -80,17 +72,8 @@ class StudentTestSeriesController extends Controller
             return response()->json(['message' => 'This test series is not published yet.'], 404);
         }
 
-        // Verify active enrollment in at least one assigned batch
-        $activeBatchIds = Enrollment::active()
-            ->where('user_id', $user->id)
-            ->pluck('batch_id')
-            ->toArray();
-
-        $isAssigned = Assignment::where('is_active', true)
-            ->whereIn('batch_id', $activeBatchIds)
-            ->where('assignable_type', TestSeries::class)
-            ->where('assignable_id', $series->id)
-            ->exists();
+        // Bought outright, inside a bundle, or assigned to the student's batch.
+        $isAssigned = app(\App\Services\EntitlementService::class)->hasSeries($user, $series->id);
 
         if (!$isAssigned) {
             return response()->json(['message' => 'You do not have active access to this test series.'], 403);

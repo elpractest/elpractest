@@ -16,11 +16,13 @@ export default function StudyZone() {
   const { t } = useTranslation();
 
   const tiles = [
-    { label: t('study.attempts'), sub: t('study.attemptsSub'), hue: 'gold', icon: 'edit', to: '/results' },
+    { label: 'My library', sub: 'Courses & series you own', hue: 'blue', icon: 'book-open', to: '/library' },
+    { label: 'Build a practice paper', sub: 'Your subjects, your clock', hue: 'gold', icon: 'edit', to: '/practice' },
+    { label: t('study.attempts'), sub: t('study.attemptsSub'), hue: 'sky', icon: 'clock', to: '/results' },
     { label: t('study.analytics'), sub: t('study.analyticsSub'), hue: 'green', icon: 'chart', to: '/results' },
-    { label: t('study.testSeries'), sub: t('study.testSeriesSub'), hue: 'blue', icon: 'target', to: '/student/test-series' },
-    { label: t('study.notes'), sub: t('common.comingSoon'), hue: 'violet', icon: 'file', todo: true },
-    { label: t('study.pyq'), sub: t('common.comingSoon'), hue: 'sky', icon: 'book-open', todo: true },
+    { label: t('study.testSeries'), sub: t('study.testSeriesSub'), hue: 'violet', icon: 'target', to: '/student/test-series' },
+    { label: t('study.notes'), sub: t('common.comingSoon'), hue: 'sky', icon: 'file', todo: true },
+    { label: t('study.pyq'), sub: t('common.comingSoon'), hue: 'green', icon: 'book-open', todo: true },
     { label: t('study.bookmarks'), sub: t('common.comingSoon'), hue: 'red', icon: 'bookmark', todo: true },
   ];
 

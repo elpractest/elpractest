@@ -21,6 +21,9 @@ class PaymentHistoryController extends Controller
     {
         $payments = Payment::with([
                 'user:id,name,email',
+                // A product sale has no batch at all, so without this the admin
+                // list rendered two blank lines where the item name should be.
+                'product:id,title,type',
                 'batch:id,name,course_id',
                 'batch.course:id,title',
                 'coupon:id,code',
@@ -82,6 +85,12 @@ class PaymentHistoryController extends Controller
                 // A PARTIAL refund keeps access: the student still paid for part
                 // of the course, so revoking it would be the wrong outcome.
                 Enrollment::where('payment_id', $payment->id)->update(['is_active' => false]);
+
+                // Product purchases grant entitlements rather than enrolments,
+                // so a full refund has to withdraw those too -- otherwise a
+                // refunded series would stay readable forever.
+                \App\Models\Entitlement::where('payment_id', $payment->id)
+                    ->update(['is_active' => false]);
             });
         }
 

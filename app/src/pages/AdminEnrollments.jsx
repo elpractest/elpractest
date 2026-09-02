@@ -546,8 +546,15 @@ export default function AdminEnrollments() {
                       <div style={{ fontSize: '0.8rem', color: 'var(--text-secondary)', marginTop: '2px' }}>{p.user?.email}</div>
                     </td>
                     <td style={{ padding: '16px' }}>
-                      <div>{p.batch?.course?.title}</div>
-                      <div style={{ fontSize: '0.8rem', color: 'var(--text-secondary)', marginTop: '2px' }}>Batch: {p.batch?.name}</div>
+                      {/* Two rails land in this table: a batch enrolment and a
+                          store product (a series or bundle has no batch at all,
+                          which used to render as two blank lines). */}
+                      <div>{p.product?.title || p.batch?.course?.title || '—'}</div>
+                      <div style={{ fontSize: '0.8rem', color: 'var(--text-secondary)', marginTop: '2px' }}>
+                        {p.product
+                          ? (p.product.type === 'bundle' ? 'Bundle' : p.product.type === 'test_series' ? 'Test series' : 'Course')
+                          : p.batch?.name ? `Batch: ${p.batch.name}` : 'Batch enrolment'}
+                      </div>
                     </td>
                     <td style={{ padding: '16px' }}>
                       <div style={{ fontSize: '0.85rem' }}>Order: <span style={{ color: 'var(--text-secondary)' }}>{p.razorpay_order_id || 'N/A'}</span></div>

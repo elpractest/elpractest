@@ -72,13 +72,19 @@ class InvoiceService
         $sgst = intdiv($tax, 2);
         $cgst = $tax - $sgst;
 
-        $payment->loadMissing(['user', 'course', 'batch']);
+        $payment->loadMissing(['user', 'course', 'batch', 'product']);
 
-        $description = trim(sprintf(
-            '%s%s',
-            $payment->course?->title ?? 'Course enrolment',
-            $payment->batch?->name ? ' — ' . $payment->batch->name : ''
-        ));
+        // A product purchase names the product; a series or bundle has no course
+        // to fall back on, so without this the receipt would read "Course
+        // enrolment" for a test series -- wrong on a document that is a tax
+        // invoice when a GSTIN is configured.
+        $description = $payment->product
+            ? trim($payment->product->title)
+            : trim(sprintf(
+                '%s%s',
+                $payment->course?->title ?? 'Course enrolment',
+                $payment->batch?->name ? ' — ' . $payment->batch->name : ''
+            ));
 
         // The unique (financial_year, sequence) index is the real guarantee; on
         // the rare occasion two captures land in the same instant and both read

@@ -10,14 +10,17 @@ import logoMark from '../assets/logo-mark.png';
  * Active tab = gold, idle = muted.
  *
  * Home & Tests map to real routes; Study/Store/Profile are new student
- * surfaces. Store is a real storefront — it lists /student/purchasable-courses
- * and checks out through the Razorpay StudentCheckout modal; it falls back to a
- * demo layout only when the payment gateway is off or nothing is purchasable.
+ * surfaces. Store is a real storefront over /student/store — courses, test
+ * series and bundles, checking out through the Razorpay StudentCheckout modal;
+ * it shows an honest empty state when the gateway is off or nothing is on sale.
+ *
+ * The practice console lives under Study rather than as a sixth tab: five is
+ * already the most a phone bottom-bar carries without crowding.
  */
 const TABS = [
   { key: 'home', icon: 'home', to: '/dashboard', match: ['/dashboard'] },
   { key: 'tests', icon: 'target', to: '/student/test-series', match: ['/student/test-series'] },
-  { key: 'study', icon: 'book-open', to: '/study', match: ['/study', '/results', '/courses', '/lessons'] },
+  { key: 'study', icon: 'book-open', to: '/study', match: ['/study', '/results', '/courses', '/lessons', '/practice', '/library'] },
   { key: 'store', icon: 'shopping-bag', to: '/store', match: ['/store'] },
   { key: 'profile', icon: 'user', to: '/profile', match: ['/profile'] },
 ];

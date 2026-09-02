@@ -10,6 +10,7 @@ class Payment extends Model
 {
     protected $fillable = [
         'user_id',
+        'product_id',
         'course_id',
         'batch_id',
         'razorpay_order_id',
@@ -24,6 +25,11 @@ class Payment extends Model
         'coupon_id',
         'event_id',
     ];
+
+    public function product(): BelongsTo
+    {
+        return $this->belongsTo(Product::class);
+    }
 
     public function user(): BelongsTo
     {

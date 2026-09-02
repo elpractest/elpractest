@@ -23,6 +23,8 @@ import StudentTestSeries from './pages/StudentTestSeries';
 import TestSeriesDetail from './pages/TestSeriesDetail';
 import StudyZone from './pages/StudyZone';
 import Store from './pages/Store';
+import PracticeConsole from './pages/PracticeConsole';
+import Library from './pages/Library';
 import Profile from './pages/Profile';
 import Vajini from './pages/Vajini';
 import Notifications from './pages/Notifications';
@@ -167,6 +169,18 @@ function AppContent({ user, setUser, loading }) {
         <Route path="/store" element={
           <StudentGuard user={user} loading={loading}>
             {shell(<Store user={user} />)}
+          </StudentGuard>
+        } />
+
+        <Route path="/library" element={
+          <StudentGuard user={user} loading={loading}>
+            {shell(<Library />)}
+          </StudentGuard>
+        } />
+
+        <Route path="/practice" element={
+          <StudentGuard user={user} loading={loading}>
+            {shell(<PracticeConsole />)}
           </StudentGuard>
         } />
 

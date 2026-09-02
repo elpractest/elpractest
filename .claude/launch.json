@@ -1,0 +1,19 @@
+{
+  "version": "0.0.1",
+  "configurations": [
+    {
+      "name": "practest-api",
+      "runtimeExecutable": "php",
+      "runtimeArgs": ["artisan", "serve", "--host=127.0.0.1", "--port=8000"],
+      "cwd": "api",
+      "port": 8000
+    },
+    {
+      "name": "practest-app",
+      "runtimeExecutable": "npm",
+      "runtimeArgs": ["run", "dev"],
+      "cwd": "app",
+      "port": 3000
+    }
+  ]
+}

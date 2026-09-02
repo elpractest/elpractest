@@ -196,6 +196,11 @@ Route::middleware('auth:sanctum')->group(function () {
         Route::get('batches/{batch}/assignments', [\App\Http\Controllers\Admin\AssignmentController::class, 'batchAssignments']);
         Route::delete('assignments/{assignment}', [\App\Http\Controllers\Admin\AssignmentController::class, 'destroy']);
 
+        // Store products — courses, test series and bundles put on sale
+        Route::apiResource('products', \App\Http\Controllers\Admin\ProductController::class);
+        Route::post('products/{product}/publish', [\App\Http\Controllers\Admin\ProductController::class, 'publish']);
+        Route::post('products/{product}/unpublish', [\App\Http\Controllers\Admin\ProductController::class, 'unpublish']);
+
         // Payments
         Route::get('payments', [\App\Http\Controllers\Admin\PaymentHistoryController::class, 'index']);
         Route::post('payments/{payment}/refund', [\App\Http\Controllers\Admin\PaymentHistoryController::class, 'refund']);
@@ -295,6 +300,26 @@ Route::middleware('auth:sanctum')->group(function () {
         Route::get('activation-requests', [StudentActivationController::class, 'index']);
         Route::post('activation-requests', [StudentActivationController::class, 'requestActivation']);
         Route::post('activation-codes/redeem', [StudentActivationController::class, 'redeemCode']);
+
+        // Store — products (course, test series, bundle) and the student's library
+        Route::get('store', [\App\Http\Controllers\Student\StoreController::class, 'index']);
+        Route::get('library', [\App\Http\Controllers\Student\StoreController::class, 'library']);
+
+        // Custom practice console — the student builds their own paper from the
+        // question pool their purchases give them access to. Generation is
+        // throttled: each call writes a test, a section and up to 100 pivot rows.
+        Route::get('practice-tests/options', [\App\Http\Controllers\Student\PracticeTestController::class, 'options']);
+        Route::post('practice-tests/preview', [\App\Http\Controllers\Student\PracticeTestController::class, 'preview']);
+        Route::get('practice-tests', [\App\Http\Controllers\Student\PracticeTestController::class, 'index']);
+        Route::post('practice-tests', [\App\Http\Controllers\Student\PracticeTestController::class, 'store'])
+            ->middleware('throttle:practice-build');
+        Route::delete('practice-tests/{test}', [\App\Http\Controllers\Student\PracticeTestController::class, 'destroy']);
+
+        // Checkout — product rail (course / series / bundle). Sits beside the
+        // batch rail below rather than replacing it; both produce a Payment that
+        // the same service confirms, invoices and refunds.
+        Route::post('checkout/product/create-order', [\App\Http\Controllers\Student\ProductCheckoutController::class, 'createOrder']);
+        Route::post('checkout/product/validate-coupon', [\App\Http\Controllers\Student\ProductCheckoutController::class, 'validateCoupon']);
 
         // Payments — Razorpay rail (web / non-Play builds).
         Route::post('checkout/create-order', [\App\Http\Controllers\Student\PaymentController::class, 'createOrder']);

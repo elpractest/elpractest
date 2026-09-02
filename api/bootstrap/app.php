@@ -106,6 +106,18 @@ return Application::configure(basePath: dirname(__DIR__))
             });
         });
 
+        // Practice-paper generation: 6/min per student. Each call writes a test,
+        // a section and up to 100 pivot rows, and a student fiddling with the
+        // filters can otherwise fire one per keystroke. Well clear of anyone
+        // genuinely building a few papers in a sitting.
+        RateLimiter::for('practice-build', function (Request $request) {
+            return Limit::perMinute(6)->by($request->user()?->id ?: $request->ip())->response(function () {
+                return response()->json([
+                    'message' => 'You are building practice papers very quickly — please wait a moment.',
+                ], 429);
+            });
+        });
+
         // Vajini chat: 20/min per student. Each request is an OpenAI call, so
         // this caps runaway cost from a hammered composer without hurting a
         // normal back-and-forth.

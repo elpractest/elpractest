@@ -5,13 +5,18 @@ import { trackEvent } from "../lib/analytics";
 /**
  * StudentCheckout
  *
- * Modal checkout flow for a single batch. Render conditionally from
- * Dashboard.jsx when a batch is selected for enrollment.
+ * Modal checkout flow for ONE purchasable thing, on either rail.
+ *
+ * Pass `batch` for the original course-batch rail, or `product` for a course,
+ * test series or bundle from the store. Everything below the endpoint choice is
+ * shared: the coupon responses have the same shape on both, and both produce a
+ * Payment that the same server-side service confirms and invoices.
  *
  * Props:
- *   batch      { id, name, price_paise, course: { title } }
+ *   batch      { id, name, price_paise, course: { title } }        — batch rail
+ *   product    { id, title, type, price_paise, exam_category }     — product rail
  *   onClose    () => void
- *   onEnrolled (result) => void   // called after a successful enrollment
+ *   onEnrolled (result) => void   // called after access is granted
  *   user       optional { name, email, phone } — prefills Razorpay checkout.
  *              Omitted is fine; Razorpay just asks for the details itself.
  */
@@ -24,20 +29,47 @@ function formatRupees(paise) {
   });
 }
 
-export default function StudentCheckout({ batch, onClose, onEnrolled, user }) {
+export default function StudentCheckout({ batch, product, onClose, onEnrolled, user }) {
+  // One item, whichever rail. Everything below reads `item`, so the two paths
+  // differ only in the two endpoint URLs and the id field they send.
+  const isProduct = !!product;
+  const item = isProduct
+    ? {
+        id: product.id,
+        title: product.title,
+        subtitle: product.short_description
+          || (product.type === 'bundle' ? 'Bundle' : product.type === 'test_series' ? 'Test series' : 'Course'),
+        price_paise: product.price_paise,
+        category: product.exam_category,
+      }
+    : {
+        id: batch.id,
+        title: batch.course?.title || batch.name,
+        subtitle: batch.name,
+        price_paise: batch.price_paise,
+        category: batch.course?.exam_category,
+      };
+  const couponUrl = isProduct
+    ? '/api/student/checkout/product/validate-coupon'
+    : '/api/student/checkout/validate-coupon';
+  const orderUrl = isProduct
+    ? '/api/student/checkout/product/create-order'
+    : '/api/student/checkout/create-order';
+  const idPayload = isProduct ? { product_id: product.id } : { batch_id: batch.id };
+
   const [couponCode, setCouponCode] = useState("");
 
   // Fire GTM InitiateCheckout on modal mount
   useEffect(() => {
     trackEvent("InitiateCheckout", {
-      content_name: batch.course?.title || batch.name,
-      content_category: batch.course?.exam_category || "General",
-      content_ids: [batch.id],
+      content_name: item.title,
+      content_category: item.category || "General",
+      content_ids: [item.id],
       content_type: "product",
-      value: batch.price_paise / 100,
+      value: item.price_paise / 100,
       currency: "INR"
     });
-  }, [batch]);
+  }, [item.id]);
   const [showCouponInput, setShowCouponInput] = useState(false);
   const [couponState, setCouponState] = useState(null); // { valid, discounted_price, message }
   const [couponLoading, setCouponLoading] = useState(false);
@@ -45,7 +77,7 @@ export default function StudentCheckout({ batch, onClose, onEnrolled, user }) {
   const [error, setError] = useState(null);
   const [status, setStatus] = useState("idle"); // idle | success
 
-  const originalPrice = batch.price_paise;
+  const originalPrice = item.price_paise;
   const finalPrice = couponState?.valid ? couponState.discounted_price : originalPrice;
 
   const applyCoupon = useCallback(async () => {
@@ -53,9 +85,9 @@ export default function StudentCheckout({ batch, onClose, onEnrolled, user }) {
     setCouponLoading(true);
     setError(null);
     try {
-      const res = await api.post("/api/student/checkout/validate-coupon", {
+      const res = await api.post(couponUrl, {
         code: couponCode.trim(),
-        batch_id: batch.id,
+        ...idPayload,
       });
       setCouponState(res.data);
     } catch (err) {
@@ -66,15 +98,15 @@ export default function StudentCheckout({ batch, onClose, onEnrolled, user }) {
     } finally {
       setCouponLoading(false);
     }
-  }, [couponCode, batch.id]);
+  }, [couponCode, item.id, couponUrl]);
 
   const handlePay = useCallback(async () => {
     setError(null);
     setPayLoading(true);
     const eventId = "evt_" + Date.now() + "_" + Math.random().toString(36).substring(2, 11);
     try {
-      const res = await api.post("/api/student/checkout/create-order", {
-        batch_id: batch.id,
+      const res = await api.post(orderUrl, {
+        ...idPayload,
         coupon_code: couponState?.valid ? couponCode.trim() : undefined,
         event_id: eventId,
       });
@@ -82,14 +114,14 @@ export default function StudentCheckout({ batch, onClose, onEnrolled, user }) {
       const order = res.data;
 
       // A 100%-off coupon enrolls directly and skips Razorpay entirely.
-      if (order.enrolled) {
+      if (order.enrolled || order.granted) {
         trackEvent("Purchase", {
           event_id: eventId,
           transaction_id: "free_" + Date.now(),
           value: 0,
           currency: "INR",
-          content_name: batch.course?.title || batch.name,
-          content_ids: [batch.id],
+          content_name: item.title,
+          content_ids: [item.id],
           content_type: "product"
         });
         setStatus("success");
@@ -106,8 +138,8 @@ export default function StudentCheckout({ batch, onClose, onEnrolled, user }) {
         order_id: order.order_id,
         amount: order.amount,
         currency: order.currency,
-        name: batch.course?.title || batch.name,
-        description: `Enrollment — ${batch.name}`,
+        name: item.title,
+        description: item.subtitle,
         // UPI is the default rail in India — most students expect to scan and
         // pay, not type a card number. Surfacing it as the first block (rather
         // than behind "Other payment methods") measurably shortens checkout.
@@ -143,8 +175,8 @@ export default function StudentCheckout({ batch, onClose, onEnrolled, user }) {
               transaction_id: response.razorpay_payment_id,
               value: finalPrice / 100,
               currency: "INR",
-              content_name: batch.course?.title || batch.name,
-              content_ids: [batch.id],
+              content_name: item.title,
+              content_ids: [item.id],
               content_type: "product"
             });
 
@@ -183,7 +215,7 @@ export default function StudentCheckout({ batch, onClose, onEnrolled, user }) {
           <div style={{ fontSize: '3rem', margin: '0 auto 8px auto' }}>🎉</div>
           <h2 style={{ fontSize: '1.25rem', fontWeight: 700, margin: 0, color: 'var(--text-primary)' }}>You're enrolled</h2>
           <p style={{ fontSize: '0.9rem', color: 'var(--text-secondary)', margin: 0 }}>
-            {batch.course?.title || batch.name} ({batch.name}) is now in your dashboard.
+            {item.title} is now in your library.
           </p>
           <button
             onClick={onClose}
@@ -202,8 +234,8 @@ export default function StudentCheckout({ batch, onClose, onEnrolled, user }) {
       <div className="glass-panel" style={{ width: '100%', maxWidth: '400px', padding: '32px', display: 'flex', flexDirection: 'column', gap: '20px' }}>
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
           <div>
-            <h2 style={{ fontSize: '1.25rem', fontWeight: 700, margin: '0 0 4px 0' }}>{batch.course?.title || batch.name}</h2>
-            <p style={{ fontSize: '0.9rem', color: 'var(--text-secondary)', margin: 0 }}>{batch.name}</p>
+            <h2 style={{ fontSize: '1.25rem', fontWeight: 700, margin: '0 0 4px 0' }}>{item.title}</h2>
+            <p style={{ fontSize: '0.9rem', color: 'var(--text-secondary)', margin: 0 }}>{item.subtitle}</p>
           </div>
           <button 
             onClick={onClose} 

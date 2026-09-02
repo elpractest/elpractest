@@ -25,6 +25,7 @@ class Test extends Model
         'available_from',
         'available_until',
         'created_by',
+        'owner_id',
         'cutoff_marks',
         'cutoff_percentage',
         'shuffle_questions',
@@ -89,6 +90,20 @@ class Test extends Model
     }
 
     // ── Scopes ─────────────────────────────────────────────────────
+
+    public function owner(): \Illuminate\Database\Eloquent\Relations\BelongsTo
+    {
+        return $this->belongsTo(User::class, 'owner_id');
+    }
+
+    /**
+     * Papers the catalogue should show: everything except the private practice
+     * tests students generate for themselves.
+     */
+    public function scopeCatalogue($query)
+    {
+        return $query->whereNull('owner_id');
+    }
 
     public function scopePublished($query)
     {

@@ -94,7 +94,11 @@ class ItemAnalysisService
             ? [$onlyQuestionId]
             : DB::table('test_answers as ta')
                 ->join('test_sessions as ts', 'ta.test_session_id', '=', 'ts.id')
+                ->join('tests as t', 'ts.test_id', '=', 't.id')
                 ->whereNotNull('ts.submitted_at')
+                // Student-generated practice papers are excluded — see
+                // attemptRows() for why.
+                ->whereNull('t.owner_id')
                 ->distinct()
                 ->pluck('ta.question_id')
                 ->all();
@@ -134,8 +138,16 @@ class ItemAnalysisService
         return DB::table('test_answers as ta')
             ->join('test_sessions as ts', 'ta.test_session_id', '=', 'ts.id')
             ->join('test_analytics as an', 'an.test_session_id', '=', 'ts.id')
+            ->join('tests as t', 'ts.test_id', '=', 't.id')
             ->whereIn('ta.question_id', $questionIds)
             ->whereNotNull('ts.submitted_at')
+            // Attempts on a student's own practice paper never count. The
+            // candidate picked the subject, the length and the clock, so the
+            // ability score this discrimination index correlates against means
+            // something different from a sat mock — and difficulty_index would
+            // drift toward whatever people choose to drill. Keeping them out
+            // preserves the one signal that reveals a wrong answer key.
+            ->whereNull('t.owner_id')
             ->select(
                 'ta.question_id',
                 'ta.selected_option_id',

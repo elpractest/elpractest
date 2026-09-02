@@ -8,6 +8,8 @@ use App\Jobs\ComputeTestAnalytics;
 use App\Models\Enrollment;
 use App\Models\Question;
 use App\Models\Test;
+use App\Models\User;
+use App\Services\EntitlementService;
 use App\Models\TestAnswer;
 use App\Models\TestSession;
 use Illuminate\Http\JsonResponse;
@@ -16,27 +18,26 @@ use Illuminate\Support\Facades\DB;
 
 class TestTakingController extends Controller
 {
+    public function __construct(
+        private readonly EntitlementService $entitlements,
+    ) {}
+
     /**
-     * List all published tests available to the student based on their course/batch enrollments.
+     * List every published test this student is entitled to sit.
      */
     public function availableTests(Request $request): JsonResponse
     {
         $user = $request->user();
 
-        // Get active enrollments
-        $enrollments = Enrollment::where('user_id', $user->id)->active()->get();
-        $courseIds = $enrollments->pluck('course_id')->filter()->unique()->toArray();
-        $batchIds = $enrollments->pluck('batch_id')->filter()->unique()->toArray();
+        // The listing and the action now read the same rule from one place.
+        // Their disagreeing is exactly what let any student start any test by
+        // id: the entitlement filter lived only here, in the listing.
+        $accessibleIds = $this->entitlements->accessibleTestIds($user);
 
         $query = Test::published()
             ->available()
-            ->where(function ($q) use ($courseIds, $batchIds) {
-                $q->whereIn('course_id', $courseIds)
-                  ->orWhereIn('batch_id', $batchIds)
-                  ->orWhere(function ($sq) {
-                      $sq->whereNull('course_id')->whereNull('batch_id');
-                  });
-            })
+            ->catalogue()
+            ->whereIn('id', $accessibleIds)
             ->withCount(['sessions' => function ($q) use ($user) {
                 $q->where('user_id', $user->id)->whereNotNull('submitted_at');
             }]);
@@ -75,7 +76,24 @@ class TestTakingController extends Controller
             }
         }
 
-        // 2. Check attempt limits
+        // 2. Entitlement. This endpoint used to check only the concurrent
+        // session and the attempt cap, so ANY authenticated student could start
+        // ANY test by id — an unpublished draft, a paper outside its window, or
+        // a paid mock from a batch they never bought. The filter lived solely in
+        // availableTests(), i.e. in the *listing*: it shaped what the app showed
+        // and gated nothing at all. Both now ask EntitlementService, so they
+        // cannot drift apart again.
+        //
+        // Checked AFTER the resume branch above: a candidate already sitting a
+        // paper must always be able to resume it, even if the window closed or
+        // their entitlement lapsed mid-exam.
+        if (!$this->entitlements->mayStartTest($user, $test)) {
+            return response()->json([
+                'message' => 'This test is not available to you.',
+            ], 403);
+        }
+
+        // 3. Check attempt limits
         $completedAttempts = TestSession::where('user_id', $user->id)
             ->where('test_id', $test->id)
             ->whereNotNull('submitted_at')
@@ -87,7 +105,7 @@ class TestTakingController extends Controller
             ], 403);
         }
 
-        // 3. Start new session
+        // 4. Start new session
         $sections = null;
         $session = DB::transaction(function () use ($user, $test, &$sections) {
             // `questions.passage` is eager-loaded here as well as options: the

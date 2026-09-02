@@ -8,6 +8,7 @@ import AdminCourses from './AdminCourses';
 import AdminQuestions from './AdminQuestions';
 import AdminTests from './AdminTests';
 import AdminTestSeries from './AdminTestSeries';
+import AdminProducts from './AdminProducts';
 import AdminEnrollments from './AdminEnrollments';
 import AdminActivations from './AdminActivations';
 import AdminActivationCodes from './AdminActivationCodes';
@@ -26,6 +27,7 @@ const MAIN_NAV = [
   { id: 'questions', label: 'Question Bank', icon: 'edit' },
   { id: 'tests', label: 'Tests Manager', icon: 'award' },
   { id: 'test_series', label: 'Test Series Builder', icon: 'target' },
+  { id: 'products', label: 'Store Products', icon: 'shopping-bag' },
   { id: 'enrollments', label: 'Batches & Enrollments', icon: 'user' },
   { id: 'activations', label: 'Activation Requests', icon: 'clock' },
   { id: 'codes', label: 'Activation Codes', icon: 'key' },
@@ -176,6 +178,8 @@ export default function AdminDashboard({ user, setUser }) {
         return <AdminTests />;
       case 'test_series':
         return <AdminTestSeries />;
+      case 'products':
+        return <AdminProducts />;
       case 'enrollments':
         return <AdminEnrollments />;
       case 'activations':
