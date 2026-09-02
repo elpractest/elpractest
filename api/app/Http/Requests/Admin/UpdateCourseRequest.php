@@ -3,6 +3,7 @@
 namespace App\Http\Requests\Admin;
 
 use Illuminate\Foundation\Http\FormRequest;
+use Illuminate\Validation\Rule;
 
 class UpdateCourseRequest extends FormRequest
 {
@@ -26,7 +27,7 @@ class UpdateCourseRequest extends FormRequest
             'mode' => ['sometimes', 'required', 'string', 'in:online,offline,hybrid,live,recorded'],
             'syllabus' => ['nullable', 'array'],
             'faq' => ['nullable', 'array'],
-            'exam_category' => ['sometimes', 'required', 'string', 'in:SSC,Banking,RRB,UPSC,State PCS'],
+            'exam_category' => ['sometimes', 'required', 'string', Rule::in(config('exams.categories'))],
             // Kept byte-identical to StoreCourseRequest — see the note there.
             'thumbnail' => ['nullable', 'image', 'max:2048', 'mimes:jpeg,png,jpg,webp', 'dimensions:ratio=16/9,min_width=640'],
             'sort_order' => ['nullable', 'integer', 'min:0'],

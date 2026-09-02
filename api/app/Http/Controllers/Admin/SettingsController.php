@@ -98,6 +98,12 @@ class SettingsController extends Controller
         $googleClientId = config('services.google.mobile_client_id') ?: config('services.google.client_id');
         $settings = $settings->put('google_client_id', $googleClientId);
 
+        // The exam list the admin dropdowns populate from. Served here rather
+        // than duplicated in each frontend, so the UI can never offer a category
+        // the API will reject -- which is exactly how the Course and Test Series
+        // forms had already drifted apart. See config/exams.php.
+        $settings = $settings->put('exam_categories', config('exams.categories'));
+
         return response()->json(['settings' => $settings]);
     }
 }

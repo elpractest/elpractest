@@ -1,7 +1,9 @@
 import React, { useState, useEffect } from 'react';
 import api from '../api';
+import { useExamCategories } from '../lib/examCategories';
 
 export default function AdminTestSeries() {
+  const examCategories = useExamCategories();
   const [seriesList, setSeriesList] = useState([]);
   const [courses, setCourses] = useState([]);
   const [batches, setBatches] = useState([]);
@@ -404,7 +406,7 @@ export default function AdminTestSeries() {
                   value={formData.exam_category}
                   onChange={(e) => setFormData({ ...formData, exam_category: e.target.value })}
                 >
-                  {['SSC', 'Banking', 'RRB', 'UPSC', 'State PCS', 'Railways', 'Defence', 'Other'].map((cat) => (
+                  {examCategories.map((cat) => (
                     <option key={cat} value={cat}>{cat}</option>
                   ))}
                 </select>

@@ -1,7 +1,9 @@
 import React, { useState, useEffect, useRef } from 'react';
 import api from '../api';
+import { useExamCategories } from '../lib/examCategories';
 
 export default function AdminCourses() {
+  const examCategories = useExamCategories();
   const [courses, setCourses] = useState([]);
   const [selectedCourse, setSelectedCourse] = useState(null);
   const [loading, setLoading] = useState(true);
@@ -547,14 +549,11 @@ export default function AdminCourses() {
                   onChange={(e) => setCourseForm({ ...courseForm, exam_category: e.target.value })} 
                   className="form-input"
                 >
-                  {/* These are the only five the API accepts. "Railways" and
-                      "Other" used to be offered here and 422'd on save, and
-                      UPSC / State PCS could not be chosen at all. */}
-                  <option value="SSC">SSC</option>
-                  <option value="Banking">Banking</option>
-                  <option value="RRB">RRB (Railways)</option>
-                  <option value="UPSC">UPSC</option>
-                  <option value="State PCS">State PCS</option>
+                  {/* Served by the API from config/exams.php, so this list and
+                      the validation rule cannot drift apart again. */}
+                  {examCategories.map((cat) => (
+                    <option key={cat} value={cat}>{cat}</option>
+                  ))}
                 </select>
               </div>
 
