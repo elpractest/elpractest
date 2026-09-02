@@ -205,10 +205,19 @@ class TestTakingController extends Controller
             return response()->json(['message' => 'Answer row not initialized.'], 404);
         }
 
-        // `selected_option_id` is validated by SaveAnswerRequest to belong to THIS
-        // question, so a foreign option id can never be stored.
+        // Only the field matching the question's type is written — the other
+        // two answer columns stay untouched (they're never used for this
+        // question anyway). `selected_option_id(s)` are validated by
+        // SaveAnswerRequest to belong to THIS question, so a foreign option id
+        // can never be stored.
+        $responseField = match ($question->question_type) {
+            Question::TYPE_MULTI_SELECT => 'selected_option_ids',
+            Question::TYPE_NUMERIC => 'numeric_response',
+            default => 'selected_option_id',
+        };
+
         $answer->update([
-            'selected_option_id' => $request->input('selected_option_id'),
+            $responseField => $request->input($responseField),
             'is_visited' => true,
             'answered_at' => now(),
             'time_spent_seconds' => $request->input('time_spent_seconds', $answer->time_spent_seconds),
@@ -373,20 +382,30 @@ class TestTakingController extends Controller
 
         // Fetch question-by-question review key
         $answers = TestAnswer::where('test_session_id', $session->id)
-            ->with(['question.options'])
+            ->with(['question.options', 'question.passage'])
             ->get()
             ->map(function ($ans) {
                 $q = $ans->question;
                 return [
                     'question_id' => $ans->question_id,
                     'question_text' => $q->question_text,
+                    'question_type' => $q->question_type,
                     'explanation' => $q->explanation,
                     'marks' => $q->marks,
                     'negative_marks' => $q->negative_marks,
                     'selected_option_id' => $ans->selected_option_id,
+                    'selected_option_ids' => $ans->selected_option_ids,
+                    'numeric_response' => $ans->numeric_response,
+                    'numeric_answer' => $q->numeric_answer,
+                    'numeric_tolerance' => $q->numeric_tolerance,
                     'is_correct' => $ans->isCorrect(),
                     'is_visited' => $ans->is_visited,
                     'time_spent_seconds' => $ans->time_spent_seconds,
+                    'passage' => $q->passage ? [
+                        'id' => $q->passage->id,
+                        'title' => $q->passage->title,
+                        'body' => $q->passage->body,
+                    ] : null,
                     'options' => $q->options->map(fn($o) => [
                         'id' => $o->id,
                         'label' => $o->label,
@@ -457,13 +476,17 @@ class TestTakingController extends Controller
 
         $answers = $this->inCandidateOrder(
             $session,
-            TestAnswer::where('test_session_id', $session->id)->get()
+            // question:id,question_type only — this is polled frequently during a
+            // live exam, and isAttempted() needs the type, nothing else.
+            TestAnswer::where('test_session_id', $session->id)->with('question:id,question_type')->get()
         );
 
         $palette = $answers->map(function ($ans) {
             $status = 'not_visited';
             if ($ans->is_visited) {
-                if ($ans->selected_option_id !== null) {
+                // isAttempted() is type-aware (single_choice/multi_select/numeric),
+                // so a multi-select or numeric response shows as answered here too.
+                if ($ans->isAttempted()) {
                     $status = $ans->is_marked_for_review ? 'answered_and_marked' : 'answered';
                 } else {
                     $status = $ans->is_marked_for_review ? 'marked_for_review' : 'not_answered';
@@ -485,7 +508,7 @@ class TestTakingController extends Controller
      */
     private function sessionStateResponse(TestSession $session, string $message): JsonResponse
     {
-        $session->load('test.sections.questions.options');
+        $session->load('test.sections.questions.options', 'test.sections.questions.passage');
 
         $questionOrder = $session->question_order ?? [];
         $optionOrder = $session->option_order ?? [];
@@ -515,9 +538,16 @@ class TestTakingController extends Controller
                         'difficulty' => $q->difficulty,
                         'exam_tags' => $q->exam_tags,
                         'question_text' => $q->question_text,
+                        'question_type' => $q->question_type,
                         'marks' => $q->marks,
                         'negative_marks' => $q->negative_marks,
-                        // Options excluding is_correct for cheating prevention
+                        'passage' => $q->passage ? [
+                            'id' => $q->passage->id,
+                            'title' => $q->passage->title,
+                            'body' => $q->passage->body,
+                        ] : null,
+                        // Options excluding is_correct for cheating prevention.
+                        // Numeric questions have none — the array is just empty.
                         'options' => $options->values()->map(fn($o) => [
                             'id' => $o->id,
                             'label' => $o->label,
@@ -530,7 +560,7 @@ class TestTakingController extends Controller
         });
 
         $answers = TestAnswer::where('test_session_id', $session->id)
-            ->select('question_id', 'selected_option_id', 'is_marked_for_review', 'is_visited')
+            ->select('question_id', 'selected_option_id', 'selected_option_ids', 'numeric_response', 'is_marked_for_review', 'is_visited')
             ->get();
 
         return response()->json([

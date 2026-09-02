@@ -27,6 +27,21 @@ class Question extends Model
         'discrimination_index',
         'stats_sample_size',
         'stats_computed_at',
+        'question_type',
+        'numeric_answer',
+        'numeric_tolerance',
+        'passage_id',
+    ];
+
+    /** Formats real SSC/Banking/RRB papers actually use. */
+    public const TYPE_SINGLE_CHOICE = 'single_choice';
+    public const TYPE_MULTI_SELECT = 'multi_select';
+    public const TYPE_NUMERIC = 'numeric';
+
+    public const QUESTION_TYPES = [
+        self::TYPE_SINGLE_CHOICE,
+        self::TYPE_MULTI_SELECT,
+        self::TYPE_NUMERIC,
     ];
 
     /** Review states. Only APPROVED questions may enter a published test. */
@@ -59,6 +74,8 @@ class Question extends Model
             'difficulty_index' => 'float',
             'discrimination_index' => 'float',
             'stats_sample_size' => 'integer',
+            'numeric_answer' => 'decimal:4',
+            'numeric_tolerance' => 'decimal:4',
         ];
     }
 
@@ -70,6 +87,11 @@ class Question extends Model
     public function createdBy(): BelongsTo
     {
         return $this->belongsTo(User::class, 'created_by');
+    }
+
+    public function passage(): BelongsTo
+    {
+        return $this->belongsTo(Passage::class);
     }
 
     /**

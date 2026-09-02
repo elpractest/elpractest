@@ -2,7 +2,9 @@
 
 namespace App\Http\Requests\Admin;
 
+use App\Models\Question;
 use Illuminate\Foundation\Http\FormRequest;
+use Illuminate\Validation\Rule;
 
 class StoreQuestionRequest extends FormRequest
 {
@@ -13,6 +15,9 @@ class StoreQuestionRequest extends FormRequest
 
     public function rules(): array
     {
+        $type = $this->input('question_type', Question::TYPE_SINGLE_CHOICE);
+        $isNumeric = $type === Question::TYPE_NUMERIC;
+
         return [
             'subject' => ['required', 'string', 'max:255'],
             'topic' => ['required', 'string', 'max:255'],
@@ -23,26 +28,39 @@ class StoreQuestionRequest extends FormRequest
             'explanation' => ['nullable', 'string'],
             'marks' => ['required', 'numeric', 'min:0'],
             'negative_marks' => ['required', 'numeric', 'min:0'],
-            'options' => ['required', 'array', 'min:4', 'max:6'],
-            'options.*.label' => ['required', 'string', 'size:1', 'in:a,b,c,d,e,f'],
-            'options.*.option_text' => ['required', 'string'],
-            'options.*.is_correct' => ['required', 'boolean'],
+            'question_type' => ['nullable', 'string', Rule::in(Question::QUESTION_TYPES)],
+            'passage_id' => ['nullable', 'integer', 'exists:passages,id'],
+
+            // Choice-based types (single_choice, multi_select) carry options;
+            // numeric carries an answer + tolerance instead.
+            'options' => [$isNumeric ? 'prohibited' : 'required', 'array', 'min:2', 'max:6'],
+            'options.*.label' => ['required_with:options', 'string', 'size:1', 'in:a,b,c,d,e,f'],
+            'options.*.option_text' => ['required_with:options', 'string'],
+            'options.*.is_correct' => ['required_with:options', 'boolean'],
+            'numeric_answer' => [$isNumeric ? 'required' : 'prohibited', 'numeric'],
+            'numeric_tolerance' => ['nullable', 'numeric', 'min:0'],
         ];
     }
 
     /**
-     * Exactly one option must be marked correct.
+     * single_choice: exactly one correct option (the CBT player can only submit
+     * one, so more than one is unreachable and zero is unscoreable).
+     * multi_select: at least one correct option — several may be true, matching
+     * SSC/RRB statement-based questions ("which of the above are correct?").
      *
-     * Without this a question can be saved with zero correct options (nobody can
-     * ever score it) or several (the single-select CBT player can only submit one,
-     * so the rest are unreachable). Both silently corrupt every score the question
-     * takes part in, which is why it is a hard validation rather than a warning.
+     * Either way, zero correct options silently corrupts every score the
+     * question takes part in, which is why this is a hard validation.
      */
-    protected function validateExactlyOneCorrect($validator): void
+    protected function validateOptions($validator): void
     {
+        $type = $this->input('question_type', Question::TYPE_SINGLE_CHOICE);
+        if ($type === Question::TYPE_NUMERIC) {
+            return;
+        }
+
         $options = $this->input('options');
         if (!is_array($options) || $options === []) {
-            return; // `sometimes`/`nullable` handles absence; nothing to check
+            return; // the `required` rule above already reports this
         }
 
         $correct = 0;
@@ -52,11 +70,13 @@ class StoreQuestionRequest extends FormRequest
             }
         }
 
-        if ($correct !== 1) {
+        if ($type === Question::TYPE_SINGLE_CHOICE && $correct !== 1) {
             $validator->errors()->add(
                 'options',
                 "Exactly one option must be marked correct ({$correct} were)."
             );
+        } elseif ($type === Question::TYPE_MULTI_SELECT && $correct < 1) {
+            $validator->errors()->add('options', 'At least one option must be marked correct.');
         }
 
         $labels = array_map(
@@ -70,6 +90,6 @@ class StoreQuestionRequest extends FormRequest
 
     public function withValidator($validator): void
     {
-        $validator->after(fn ($v) => $this->validateExactlyOneCorrect($v));
+        $validator->after(fn ($v) => $this->validateOptions($v));
     }
 }

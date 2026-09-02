@@ -68,20 +68,30 @@ class ResultController extends Controller
         $rankAndPercent = $session->getRankAndPercentile();
         
         $answers = TestAnswer::where('test_session_id', $session->id)
-            ->with(['question.options'])
+            ->with(['question.options', 'question.passage'])
             ->get()
             ->map(function ($ans) {
                 $q = $ans->question;
                 return [
                     'question_id' => $ans->question_id,
                     'question_text' => $q->question_text,
+                    'question_type' => $q->question_type,
                     'explanation' => $q->explanation,
                     'marks' => $q->marks,
                     'negative_marks' => $q->negative_marks,
                     'selected_option_id' => $ans->selected_option_id,
+                    'selected_option_ids' => $ans->selected_option_ids,
+                    'numeric_response' => $ans->numeric_response,
+                    'numeric_answer' => $q->numeric_answer,
+                    'numeric_tolerance' => $q->numeric_tolerance,
                     'is_correct' => $ans->isCorrect(),
                     'is_visited' => $ans->is_visited,
                     'time_spent_seconds' => $ans->time_spent_seconds,
+                    'passage' => $q->passage ? [
+                        'id' => $q->passage->id,
+                        'title' => $q->passage->title,
+                        'body' => $q->passage->body,
+                    ] : null,
                     'options' => $q->options->map(fn($o) => [
                         'id' => $o->id,
                         'label' => $o->label,

@@ -116,6 +116,9 @@ export default function TestResult() {
   const normalizedScore = isDemo ? null : (analytic?.normalized_score != null ? parseFloat(analytic.normalized_score) : null);
   const hasQualifyingSection = sectionBreakdown.some((sec) => sec.is_qualifying);
   const fmt = (n) => (Math.round(Number(n) * 100) / 100);
+  // Numeric answers come back from a decimal:4 cast ("1920.0000"); show them the
+  // way a candidate wrote them, without the trailing zeros.
+  const num = (v) => (v === null || v === undefined || v === '' ? '—' : String(Number(v)));
 
   const R = 56, C = 2 * Math.PI * R;
   const verdict = pct >= 80 ? 'Excellent — top 4%! 🎯' : pct >= 60 ? 'Good effort — keep pushing 💪' : 'Keep practising 📚';
@@ -293,30 +296,63 @@ export default function TestResult() {
           <h2 style={{ font: '800 18px var(--font-display)', marginBottom: '16px', color: 'var(--tx)' }}>Answer review</h2>
           <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
             {answers.map((ans, idx) => {
-              const isCorrect = ans.selected_option_id !== null && ans.is_correct;
-              const isUnanswered = ans.selected_option_id === null;
+              const isNumeric = ans.question_type === 'numeric';
+              const isMulti = ans.question_type === 'multi_select';
+              const isUnanswered = isNumeric
+                ? ans.numeric_response === null || ans.numeric_response === undefined
+                : isMulti
+                  ? !ans.selected_option_ids || ans.selected_option_ids.length === 0
+                  : ans.selected_option_id === null;
+              const isCorrect = !isUnanswered && ans.is_correct;
               return (
                 <div key={ans.question_id} className="glass-panel" style={{ padding: '20px', borderLeft: '4px solid', borderLeftColor: isCorrect ? 'var(--success)' : isUnanswered ? 'var(--muted)' : 'var(--danger)' }}>
                   <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '14px', fontSize: '0.85rem' }}>
                     <span style={{ fontWeight: 700, color: 'var(--tx)' }}>Question {idx + 1}</span>
                     <span style={{ color: isCorrect ? 'var(--success-text)' : isUnanswered ? 'var(--muted)' : 'var(--danger-text)', fontWeight: 700, textTransform: 'uppercase' }}>{isCorrect ? 'Correct' : isUnanswered ? 'Skipped' : 'Incorrect'}</span>
                   </div>
+
+                  {ans.passage && (
+                    <div style={{ padding: '12px 14px', borderRadius: '10px', background: 'var(--surf)', border: '1px solid var(--line)', marginBottom: '14px', maxHeight: '160px', overflowY: 'auto' }}>
+                      {ans.passage.title && <div style={{ font: '800 12px var(--font-display)', color: 'var(--tx)', marginBottom: '4px' }}>{ans.passage.title}</div>}
+                      <div style={{ font: '500 12.5px/1.6 var(--font-body)', color: 'var(--tx2)', whiteSpace: 'pre-wrap' }}>{ans.passage.body}</div>
+                    </div>
+                  )}
+
                   <div style={{ fontSize: '1.02rem', lineHeight: 1.6, marginBottom: '16px', color: 'var(--tx)' }}><MathRenderer text={ans.question_text} /></div>
-                  <div style={{ display: 'flex', flexDirection: 'column', gap: '8px', marginBottom: '14px' }}>
-                    {ans.options.map((opt) => {
-                      const wasSelected = ans.selected_option_id === opt.id;
-                      const isRight = opt.is_correct;
-                      let bg = 'var(--surf)', border = 'var(--line)';
-                      if (isRight) { bg = 'var(--success-bg)'; border = 'var(--success-border)'; }
-                      else if (wasSelected) { bg = 'var(--danger-bg)'; border = 'var(--danger-border)'; }
-                      return (
-                        <div key={opt.id} style={{ display: 'flex', alignItems: 'center', padding: '10px 14px', borderRadius: '10px', background: bg, border: `1px solid ${border}`, fontSize: '0.95rem', color: 'var(--tx)' }}>
-                          <span style={{ display: 'inline-flex', alignItems: 'center', justifyContent: 'center', width: '24px', height: '24px', borderRadius: '50%', background: isRight ? 'var(--success)' : wasSelected ? 'var(--danger)' : 'var(--surf)', color: '#fff', marginRight: '12px', fontWeight: 'bold', fontSize: '0.8rem' }}>{opt.label}</span>
-                          <span><MathRenderer text={opt.option_text} /></span>
-                        </div>
-                      );
-                    })}
-                  </div>
+
+                  {isNumeric ? (
+                    <div style={{ display: 'flex', gap: '12px', marginBottom: '14px', flexWrap: 'wrap' }}>
+                      <div style={{ padding: '10px 14px', borderRadius: '10px', background: isUnanswered ? 'var(--surf)' : isCorrect ? 'var(--success-bg)' : 'var(--danger-bg)', border: `1px solid ${isUnanswered ? 'var(--line)' : isCorrect ? 'var(--success-border)' : 'var(--danger-border)'}`, fontSize: '0.9rem', color: 'var(--tx)' }}>
+                        <span style={{ color: 'var(--muted)', marginRight: '6px' }}>Your answer:</span>
+                        <strong>{isUnanswered ? '—' : num(ans.numeric_response)}</strong>
+                      </div>
+                      <div style={{ padding: '10px 14px', borderRadius: '10px', background: 'var(--success-bg)', border: '1px solid var(--success-border)', fontSize: '0.9rem', color: 'var(--tx)' }}>
+                        <span style={{ color: 'var(--muted)', marginRight: '6px' }}>Accepted:</span>
+                        <strong>{num(ans.numeric_answer)}{Number(ans.numeric_tolerance) > 0 ? ` ± ${num(ans.numeric_tolerance)}` : ''}</strong>
+                      </div>
+                    </div>
+                  ) : (
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: '8px', marginBottom: '14px' }}>
+                      {isMulti && (
+                        <div style={{ font: '700 11px var(--font-body)', color: '#8B5CF6', marginBottom: '2px' }}>Select all that apply</div>
+                      )}
+                      {ans.options.map((opt) => {
+                        const wasSelected = isMulti
+                          ? Array.isArray(ans.selected_option_ids) && ans.selected_option_ids.includes(opt.id)
+                          : ans.selected_option_id === opt.id;
+                        const isRight = opt.is_correct;
+                        let bg = 'var(--surf)', border = 'var(--line)';
+                        if (isRight) { bg = 'var(--success-bg)'; border = 'var(--success-border)'; }
+                        else if (wasSelected) { bg = 'var(--danger-bg)'; border = 'var(--danger-border)'; }
+                        return (
+                          <div key={opt.id} style={{ display: 'flex', alignItems: 'center', padding: '10px 14px', borderRadius: '10px', background: bg, border: `1px solid ${border}`, fontSize: '0.95rem', color: 'var(--tx)' }}>
+                            <span style={{ display: 'inline-flex', alignItems: 'center', justifyContent: 'center', width: '24px', height: '24px', borderRadius: isMulti ? '6px' : '50%', background: isRight ? 'var(--success)' : wasSelected ? 'var(--danger)' : 'var(--surf)', color: '#fff', marginRight: '12px', fontWeight: 'bold', fontSize: '0.8rem' }}>{isMulti ? (wasSelected || isRight ? '✓' : opt.label) : opt.label}</span>
+                            <span><MathRenderer text={opt.option_text} /></span>
+                          </div>
+                        );
+                      })}
+                    </div>
+                  )}
                   {ans.explanation && (
                     <div style={{ background: 'var(--surf)', border: '1px dashed var(--line2)', padding: '14px', borderRadius: '10px' }}>
                       <div style={{ fontSize: '0.85rem', fontWeight: 700, color: 'var(--accent-color)', marginBottom: '6px' }}>Explanation</div>

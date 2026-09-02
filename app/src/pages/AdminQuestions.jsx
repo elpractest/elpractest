@@ -70,7 +70,7 @@ export default function AdminQuestions({ csvState, triggerCsvImport, csvJobId })
 
   // Single Question Form State
   const [showForm, setShowForm] = useState(false);
-  const [form, setForm] = useState({
+  const blankForm = () => ({
     id: null,
     subject: '',
     topic: '',
@@ -80,6 +80,10 @@ export default function AdminQuestions({ csvState, triggerCsvImport, csvJobId })
     question_text: '',
     explanation: '',
     exam_tags: [],
+    question_type: 'single_choice',
+    numeric_answer: '',
+    numeric_tolerance: 0,
+    passage_id: '',
     options: [
       { label: 'a', option_text: '', is_correct: false },
       { label: 'b', option_text: '', is_correct: false },
@@ -87,6 +91,51 @@ export default function AdminQuestions({ csvState, triggerCsvImport, csvJobId })
       { label: 'd', option_text: '', is_correct: false },
     ]
   });
+  const [form, setForm] = useState(blankForm());
+
+  // Passages — shared comprehension text a question can link to. A manual,
+  // low-volume authoring flow (unlike the CSV path for plain questions).
+  const [passages, setPassages] = useState([]);
+  const [showPassageManager, setShowPassageManager] = useState(false);
+  const [passageForm, setPassageForm] = useState({ id: null, title: '', body: '' });
+
+  const fetchPassages = async () => {
+    try {
+      const res = await api.get('/api/admin/passages', { params: { per_page: 100 } });
+      setPassages(res.data.data || []);
+    } catch (err) {
+      // Non-critical — the picker just stays empty.
+    }
+  };
+
+  useEffect(() => { fetchPassages(); }, []);
+
+  const savePassage = async (e) => {
+    e.preventDefault();
+    setError('');
+    try {
+      if (passageForm.id) {
+        await api.put(`/api/admin/passages/${passageForm.id}`, passageForm);
+      } else {
+        await api.post('/api/admin/passages', passageForm);
+      }
+      setPassageForm({ id: null, title: '', body: '' });
+      fetchPassages();
+    } catch (err) {
+      setError(err.response?.data?.message || 'Failed to save passage.');
+    }
+  };
+
+  const deletePassage = async (id) => {
+    if (!window.confirm('Delete this passage? Only possible while no questions are linked to it.')) return;
+    setError('');
+    try {
+      await api.delete(`/api/admin/passages/${id}`);
+      fetchPassages();
+    } catch (err) {
+      setError(err.response?.data?.message || 'Failed to delete passage.');
+    }
+  };
 
   const fetchQuestions = async () => {
     setLoading(true);
@@ -159,12 +208,27 @@ export default function AdminQuestions({ csvState, triggerCsvImport, csvJobId })
     setForm({ ...form, options: updatedOptions });
   };
 
+  // single_choice: picking one clears every other (radio behaviour).
+  // multi_select: each option toggles independently (checkbox behaviour) —
+  // several may be correct, matching a "which of the above" statement question.
   const handleCorrectOptionSelect = (index) => {
-    const updatedOptions = form.options.map((opt, i) => ({
-      ...opt,
-      is_correct: i === index
-    }));
+    const updatedOptions = form.question_type === 'multi_select'
+      ? form.options.map((opt, i) => i === index ? { ...opt, is_correct: !opt.is_correct } : opt)
+      : form.options.map((opt, i) => ({ ...opt, is_correct: i === index }));
     setForm({ ...form, options: updatedOptions });
+  };
+
+  const nextOptionLabel = () => 'abcdef'[form.options.length] || null;
+
+  const addOption = () => {
+    const label = nextOptionLabel();
+    if (!label || form.options.length >= 6) return;
+    setForm({ ...form, options: [...form.options, { label, option_text: '', is_correct: false }] });
+  };
+
+  const removeOption = (index) => {
+    if (form.options.length <= 2) return;
+    setForm({ ...form, options: form.options.filter((_, i) => i !== index) });
   };
 
   // Question Form submit
@@ -173,19 +237,40 @@ export default function AdminQuestions({ csvState, triggerCsvImport, csvJobId })
     setError('');
     setSuccess('');
 
-    // Validation: make sure one option is selected as correct
-    const hasCorrect = form.options.some(opt => opt.is_correct);
-    if (!hasCorrect) {
-      setError('Please select exactly one correct option.');
-      return;
+    const isNumeric = form.question_type === 'numeric';
+
+    if (isNumeric) {
+      if (form.numeric_answer === '' || form.numeric_answer === null) {
+        setError('Enter the correct numeric answer.');
+        return;
+      }
+    } else {
+      const correctCount = form.options.filter(opt => opt.is_correct).length;
+      if (form.question_type === 'single_choice' && correctCount !== 1) {
+        setError(`Exactly one option must be marked correct (${correctCount} were).`);
+        return;
+      }
+      if (form.question_type === 'multi_select' && correctCount < 1) {
+        setError('Select at least one correct option.');
+        return;
+      }
     }
+
+    const payload = { ...form };
+    if (isNumeric) {
+      delete payload.options;
+    } else {
+      delete payload.numeric_answer;
+      delete payload.numeric_tolerance;
+    }
+    if (!payload.passage_id) payload.passage_id = null;
 
     try {
       if (form.id) {
-        await api.put(`/api/admin/questions/${form.id}`, form);
+        await api.put(`/api/admin/questions/${form.id}`, payload);
         setSuccess('Question updated successfully.');
       } else {
-        await api.post('/api/admin/questions', form);
+        await api.post('/api/admin/questions', payload);
         setSuccess('Question created successfully.');
       }
       setShowForm(false);
@@ -206,11 +291,17 @@ export default function AdminQuestions({ csvState, triggerCsvImport, csvJobId })
       question_text: q.question_text,
       explanation: q.explanation || '',
       exam_tags: q.exam_tags || [],
-      options: q.options.map(opt => ({
-        label: opt.label,
-        option_text: opt.option_text,
-        is_correct: !!opt.is_correct
-      }))
+      question_type: q.question_type || 'single_choice',
+      numeric_answer: q.numeric_answer ?? '',
+      numeric_tolerance: q.numeric_tolerance ?? 0,
+      passage_id: q.passage_id ?? '',
+      options: q.question_type === 'numeric' || !q.options?.length
+        ? blankForm().options
+        : q.options.map(opt => ({
+            label: opt.label,
+            option_text: opt.option_text,
+            is_correct: !!opt.is_correct
+          }))
     });
     setShowForm(true);
   };
@@ -290,31 +381,17 @@ export default function AdminQuestions({ csvState, triggerCsvImport, csvJobId })
           <h1 style={{ fontSize: '2rem', margin: 0, fontWeight: 800 }}>Question Bank</h1>
           <p style={{ color: 'var(--text-secondary)', margin: '4px 0 0 0' }}>Search, create, and upload questions in bulk with LaTeX support.</p>
         </div>
-        <button 
-          onClick={() => {
-            setForm({
-              id: null,
-              subject: '',
-              topic: '',
-              difficulty: 'medium',
-              marks: 1.0,
-              negative_marks: 0.25,
-              question_text: '',
-              explanation: '',
-              exam_tags: [],
-              options: [
-                { label: 'a', option_text: '', is_correct: false },
-                { label: 'b', option_text: '', is_correct: false },
-                { label: 'c', option_text: '', is_correct: false },
-                { label: 'd', option_text: '', is_correct: false },
-              ]
-            });
-            setShowForm(true);
-          }} 
-          className="btn-primary"
-        >
-          ➕ Add Question
-        </button>
+        <div style={{ display: 'flex', gap: '10px' }}>
+          <button onClick={() => setShowPassageManager(true)} className="btn-secondary">
+            📖 Passages
+          </button>
+          <button
+            onClick={() => { setForm(blankForm()); setShowForm(true); }}
+            className="btn-primary"
+          >
+            ➕ Add Question
+          </button>
+        </div>
       </div>
 
       {success && (
@@ -383,7 +460,7 @@ export default function AdminQuestions({ csvState, triggerCsvImport, csvJobId })
           <div style={{ fontSize: '3rem' }}>📂</div>
           <div>
             <h3 style={{ margin: '0 0 6px 0', fontSize: '1.1rem', fontWeight: 700 }}>Drag & Drop Question CSV</h3>
-            <p style={{ color: 'var(--text-secondary)', fontSize: '0.85rem', margin: 0 }}>Upload questions in bulk with headers: subject, topic, difficulty, question_text, option_a...option_d, correct_option, explanation</p>
+            <p style={{ color: 'var(--text-secondary)', fontSize: '0.85rem', margin: 0 }}>Required: subject, topic, difficulty, question_text, option_a...option_f, correct_option, marks, negative_marks, explanation. Optional: question_type (single_choice/multi_select/numeric — defaults to single_choice), numeric_answer, numeric_tolerance. For multi_select, pipe-separate correct_option (e.g. "a|c").</p>
           </div>
           <div style={{ color: 'var(--text-secondary)', fontSize: '0.9rem' }}>— OR —</div>
           <label className="btn-secondary" style={{ padding: '8px 16px', fontSize: '0.85rem', cursor: 'pointer' }}>
@@ -497,6 +574,11 @@ export default function AdminQuestions({ csvState, triggerCsvImport, csvJobId })
                     >
                       {q.difficulty}
                     </span>
+                    {q.question_type && q.question_type !== 'single_choice' && (
+                      <div style={{ fontSize: '0.7rem', color: 'var(--text-secondary)', marginTop: '4px', textTransform: 'capitalize' }}>
+                        {q.question_type.replace('_', ' ')}
+                      </div>
+                    )}
                   </td>
                   <td style={{ padding: '16px', maxWidth: '300px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
                     {/* Render KaTeX inline for preview safely */}
@@ -664,6 +746,64 @@ export default function AdminQuestions({ csvState, triggerCsvImport, csvJobId })
         </div>
       )}
 
+      {/* Passage manager — shared comprehension text that questions link to */}
+      {showPassageManager && (
+        <div
+          onClick={() => { setShowPassageManager(false); setPassageForm({ id: null, title: '', body: '' }); }}
+          style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, background: 'var(--overlay)', display: 'flex', justifyContent: 'center', alignItems: 'center', zIndex: 1100, padding: '20px' }}
+        >
+          <div className="glass-panel" onClick={(e) => e.stopPropagation()} style={{ width: '100%', maxWidth: '720px', maxHeight: '85vh', overflowY: 'auto', padding: '26px' }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: '16px', marginBottom: '16px' }}>
+              <div>
+                <h3 style={{ margin: 0, fontWeight: 800 }}>Comprehension passages</h3>
+                <p style={{ margin: '4px 0 0', fontSize: '0.82rem', color: 'var(--text-secondary)' }}>
+                  Author a passage once, then link several questions to it from the question form.
+                </p>
+              </div>
+              <button onClick={() => { setShowPassageManager(false); setPassageForm({ id: null, title: '', body: '' }); }} style={{ background: 'transparent', border: 'none', cursor: 'pointer', fontSize: '1.1rem' }}>✕</button>
+            </div>
+
+            <form onSubmit={savePassage} style={{ display: 'flex', flexDirection: 'column', gap: '10px', marginBottom: '22px', padding: '16px', borderRadius: '10px', background: 'var(--surface-sunken, var(--surface-1))' }}>
+              <input
+                type="text" placeholder="Title (optional, e.g. 'RC Passage 1 — Climate Change')"
+                value={passageForm.title} onChange={(e) => setPassageForm({ ...passageForm, title: e.target.value })}
+                className="form-input" style={{ padding: '8px 12px' }}
+              />
+              <textarea
+                placeholder="Passage text" rows={5} required
+                value={passageForm.body} onChange={(e) => setPassageForm({ ...passageForm, body: e.target.value })}
+                className="form-input" style={{ padding: '8px 12px' }}
+              />
+              <div style={{ display: 'flex', gap: '10px', justifyContent: 'flex-end' }}>
+                {passageForm.id && (
+                  <button type="button" onClick={() => setPassageForm({ id: null, title: '', body: '' })} className="btn-secondary" style={{ padding: '6px 14px', fontSize: '0.85rem' }}>Cancel edit</button>
+                )}
+                <button type="submit" className="btn-primary" style={{ padding: '6px 16px', fontSize: '0.85rem' }}>{passageForm.id ? 'Update passage' : 'Add passage'}</button>
+              </div>
+            </form>
+
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
+              {passages.length === 0 && (
+                <p style={{ color: 'var(--text-secondary)', fontSize: '0.85rem' }}>No passages yet.</p>
+              )}
+              {passages.map(p => (
+                <div key={p.id} style={{ padding: '12px 14px', borderRadius: '10px', border: '1px solid var(--border-color)', display: 'flex', justifyContent: 'space-between', gap: '12px', alignItems: 'flex-start' }}>
+                  <div style={{ minWidth: 0 }}>
+                    <div style={{ fontWeight: 700, fontSize: '0.9rem' }}>{p.title || `Passage #${p.id}`}</div>
+                    <div style={{ fontSize: '0.8rem', color: 'var(--text-secondary)', marginTop: '4px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{p.body}</div>
+                    <div style={{ fontSize: '0.72rem', color: 'var(--text-secondary)', marginTop: '4px' }}>{p.questions_count ?? 0} question(s) linked</div>
+                  </div>
+                  <div style={{ display: 'flex', gap: '10px', flexShrink: 0 }}>
+                    <button onClick={() => setPassageForm({ id: p.id, title: p.title || '', body: p.body })} style={{ background: 'transparent', border: 'none', cursor: 'pointer' }} title="Edit">✏️</button>
+                    <button onClick={() => deletePassage(p.id)} style={{ background: 'transparent', border: 'none', cursor: 'pointer' }} title="Delete">🗑️</button>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+        </div>
+      )}
+
       {/* Single Question Creator/Editor Form modal */}
       {showForm && (
         <div style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, background: 'var(--overlay)', display: 'flex', justifyContent: 'center', alignItems: 'center', zIndex: 1000, padding: '20px' }}>
@@ -708,6 +848,37 @@ export default function AdminQuestions({ csvState, triggerCsvImport, csvJobId })
                   </div>
                 </div>
 
+                {/* Question type + passage link */}
+                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px' }}>
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
+                    <label style={{ fontSize: '0.8rem', color: 'var(--text-secondary)' }}>Question type</label>
+                    <select
+                      value={form.question_type}
+                      onChange={(e) => setForm({ ...form, question_type: e.target.value })}
+                      className="form-input"
+                      style={{ padding: '8px 12px' }}
+                    >
+                      <option value="single_choice">Single choice (one correct)</option>
+                      <option value="multi_select">Multi-select (several correct)</option>
+                      <option value="numeric">Numeric answer</option>
+                    </select>
+                  </div>
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
+                    <label style={{ fontSize: '0.8rem', color: 'var(--text-secondary)' }}>Passage (comprehension set)</label>
+                    <select
+                      value={form.passage_id || ''}
+                      onChange={(e) => setForm({ ...form, passage_id: e.target.value })}
+                      className="form-input"
+                      style={{ padding: '8px 12px' }}
+                    >
+                      <option value="">None — standalone question</option>
+                      {passages.map(p => (
+                        <option key={p.id} value={p.id}>{p.title || `Passage #${p.id}`}</option>
+                      ))}
+                    </select>
+                  </div>
+                </div>
+
                 {/* Question Text */}
                 <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
                   <label style={{ fontSize: '0.8rem', color: 'var(--text-secondary)' }}>Question Text (LaTeX supported, e.g. $x^2$ or $$\sum x$$)</label>
@@ -720,31 +891,75 @@ export default function AdminQuestions({ csvState, triggerCsvImport, csvJobId })
                   />
                 </div>
 
-                {/* Options */}
-                <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
-                  <label style={{ fontSize: '0.85rem', fontWeight: 'bold' }}>Answer Options & Correct Key</label>
-                  {form.options.map((opt, idx) => (
-                    <div key={idx} style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-                      <input 
-                        type="checkbox" 
-                        checked={opt.is_correct} 
-                        onChange={() => handleCorrectOptionSelect(idx)}
-                        style={{ width: '20px', height: '20px', cursor: 'pointer' }}
-                        title="Set as correct answer"
-                      />
-                      <span style={{ fontWeight: 'bold', textTransform: 'uppercase' }}>{opt.label}.</span>
-                      <input 
-                        type="text" 
-                        value={opt.option_text} 
-                        onChange={(e) => handleOptionTextChange(idx, e.target.value)} 
-                        className="form-input" 
-                        placeholder={`Option ${opt.label.toUpperCase()}`}
-                        style={{ padding: '8px 12px' }}
-                        required 
-                      />
+                {/* Options (single_choice / multi_select) or numeric answer key */}
+                {form.question_type === 'numeric' ? (
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                    <label style={{ fontSize: '0.85rem', fontWeight: 'bold' }}>Numeric answer key</label>
+                    <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px' }}>
+                      <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
+                        <label style={{ fontSize: '0.78rem', color: 'var(--text-secondary)' }}>Correct value</label>
+                        <input
+                          type="number" step="any"
+                          value={form.numeric_answer}
+                          onChange={(e) => setForm({ ...form, numeric_answer: e.target.value })}
+                          className="form-input" style={{ padding: '8px 12px' }} required
+                        />
+                      </div>
+                      <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
+                        <label style={{ fontSize: '0.78rem', color: 'var(--text-secondary)' }}>Tolerance (± accepted range)</label>
+                        <input
+                          type="number" step="any" min="0"
+                          value={form.numeric_tolerance}
+                          onChange={(e) => setForm({ ...form, numeric_tolerance: e.target.value })}
+                          className="form-input" style={{ padding: '8px 12px' }}
+                        />
+                      </div>
                     </div>
-                  ))}
-                </div>
+                    <p style={{ margin: '2px 0 0', fontSize: '0.78rem', color: 'var(--text-secondary)' }}>
+                      A response is correct when it falls within ±tolerance of the value above. Use 0 for an exact match.
+                    </p>
+                  </div>
+                ) : (
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                    <label style={{ fontSize: '0.85rem', fontWeight: 'bold' }}>
+                      Answer Options & Correct Key
+                      <span style={{ fontWeight: 500, color: 'var(--text-secondary)', marginLeft: '8px' }}>
+                        {form.question_type === 'multi_select' ? '— tick every correct statement' : '— tick the one correct option'}
+                      </span>
+                    </label>
+                    {form.options.map((opt, idx) => (
+                      <div key={idx} style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                        <input
+                          type="checkbox"
+                          checked={opt.is_correct}
+                          onChange={() => handleCorrectOptionSelect(idx)}
+                          style={{ width: '20px', height: '20px', cursor: 'pointer' }}
+                          title="Set as correct answer"
+                        />
+                        <span style={{ fontWeight: 'bold', textTransform: 'uppercase' }}>{opt.label}.</span>
+                        <input
+                          type="text"
+                          value={opt.option_text}
+                          onChange={(e) => handleOptionTextChange(idx, e.target.value)}
+                          className="form-input"
+                          placeholder={`Option ${opt.label.toUpperCase()}`}
+                          style={{ padding: '8px 12px', flex: 1 }}
+                          required
+                        />
+                        <button
+                          type="button" onClick={() => removeOption(idx)} disabled={form.options.length <= 2}
+                          style={{ background: 'transparent', border: 'none', cursor: form.options.length <= 2 ? 'not-allowed' : 'pointer', opacity: form.options.length <= 2 ? 0.3 : 1, fontSize: '0.95rem' }}
+                          title="Remove option"
+                        >✕</button>
+                      </div>
+                    ))}
+                    {form.options.length < 6 && (
+                      <button type="button" onClick={addOption} className="btn-secondary" style={{ alignSelf: 'flex-start', padding: '6px 14px', fontSize: '0.82rem' }}>
+                        + Add option {nextOptionLabel()?.toUpperCase()}
+                      </button>
+                    )}
+                  </div>
+                )}
 
                 {/* Explanation */}
                 <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
@@ -773,7 +988,17 @@ export default function AdminQuestions({ csvState, triggerCsvImport, csvJobId })
                 {/* Subject & topic breadcrumb */}
                 <div style={{ fontSize: '0.8rem', color: 'var(--text-secondary)' }}>
                   {form.subject || 'Subject'} &gt; {form.topic || 'Topic'} • {form.difficulty} • +{form.marks}/-{form.negative_marks} Marks
+                  {form.question_type !== 'single_choice' && (
+                    <span style={{ marginLeft: '8px', textTransform: 'capitalize' }}>• {form.question_type.replace('_', ' ')}</span>
+                  )}
                 </div>
+
+                {/* Passage preview, pinned above the question exactly like the student sees it */}
+                {form.passage_id && passages.find(p => String(p.id) === String(form.passage_id)) && (
+                  <div style={{ padding: '14px', borderRadius: '10px', background: 'var(--surf, var(--surface-1))', border: '1px dashed var(--border-color)', fontSize: '0.88rem', lineHeight: 1.6 }}>
+                    {passages.find(p => String(p.id) === String(form.passage_id)).body}
+                  </div>
+                )}
 
                 {/* Question Text preview */}
                 <div style={{ fontSize: '1.05rem', lineHeight: '1.6', borderBottom: '1px solid var(--surface-2)', paddingBottom: '16px' }}>
@@ -784,19 +1009,35 @@ export default function AdminQuestions({ csvState, triggerCsvImport, csvJobId })
                   )}
                 </div>
 
-                {/* Options Preview */}
-                <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
-                  {form.options.map((opt, idx) => (
-                    <div 
-                      key={idx}
-                      className={`mcq-option ${opt.is_correct ? 'selected' : ''}`}
-                      style={{ margin: 0, padding: '10px 16px', cursor: 'default' }}
-                    >
-                      <span className="option-badge">{opt.label}</span>
-                      <div dangerouslySetInnerHTML={renderMath(opt.option_text || `<span style="color:var(--text-secondary);font-style:italic">Option ${opt.label.toUpperCase()} empty</span>`)} />
+                {/* Answer preview: options for choice-based types, key for numeric */}
+                {form.question_type === 'numeric' ? (
+                  <div style={{ padding: '12px 16px', borderRadius: '10px', background: 'var(--accent-soft)', border: '1px solid var(--accent-color)' }}>
+                    <div style={{ fontSize: '0.8rem', color: 'var(--text-secondary)' }}>Accepted answer</div>
+                    <div style={{ fontSize: '1.2rem', fontWeight: 800 }}>
+                      {form.numeric_answer !== '' ? form.numeric_answer : '—'}
+                      {Number(form.numeric_tolerance) > 0 && (
+                        <span style={{ fontSize: '0.85rem', fontWeight: 500, color: 'var(--text-secondary)' }}> ± {form.numeric_tolerance}</span>
+                      )}
                     </div>
-                  ))}
-                </div>
+                  </div>
+                ) : (
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
+                    {form.options.map((opt, idx) => (
+                      <div
+                        key={idx}
+                        className={`mcq-option ${opt.is_correct ? 'selected' : ''}`}
+                        style={{ margin: 0, padding: '10px 16px', cursor: 'default' }}
+                      >
+                        <span className="option-badge">{opt.label}</span>
+                        {/* renderMath escapes markup, so an HTML placeholder would
+                            print as literal tags — render the empty state as JSX. */}
+                        {opt.option_text
+                          ? <div dangerouslySetInnerHTML={renderMath(opt.option_text)} />
+                          : <div style={{ color: 'var(--text-secondary)', fontStyle: 'italic' }}>Option {opt.label.toUpperCase()} empty</div>}
+                      </div>
+                    ))}
+                  </div>
+                )}
 
                 {/* Explanation preview */}
                 {form.explanation && (

@@ -83,9 +83,14 @@ class QuestionController extends Controller
                 'negative_marks' => $request->negative_marks,
                 'is_active' => true,
                 'created_by' => $request->user()->id,
+                'question_type' => $request->input('question_type', Question::TYPE_SINGLE_CHOICE),
+                'numeric_answer' => $request->input('numeric_answer'),
+                'numeric_tolerance' => $request->input('numeric_tolerance', 0),
+                'passage_id' => $request->input('passage_id'),
             ]);
 
-            foreach ($request->options as $index => $optionData) {
+            // Numeric questions carry no options at all.
+            foreach ($request->input('options', []) as $index => $optionData) {
                 QuestionOption::create([
                     'question_id' => $question->id,
                     'label' => strtolower($optionData['label']),
@@ -133,6 +138,10 @@ class QuestionController extends Controller
                 'explanation',
                 'marks',
                 'negative_marks',
+                'question_type',
+                'numeric_answer',
+                'numeric_tolerance',
+                'passage_id',
             ]));
 
             if ($request->has('options')) {

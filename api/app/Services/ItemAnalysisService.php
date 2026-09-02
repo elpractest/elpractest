@@ -3,6 +3,7 @@
 namespace App\Services;
 
 use App\Models\Question;
+use App\Models\TestAnswer;
 use Illuminate\Support\Facades\DB;
 
 /**
@@ -123,7 +124,10 @@ class ItemAnalysisService
 
     /**
      * One row per answered-or-skipped question in a SUBMITTED session, carrying
-     * the candidate ability score for that session.
+     * the candidate ability score for that session. Carries every type's answer
+     * column plus the question's own type/key — `summarise()` stays raw-SQL for
+     * bulk performance rather than hydrating TestAnswer/Question models, but
+     * still needs to judge correctness per type, not just single_choice.
      */
     private function attemptRows(array $questionIds)
     {
@@ -135,6 +139,8 @@ class ItemAnalysisService
             ->select(
                 'ta.question_id',
                 'ta.selected_option_id',
+                'ta.selected_option_ids',
+                'ta.numeric_response',
                 'an.max_score',
                 'an.total_score'
             )
@@ -147,8 +153,14 @@ class ItemAnalysisService
      */
     private function summarise(int $questionId, $rows): array
     {
+        $question = DB::table('questions')
+            ->where('id', $questionId)
+            ->first(['question_type', 'numeric_answer', 'numeric_tolerance']);
+        $type = $question->question_type ?? Question::TYPE_SINGLE_CHOICE;
+
         // Correct option ids for this question, scoped to the question so a
-        // foreign option id can never be counted as correct.
+        // foreign option id can never be counted as correct. Empty for numeric
+        // (it has no question_options rows), which is the correct answer.
         $correctIds = DB::table('question_options')
             ->where('question_id', $questionId)
             ->where('is_correct', true)
@@ -168,9 +180,19 @@ class ItemAnalysisService
         $optionScores = [];
 
         foreach ($rows as $r) {
-            $selected = $r->selected_option_id === null ? null : (int) $r->selected_option_id;
+            // Distractor breakdown is only meaningful for choice-based types —
+            // multi_select still selects real option ids, numeric selects none.
+            $selectedForDistractors = $type === Question::TYPE_MULTI_SELECT
+                ? array_map('intval', json_decode($r->selected_option_ids ?? '[]', true) ?: [])
+                : ($r->selected_option_id === null ? [] : [(int) $r->selected_option_id]);
 
-            if ($selected === null) {
+            $attempted = match ($type) {
+                Question::TYPE_MULTI_SELECT => $selectedForDistractors !== [],
+                Question::TYPE_NUMERIC => $r->numeric_response !== null,
+                default => $r->selected_option_id !== null,
+            };
+
+            if (!$attempted) {
                 $skipped++;
                 // A skip is still evidence about the item: it counts as "not
                 // correct" for difficulty, which is what a real scorecard does.
@@ -178,10 +200,18 @@ class ItemAnalysisService
                 continue;
             }
 
-            $optionCounts[$selected] = ($optionCounts[$selected] ?? 0) + 1;
-            $optionScores[$selected][] = $ability($r);
+            foreach ($selectedForDistractors as $optId) {
+                $optionCounts[$optId] = ($optionCounts[$optId] ?? 0) + 1;
+                $optionScores[$optId][] = $ability($r);
+            }
 
-            if (in_array($selected, $correctIds, true)) {
+            $correct = match ($type) {
+                Question::TYPE_MULTI_SELECT => TestAnswer::multiSelectMatches($selectedForDistractors, $correctIds),
+                Question::TYPE_NUMERIC => TestAnswer::numericMatches($r->numeric_response, $question->numeric_answer, $question->numeric_tolerance),
+                default => in_array($selectedForDistractors[0] ?? null, $correctIds, true),
+            };
+
+            if ($correct) {
                 $correctScores[] = $ability($r);
             } else {
                 $wrongScores[] = $ability($r);

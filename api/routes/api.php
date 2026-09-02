@@ -134,6 +134,9 @@ Route::middleware('auth:sanctum')->group(function () {
         Route::post('questions/{question}/review', [QuestionController::class, 'review']);
         Route::get('questions/{question}/item-analysis', [QuestionController::class, 'itemAnalysis']);
 
+        // Shared comprehension passages (English RC sets etc) that questions link to
+        Route::apiResource('passages', \App\Http\Controllers\Admin\PassageController::class);
+
         // Test management
         Route::apiResource('tests', TestController::class);
         Route::post('tests/{test}/publish', [TestController::class, 'publish']);

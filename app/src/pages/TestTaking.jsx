@@ -112,13 +112,21 @@ export default function TestTaking() {
       setTimeRemaining(data.session.time_remaining_seconds);
       setSectionTimeRemaining(data.session.section_time_remaining_seconds);
 
-      // Map answers to local state
+      // Map answers to local state. Shape depends on question type:
+      // single_choice -> option id, multi_select -> array of option ids,
+      // numeric -> a number (or '' while empty, so the input stays controlled).
       const initialAnswers = {};
       const initialMarked = {};
 
       if (data.answers) {
         data.answers.forEach((ans) => {
-          initialAnswers[ans.question_id] = ans.selected_option_id;
+          if (ans.selected_option_ids !== null && ans.selected_option_ids !== undefined) {
+            initialAnswers[ans.question_id] = ans.selected_option_ids;
+          } else if (ans.numeric_response !== null && ans.numeric_response !== undefined) {
+            initialAnswers[ans.question_id] = ans.numeric_response;
+          } else {
+            initialAnswers[ans.question_id] = ans.selected_option_id;
+          }
           initialMarked[ans.question_id] = !!ans.is_marked_for_review;
         });
       }
@@ -209,6 +217,7 @@ export default function TestTaking() {
 
   const handleAutoSubmit = async () => {
     if (isDemo) { navigate('/tests/demo/result'); return; }
+    flushIfNumeric();
     setIsSubmitting(true);
     try {
       await api.post(`/api/student/tests/sessions/${sessionId}/submit`);
@@ -220,6 +229,7 @@ export default function TestTaking() {
 
   const handleManualSubmit = async () => {
     if (isDemo) { navigate('/tests/demo/result'); return; }
+    flushIfNumeric();
     setIsSubmitting(true);
     try {
       await api.post(`/api/student/tests/sessions/${sessionId}/submit`);
@@ -257,8 +267,17 @@ export default function TestTaking() {
     }
   }, [currentSectionIndex, currentQuestionIndex, activeQuestion?.id]);
 
+  // A numeric answer only truly saves on blur; navigating away before that
+  // fires would otherwise silently drop whatever was typed.
+  const flushIfNumeric = () => {
+    if (activeQuestion?.question_type === 'numeric') {
+      flushNumericResponse(activeQuestion.id, answers[activeQuestion.id]);
+    }
+  };
+
   // Navigate Questions (snappy, checks visited state)
   const navigateToQuestion = (sectionIdx, questionIdx) => {
+    flushIfNumeric();
     if (sectionIdx !== currentSectionIndex) {
       // Sectional timing mode restriction checks
       const hasSectionalTiming = sections.some(s => s.duration_seconds > 0);
@@ -270,7 +289,22 @@ export default function TestTaking() {
     setCurrentQuestionIndex(questionIdx);
   };
 
-  // Instant Option Selection & Auto-Save
+  // The field name the API expects, per question type.
+  const responseFieldFor = (question) => {
+    if (question.question_type === 'multi_select') return 'selected_option_ids';
+    if (question.question_type === 'numeric') return 'numeric_response';
+    return 'selected_option_id';
+  };
+
+  const markPaletteLocally = (questionId, hasAnswer) => {
+    setPalette((prev) => {
+      const isMarked = markedForReview[questionId];
+      if (hasAnswer) return { ...prev, [questionId]: isMarked ? 'answered_and_marked' : 'answered' };
+      return { ...prev, [questionId]: isMarked ? 'marked_for_review' : 'not_answered' };
+    });
+  };
+
+  // Instant Option Selection & Auto-Save (single_choice)
   const selectOption = async (optionId) => {
     const nowTime = Date.now();
     if (nowTime - lastSaveTime.current < 300) return; // double-click protection
@@ -280,13 +314,7 @@ export default function TestTaking() {
 
     // Snappy local UI update
     setAnswers((prev) => ({ ...prev, [questionId]: optionId }));
-    setPalette((prev) => {
-      const isMarked = markedForReview[questionId];
-      return {
-        ...prev,
-        [questionId]: isMarked ? 'answered_and_marked' : 'answered'
-      };
-    });
+    markPaletteLocally(questionId, true);
 
     if (isDemo) return;
     try {
@@ -299,23 +327,68 @@ export default function TestTaking() {
     }
   };
 
-  // Clear selected MCQ option
-  const clearResponse = async () => {
-    const questionId = activeQuestion.id;
+  // Toggle one option in/out of a multi_select response, then save the whole set.
+  const toggleMultiOption = async (optionId) => {
+    const nowTime = Date.now();
+    if (nowTime - lastSaveTime.current < 300) return;
+    lastSaveTime.current = nowTime;
 
-    setAnswers((prev) => ({ ...prev, [questionId]: null }));
-    setPalette((prev) => {
-      const isMarked = markedForReview[questionId];
-      return {
-        ...prev,
-        [questionId]: isMarked ? 'marked_for_review' : 'not_answered'
-      };
-    });
+    const questionId = activeQuestion.id;
+    const current = Array.isArray(answers[questionId]) ? answers[questionId] : [];
+    const next = current.includes(optionId)
+      ? current.filter((id) => id !== optionId)
+      : [...current, optionId];
+
+    setAnswers((prev) => ({ ...prev, [questionId]: next }));
+    markPaletteLocally(questionId, next.length > 0);
 
     if (isDemo) return;
     try {
       await api.put(`/api/student/tests/sessions/${sessionId}/answers/${questionId}`, {
-        selected_option_id: null,
+        selected_option_ids: next,
+        time_spent_seconds: timeSpentOnCurrentQuestion,
+      });
+    } catch (err) {
+      setError('Failed to save answer. Please check connection.');
+    }
+  };
+
+  // Numeric input updates state on every keystroke (no network call — typing a
+  // multi-digit number would otherwise fire a request per digit); it actually
+  // persists on blur, and is force-flushed before navigating away so a typed
+  // value is never lost to an unfired blur event.
+  const setNumericLocal = (value) => {
+    setAnswers((prev) => ({ ...prev, [activeQuestion.id]: value }));
+  };
+
+  const flushNumericResponse = async (questionId, value) => {
+    const hasValue = value !== '' && value !== null && value !== undefined;
+    markPaletteLocally(questionId, hasValue);
+
+    if (isDemo) return;
+    try {
+      await api.put(`/api/student/tests/sessions/${sessionId}/answers/${questionId}`, {
+        numeric_response: hasValue ? value : null,
+        time_spent_seconds: timeSpentOnCurrentQuestion,
+      });
+    } catch (err) {
+      setError('Failed to save answer. Please check connection.');
+    }
+  };
+
+  // Clear the current question's response, whatever its type.
+  const clearResponse = async () => {
+    const questionId = activeQuestion.id;
+    const field = responseFieldFor(activeQuestion);
+    const emptyValue = field === 'selected_option_ids' ? [] : null;
+
+    setAnswers((prev) => ({ ...prev, [questionId]: field === 'selected_option_ids' ? [] : null }));
+    markPaletteLocally(questionId, false);
+
+    if (isDemo) return;
+    try {
+      await api.put(`/api/student/tests/sessions/${sessionId}/answers/${questionId}`, {
+        [field]: emptyValue,
         time_spent_seconds: timeSpentOnCurrentQuestion,
       });
     } catch (err) {
@@ -348,6 +421,7 @@ export default function TestTaking() {
 
   // Save & Next button
   const handleSaveAndNext = () => {
+    flushIfNumeric();
     if (currentQuestionIndex < activeSection.questions.length - 1) {
       setCurrentQuestionIndex((prev) => prev + 1);
     } else {
@@ -365,6 +439,7 @@ export default function TestTaking() {
 
   // Section manual advancement
   const handleAdvanceSection = async () => {
+    flushIfNumeric();
     setAutoAdvancing(true);
     try {
       await api.post(`/api/student/tests/sessions/${sessionId}/advance-section`);
@@ -472,20 +547,59 @@ export default function TestTaking() {
               </div>
             </div>
 
+            {/* Passage, pinned above a comprehension-linked question */}
+            {activeQuestion.passage && (
+              <div style={{ padding: '14px 16px', borderRadius: '14px', background: '#F7F8FC', border: '1px solid #E2E7F0', marginBottom: '12px', maxHeight: '220px', overflowY: 'auto' }}>
+                {activeQuestion.passage.title && (
+                  <div style={{ font: '800 12.5px var(--font-display)', color: '#12203A', marginBottom: '6px' }}>{activeQuestion.passage.title}</div>
+                )}
+                <div style={{ font: '500 13.5px/1.6 var(--font-body)', color: '#3A4560', whiteSpace: 'pre-wrap' }}>{activeQuestion.passage.body}</div>
+              </div>
+            )}
+
             {/* Question card */}
             <div style={{ padding: '16px', borderRadius: '16px', background: '#fff', border: '1px solid #E2E7F0', boxShadow: '0 6px 20px -12px rgba(18,32,58,.25)' }}>
               <div style={{ font: '600 15.5px/1.5 var(--font-body)', color: '#1A2233', margin: '0 0 16px' }}>
                 <MathRenderer text={activeQuestion.question_text} />
               </div>
-              {activeQuestion.options?.map((option) => {
-                const isSelected = answers[activeQuestion.id] === option.id;
-                return (
-                  <div key={option.id} onClick={() => selectOption(option.id)} className={`mcq-option ${isSelected ? 'selected' : ''}`}>
-                    <span className="option-badge">{option.label}</span>
-                    <span style={{ fontSize: '14.5px' }}><MathRenderer text={option.option_text} /></span>
-                  </div>
-                );
-              })}
+
+              {activeQuestion.question_type === 'multi_select' && (
+                <div style={{ font: '700 11px var(--font-body)', color: '#8B5CF6', marginBottom: '10px' }}>Select all that apply</div>
+              )}
+
+              {activeQuestion.question_type === 'numeric' ? (
+                <input
+                  type="number"
+                  inputMode="decimal"
+                  step="any"
+                  value={answers[activeQuestion.id] ?? ''}
+                  onChange={(e) => setNumericLocal(e.target.value === '' ? '' : e.target.value)}
+                  onBlur={(e) => flushNumericResponse(activeQuestion.id, e.target.value === '' ? '' : e.target.value)}
+                  placeholder="Type your answer"
+                  style={{ width: '100%', padding: '14px 16px', borderRadius: '12px', border: '1.5px solid #C9D2E0', font: '700 16px var(--font-mono)', color: '#12203A' }}
+                />
+              ) : activeQuestion.question_type === 'multi_select' ? (
+                activeQuestion.options?.map((option) => {
+                  const selectedIds = Array.isArray(answers[activeQuestion.id]) ? answers[activeQuestion.id] : [];
+                  const isSelected = selectedIds.includes(option.id);
+                  return (
+                    <div key={option.id} onClick={() => toggleMultiOption(option.id)} className={`mcq-option ${isSelected ? 'selected' : ''}`}>
+                      <span className="option-badge" style={{ borderRadius: '5px' }}>{isSelected ? '✓' : option.label}</span>
+                      <span style={{ fontSize: '14.5px' }}><MathRenderer text={option.option_text} /></span>
+                    </div>
+                  );
+                })
+              ) : (
+                activeQuestion.options?.map((option) => {
+                  const isSelected = answers[activeQuestion.id] === option.id;
+                  return (
+                    <div key={option.id} onClick={() => selectOption(option.id)} className={`mcq-option ${isSelected ? 'selected' : ''}`}>
+                      <span className="option-badge">{option.label}</span>
+                      <span style={{ fontSize: '14.5px' }}><MathRenderer text={option.option_text} /></span>
+                    </div>
+                  );
+                })
+              )}
             </div>
 
             {/* Legend + palette */}
@@ -530,7 +644,7 @@ export default function TestTaking() {
           }
           return <button onClick={handleSaveAndNext} style={{ flex: 1, padding: '13px', border: 'none', borderRadius: '12px', background: 'linear-gradient(135deg,#FFC968,#F5A623 55%,#E07C0A)', color: '#1A1206', font: '800 14px var(--font-display)', cursor: 'pointer' }}>Save &amp; Next</button>;
         })()}
-        <button onClick={() => setShowSubmitConfirm(true)} style={{ flex: 'none', padding: '13px 16px', border: 'none', borderRadius: '12px', background: '#0B9E6D', color: '#fff', font: '800 13px var(--font-body)', cursor: 'pointer' }}>Submit</button>
+        <button onClick={() => { flushIfNumeric(); setShowSubmitConfirm(true); }} style={{ flex: 'none', padding: '13px 16px', border: 'none', borderRadius: '12px', background: '#0B9E6D', color: '#fff', font: '800 13px var(--font-body)', cursor: 'pointer' }}>Submit</button>
       </div>
 
       {/* Submit confirmation */}
