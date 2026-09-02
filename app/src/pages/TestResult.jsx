@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate, Link } from 'react-router-dom';
+import { useTranslation } from 'react-i18next';
 import katex from 'katex';
 import api from '../api';
 import { useTheme } from '../lib/theme';
@@ -40,6 +41,7 @@ export default function TestResult() {
   const { session: sessionId } = useParams();
   const navigate = useNavigate();
   const { tint } = useTheme();
+  const { t } = useTranslation();
   const isDemo = sessionId === 'demo';
 
   const [loading, setLoading] = useState(!isDemo);
@@ -62,7 +64,7 @@ export default function TestResult() {
         setMeritRank(res.data.merit_rank ?? null);
         setAnswers(res.data.answers || []);
       })
-      .catch((err) => setError(err.response?.data?.message || 'Failed to fetch test results.'))
+      .catch((err) => setError(err.response?.data?.message || t('result.fetchFailed')))
       .finally(() => setLoading(false));
   }, [sessionId]);
 
@@ -73,7 +75,7 @@ export default function TestResult() {
     return (
       <div style={{ padding: '40px 24px', textAlign: 'center' }}>
         <div style={{ color: 'var(--danger-text)', marginBottom: '16px' }}>{error}</div>
-        <Link to="/dashboard" className="btn-primary">Back to Dashboard</Link>
+        <Link to="/dashboard" className="btn-primary">{t('result.backToDashboard')}</Link>
       </div>
     );
   }
@@ -87,7 +89,7 @@ export default function TestResult() {
     : {
         rank: `${rank}`, percentile: parseFloat(percentile).toFixed(1), accuracy: `${parseFloat(analytic.accuracy_percentage || 0).toFixed(0)}%`,
         correct: analytic.correct_count || 0, wrong: analytic.incorrect_count || 0, skipped: analytic.unanswered_count || 0,
-        time: analytic.time_spent_formatted || '—', title: analytic.test_title || 'Your scorecard',
+        time: analytic.time_spent_formatted || '—', title: analytic.test_title || t('result.scorecard'),
       };
   // Subject bars from the REAL analytics. This used to render demoResultBars on
   // every scorecard, including real sessions, so a student saw a breakdown of a
@@ -102,7 +104,7 @@ export default function TestResult() {
         k,
         pct: attempted > 0 ? Math.round((v.correct / attempted) * 100) : 0,
         hue: hues[i % hues.length],
-        detail: `${v.correct || 0}/${attempted} · ${v.unanswered || 0} blank`,
+        detail: `${v.correct || 0}/${attempted} · ${v.unanswered || 0} ${t('result.blank')}`,
       };
     });
   })();
@@ -121,7 +123,7 @@ export default function TestResult() {
   const num = (v) => (v === null || v === undefined || v === '' ? '—' : String(Number(v)));
 
   const R = 56, C = 2 * Math.PI * R;
-  const verdict = pct >= 80 ? 'Excellent — top 4%! 🎯' : pct >= 60 ? 'Good effort — keep pushing 💪' : 'Keep practising 📚';
+  const verdict = pct >= 80 ? t('result.verdictHigh') : pct >= 60 ? t('result.verdictMid') : t('result.verdictLow');
 
   const statCard = (value, label, hue) => (
     <div style={{ padding: '14px 10px', borderRadius: '16px', background: 'var(--card)', border: '1px solid var(--line)', textAlign: 'center' }}>
@@ -138,7 +140,7 @@ export default function TestResult() {
 
   return (
     <div style={{ padding: '10px 18px 30px', animation: 'fade-in .35s ease both' }}>
-      <h1 style={{ margin: '0 0 14px', font: '800 19px var(--font-display)', color: 'var(--tx)' }}>Result &amp; analysis</h1>
+      <h1 style={{ margin: '0 0 14px', font: '800 19px var(--font-display)', color: 'var(--tx)' }}>{t('result.title')}</h1>
 
       {/* Score hero */}
       <div style={{ padding: '24px', borderRadius: '22px', background: 'var(--card2)', border: '1px solid var(--line)', display: 'flex', flexDirection: 'column', alignItems: 'center', textAlign: 'center', position: 'relative', overflow: 'hidden' }}>
@@ -150,7 +152,7 @@ export default function TestResult() {
           </svg>
           <div style={{ position: 'absolute', inset: 0, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center' }}>
             <span style={{ font: '800 30px var(--font-display)', color: 'var(--tx)', lineHeight: 1 }}>{score}</span>
-            <span style={{ font: '600 12px var(--font-body)', color: 'var(--muted)' }}>out of {maxScore}</span>
+            <span style={{ font: '600 12px var(--font-body)', color: 'var(--muted)' }}>{t('result.outOf')} {maxScore}</span>
           </div>
         </div>
         <div style={{ font: '800 18px var(--font-display)', color: '#FFC968', marginTop: '14px' }}>{verdict}</div>
@@ -165,13 +167,13 @@ export default function TestResult() {
               color: isQualified ? 'var(--success)' : 'var(--danger)',
             }}
           >
-            {isQualified ? 'QUALIFIED' : 'NOT QUALIFIED'}
+            {isQualified ? t('result.qualified') : t('result.notQualified')}
           </div>
         )}
 
         {normalizedScore !== null && (
           <div style={{ font: '600 11.5px var(--font-body)', color: 'var(--muted)', marginTop: '8px' }}>
-            Normalised across shifts: <strong style={{ color: 'var(--tx)' }}>{fmt(normalizedScore)}</strong>
+            {t('result.normalised')}: <strong style={{ color: 'var(--tx)' }}>{fmt(normalizedScore)}</strong>
           </div>
         )}
       </div>
@@ -180,30 +182,29 @@ export default function TestResult() {
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3,1fr)', gap: '10px', marginTop: '14px' }}>
         {/* Merit rank is the strict published order; `rank` lets equal scores
             share a place, which is what a percentile is computed against. */}
-        {statCard(meritRank !== null ? `${meritRank}` : vm.rank, meritRank !== null ? 'Merit rank' : 'Batch rank', 'gold')}
-        {statCard(vm.percentile, 'Percentile', 'blue')}
-        {statCard(vm.accuracy, 'Accuracy', 'green')}
+        {statCard(meritRank !== null ? `${meritRank}` : vm.rank, meritRank !== null ? t('result.meritRank') : t('result.batchRank'), 'gold')}
+        {statCard(vm.percentile, t('result.percentile'), 'blue')}
+        {statCard(vm.accuracy, t('result.accuracy'), 'green')}
       </div>
 
       {hasQualifyingSection && meritScore !== null && (
         <div style={{ marginTop: '10px', padding: '11px 14px', borderRadius: '14px', background: 'var(--card)', border: '1px solid var(--line)', font: '600 12px var(--font-body)', color: 'var(--muted)' }}>
-          Merit score <strong style={{ color: 'var(--tx)' }}>{fmt(meritScore)}</strong> — qualifying
-          sections must be cleared but their marks are excluded from the merit list.
+          {t('result.meritScore')} <strong style={{ color: 'var(--tx)' }}>{fmt(meritScore)}</strong> — {t('result.meritNote')}
         </div>
       )}
 
       {/* Correct / wrong / skipped / time */}
       <div style={{ display: 'flex', gap: '16px', marginTop: '14px', padding: '15px 16px', borderRadius: '16px', background: 'var(--card)', border: '1px solid var(--line)' }}>
-        {countCell(vm.correct, 'Correct', tint('green').c)}
-        {countCell(vm.wrong, 'Wrong', tint('red').c)}
-        {countCell(vm.skipped, 'Skipped', 'var(--tx2)')}
-        {countCell(vm.time, 'Time', 'var(--tx2)', true)}
+        {countCell(vm.correct, t('result.correct'), tint('green').c)}
+        {countCell(vm.wrong, t('result.wrong'), tint('red').c)}
+        {countCell(vm.skipped, t('result.skipped'), 'var(--tx2)')}
+        {countCell(vm.time, t('result.time'), 'var(--tx2)', true)}
       </div>
 
       {/* Sectional performance against each cut-off */}
       {sectionBreakdown.length > 0 && (
         <>
-          <h2 style={{ margin: '22px 0 12px', font: '700 16px var(--font-display)', color: 'var(--tx)' }}>Section-wise result</h2>
+          <h2 style={{ margin: '22px 0 12px', font: '700 16px var(--font-display)', color: 'var(--tx)' }}>{t('result.sectionWise')}</h2>
           <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
             {sectionBreakdown.map((sec) => {
               const pctOf = sec.max_score > 0 ? Math.max(0, Math.min(100, (sec.score / sec.max_score) * 100)) : 0;
@@ -220,7 +221,7 @@ export default function TestResult() {
                     <span style={{ font: '700 13.5px var(--font-display)', color: 'var(--tx)' }}>
                       {sec.title}
                       {sec.is_qualifying && (
-                        <span style={{ marginLeft: '8px', font: '700 10px var(--font-body)', color: 'var(--muted)' }}>QUALIFYING ONLY</span>
+                        <span style={{ marginLeft: '8px', font: '700 10px var(--font-body)', color: 'var(--muted)' }}>{t('result.qualifyingOnly')}</span>
                       )}
                     </span>
                     <span style={{ font: '800 13px var(--font-mono)', color: 'var(--tx)' }}>
@@ -243,10 +244,10 @@ export default function TestResult() {
                   </div>
 
                   <div style={{ marginTop: '8px', font: '600 11px var(--font-body)', color: 'var(--muted)' }}>
-                    {sec.correct} correct · {sec.incorrect} wrong · {sec.unanswered} blank
+                    {t('result.breakdown', { correct: sec.correct, wrong: sec.incorrect, blank: sec.unanswered })}
                     {barred && (
                       <strong style={{ marginLeft: '8px', color: sec.cleared ? 'var(--success)' : 'var(--danger)' }}>
-                        {sec.cleared ? 'Cleared' : 'Missed'} cut-off {fmt(sec.cutoff_marks)}
+                        {sec.cleared ? t('result.cleared') : t('result.missed')} {t('result.cutoff')} {fmt(sec.cutoff_marks)}
                       </strong>
                     )}
                   </div>
@@ -258,7 +259,7 @@ export default function TestResult() {
       )}
 
       {/* Subject-wise accuracy */}
-      <h2 style={{ margin: '22px 0 12px', font: '700 16px var(--font-display)', color: 'var(--tx)' }}>Subject-wise accuracy</h2>
+      <h2 style={{ margin: '22px 0 12px', font: '700 16px var(--font-display)', color: 'var(--tx)' }}>{t('result.subjectWise')}</h2>
       <div style={{ display: 'flex', flexDirection: 'column', gap: '14px' }}>
         {bars.length === 0 && (
           <p style={{ font: '600 12px var(--font-body)', color: 'var(--muted)', margin: 0 }}>
@@ -286,14 +287,14 @@ export default function TestResult() {
 
       {/* Actions */}
       <div style={{ display: 'flex', gap: '10px', marginTop: '24px' }}>
-        <button onClick={() => navigate('/student/test-series')} className="btn-secondary" style={{ flex: 1 }}>Retake</button>
-        <button onClick={() => { const el = document.getElementById('answer-review'); el ? el.scrollIntoView({ behavior: 'smooth' }) : navigate('/results'); }} className="btn-primary" style={{ flex: 1 }}>Review answers</button>
+        <button onClick={() => navigate('/student/test-series')} className="btn-secondary" style={{ flex: 1 }}>{t('result.retake')}</button>
+        <button onClick={() => { const el = document.getElementById('answer-review'); el ? el.scrollIntoView({ behavior: 'smooth' }) : navigate('/results'); }} className="btn-primary" style={{ flex: 1 }}>{t('result.reviewAnswers')}</button>
       </div>
 
       {/* Question-by-question review (real sessions only) */}
       {answers.length > 0 && (
         <div id="answer-review" style={{ marginTop: '30px' }}>
-          <h2 style={{ font: '800 18px var(--font-display)', marginBottom: '16px', color: 'var(--tx)' }}>Answer review</h2>
+          <h2 style={{ font: '800 18px var(--font-display)', marginBottom: '16px', color: 'var(--tx)' }}>{t('result.answerReview')}</h2>
           <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
             {answers.map((ans, idx) => {
               const isNumeric = ans.question_type === 'numeric';
@@ -307,8 +308,8 @@ export default function TestResult() {
               return (
                 <div key={ans.question_id} className="glass-panel" style={{ padding: '20px', borderLeft: '4px solid', borderLeftColor: isCorrect ? 'var(--success)' : isUnanswered ? 'var(--muted)' : 'var(--danger)' }}>
                   <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '14px', fontSize: '0.85rem' }}>
-                    <span style={{ fontWeight: 700, color: 'var(--tx)' }}>Question {idx + 1}</span>
-                    <span style={{ color: isCorrect ? 'var(--success-text)' : isUnanswered ? 'var(--muted)' : 'var(--danger-text)', fontWeight: 700, textTransform: 'uppercase' }}>{isCorrect ? 'Correct' : isUnanswered ? 'Skipped' : 'Incorrect'}</span>
+                    <span style={{ fontWeight: 700, color: 'var(--tx)' }}>{t('exam.question')} {idx + 1}</span>
+                    <span style={{ color: isCorrect ? 'var(--success-text)' : isUnanswered ? 'var(--muted)' : 'var(--danger-text)', fontWeight: 700, textTransform: 'uppercase' }}>{isCorrect ? t('result.correct') : isUnanswered ? t('result.skipped') : t('result.incorrect')}</span>
                   </div>
 
                   {ans.passage && (
@@ -323,18 +324,18 @@ export default function TestResult() {
                   {isNumeric ? (
                     <div style={{ display: 'flex', gap: '12px', marginBottom: '14px', flexWrap: 'wrap' }}>
                       <div style={{ padding: '10px 14px', borderRadius: '10px', background: isUnanswered ? 'var(--surf)' : isCorrect ? 'var(--success-bg)' : 'var(--danger-bg)', border: `1px solid ${isUnanswered ? 'var(--line)' : isCorrect ? 'var(--success-border)' : 'var(--danger-border)'}`, fontSize: '0.9rem', color: 'var(--tx)' }}>
-                        <span style={{ color: 'var(--muted)', marginRight: '6px' }}>Your answer:</span>
+                        <span style={{ color: 'var(--muted)', marginRight: '6px' }}>{t('result.yourAnswer')}</span>
                         <strong>{isUnanswered ? '—' : num(ans.numeric_response)}</strong>
                       </div>
                       <div style={{ padding: '10px 14px', borderRadius: '10px', background: 'var(--success-bg)', border: '1px solid var(--success-border)', fontSize: '0.9rem', color: 'var(--tx)' }}>
-                        <span style={{ color: 'var(--muted)', marginRight: '6px' }}>Accepted:</span>
+                        <span style={{ color: 'var(--muted)', marginRight: '6px' }}>{t('result.accepted')}</span>
                         <strong>{num(ans.numeric_answer)}{Number(ans.numeric_tolerance) > 0 ? ` ± ${num(ans.numeric_tolerance)}` : ''}</strong>
                       </div>
                     </div>
                   ) : (
                     <div style={{ display: 'flex', flexDirection: 'column', gap: '8px', marginBottom: '14px' }}>
                       {isMulti && (
-                        <div style={{ font: '700 11px var(--font-body)', color: '#8B5CF6', marginBottom: '2px' }}>Select all that apply</div>
+                        <div style={{ font: '700 11px var(--font-body)', color: '#8B5CF6', marginBottom: '2px' }}>{t('exam.selectAll')}</div>
                       )}
                       {ans.options.map((opt) => {
                         const wasSelected = isMulti
@@ -355,7 +356,7 @@ export default function TestResult() {
                   )}
                   {ans.explanation && (
                     <div style={{ background: 'var(--surf)', border: '1px dashed var(--line2)', padding: '14px', borderRadius: '10px' }}>
-                      <div style={{ fontSize: '0.85rem', fontWeight: 700, color: 'var(--accent-color)', marginBottom: '6px' }}>Explanation</div>
+                      <div style={{ fontSize: '0.85rem', fontWeight: 700, color: 'var(--accent-color)', marginBottom: '6px' }}>{t('result.explanation')}</div>
                       <div style={{ fontSize: '0.9rem', color: 'var(--tx2)', lineHeight: 1.5 }}><MathRenderer text={ans.explanation} /></div>
                     </div>
                   )}

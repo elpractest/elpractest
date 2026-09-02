@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
+import { useTranslation } from 'react-i18next';
 import katex from 'katex';
 import api from '../api';
 import Icon from '../components/Icon';
@@ -39,6 +40,7 @@ const MathRenderer = ({ text }) => {
 export default function TestTaking() {
   const { session: sessionId } = useParams();
   const navigate = useNavigate();
+  const { t } = useTranslation();
 
   // Demo mode: reachable via "Free test" / "Attempt free". Renders the CBT
   // reference against local demo questions with NO backend calls. The real
@@ -141,7 +143,7 @@ export default function TestTaking() {
       // Load palette status
       await refreshPalette();
     } catch (err) {
-      setError(err.response?.data?.message || 'Failed to resume test session.');
+      setError(err.response?.data?.message || t('exam.errors.resume'));
     } finally {
       setLoading(false);
       setAutoAdvancing(false);
@@ -209,7 +211,7 @@ export default function TestTaking() {
       // Fetch session state which automatically reconciles and heals the timing boundaries on the backend
       await fetchSessionState(false);
     } catch (e) {
-      setError('Section timing reconciliation failed. Please refresh.');
+      setError(t('exam.errors.section'));
     } finally {
       setAutoAdvancing(false);
     }
@@ -223,7 +225,7 @@ export default function TestTaking() {
       await api.post(`/api/student/tests/sessions/${sessionId}/submit`);
       navigate(`/tests/${sessionId}/result`);
     } catch (err) {
-      setError('Failed to auto-submit expired session. Please refresh to view scorecard.');
+      setError(t('exam.errors.autoSubmit'));
     }
   };
 
@@ -235,7 +237,7 @@ export default function TestTaking() {
       await api.post(`/api/student/tests/sessions/${sessionId}/submit`);
       navigate(`/tests/${sessionId}/result`);
     } catch (err) {
-      setError(err.response?.data?.message || 'Failed to submit test. Please try again.');
+      setError(err.response?.data?.message || t('exam.errors.submit'));
       setIsSubmitting(false);
     }
   };
@@ -323,7 +325,7 @@ export default function TestTaking() {
         time_spent_seconds: timeSpentOnCurrentQuestion,
       });
     } catch (err) {
-      setError('Failed to save answer. Please check connection.');
+      setError(t('exam.errors.save'));
     }
   };
 
@@ -349,7 +351,7 @@ export default function TestTaking() {
         time_spent_seconds: timeSpentOnCurrentQuestion,
       });
     } catch (err) {
-      setError('Failed to save answer. Please check connection.');
+      setError(t('exam.errors.save'));
     }
   };
 
@@ -372,7 +374,7 @@ export default function TestTaking() {
         time_spent_seconds: timeSpentOnCurrentQuestion,
       });
     } catch (err) {
-      setError('Failed to save answer. Please check connection.');
+      setError(t('exam.errors.save'));
     }
   };
 
@@ -392,7 +394,7 @@ export default function TestTaking() {
         time_spent_seconds: timeSpentOnCurrentQuestion,
       });
     } catch (err) {
-      setError('Failed to clear answer.');
+      setError(t('exam.errors.clear'));
     }
   };
 
@@ -415,7 +417,7 @@ export default function TestTaking() {
     try {
       await api.put(`/api/student/tests/sessions/${sessionId}/answers/${questionId}/review`);
     } catch (err) {
-      setError('Failed to toggle review state.');
+      setError(t('exam.errors.review'));
     }
   };
 
@@ -445,7 +447,7 @@ export default function TestTaking() {
       await api.post(`/api/student/tests/sessions/${sessionId}/advance-section`);
       await fetchSessionState(false);
     } catch (err) {
-      setError(err.response?.data?.message || 'Failed to advance section.');
+      setError(err.response?.data?.message || t('exam.errors.advance'));
     } finally {
       setAutoAdvancing(false);
     }
@@ -475,8 +477,8 @@ export default function TestTaking() {
   if (autoAdvancing) {
     return (
       <div className="cbt-root" style={{ position: 'fixed', inset: 0, display: 'flex', justifyContent: 'center', alignItems: 'center', flexDirection: 'column', gap: '14px' }}>
-        <div style={{ color: '#F5A623', fontSize: '1.15rem', fontWeight: 800 }}>Section time expired</div>
-        <div style={{ color: '#5A6A85' }}>Auto-advancing to the next section…</div>
+        <div style={{ color: '#F5A623', fontSize: '1.15rem', fontWeight: 800 }}>{t('exam.sectionExpired')}</div>
+        <div style={{ color: '#5A6A85' }}>{t('exam.autoAdvancing')}</div>
       </div>
     );
   }
@@ -507,7 +509,7 @@ export default function TestTaking() {
         </div>
         {sectionTimeRemaining !== null && (
           <div style={{ marginTop: '8px', font: '700 11px var(--font-body)', color: sectionTimeRemaining < 60 ? '#FFB4B6' : '#9AB0E0' }}>
-            Section time: <span style={{ fontFamily: 'var(--font-mono)' }}>{formatTime(sectionTimeRemaining)}</span>
+            {t('exam.sectionTime')}: <span style={{ fontFamily: 'var(--font-mono)' }}>{formatTime(sectionTimeRemaining)}</span>
           </div>
         )}
       </div>
@@ -539,7 +541,7 @@ export default function TestTaking() {
           <>
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '12px' }}>
               <span style={{ font: '800 15px var(--font-display)', color: '#12203A' }}>
-                Question {currentQuestionIndex + 1} <span style={{ color: '#93A0B5', fontWeight: 600 }}>/ {activeSection.questions.length}</span>
+                {t('exam.question')} {currentQuestionIndex + 1} <span style={{ color: '#93A0B5', fontWeight: 600 }}>/ {activeSection.questions.length}</span>
               </span>
               <div style={{ display: 'flex', gap: '6px' }}>
                 <span style={{ font: '800 11px var(--font-mono)', color: '#0B9E6D', background: 'rgba(11,158,109,.12)', padding: '4px 9px', borderRadius: '8px' }}>+{activeQuestion.marks}</span>
@@ -564,7 +566,7 @@ export default function TestTaking() {
               </div>
 
               {activeQuestion.question_type === 'multi_select' && (
-                <div style={{ font: '700 11px var(--font-body)', color: '#8B5CF6', marginBottom: '10px' }}>Select all that apply</div>
+                <div style={{ font: '700 11px var(--font-body)', color: '#8B5CF6', marginBottom: '10px' }}>{t('exam.selectAll')}</div>
               )}
 
               {activeQuestion.question_type === 'numeric' ? (
@@ -575,7 +577,7 @@ export default function TestTaking() {
                   value={answers[activeQuestion.id] ?? ''}
                   onChange={(e) => setNumericLocal(e.target.value === '' ? '' : e.target.value)}
                   onBlur={(e) => flushNumericResponse(activeQuestion.id, e.target.value === '' ? '' : e.target.value)}
-                  placeholder="Type your answer"
+                  placeholder={t('exam.typeAnswer')}
                   style={{ width: '100%', padding: '14px 16px', borderRadius: '12px', border: '1.5px solid #C9D2E0', font: '700 16px var(--font-mono)', color: '#12203A' }}
                 />
               ) : activeQuestion.question_type === 'multi_select' ? (
@@ -605,7 +607,7 @@ export default function TestTaking() {
             {/* Legend + palette */}
             <div style={{ marginTop: '16px', padding: '15px', borderRadius: '16px', background: '#fff', border: '1px solid #E2E7F0' }}>
               <div style={{ display: 'flex', flexWrap: 'wrap', gap: '12px 16px' }}>
-                {[['#0ea371', 'Answered', cAnswered], ['#e5484d', 'Not answered', cNotAnswered], ['#8b5cf6', 'Marked', cMarked], ['#64748b', 'Not visited', cNotVisited]].map(([c, label, n]) => (
+                {[['#0ea371', t('exam.legend.answered'), cAnswered], ['#e5484d', t('exam.legend.notAnswered'), cNotAnswered], ['#8b5cf6', t('exam.legend.marked'), cMarked], ['#64748b', t('exam.legend.notVisited'), cNotVisited]].map(([c, label, n]) => (
                   <span key={label} style={{ display: 'flex', alignItems: 'center', gap: '6px', font: '700 11px var(--font-body)', color: '#5A6A85' }}>
                     <span style={{ width: '12px', height: '12px', borderRadius: '3px', background: c }} />{label} {n}
                   </span>
@@ -625,37 +627,40 @@ export default function TestTaking() {
             </div>
           </>
         ) : (
-          <div style={{ color: '#5A6A85' }}>No questions available.</div>
+          <div style={{ color: '#5A6A85' }}>{t('exam.noQuestions')}</div>
         )}
       </div>
 
       {/* ---- Bottom action bar ---- */}
       <div style={{ flex: 'none', display: 'flex', gap: '8px', padding: '12px 14px calc(14px + env(safe-area-inset-bottom,8px))', background: '#fff', borderTop: '1px solid #E2E7F0' }}>
         <button onClick={toggleMarkForReview} style={{ flex: 'none', padding: '13px 12px', border: '1px solid #C9D2E0', borderRadius: '12px', background: markedForReview[activeQuestion?.id] ? 'rgba(139,92,246,.1)' : '#fff', color: markedForReview[activeQuestion?.id] ? '#6A34DE' : '#5A6A85', font: '700 12px var(--font-body)', cursor: 'pointer' }}>
-          {markedForReview[activeQuestion?.id] ? 'Unmark' : 'Mark'}
+          {markedForReview[activeQuestion?.id] ? t('exam.unmark') : t('exam.mark')}
         </button>
-        <button onClick={clearResponse} style={{ flex: 'none', padding: '13px 12px', border: '1px solid #C9D2E0', borderRadius: '12px', background: '#fff', color: '#5A6A85', font: '700 12px var(--font-body)', cursor: 'pointer' }}>Clear</button>
+        <button onClick={clearResponse} style={{ flex: 'none', padding: '13px 12px', border: '1px solid #C9D2E0', borderRadius: '12px', background: '#fff', color: '#5A6A85', font: '700 12px var(--font-body)', cursor: 'pointer' }}>{t('exam.clear')}</button>
         {(() => {
           const isLastQuestionOfSection = currentQuestionIndex === activeSection?.questions?.length - 1;
           const hasSectionalTiming = sections.some((s) => s.duration_seconds > 0);
           const isNotLastSection = currentSectionIndex < sections.length - 1;
           if (isLastQuestionOfSection && hasSectionalTiming && isNotLastSection) {
-            return <button onClick={handleAdvanceSection} style={{ flex: 1, padding: '13px', border: 'none', borderRadius: '12px', background: 'linear-gradient(135deg,#FFC968,#F5A623 55%,#E07C0A)', color: '#1A1206', font: '800 14px var(--font-display)', cursor: 'pointer' }}>Submit Section</button>;
+            return <button onClick={handleAdvanceSection} style={{ flex: 1, padding: '13px', border: 'none', borderRadius: '12px', background: 'linear-gradient(135deg,#FFC968,#F5A623 55%,#E07C0A)', color: '#1A1206', font: '800 14px var(--font-display)', cursor: 'pointer' }}>{t('exam.submitSection')}</button>;
           }
-          return <button onClick={handleSaveAndNext} style={{ flex: 1, padding: '13px', border: 'none', borderRadius: '12px', background: 'linear-gradient(135deg,#FFC968,#F5A623 55%,#E07C0A)', color: '#1A1206', font: '800 14px var(--font-display)', cursor: 'pointer' }}>Save &amp; Next</button>;
+          return <button onClick={handleSaveAndNext} style={{ flex: 1, padding: '13px', border: 'none', borderRadius: '12px', background: 'linear-gradient(135deg,#FFC968,#F5A623 55%,#E07C0A)', color: '#1A1206', font: '800 14px var(--font-display)', cursor: 'pointer' }}>{t('exam.saveNext')}</button>;
         })()}
-        <button onClick={() => { flushIfNumeric(); setShowSubmitConfirm(true); }} style={{ flex: 'none', padding: '13px 16px', border: 'none', borderRadius: '12px', background: '#0B9E6D', color: '#fff', font: '800 13px var(--font-body)', cursor: 'pointer' }}>Submit</button>
+        <button onClick={() => { flushIfNumeric(); setShowSubmitConfirm(true); }} style={{ flex: 'none', padding: '13px 16px', border: 'none', borderRadius: '12px', background: '#0B9E6D', color: '#fff', font: '800 13px var(--font-body)', cursor: 'pointer' }}>{t('exam.submit')}</button>
       </div>
 
       {/* Submit confirmation */}
       {showSubmitConfirm && (
         <div style={{ position: 'fixed', inset: 0, background: 'rgba(18,24,48,.5)', display: 'flex', justifyContent: 'center', alignItems: 'center', zIndex: 1000, padding: '16px' }}>
           <div style={{ width: '100%', maxWidth: '380px', padding: '26px', borderRadius: '20px', background: '#fff', border: '1px solid #E2E7F0', display: 'flex', flexDirection: 'column', gap: '18px' }}>
-            <h3 style={{ margin: 0, font: '800 19px var(--font-display)', color: '#12203A' }}>Submit test?</h3>
-            <p style={{ margin: 0, color: '#5A6A85', fontSize: '0.9rem', lineHeight: 1.5 }}>You cannot change responses after submission. {cNotVisited + cNotAnswered > 0 && `${cNotVisited + cNotAnswered} question(s) are unanswered.`}</p>
+            <h3 style={{ margin: 0, font: '800 19px var(--font-display)', color: '#12203A' }}>{t('exam.confirm.title')}</h3>
+            <p style={{ margin: 0, color: '#5A6A85', fontSize: '0.9rem', lineHeight: 1.5 }}>
+              {t('exam.confirm.body')}{' '}
+              {cNotVisited + cNotAnswered > 0 && t('exam.confirm.unanswered', { count: cNotVisited + cNotAnswered })}
+            </p>
             <div style={{ display: 'flex', gap: '12px', justifyContent: 'flex-end' }}>
-              <button onClick={() => setShowSubmitConfirm(false)} style={{ padding: '10px 18px', border: '1px solid #C9D2E0', borderRadius: '12px', background: '#fff', color: '#5A6A85', font: '700 13px var(--font-body)', cursor: 'pointer' }}>Cancel</button>
-              <button onClick={handleManualSubmit} disabled={isSubmitting} style={{ padding: '10px 18px', border: 'none', borderRadius: '12px', background: '#0B9E6D', color: '#fff', font: '800 13px var(--font-body)', cursor: 'pointer', opacity: isSubmitting ? 0.6 : 1 }}>{isSubmitting ? 'Submitting…' : 'Yes, submit'}</button>
+              <button onClick={() => setShowSubmitConfirm(false)} style={{ padding: '10px 18px', border: '1px solid #C9D2E0', borderRadius: '12px', background: '#fff', color: '#5A6A85', font: '700 13px var(--font-body)', cursor: 'pointer' }}>{t('exam.confirm.cancel')}</button>
+              <button onClick={handleManualSubmit} disabled={isSubmitting} style={{ padding: '10px 18px', border: 'none', borderRadius: '12px', background: '#0B9E6D', color: '#fff', font: '800 13px var(--font-body)', cursor: 'pointer', opacity: isSubmitting ? 0.6 : 1 }}>{isSubmitting ? t('exam.confirm.submitting') : t('exam.confirm.yes')}</button>
             </div>
           </div>
         </div>
