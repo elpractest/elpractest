@@ -108,32 +108,93 @@ banner in admin (proves the `public` disk + `storage:link`).
 
 ## CI (the deploy gate)
 
-`.github/workflows/ci.yml`: `api-tests` (Laravel suite on MariaDB 10.6) is the
-gate. On a green push to `deploy/coolify` the `deploy` job calls the Coolify
-deploy API. Until the three secrets below are set, the `deploy` job skips
-cleanly (green) — so auto-deploy is dormant, not broken, until you configure it.
-Set these repo secrets (needs repo **admin**):
-
-```
-COOLIFY_URL        https://<coolify-host>       (no trailing slash)
-COOLIFY_TOKEN      <a Coolify API token>
-COOLIFY_APP_UUID   <the Practest compose app's resource UUID>
-```
-
-Set them via the GitHub UI (Settings → Secrets and variables → Actions) or the
-CLI, e.g. `gh secret set COOLIFY_URL --repo elpractest/elpractest`.
+`.github/workflows/ci.yml` uses a **promotion-branch** model, not a deploy API
+call: push to `main` → `api-tests` runs (Laravel suite on MariaDB 10.6) → only
+if green, CI fast-forwards `deploy/coolify` to that exact tested commit using
+the automatic `GITHUB_TOKEN` — no Coolify credential involved. Coolify's own
+GitHub-App webhook watches `deploy/coolify` and rebuilds when it moves, so the
+gate is structural: that branch cannot advance unless the tests passed, because
+nothing else advances it. Keep Coolify's tracked branch as `deploy/coolify` and
+its auto-deploy-on-push **on** — that webhook is what applies the promotion. A
+direct push to `deploy/coolify` bypasses the gate, so avoid pushing there
+directly; push to `main` instead.
 
 ## Rollback
 
 Coolify keeps prior deployments — roll back with a one-click redeploy of the
 previous image from the application's Deployments tab. Because the database is an
-embedded compose service (see *Known follow-up*), a rollback that predates a
-migration can leave schema ahead of code; take a `mariadb-dump` before deploying
-anything with migrations so you can restore if you roll code back.
+embedded compose service, a rollback that predates a migration can leave schema
+ahead of code; take a backup (see *Database backups* below, or a manual
+`mariadb-dump`) before deploying anything with migrations so you can restore if
+you roll code back.
 
-## Known follow-up — database backups
+## Database backups
 
-The DB is an **embedded compose service**, not a Coolify *managed database*, so it
-has no automatic backups. Before this holds real user data long-term, add a
-nightly `mariadb-dump` (Coolify scheduled task or a cron sidecar) to a preserved
-volume / offsite — or migrate it to a Coolify-managed MariaDB resource.
+The DB is an **embedded compose service**, not a Coolify *managed database*, so
+it has no backups on its own. A `backup` service in `docker-compose.coolify.yml`
+handles this: nightly (default 2:30am IST, `BACKUP_SCHEDULE` to change) it dumps
+MariaDB and pushes an encrypted, deduplicated snapshot offsite via
+[restic](https://restic.net/), to any S3-compatible bucket. **It no-ops until
+configured** — the stack builds and deploys fine before a bucket exists, same
+as the FCM/OpenAI integrations.
+
+### One-time setup — Cloudflare R2
+
+R2 is the recommended target: same account you already use for DNS, S3-compatible,
+no egress fees, and a free tier that comfortably covers years of nightly SQL
+dumps for one institute's database.
+
+1. Cloudflare dashboard → **R2** → **Create bucket** → name it `practest-backups`.
+2. **R2** → **Manage API tokens** → **Create API token** → permission *Object
+   Read & Write*, scoped to that bucket only. Copy the **Access Key ID**,
+   **Secret Access Key**, and the **Account ID** shown on the token page.
+3. Generate a strong passphrase for `BACKUP_RESTIC_PASSWORD` (e.g.
+   `openssl rand -base64 32`) and **save it somewhere outside this server** — a
+   password manager, not a note on the box being backed up. This encrypts every
+   snapshot; losing it makes the backups permanently unreadable, so it is worth
+   treating with the same care as a database root password.
+4. Set in Coolify (`backup` service reads these; empty = disabled):
+
+   ```
+   BACKUP_RESTIC_REPOSITORY=s3:https://<ACCOUNT_ID>.r2.cloudflarestorage.com/practest-backups
+   BACKUP_RESTIC_PASSWORD=<the passphrase from step 3>
+   BACKUP_S3_ACCESS_KEY_ID=<from step 2>
+   BACKUP_S3_SECRET_ACCESS_KEY=<from step 2>
+   ```
+
+   Optional: `BACKUP_SCHEDULE` (cron expression, default `30 2 * * *`),
+   `TZ` (default `Asia/Kolkata`), `BACKUP_KEEP_DAILY`/`_WEEKLY`/`_MONTHLY`
+   (defaults 14/8/6).
+
+5. Redeploy — this adds the `backup` container to the stack.
+
+### Verify a backup actually ran
+
+```bash
+# From a Coolify terminal on the backup container, or `docker exec`:
+backup                  # trigger one immediately, don't wait for 2:30am
+restic snapshots         # should list what you just took
+```
+
+### Restore rehearsal — do this once, not just when you need it
+
+An untested backup is a hope, not a plan. From the `backup` container:
+
+```bash
+# 1. See what's available.
+restic snapshots
+
+# 2. Restore the latest snapshot's SQL dump to disk.
+restic restore latest --target /tmp/restore
+
+# 3. Load it into a THROWAWAY database, never straight into prod, to prove the
+#    dump is actually valid and complete.
+mysql -h mariadb -u root -p"$DB_ROOT_PASSWORD" -e "CREATE DATABASE restore_check"
+mysql -h mariadb -u root -p"$DB_ROOT_PASSWORD" restore_check < /tmp/restore/practest-*.sql
+
+# 4. Sanity-check row counts against prod, then drop it.
+mysql -h mariadb -u root -p"$DB_ROOT_PASSWORD" -e "SELECT COUNT(*) FROM restore_check.users; DROP DATABASE restore_check"
+```
+
+A real disaster restore is the same steps 1–2, then loading into the live
+`practest` database instead of a throwaway one (take the app offline first).
