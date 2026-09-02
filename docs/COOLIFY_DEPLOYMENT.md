@@ -119,6 +119,50 @@ its auto-deploy-on-push **on** — that webhook is what applies the promotion. A
 direct push to `deploy/coolify` bypasses the gate, so avoid pushing there
 directly; push to `main` instead.
 
+## ⚠ Active workaround — GitHub routing (added 2026-09-02)
+
+**There is a hand-edited block in `/etc/hosts` on the production host. Remove it
+once the provider fixes their routing.**
+
+On 2026-09-02 every deploy started failing after ~12 seconds with:
+
+```
+Deployment failed: cURL error 28: Connection timed out after 10001 milliseconds
+for https://api.github.com/zen
+```
+
+Coolify pings `api.github.com` before it builds anything, so it aborted at the
+first step having built nothing. Diagnosis:
+
+- The host resolves `github.com` to `20.207.73.82` — GitHub's India/Azure edge,
+  which is the correct DNS answer.
+- **That IP is unreachable from this VPS** on 443, and so is the rest of that
+  range. Every DNS resolver returns it, so DNS is not the problem.
+- GitHub's `140.82.112.0/20` (its own published range) *is* reachable and
+  answers in ~1s.
+- General egress is fine (Cloudflare, Google, Razorpay, Docker Hub), `ufw` is
+  inactive and iptables OUTPUT is ACCEPT — so it is not the firewall either.
+
+That is a routing/peering failure between the provider and that Azure range.
+The real fix is a provider ticket: *"cannot reach 20.207.73.82 (github.com) on
+443 from my VPS; 140.82.121.4 works fine — looks like a routing issue to that
+GitHub/Azure range."*
+
+Until then `/etc/hosts` pins the three hostnames Coolify needs, in a block
+marked `# >>> practest github routing workaround`:
+
+```
+140.82.112.3    github.com
+140.82.112.5    api.github.com
+140.82.112.9    codeload.github.com
+```
+
+**Why this is a stopgap, not a fix:** GitHub renumbers. If it does, deploys
+break again with exactly this symptom and the pinned IPs will be the cause
+rather than the cure. Delete the block (a timestamped `/etc/hosts.bak-*` sits
+beside it) as soon as the route is restored, and re-test with
+`curl -sS -o /dev/null -w '%{http_code}\n' https://api.github.com/zen`.
+
 ## Rollback
 
 Coolify keeps prior deployments — roll back with a one-click redeploy of the
