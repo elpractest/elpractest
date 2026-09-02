@@ -47,7 +47,12 @@ class TestAnswer extends Model
 
     /**
      * Check if this answer is correct.
-     * Loads the question's correct option(s) and compares.
+     *
+     * The option must be BOTH correct AND belong to this row's question. Scoping
+     * by question_id is not optional: option ids are globally unique across the
+     * whole bank, so without it any correct option id from any other question
+     * scores as correct here (an unvalidated `selected_option_id` on the save
+     * endpoint made that reachable from the client).
      */
     public function isCorrect(): bool
     {
@@ -56,6 +61,7 @@ class TestAnswer extends Model
         }
 
         return QuestionOption::where('id', $this->selected_option_id)
+            ->where('question_id', $this->question_id)
             ->where('is_correct', true)
             ->exists();
     }

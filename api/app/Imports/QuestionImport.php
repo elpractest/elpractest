@@ -21,10 +21,20 @@ class QuestionImport implements OnEachRow, WithHeadingRow, WithValidation, Skips
     private array $errors = [];
     private int $importedCount = 0;
     private ?int $createdBy = null;
+    private string $status;
 
-    public function __construct(?int $createdBy = null)
+    /**
+     * Imported questions land in review by default.
+     *
+     * A CSV is the easiest way to put a wrong answer key in front of thousands
+     * of candidates at once, and it is the one authoring path with no human
+     * looking at each row. So bulk import feeds the review queue rather than
+     * going live; pass 'approved' explicitly to skip that.
+     */
+    public function __construct(?int $createdBy = null, string $status = Question::STATUS_PENDING)
     {
         $this->createdBy = $createdBy;
+        $this->status = $status;
     }
 
     public function onRow(Row $row)
@@ -54,6 +64,7 @@ class QuestionImport implements OnEachRow, WithHeadingRow, WithValidation, Skips
                 'negative_marks' => (float)$cleanedData['negative_marks'],
                 'is_active' => true,
                 'created_by' => $this->createdBy,
+                'status' => $this->status,
             ]);
 
             $correctOption = strtolower(trim($cleanedData['correct_option']));

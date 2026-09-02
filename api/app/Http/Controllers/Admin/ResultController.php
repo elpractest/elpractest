@@ -46,6 +46,8 @@ class ResultController extends Controller
             $rankAndPercent = $session->getRankAndPercentile();
             $session->rank = $rankAndPercent['rank'];
             $session->percentile = $rankAndPercent['percentile'];
+            // Strict published ordering; `rank` lets equal scores tie.
+            $session->merit_rank = $rankAndPercent['merit_rank'];
             return $session;
         });
 
@@ -93,6 +95,7 @@ class ResultController extends Controller
             'analytic' => $analytic,
             'rank' => $rankAndPercent['rank'],
             'percentile' => $rankAndPercent['percentile'],
+            'merit_rank' => $rankAndPercent['merit_rank'],
             'answers' => $answers,
         ]);
     }

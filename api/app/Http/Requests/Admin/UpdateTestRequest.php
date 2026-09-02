@@ -23,10 +23,24 @@ class UpdateTestRequest extends FormRequest
             'instructions' => ['nullable', 'string'],
             'available_from' => ['nullable', 'date'],
             'available_until' => ['nullable', 'date', 'after:available_from'],
+
+            // ── Exam pattern ────────────────────────────────────────────────
+            // All optional: a test with none of these behaves exactly as before
+            // (no bar, no shuffle, no normalisation).
+            'cutoff_marks' => ['nullable', 'numeric', 'min:0'],
+            'cutoff_percentage' => ['nullable', 'numeric', 'min:0', 'max:100'],
+            'shuffle_questions' => ['nullable', 'boolean'],
+            'shuffle_options' => ['nullable', 'boolean'],
+            'shift_group' => ['nullable', 'string', 'max:255'],
+            'shift_label' => ['nullable', 'string', 'max:255'],
+            'normalization_method' => ['nullable', 'string', 'in:none,equipercentile,zscore'],
             
             'sections' => ['sometimes', 'required', 'array', 'min:1'],
             'sections.*.title' => ['required_with:sections', 'string', 'max:255'],
             'sections.*.duration_seconds' => ['nullable', 'integer', 'min:10'],
+            'sections.*.cutoff_marks' => ['nullable', 'numeric', 'min:0'],
+            'sections.*.cutoff_percentage' => ['nullable', 'numeric', 'min:0', 'max:100'],
+            'sections.*.is_qualifying' => ['nullable', 'boolean'],
             'sections.*.question_ids' => ['required_with:sections', 'array', 'min:1'],
             'sections.*.question_ids.*' => ['required_with:sections', 'exists:questions,id'],
         ];

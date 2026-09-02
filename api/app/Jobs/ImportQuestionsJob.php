@@ -17,7 +17,8 @@ class ImportQuestionsJob implements ShouldQueue
     public function __construct(
         private readonly string $tempFilePath,
         private readonly string $jobUuid,
-        private readonly ?int $createdBy
+        private readonly ?int $createdBy,
+        private readonly string $status = \App\Models\Question::STATUS_PENDING
     ) {}
 
     public function handle(): void
@@ -54,7 +55,7 @@ class ImportQuestionsJob implements ShouldQueue
         ], 3600);
 
         try {
-            $import = new QuestionImport($this->createdBy);
+            $import = new QuestionImport($this->createdBy, $this->status);
             $import->import($filePath);
 
             Cache::put("import_status_{$this->jobUuid}", [

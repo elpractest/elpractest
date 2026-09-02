@@ -70,6 +70,14 @@ class TestController extends Controller
                 'available_from' => $request->available_from,
                 'available_until' => $request->available_until,
                 'created_by' => $request->user()->id,
+                // Exam pattern. Null / false throughout = today's behaviour.
+                'cutoff_marks' => $request->cutoff_marks,
+                'cutoff_percentage' => $request->cutoff_percentage,
+                'shuffle_questions' => $request->boolean('shuffle_questions'),
+                'shuffle_options' => $request->boolean('shuffle_options'),
+                'shift_group' => $request->shift_group,
+                'shift_label' => $request->shift_label,
+                'normalization_method' => $request->normalization_method ?? 'none',
             ]);
 
             foreach ($request->sections as $sIndex => $sectionData) {
@@ -78,6 +86,11 @@ class TestController extends Controller
                     'title' => $sectionData['title'],
                     'sort_order' => $sIndex,
                     'duration_seconds' => $sectionData['duration_seconds'] ?? null,
+                    // A qualifying section must be cleared but its marks stay OUT of
+                    // the merit score (the UPSC CSAT model).
+                    'cutoff_marks' => $sectionData['cutoff_marks'] ?? null,
+                    'cutoff_percentage' => $sectionData['cutoff_percentage'] ?? null,
+                    'is_qualifying' => (bool) ($sectionData['is_qualifying'] ?? false),
                 ]);
 
                 foreach ($sectionData['question_ids'] as $qIndex => $qId) {
@@ -128,6 +141,13 @@ class TestController extends Controller
                 'instructions',
                 'available_from',
                 'available_until',
+                'cutoff_marks',
+                'cutoff_percentage',
+                'shuffle_questions',
+                'shuffle_options',
+                'shift_group',
+                'shift_label',
+                'normalization_method',
             ]));
 
             if ($request->has('sections')) {
@@ -152,6 +172,11 @@ class TestController extends Controller
                         'title' => $sectionData['title'],
                         'sort_order' => $sIndex,
                         'duration_seconds' => $sectionData['duration_seconds'] ?? null,
+                        // A qualifying section must be cleared but its marks stay OUT of
+                        // the merit score (the UPSC CSAT model).
+                        'cutoff_marks' => $sectionData['cutoff_marks'] ?? null,
+                        'cutoff_percentage' => $sectionData['cutoff_percentage'] ?? null,
+                        'is_qualifying' => (bool) ($sectionData['is_qualifying'] ?? false),
                     ]);
 
                     foreach ($sectionData['question_ids'] as $qIndex => $qId) {
@@ -209,6 +234,30 @@ class TestController extends Controller
         if ($totalQuestions === 0) {
             return response()->json([
                 'message' => 'Cannot publish a test with no questions.',
+            ], 422);
+        }
+
+        // Review gate. A question that has not cleared review must not reach a
+        // candidate: a wrong answer key discovered after the fact cannot be
+        // un-marked, it can only be re-scored, and by then the candidate has
+        // already made decisions on a false premise.
+        $unreviewed = [];
+        foreach ($test->sections as $section) {
+            foreach ($section->questions as $question) {
+                if ($question->status !== Question::STATUS_APPROVED || !$question->is_active) {
+                    $unreviewed[] = [
+                        'question_id' => $question->id,
+                        'status' => $question->status,
+                        'is_active' => (bool) $question->is_active,
+                    ];
+                }
+            }
+        }
+
+        if ($unreviewed !== []) {
+            return response()->json([
+                'message' => count($unreviewed) . ' question(s) in this test have not been approved.',
+                'unapproved_questions' => $unreviewed,
             ], 422);
         }
 

@@ -18,6 +18,10 @@ class TestAnalytic extends Model
         'total_time_seconds',
         'subject_breakdown',
         'topic_breakdown',
+        'merit_score',
+        'normalized_score',
+        'is_qualified',
+        'section_breakdown',
     ];
 
     protected function casts(): array
@@ -28,6 +32,10 @@ class TestAnalytic extends Model
             'accuracy_percentage' => 'decimal:2',
             'subject_breakdown' => 'array',
             'topic_breakdown' => 'array',
+            'section_breakdown' => 'array',
+            'merit_score' => 'decimal:2',
+            'normalized_score' => 'decimal:2',
+            'is_qualified' => 'boolean',
         ];
     }
 

@@ -40,6 +40,7 @@ export default function AdminResultDetail({ sessionId, onBack }) {
   const [analytic, setAnalytic] = useState(null);
   const [rank, setRank] = useState(1);
   const [percentile, setPercentile] = useState(100.00);
+  const [meritRank, setMeritRank] = useState(null);
   const [answers, setAnswers] = useState([]);
 
   useEffect(() => {
@@ -52,6 +53,7 @@ export default function AdminResultDetail({ sessionId, onBack }) {
         setAnalytic(res.data.analytic || {});
         setRank(res.data.rank || 1);
         setPercentile(res.data.percentile !== undefined ? res.data.percentile : 100.00);
+        setMeritRank(res.data.merit_rank ?? null);
         setAnswers(res.data.answers || []);
       })
       .catch((err) => {
@@ -116,6 +118,7 @@ export default function AdminResultDetail({ sessionId, onBack }) {
             </div>
             <span style={{ fontSize: '0.75rem', color: 'var(--text-secondary)' }}>
               Cohort Rank: <strong>#{rank}</strong>
+              {meritRank !== null && <> &middot; Merit: <strong>#{meritRank}</strong></>}
             </span>
           </div>
 
@@ -142,8 +145,68 @@ export default function AdminResultDetail({ sessionId, onBack }) {
               <span style={{ color: 'var(--text-secondary)', fontWeight: 600 }}>Unanswered:</span>
               <strong>{analytic.unanswered_count}</strong>
             </div>
+            {/* null = the paper defined no cut-off, which is not a failure. */}
+            {analytic.is_qualified !== null && analytic.is_qualified !== undefined && (
+              <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.85rem', paddingTop: '8px', borderTop: '1px solid var(--border-color)' }}>
+                <span style={{ color: 'var(--text-secondary)', fontWeight: 600 }}>Cut-off:</span>
+                <strong style={{ color: analytic.is_qualified ? 'var(--success)' : 'var(--danger)' }}>
+                  {analytic.is_qualified ? 'Qualified' : 'Not qualified'}
+                </strong>
+              </div>
+            )}
+            {analytic.normalized_score != null && (
+              <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.85rem' }}>
+                <span style={{ color: 'var(--text-secondary)', fontWeight: 600 }}>Normalised:</span>
+                <strong>{parseFloat(analytic.normalized_score).toFixed(2)}</strong>
+              </div>
+            )}
           </div>
 
+        </div>
+      )}
+
+      {/* Sectional result: which bars this candidate cleared */}
+      {analytic?.section_breakdown?.length > 0 && (
+        <div className="glass-panel" style={{ padding: '24px', marginBottom: '24px' }}>
+          <h2 style={{ fontSize: '1.1rem', margin: '0 0 4px', fontWeight: 700 }}>Section-wise result</h2>
+          <p style={{ margin: '0 0 16px', fontSize: '0.8rem', color: 'var(--text-secondary)' }}>
+            A qualifying section must be cleared but its marks are excluded from the merit score.
+          </p>
+          <table style={{ width: '100%', borderCollapse: 'collapse', textAlign: 'left', fontSize: '0.88rem' }}>
+            <thead>
+              <tr style={{ borderBottom: '1px solid var(--border-color)', color: 'var(--text-secondary)', fontSize: '0.8rem' }}>
+                <th style={{ padding: '8px 12px' }}>Section</th>
+                <th style={{ padding: '8px 12px', textAlign: 'right' }}>Score</th>
+                <th style={{ padding: '8px 12px', textAlign: 'right' }}>Cut-off</th>
+                <th style={{ padding: '8px 12px', textAlign: 'right' }}>C / W / Blank</th>
+                <th style={{ padding: '8px 12px', textAlign: 'right' }}>Result</th>
+              </tr>
+            </thead>
+            <tbody>
+              {analytic.section_breakdown.map((sec) => (
+                <tr key={sec.section_id} style={{ borderBottom: '1px solid var(--surface-2)' }}>
+                  <td style={{ padding: '10px 12px', fontWeight: 600 }}>
+                    {sec.title}
+                    {sec.is_qualifying && (
+                      <span style={{ marginLeft: '8px', fontSize: '0.68rem', fontWeight: 700, color: 'var(--text-secondary)' }}>QUALIFYING</span>
+                    )}
+                  </td>
+                  <td style={{ padding: '10px 12px', textAlign: 'right', fontWeight: 700 }}>
+                    {Number(sec.score).toFixed(2)} / {Number(sec.max_score).toFixed(2)}
+                  </td>
+                  <td style={{ padding: '10px 12px', textAlign: 'right', color: 'var(--text-secondary)' }}>
+                    {sec.cutoff_marks == null ? '—' : Number(sec.cutoff_marks).toFixed(2)}
+                  </td>
+                  <td style={{ padding: '10px 12px', textAlign: 'right', color: 'var(--text-secondary)' }}>
+                    {sec.correct} / {sec.incorrect} / {sec.unanswered}
+                  </td>
+                  <td style={{ padding: '10px 12px', textAlign: 'right', fontWeight: 700, color: sec.cutoff_marks == null ? 'var(--text-secondary)' : sec.cleared ? 'var(--success)' : 'var(--danger)' }}>
+                    {sec.cutoff_marks == null ? 'no bar' : sec.cleared ? 'Cleared' : 'Missed'}
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
         </div>
       )}
 

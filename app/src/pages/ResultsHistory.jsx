@@ -79,6 +79,19 @@ export default function ResultsHistory() {
                   Submitted: {new Date(r.submitted_at).toLocaleString()}
                   {r.is_auto_submitted && <span style={{ color: 'var(--warning)', marginLeft: '6px' }}>(Auto-Submitted at Expiry)</span>}
                 </div>
+                {/* null means the paper set no cut-off, which is not a failure
+                    and must not be rendered as one. */}
+                {r.is_qualified !== null && r.is_qualified !== undefined && (
+                  <div>
+                    <span style={{
+                      fontSize: '0.7rem', fontWeight: 800, padding: '2px 9px', borderRadius: '999px',
+                      background: r.is_qualified ? 'var(--success-bg)' : 'var(--danger-bg)',
+                      color: r.is_qualified ? 'var(--success)' : 'var(--danger)',
+                    }}>
+                      {r.is_qualified ? 'QUALIFIED' : 'NOT QUALIFIED'}
+                    </span>
+                  </div>
+                )}
               </div>
 
               {/* Analytics Badges */}
@@ -96,6 +109,13 @@ export default function ResultsHistory() {
                     {r.accuracy_percentage}%
                   </div>
                 </div>
+
+                {r.merit_rank != null && (
+                  <div style={{ textAlign: 'center', padding: '8px 16px', background: 'var(--surface-2)', borderRadius: '8px', border: '1px solid var(--border-color)' }}>
+                    <div style={{ fontSize: '0.75rem', color: 'var(--text-secondary)', fontWeight: 600 }}>MERIT RANK</div>
+                    <div style={{ fontSize: '1.2rem', fontWeight: 800, color: 'var(--warning)' }}>#{r.merit_rank}</div>
+                  </div>
+                )}
 
                 <div style={{ textAlign: 'center', padding: '8px 16px', background: 'var(--surface-2)', borderRadius: '8px', border: '1px solid var(--border-color)' }}>
                   <div style={{ fontSize: '0.75rem', color: 'var(--text-secondary)', fontWeight: 600 }}>PERCENTILE</div>

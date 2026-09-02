@@ -28,8 +28,16 @@ export default function AdminTests() {
     instructions: '',
     available_from: '',
     available_until: '',
+    // Exam pattern. Empty / false throughout = an ordinary ungraded mock.
+    cutoff_marks: '',
+    cutoff_percentage: '',
+    shuffle_questions: false,
+    shuffle_options: false,
+    shift_group: '',
+    shift_label: '',
+    normalization_method: 'none',
     sections: [
-      { title: 'Section 1', duration_seconds: 1800, question_ids: [], questions: [] }
+      { title: 'Section 1', duration_seconds: 1800, cutoff_marks: '', is_qualifying: false, question_ids: [], questions: [] }
     ]
   });
 
@@ -117,7 +125,7 @@ export default function AdminTests() {
       ...testForm,
       sections: [
         ...testForm.sections,
-        { title: `Section ${nextIdx + 1}`, duration_seconds: 1800, question_ids: [], questions: [] }
+        { title: `Section ${nextIdx + 1}`, duration_seconds: 1800, cutoff_marks: '', is_qualifying: false, question_ids: [], questions: [] }
       ]
     });
     setActiveSectionIdx(nextIdx);
@@ -167,11 +175,25 @@ export default function AdminTests() {
     }
 
     // Convert date formats to server format (optional fields)
+    // '' means "no bar". It has to go to the server as null, not as an empty
+    // string, or numeric validation rejects it and a cut-off becomes impossible
+    // to clear once set.
+    const blankToNull = (v) => (v === '' || v === null || v === undefined ? null : Number(v));
+
     const payload = {
       ...testForm,
       batch_id: testForm.batch_id || null,
       available_from: testForm.available_from ? testForm.available_from.replace('T', ' ') : null,
       available_until: testForm.available_until ? testForm.available_until.replace('T', ' ') : null,
+      cutoff_marks: blankToNull(testForm.cutoff_marks),
+      cutoff_percentage: blankToNull(testForm.cutoff_percentage),
+      shift_group: testForm.shift_group || null,
+      shift_label: testForm.shift_label || null,
+      sections: testForm.sections.map((sec) => ({
+        ...sec,
+        cutoff_marks: blankToNull(sec.cutoff_marks),
+        is_qualifying: !!sec.is_qualifying,
+      })),
     };
 
     try {
@@ -199,6 +221,9 @@ export default function AdminTests() {
       const formattedSections = t.sections.map(sec => ({
         title: sec.title,
         duration_seconds: sec.duration_seconds || 1800,
+        // '' not null, so a cleared field round-trips as "no bar" rather than 0.
+        cutoff_marks: sec.cutoff_marks ?? '',
+        is_qualifying: !!sec.is_qualifying,
         question_ids: sec.questions.map(q => q.id),
         questions: sec.questions
       }));
@@ -222,6 +247,13 @@ export default function AdminTests() {
         instructions: t.instructions || '',
         available_from: fmtDate(t.available_from),
         available_until: fmtDate(t.available_until),
+        cutoff_marks: t.cutoff_marks ?? '',
+        cutoff_percentage: t.cutoff_percentage ?? '',
+        shuffle_questions: !!t.shuffle_questions,
+        shuffle_options: !!t.shuffle_options,
+        shift_group: t.shift_group ?? '',
+        shift_label: t.shift_label ?? '',
+        normalization_method: t.normalization_method || 'none',
         sections: formattedSections
       });
       setActiveSectionIdx(0);
@@ -273,7 +305,7 @@ export default function AdminTests() {
               available_from: '',
               available_until: '',
               sections: [
-                { title: 'Quantitative Aptitude', duration_seconds: 1800, question_ids: [], questions: [] }
+                { title: 'Quantitative Aptitude', duration_seconds: 1800, cutoff_marks: '', is_qualifying: false, question_ids: [], questions: [] }
               ]
             });
             setActiveSectionIdx(0);
@@ -480,6 +512,73 @@ export default function AdminTests() {
                   <label style={{ fontSize: '0.8rem', color: 'var(--text-secondary)' }}>Instructions</label>
                   <textarea value={testForm.instructions} onChange={(e) => setTestForm({ ...testForm, instructions: e.target.value })} className="form-input" rows={2} />
                 </div>
+
+                {/* ── Exam pattern ─────────────────────────────────────────── */}
+                <div style={{ marginTop: '4px', padding: '12px', borderRadius: '8px', border: '1px solid var(--border-color)', background: 'var(--surface-1)' }}>
+                  <h4 style={{ margin: '0 0 4px', fontWeight: 700, fontSize: '0.9rem' }}>Exam pattern</h4>
+                  <p style={{ margin: '0 0 10px', fontSize: '0.75rem', color: 'var(--text-secondary)' }}>
+                    Leave the cut-off blank for an ungraded mock. Absolute marks win over the
+                    percentage when both are set, and the bar applies to the merit score.
+                  </p>
+
+                  <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px' }}>
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
+                      <label style={{ fontSize: '0.8rem', color: 'var(--text-secondary)' }}>Overall cut-off (marks)</label>
+                      <input type="number" min="0" step="0.25" value={testForm.cutoff_marks}
+                        onChange={(e) => setTestForm({ ...testForm, cutoff_marks: e.target.value })}
+                        className="form-input" style={{ padding: '8px 12px' }} placeholder="none" />
+                    </div>
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
+                      <label style={{ fontSize: '0.8rem', color: 'var(--text-secondary)' }}>Overall cut-off (%)</label>
+                      <input type="number" min="0" max="100" step="0.5" value={testForm.cutoff_percentage}
+                        onChange={(e) => setTestForm({ ...testForm, cutoff_percentage: e.target.value })}
+                        className="form-input" style={{ padding: '8px 12px' }} placeholder="none" />
+                    </div>
+                  </div>
+
+                  <div style={{ display: 'flex', gap: '18px', marginTop: '12px', flexWrap: 'wrap' }}>
+                    <label style={{ display: 'inline-flex', alignItems: 'center', gap: '6px', fontSize: '0.8rem', cursor: 'pointer' }}>
+                      <input type="checkbox" checked={testForm.shuffle_questions}
+                        onChange={(e) => setTestForm({ ...testForm, shuffle_questions: e.target.checked })} />
+                      Shuffle questions per candidate
+                    </label>
+                    <label style={{ display: 'inline-flex', alignItems: 'center', gap: '6px', fontSize: '0.8rem', cursor: 'pointer' }}>
+                      <input type="checkbox" checked={testForm.shuffle_options}
+                        onChange={(e) => setTestForm({ ...testForm, shuffle_options: e.target.checked })} />
+                      Shuffle options per candidate
+                    </label>
+                  </div>
+
+                  <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: '12px', marginTop: '12px' }}>
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
+                      <label style={{ fontSize: '0.8rem', color: 'var(--text-secondary)' }}>Shift group</label>
+                      <input type="text" value={testForm.shift_group}
+                        onChange={(e) => setTestForm({ ...testForm, shift_group: e.target.value })}
+                        className="form-input" style={{ padding: '8px 12px' }} placeholder="e.g. cgl-2026-t1" />
+                    </div>
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
+                      <label style={{ fontSize: '0.8rem', color: 'var(--text-secondary)' }}>Shift label</label>
+                      <input type="text" value={testForm.shift_label}
+                        onChange={(e) => setTestForm({ ...testForm, shift_label: e.target.value })}
+                        className="form-input" style={{ padding: '8px 12px' }} placeholder="e.g. morning" />
+                    </div>
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
+                      <label style={{ fontSize: '0.8rem', color: 'var(--text-secondary)' }}>Normalisation</label>
+                      <select value={testForm.normalization_method}
+                        onChange={(e) => setTestForm({ ...testForm, normalization_method: e.target.value })}
+                        className="form-input" style={{ padding: '8px 12px' }}>
+                        <option value="none">None</option>
+                        <option value="equipercentile">Equipercentile</option>
+                        <option value="zscore">Z-score (linear)</option>
+                      </select>
+                    </div>
+                  </div>
+                  <p style={{ margin: '8px 0 0', fontSize: '0.72rem', color: 'var(--text-secondary)' }}>
+                    Tests sharing a shift group are one exam run in several sittings. Normalised
+                    marks are computed by <code>php artisan practest:normalize</code> once every
+                    shift has finished — running it early would score a half cohort.
+                  </p>
+                </div>
               </form>
 
               {/* Sections Listing inside Creator */}
@@ -533,6 +632,41 @@ export default function AdminTests() {
                               style={{ background: 'transparent', border: 'none', borderBottom: '1px solid var(--border-color)', color: 'var(--text-primary)', width: '50px', outline: 'none', textAlign: 'center', fontSize: '0.75rem' }}
                             />
                             <span>s • Questions: {sec.question_ids.length}</span>
+                          </div>
+
+                          {/* Sectional bar + qualifying flag. A qualifying
+                              section must be cleared but its marks stay OUT of
+                              the merit score (the UPSC CSAT model). */}
+                          <div
+                            onClick={(e) => e.stopPropagation()}
+                            style={{ fontSize: '0.75rem', color: 'var(--text-secondary)', marginTop: '6px', display: 'flex', gap: '12px', alignItems: 'center', flexWrap: 'wrap' }}
+                          >
+                            <span style={{ display: 'inline-flex', alignItems: 'center', gap: '4px' }}>
+                              Cut-off:
+                              <input
+                                type="number" min="0" step="0.25"
+                                value={sec.cutoff_marks ?? ''}
+                                placeholder="none"
+                                onChange={(e) => {
+                                  const updated = [...testForm.sections];
+                                  updated[idx].cutoff_marks = e.target.value;
+                                  setTestForm({ ...testForm, sections: updated });
+                                }}
+                                style={{ background: 'transparent', border: 'none', borderBottom: '1px solid var(--border-color)', color: 'var(--text-primary)', width: '56px', outline: 'none', textAlign: 'center', fontSize: '0.75rem' }}
+                              />
+                            </span>
+                            <label style={{ display: 'inline-flex', alignItems: 'center', gap: '5px', cursor: 'pointer' }}>
+                              <input
+                                type="checkbox"
+                                checked={!!sec.is_qualifying}
+                                onChange={(e) => {
+                                  const updated = [...testForm.sections];
+                                  updated[idx].is_qualifying = e.target.checked;
+                                  setTestForm({ ...testForm, sections: updated });
+                                }}
+                              />
+                              Qualifying only
+                            </label>
                           </div>
                         </div>
                         {testForm.sections.length > 1 && (
