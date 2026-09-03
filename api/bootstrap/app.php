@@ -128,6 +128,17 @@ return Application::configure(basePath: dirname(__DIR__))
                 ], 429);
             });
         });
+
+        // Reader position sync: 40/min per student. The reader PATCHes on a 30s
+        // timer, on tab-hide and on unmount, so a student with three materials
+        // open across tabs is still nowhere near this. The cap exists because
+        // this is the one student endpoint that writes on a timer rather than
+        // on a tap — a stuck loop would otherwise write forever. A 429 here is
+        // harmless: the reader treats a failed sync as "try again in 30s" and
+        // never surfaces it, so reading is not interrupted.
+        RateLimiter::for('reader-sync', function (Request $request) {
+            return Limit::perMinute(40)->by($request->user()?->id ?: $request->ip());
+        });
     })
     ->withExceptions(function (Exceptions $exceptions): void {
         //

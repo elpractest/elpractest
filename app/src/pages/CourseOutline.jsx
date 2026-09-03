@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate, Link } from 'react-router-dom';
 import api from '../api';
 import Icon from '../components/Icon';
+import MaterialsStrip from '../components/reader/MaterialsStrip';
 
 export default function CourseOutline() {
   const { courseId } = useParams();
@@ -116,6 +117,11 @@ export default function CourseOutline() {
           </div>
         </div>
       </div>
+
+      {/* Study material — above the syllabus, because a student who came
+          here for the formula sheet should not have to scroll past every
+          module to find it. Renders nothing when the course has none. */}
+      <MaterialsStrip courseId={courseId} />
 
       {/* Modules & Lessons Hierarchy */}
       <div style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>

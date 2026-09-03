@@ -17,6 +17,7 @@ export default function StudyZone() {
 
   const tiles = [
     { label: 'My library', sub: 'Courses & series you own', hue: 'blue', icon: 'book-open', to: '/library' },
+    { label: t('materials.tile'), sub: t('materials.tileSub'), hue: 'sky', icon: 'file-text', to: '/materials' },
     { label: 'Build a practice paper', sub: 'Your subjects, your clock', hue: 'gold', icon: 'edit', to: '/practice' },
     { label: t('study.attempts'), sub: t('study.attemptsSub'), hue: 'sky', icon: 'clock', to: '/results' },
     { label: t('study.analytics'), sub: t('study.analyticsSub'), hue: 'green', icon: 'chart', to: '/results' },

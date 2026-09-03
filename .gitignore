@@ -5,3 +5,7 @@ api/database/*.sqlite-journal
 # OS noise
 .DS_Store
 Thumbs.db
+
+# pdf.js vendor assets, copied out of node_modules at build time
+# by app/scripts/copy-pdfjs-assets.mjs — never edited by hand.
+app/public/pdfjs/

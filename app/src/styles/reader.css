@@ -1,0 +1,1103 @@
+/* ============================================================
+   THE EBOOK READER
+   ------------------------------------------------------------
+   Imported by pages/Reader.jsx and pages/StudyMaterials.jsx rather
+   than from index.css, so the ~40 students' worth of CSS for a surface
+   most sessions never open is not parsed on every page load — the same
+   reason pdf.js itself is a lazy import.
+
+   Everything here is drawn from the Signal tokens (--card, --line,
+   --primary, --tx …), with one deliberate exception: the READING
+   SURFACE and the page sit in their own colour world, set by the page
+   theme (day / sepia / night), because a student reading at midnight
+   wants a dark page without flipping the whole app.
+
+   `--rd-ink` and `--rd-surface` are set per theme below and are the
+   only two colours the chrome INSIDE the reading area is allowed to
+   use; the drawers and the bottom bar stay on the app's own tokens so
+   they look like the rest of Practest.
+   ============================================================ */
+
+.rd-root {
+  position: fixed;
+  inset: 0;
+  display: flex;
+  flex-direction: column;
+  background: #5b6070;
+  color: var(--tx);
+  font-family: var(--font-body);
+  overscroll-behavior: contain;
+
+  /* `clip`, NOT `hidden`, and this is load-bearing.
+     A closed drawer parks just outside the right edge, so the shell has
+     real overflow. `overflow: hidden` still makes an element a scroll
+     CONTAINER — it only removes the scrollbars — so any scrollIntoView
+     or focus() landing on something inside a parked drawer scrolls the
+     whole reader sideways by one panel width, and nothing can scroll it
+     back: the header, the page and the bottom bar all shift left and the
+     closed drawer is revealed on the right.
+     `overflow: clip` clips without ever becoming scrollable, so that
+     failure is not merely unlikely, it is impossible. Reader.jsx also
+     pins scrollLeft as a belt-and-braces guard for browsers that have
+     not shipped clip. */
+  overflow: clip;
+}
+
+/* ── Header ── */
+
+.rd-head {
+  position: relative;
+  z-index: 40;
+  flex: none;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  height: 56px;
+  padding: 0 8px 0 6px;
+  padding-top: env(safe-area-inset-top, 0px);
+  background: var(--nav);
+  border-bottom: 1px solid var(--line);
+  backdrop-filter: blur(14px) saturate(140%);
+  transition: transform var(--t-enter) var(--ease-out);
+}
+
+.rd-root.is-focus .rd-head { transform: translateY(-100%); position: absolute; left: 0; right: 0; }
+
+.rd-head-title {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+}
+
+.rd-head-name {
+  font: 700 14px/1.25 var(--font-display);
+  color: var(--tx);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.rd-head-sub {
+  font: 500 11.5px var(--font-body);
+  color: var(--muted);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.rd-head-actions { display: flex; align-items: center; gap: 2px; }
+
+.rd-icon-btn {
+  display: inline-grid;
+  place-items: center;
+  /* 44px is the touch floor, and these are the controls most often
+     aimed at with a thumb while holding a phone one-handed. */
+  min-width: 44px;
+  min-height: 44px;
+  border: 1px solid transparent;
+  border-radius: var(--radius-sm);
+  background: transparent;
+  color: var(--tx2);
+  cursor: pointer;
+  transition: background var(--t-micro), color var(--t-micro);
+}
+
+@media (hover: hover) { .rd-icon-btn:hover { background: var(--surf); color: var(--tx); } }
+.rd-icon-btn:disabled { opacity: 0.4; cursor: default; }
+.rd-icon-btn.is-on { background: var(--primary-soft); color: var(--primary); border-color: var(--primary-border); }
+.rd-icon-btn-sm { min-width: 34px; min-height: 34px; }
+.rd-aa { font: 700 15px var(--font-display); letter-spacing: -0.02em; }
+
+/* ── Reading surface ── */
+
+.rd-main {
+  flex: 1;
+  min-height: 0;
+  overflow: auto;
+  overscroll-behavior: contain;
+  /* The PDF has its own zoom control, and a browser pinch on top of it
+     scales the floating chrome along with the page. Pan gestures are
+     untouched. */
+  touch-action: pan-x pan-y;
+  -webkit-overflow-scrolling: touch;
+}
+
+.rd-surface {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  min-height: 100%;
+}
+
+.rd-surface-paged { justify-content: flex-start; }
+
+/* Holds the reading area open for the frame or two between the document
+   opening and the surface knowing how big to draw it, so the page does
+   not appear, collapse and reappear. */
+.rd-surface-waiting { width: 100%; min-height: 60vh; }
+
+.rd-page-frame {
+  position: relative;
+  flex: none;
+  border-radius: 4px;
+  overflow: hidden;
+  box-shadow: 0 6px 26px -10px rgba(0, 0, 0, 0.55);
+  background: var(--rd-page, #fff);
+}
+
+.rd-page { position: relative; width: 100%; height: 100%; }
+.rd-canvas { display: block; }
+
+/* ── Layer order inside a page ──
+   canvas (0) · theme tint (2) · marks (3) · dimming veil (4) ·
+   text layer (5) · not-yet-drawn placeholder (6).
+
+   The text layer is deliberately on TOP: it is invisible, but it is the
+   only thing that receives the pointer, so a highlight can never block
+   the next selection. Everything between it and the canvas sets
+   pointer-events: none. */
+
+.rd-page-tint,
+.rd-page-veil {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+}
+.rd-page-tint { z-index: 2; }
+.rd-page-veil { z-index: 4; }
+
+.rd-page-pending {
+  position: absolute;
+  inset: 0;
+  display: grid;
+  place-items: center;
+  background: var(--rd-page, #fff);
+  color: #9aa2b4;
+  z-index: 6;
+}
+.rd-page-pending-num { font: 600 13px var(--font-mono); }
+
+/* ── Marks ── */
+
+.rd-marks {
+  position: absolute;
+  inset: 0;
+  z-index: 3;
+  pointer-events: none;
+  /* The blend belongs on the LAYER, not on each mark. An element with a
+     z-index makes a stacking context, so a mix-blend-mode on the marks
+     themselves blends them against this transparent container instead of
+     against the page — which paints an opaque bar over the text it was
+     meant to highlight.
+
+     Day and sepia are dark text on a light page, so `multiply` tints the
+     white and leaves the glyphs. Night is an inverted page — light text
+     on dark — where multiply would blacken everything; `lighten` there
+     tints the dark background and leaves the light glyphs untouched,
+     which is the same result the other way up. */
+  mix-blend-mode: var(--rd-mark-blend, multiply);
+}
+
+.rd-mark {
+  position: absolute;
+  border-radius: 2px;
+}
+
+.rd-mark-find {
+  background: rgba(46, 63, 204, 0.3);
+  outline: 1px solid rgba(46, 63, 204, 0.5);
+}
+.rd-mark-find.is-active { background: rgba(232, 163, 61, 0.5); outline-color: #96601a; }
+
+/* ── pdf.js text layer ──
+   Invisible, selectable, and the only real text on screen. Trimmed from
+   pdfjs-dist/web/pdf_viewer.css to what this reader actually renders;
+   the class names are pdf.js's own and must not be renamed. */
+
+.rd-page .textLayer {
+  position: absolute;
+  inset: 0;
+  z-index: 5;
+  text-align: initial;
+  overflow: clip;
+  opacity: 1;
+  line-height: 1;
+  text-size-adjust: none;
+  forced-color-adjust: none;
+  transform-origin: 0 0;
+  caret-color: CanvasText;
+}
+
+.rd-page .textLayer :is(span, br) {
+  color: transparent;
+  position: absolute;
+  white-space: pre;
+  cursor: text;
+  transform-origin: 0% 0%;
+}
+
+.rd-page .textLayer > :not(.markedContent),
+.rd-page .textLayer .markedContent span:not(.markedContent) { z-index: 1; }
+
+.rd-page .textLayer span.markedContent { top: 0; height: 0; }
+.rd-page .textLayer span[role='img'] { user-select: none; cursor: default; }
+
+.rd-page .textLayer ::selection { background: rgba(46, 63, 204, 0.3); }
+.rd-page .textLayer br::selection { background: transparent; }
+
+/* pdf.js's sentinel for "select to the end of the page". */
+.rd-page .textLayer .endOfContent {
+  display: block;
+  position: absolute;
+  inset: 100% 0 0;
+  z-index: 0;
+  cursor: default;
+  user-select: none;
+}
+
+/* ── Page themes ── */
+
+.rd-theme-day { --rd-page: #ffffff; }
+.rd-theme-sepia { --rd-page: #f8f0dd; }
+
+/* Night takes the reader's OWN chrome dark with it, by re-pointing the
+   Signal tokens on this subtree only.
+
+   The page theme is separate from the app theme on purpose — a student
+   reading at midnight should not have to flip the whole app — but the
+   reader fills the screen, and a white header and a white bottom bar
+   around a black page are precisely the glare the night page was chosen
+   to avoid. Nothing outside .rd-root is touched, so leaving the reader
+   returns the app to whatever theme the student actually set.
+
+   These are the app's own dark values from index.css, not a second dark
+   palette: the reader in night mode should look like Practest at night. */
+.rd-theme-night {
+  color-scheme: dark;
+  --rd-page: #161a26;
+  --rd-mark-blend: lighten;
+
+  --card: #141926;
+  --card2: #1b2233;
+  --tx: #eef1f8;
+  --tx2: #c0c7d8;
+  --muted: #8791a8;
+  --muted-decor: #8791a8;
+  --line: rgba(255, 255, 255, 0.09);
+  --line2: rgba(255, 255, 255, 0.14);
+  --surf: rgba(255, 255, 255, 0.05);
+  --nav: rgba(11, 14, 24, 0.94);
+  --primary: #7c8cff;
+  --primary-soft: rgba(124, 140, 255, 0.14);
+  --primary-border: rgba(124, 140, 255, 0.34);
+  --primary-ring: rgba(124, 140, 255, 0.22);
+  --success: #26e0a6;
+  --danger: #ff7b7b;
+  --danger-bg: rgba(255, 123, 123, 0.13);
+  --danger-text: #ff7b7b;
+  --reward-bg: rgba(240, 180, 81, 0.13);
+  --reward-text: #f0b451;
+  --ai: #a98bff;
+  --ai-bg: rgba(169, 139, 255, 0.14);
+  --surface-2: rgba(255, 255, 255, 0.08);
+  --surface-3: rgba(255, 255, 255, 0.12);
+  --overlay: rgba(3, 6, 14, 0.72);
+  --shadow-2: 0 4px 14px -6px rgba(0, 0, 0, 0.55);
+  --shadow-pop: 0 18px 40px -20px rgba(0, 0, 0, 0.85);
+  --on-primary: #0b0e18;
+}
+
+/* The watermark has to stay legible-but-faint against both a white page
+   and a black one, and one grey cannot do both. */
+.rd-theme-night .rd-watermark span { color: rgba(200, 210, 230, 0.13); }
+
+.rd-warmth {
+  position: absolute;
+  inset: 56px 0 0;
+  z-index: 25;
+  pointer-events: none;
+  background: #ff8a1f;
+  mix-blend-mode: multiply;
+}
+
+/* ── Opening / failure ── */
+
+.rd-opening {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 14px;
+  min-height: 60vh;
+  color: #e7ebf5;
+  font: 600 13px var(--font-body);
+}
+
+.rd-dl {
+  width: 180px;
+  height: 4px;
+  border-radius: 99px;
+  background: rgba(255, 255, 255, 0.22);
+  overflow: hidden;
+}
+.rd-dl > span { display: block; height: 100%; background: #fff; transition: width var(--t-base) linear; }
+
+.rd-root-message { display: grid; place-items: center; padding: 24px; }
+
+.rd-message {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 12px;
+  max-width: 420px;
+  padding: 32px 26px;
+  text-align: center;
+}
+.rd-message p { margin: 0; color: var(--muted); font: 400 13.5px/1.6 var(--font-body); }
+
+.rd-message-glyph {
+  display: grid;
+  place-items: center;
+  width: 54px;
+  height: 54px;
+  border-radius: 16px;
+  background: var(--primary-soft);
+  color: var(--primary);
+}
+
+/* ── Watermark ── */
+
+.rd-watermark {
+  position: absolute;
+  inset: 0;
+  z-index: 30;
+  display: flex;
+  flex-wrap: wrap;
+  align-content: space-around;
+  justify-content: space-around;
+  gap: 60px 40px;
+  padding: 40px;
+  pointer-events: none;
+  overflow: hidden;
+  user-select: none;
+}
+
+.rd-watermark span {
+  transform: rotate(-24deg);
+  font: 600 11px var(--font-body);
+  letter-spacing: 0.04em;
+  color: rgba(120, 130, 150, 0.22);
+  white-space: nowrap;
+}
+
+/* ── Page flip (paged mode) ── */
+
+.rd-flip {
+  position: absolute;
+  top: 50%;
+  z-index: 35;
+  display: grid;
+  place-items: center;
+  width: 44px;
+  height: 44px;
+  transform: translateY(-50%);
+  border: 1px solid var(--line);
+  border-radius: 99px;
+  background: var(--card);
+  color: var(--tx2);
+  box-shadow: var(--shadow-2);
+  cursor: pointer;
+}
+.rd-flip:disabled { opacity: 0.35; cursor: default; }
+.rd-flip-prev { left: 8px; }
+.rd-flip-next { right: 8px; }
+
+/* ── Drawers ── */
+
+.rd-panel {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  z-index: 47;
+  display: flex;
+  flex-direction: column;
+  width: min(88vw, 340px);
+  background: var(--card);
+  box-shadow: var(--shadow-pop);
+  transition: transform var(--t-enter) var(--ease-out);
+  padding-bottom: env(safe-area-inset-bottom, 0px);
+}
+
+/* Full height, above the bottom bar: each drawer owns a close button, so
+   covering the bar costs nothing and buys a whole column of list. */
+.rd-panel-left { left: 0; border-right: 1px solid var(--line); transform: translateX(-101%); }
+.rd-panel-right { right: 0; border-left: 1px solid var(--line); transform: translateX(101%); }
+.rd-panel.is-open { transform: translateX(0); }
+
+.rd-panel-head {
+  flex: none;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  padding: 10px 8px 10px 16px;
+  padding-top: calc(10px + env(safe-area-inset-top, 0px));
+  border-bottom: 1px solid var(--line);
+}
+
+.rd-panel-title {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin: 0;
+  font: 700 15px var(--font-display);
+  letter-spacing: -0.02em;
+  color: var(--tx);
+}
+
+.rd-panel-body { flex: 1; min-height: 0; overflow-y: auto; overscroll-behavior: contain; }
+.rd-panel-body-pad { padding: 14px 16px 24px; }
+
+/* ── Tabs ── */
+
+.rd-tabs {
+  flex: none;
+  display: flex;
+  gap: 4px;
+  padding: 8px 10px;
+  border-bottom: 1px solid var(--line);
+}
+
+.rd-tab {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  min-height: 40px;
+  padding: 0 6px;
+  border: 1px solid transparent;
+  border-radius: var(--radius-sm);
+  background: transparent;
+  color: var(--muted);
+  /* 12px floor: a reading app whose own labels need squinting at has
+     picked the wrong fight. */
+  font: 600 12px var(--font-body);
+  cursor: pointer;
+  transition: background var(--t-micro), color var(--t-micro);
+}
+.rd-tab.is-active { background: var(--primary-soft); border-color: var(--primary-border); color: var(--primary); }
+.rd-tab-count {
+  padding: 1px 6px;
+  border-radius: 99px;
+  background: var(--primary);
+  color: var(--on-primary);
+  font: 700 10.5px var(--font-mono);
+}
+
+/* ── Lists ── */
+
+.rd-list { list-style: none; margin: 0; padding: 8px; display: flex; flex-direction: column; gap: 2px; }
+.rd-list-row { display: flex; align-items: center; gap: 4px; }
+
+.rd-list-btn {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  min-height: 42px;
+  padding: 8px 12px;
+  border: 1px solid transparent;
+  border-radius: var(--radius-sm);
+  background: transparent;
+  color: var(--tx2);
+  font: 500 13px/1.4 var(--font-body);
+  text-align: left;
+  cursor: pointer;
+}
+@media (hover: hover) { .rd-list-btn:hover:not(:disabled) { background: var(--surf); } }
+.rd-list-btn:disabled { opacity: 0.55; cursor: default; }
+.rd-list-btn.is-active { background: var(--primary-soft); border-color: var(--primary-border); color: var(--primary); font-weight: 700; }
+
+.rd-list-label { flex: 1; min-width: 0; }
+.rd-list-num { font: 600 11.5px var(--font-mono); color: var(--muted); }
+
+/* ── Thumbnails ── */
+
+.rd-thumbs {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(96px, 1fr));
+  gap: 10px;
+  padding: 14px;
+}
+
+.rd-thumb {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 5px;
+  padding: 5px;
+  border: 1.5px solid var(--line);
+  border-radius: var(--radius-sm);
+  background: var(--card2);
+  cursor: pointer;
+}
+.rd-thumb.is-active { border-color: var(--primary); box-shadow: 0 0 0 2px var(--primary-ring); }
+.rd-thumb-canvas { width: 100%; height: auto; border-radius: 4px; background: #fff; aspect-ratio: 1 / 1.414; }
+.rd-thumb-num { font: 600 11px var(--font-mono); color: var(--muted); }
+
+/* ── Empty states ── */
+
+.rd-empty {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+  padding: 42px 26px;
+  text-align: center;
+}
+.rd-empty-glyph {
+  display: grid;
+  place-items: center;
+  width: 46px;
+  height: 46px;
+  border-radius: 14px;
+  background: var(--primary-soft);
+  color: var(--primary);
+}
+.rd-empty-title { margin: 4px 0 0; font: 700 14px var(--font-display); color: var(--tx); }
+.rd-empty-body { margin: 0; max-width: 30ch; font: 400 12.5px/1.6 var(--font-body); color: var(--muted); }
+
+/* ── Display controls ── */
+
+.rd-group { margin-bottom: 18px; }
+.rd-group-label { margin: 0 0 8px; color: var(--muted); }
+
+.rd-seg { display: flex; gap: 6px; }
+.rd-seg-sm { margin-top: 8px; }
+
+.rd-seg-btn {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 5px;
+  min-height: 42px;
+  padding: 0 8px;
+  border: 1.5px solid var(--line);
+  border-radius: var(--radius-sm);
+  background: var(--card2);
+  color: var(--tx2);
+  font: 600 12px var(--font-body);
+  cursor: pointer;
+  transition: background var(--t-micro), border-color var(--t-micro);
+}
+.rd-seg-btn.is-active { background: var(--primary-soft); border-color: var(--primary); color: var(--primary); }
+
+.rd-stepper {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  padding: 4px 8px;
+  border: 1.5px solid var(--line);
+  border-radius: var(--radius-sm);
+  background: var(--card2);
+}
+.rd-stepper-val { font-size: 14px; color: var(--tx); }
+
+.rd-slider { display: flex; align-items: center; gap: 12px; }
+.rd-slider input { flex: 1; accent-color: var(--primary); height: 22px; }
+.rd-slider-val { min-width: 48px; text-align: right; font-size: 12.5px; color: var(--tx2); }
+
+.rd-switch {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  min-height: 48px;
+  padding: 0 12px;
+  border: 1.5px solid var(--line);
+  border-radius: var(--radius-sm);
+  background: var(--card2);
+  cursor: pointer;
+}
+.rd-switch-label { display: flex; align-items: center; gap: 8px; font: 600 13px var(--font-body); color: var(--tx); }
+.rd-switch input { width: 18px; height: 18px; accent-color: var(--primary); }
+
+.rd-hint { margin: 6px 0 0; font: 400 11.5px/1.5 var(--font-body); color: var(--muted); }
+.rd-reset { width: 100%; margin-top: 18px; gap: 8px; }
+
+/* ── Find in book ── */
+
+.rd-overlay {
+  position: absolute;
+  inset: 0;
+  z-index: 60;
+  display: flex;
+  align-items: flex-start;
+  justify-content: center;
+  padding: 72px 16px 16px;
+  background: var(--overlay);
+  backdrop-filter: blur(3px);
+  animation: fade-in var(--t-base) var(--ease-out) both;
+}
+
+.rd-find {
+  display: flex;
+  flex-direction: column;
+  width: 100%;
+  max-width: 540px;
+  max-height: 72vh;
+  border: 1px solid var(--line);
+  border-radius: var(--radius-lg);
+  background: var(--card);
+  box-shadow: var(--shadow-pop);
+  overflow: hidden;
+}
+
+.rd-find-bar {
+  flex: none;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 8px 8px 8px 16px;
+  border-bottom: 1px solid var(--line);
+  color: var(--muted);
+}
+
+.rd-find-input {
+  flex: 1;
+  min-width: 0;
+  border: none;
+  background: transparent;
+  outline: none;
+  color: var(--tx);
+  font: 500 15px var(--font-body);
+}
+
+.rd-find-status {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 10px 16px;
+  border-bottom: 1px solid var(--line);
+  font: 500 12px var(--font-body);
+  color: var(--muted);
+}
+.rd-find-kbd { margin-left: auto; font: 500 11px var(--font-mono); }
+.rd-spinner-sm { width: 14px; height: 14px; border-width: 2px; }
+
+.rd-find-list { flex: 1; min-height: 0; overflow-y: auto; list-style: none; margin: 0; padding: 8px; }
+
+.rd-find-hit {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  width: 100%;
+  padding: 10px 12px;
+  border: 1px solid transparent;
+  border-radius: var(--radius-sm);
+  background: transparent;
+  text-align: left;
+  cursor: pointer;
+}
+@media (hover: hover) { .rd-find-hit:hover { background: var(--surf); } }
+.rd-find-hit.is-active { background: var(--primary-soft); border-color: var(--primary-border); }
+.rd-find-page { font: 700 11px var(--font-mono); color: var(--primary); }
+.rd-find-snippet { font: 400 12.5px/1.5 var(--font-body); color: var(--tx2); }
+.rd-find-snippet mark { background: var(--reward-bg); color: var(--reward-text); border-radius: 3px; padding: 0 2px; }
+
+/* ── Selection sheet ── */
+
+.rd-sel {
+  z-index: 70;
+  border: 1px solid var(--line);
+  border-radius: var(--radius-md);
+  background: var(--card);
+  box-shadow: var(--shadow-pop);
+  padding: 6px 8px;
+  animation: fade-in var(--t-micro) var(--ease-out) both;
+}
+
+.rd-sel.is-sheet {
+  border-radius: var(--radius-lg) var(--radius-lg) 0 0;
+  padding: 12px 12px calc(12px + env(safe-area-inset-bottom, 0px));
+}
+
+.rd-sel-quote {
+  margin: 0 0 10px;
+  font: 400 13px/1.45 var(--font-body);
+  color: var(--tx2);
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
+.rd-sel-row { display: flex; align-items: center; gap: 4px; }
+.rd-sel.is-sheet .rd-sel-row { flex-wrap: wrap; }
+.rd-sel-div { width: 1px; height: 20px; background: var(--line2); margin: 0 3px; }
+
+.rd-swatch {
+  display: grid;
+  place-items: center;
+  /* The disc stays 22px; the hit area around it is 40px, because this
+     is the smallest target in the reader and the one most often aimed
+     at with a thumb. */
+  min-width: 40px;
+  min-height: 40px;
+  padding: 0;
+  border: none;
+  background: transparent;
+  cursor: pointer;
+}
+.rd-swatch > span {
+  display: block;
+  width: 22px;
+  height: 22px;
+  border: 1px solid rgba(0, 0, 0, 0.16);
+  border-radius: 50%;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.12);
+}
+
+.rd-sel-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 5px;
+  min-height: 40px;
+  padding: 0 12px;
+  border: 1px solid var(--line);
+  border-radius: var(--radius-sm);
+  background: var(--card2);
+  /* One neutral treatment. Four differently-coloured action buttons in
+     one small toolbar carry four palettes and no meaning. */
+  color: var(--tx2);
+  font: 600 12px var(--font-body);
+  white-space: nowrap;
+  cursor: pointer;
+}
+@media (hover: hover) { .rd-sel-btn:hover { background: var(--surf); color: var(--tx); } }
+.rd-sel-btn.is-ai { color: var(--ai); border-color: var(--ai); background: var(--ai-bg); }
+.rd-sel-dismiss { margin-left: auto; }
+
+/* ── Note composer ── */
+
+.rd-note-modal {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  width: 100%;
+  max-width: 460px;
+  padding: 20px;
+  border-radius: var(--radius-lg);
+  background: var(--card);
+  box-shadow: var(--shadow-pop);
+}
+.rd-note-modal h2 { margin: 0; color: var(--tx); }
+
+.rd-mark-quote {
+  margin: 0;
+  padding: 8px 12px;
+  border-left: 3px solid var(--primary);
+  border-radius: 0 var(--radius-sm) var(--radius-sm) 0;
+  background: var(--surf);
+  font: 400 12.5px/1.55 var(--font-body);
+  color: var(--tx2);
+  max-height: 90px;
+  overflow-y: auto;
+}
+
+.rd-note-edit { display: flex; flex-direction: column; gap: 10px; margin-top: 8px; }
+.rd-note-edit-actions { display: flex; justify-content: flex-end; gap: 8px; }
+
+/* ── Marks list ── */
+
+.rd-marks-list { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 12px; }
+
+.rd-mark-card {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding: 12px 14px;
+  border: 1px solid var(--line);
+  border-left: 4px solid var(--line2);
+  border-radius: var(--radius-sm);
+  background: var(--card2);
+}
+
+.rd-mark-head { display: flex; align-items: center; justify-content: space-between; gap: 8px; flex-wrap: wrap; }
+
+.rd-mark-page {
+  padding: 3px 9px;
+  border: 1px solid var(--primary-border);
+  border-radius: 99px;
+  background: var(--primary-soft);
+  color: var(--primary);
+  font: 700 11px var(--font-mono);
+  cursor: pointer;
+}
+
+.rd-mark-actions { display: flex; align-items: center; gap: 3px; }
+
+.rd-mini-swatch {
+  width: 16px;
+  height: 16px;
+  border: 1px solid rgba(0, 0, 0, 0.18);
+  border-radius: 50%;
+  cursor: pointer;
+  padding: 0;
+}
+.rd-mini-swatch.is-active { box-shadow: 0 0 0 2px var(--tx); }
+
+.rd-note-body {
+  width: 100%;
+  padding: 8px 10px;
+  border: 1px dashed var(--line2);
+  border-radius: var(--radius-sm);
+  background: transparent;
+  color: var(--tx2);
+  font: 400 12.5px/1.55 var(--font-body);
+  text-align: left;
+  cursor: pointer;
+}
+.rd-note-add { display: inline-flex; align-items: center; gap: 5px; color: var(--muted); font-weight: 600; }
+
+/* ── Vajini ── */
+
+.rd-chat { display: flex; flex-direction: column; gap: 10px; padding: 14px 16px; }
+
+.rd-bubble {
+  max-width: 90%;
+  padding: 10px 13px;
+  border-radius: var(--radius-md);
+  font: 400 13px/1.6 var(--font-body);
+  white-space: pre-wrap;
+}
+.rd-bubble-assistant { align-self: flex-start; background: var(--surf); color: var(--tx); border-bottom-left-radius: 4px; }
+.rd-bubble-user { align-self: flex-end; background: var(--primary); color: var(--on-primary); border-bottom-right-radius: 4px; }
+.rd-bubble.is-error { background: var(--danger-bg); color: var(--danger-text); }
+.rd-bubble.is-thinking { color: var(--muted); font-style: italic; }
+
+.rd-sources { display: flex; flex-wrap: wrap; align-items: center; gap: 6px; margin-top: 8px; }
+
+.rd-composer {
+  flex: none;
+  display: flex;
+  align-items: flex-end;
+  gap: 8px;
+  padding: 10px 12px 4px;
+  border-top: 1px solid var(--line);
+}
+.rd-composer textarea { flex: 1; resize: none; }
+.rd-send { min-width: 44px; min-height: 44px; padding: 0; display: grid; place-items: center; }
+.rd-disclaimer { padding: 0 14px 12px; text-align: center; }
+
+/* ── Reading stats sheet ── */
+
+.rd-sheet {
+  position: absolute;
+  left: 8px;
+  right: 8px;
+  /* Above the bar, never over it: the control that opened this sheet
+     stays reachable while it is open. */
+  bottom: 92px;
+  z-index: 44;
+  border: 1px solid var(--line);
+  border-radius: var(--radius-lg);
+  background: var(--card);
+  box-shadow: var(--shadow-pop);
+  overflow: hidden;
+  opacity: 0;
+  transform: translateY(12px);
+  pointer-events: none;
+  transition: opacity var(--t-base), transform var(--t-base) var(--ease-out);
+}
+.rd-sheet.is-open { opacity: 1; transform: translateY(0); pointer-events: auto; }
+
+.rd-sheet-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 8px 8px 8px 16px;
+  border-bottom: 1px solid var(--line);
+}
+
+.rd-stats {
+  list-style: none;
+  margin: 0;
+  padding: 12px;
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 8px;
+}
+@media (min-width: 560px) { .rd-stats { grid-template-columns: repeat(3, 1fr); } }
+
+.rd-stat {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  padding: 10px 12px;
+  border: 1px solid var(--line);
+  border-radius: var(--radius-sm);
+  background: var(--card2);
+}
+.rd-stat-label { display: flex; align-items: center; gap: 5px; font: 600 12px var(--font-body); color: var(--tx2); }
+.rd-stat-value { font-size: 20px; color: var(--tx); }
+.rd-stat-sub { font: 400 11.5px var(--font-body); color: var(--muted); }
+
+/* ── Bottom bar ── */
+
+.rd-bar {
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  z-index: 45;
+  background: var(--nav);
+  border-top: 1px solid var(--line);
+  backdrop-filter: blur(14px) saturate(140%);
+  padding-bottom: env(safe-area-inset-bottom, 0px);
+}
+
+.rd-bar-progress { height: 2px; background: var(--surface-3); }
+.rd-bar-progress > span { display: block; height: 100%; background: var(--primary); transition: width var(--t-enter) var(--ease-out); }
+
+.rd-bar-top { display: flex; align-items: stretch; }
+
+.rd-bar-stats {
+  flex: 1;
+  padding: 6px 12px 2px;
+  border: none;
+  background: transparent;
+  color: var(--tx2);
+  font: 500 12px var(--font-body);
+  cursor: pointer;
+}
+.rd-bar-stats strong { color: var(--tx); font-size: 13px; }
+.rd-bar-of { color: var(--muted); }
+.rd-bar-dot { margin: 0 6px; color: var(--muted-decor); }
+.rd-bar-collapse { min-height: 30px; }
+
+.rd-bar-actions { display: flex; align-items: stretch; justify-content: space-around; padding: 0 4px 4px; }
+
+.rd-bar-btn {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 3px;
+  min-height: 52px;
+  padding: 0 2px;
+  border: none;
+  border-radius: var(--radius-sm);
+  background: transparent;
+  color: var(--muted);
+  font: 600 12px var(--font-body);
+  cursor: pointer;
+  transition: background var(--t-micro), color var(--t-micro);
+}
+.rd-bar-btn.is-active { background: var(--primary-soft); color: var(--primary); }
+
+.rd-bar-pill {
+  position: absolute;
+  left: 50%;
+  bottom: calc(16px + env(safe-area-inset-bottom, 0px));
+  z-index: 46;
+  transform: translateX(-50%);
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  min-height: 40px;
+  padding: 0 16px 0 12px;
+  border: 1px solid var(--line);
+  border-radius: 99px;
+  background: var(--nav);
+  color: var(--tx2);
+  font: 600 12px var(--font-body);
+  box-shadow: var(--shadow-2);
+  backdrop-filter: blur(14px);
+  cursor: pointer;
+}
+
+.rd-exit-focus {
+  position: absolute;
+  left: 50%;
+  bottom: calc(16px + env(safe-area-inset-bottom, 0px));
+  z-index: 46;
+  transform: translateX(-50%);
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  min-height: 40px;
+  padding: 0 18px;
+  border: 1px solid var(--line);
+  border-radius: 99px;
+  background: var(--card);
+  color: var(--tx2);
+  font: 600 12px var(--font-body);
+  box-shadow: var(--shadow-2);
+  cursor: pointer;
+}
+
+/* ============================================================
+   THE SHELF — /materials
+   ============================================================ */
+
+.rd-shelf { padding: 16px 18px 24px; animation: fade-in var(--t-enter) var(--ease-out) both; }
+.rd-shelf-loading { display: flex; justify-content: center; padding: 48px; }
+.rd-shelf-title { margin: 0 0 4px; color: var(--tx); }
+.rd-shelf-sub { margin: 0 0 18px; font: 500 13px var(--font-body); color: var(--muted); }
+
+.rd-shelf-filters { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 20px; }
+
+.rd-shelf-group { margin-bottom: 26px; }
+.rd-shelf-course { display: flex; align-items: center; gap: 8px; margin: 0 0 12px; color: var(--tx); }
+.rd-shelf-count { font: 500 12px var(--font-mono); color: var(--muted); }
+
+.rd-shelf-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(230px, 1fr)); gap: 12px; }
+
+.rd-card {
+  display: flex;
+  flex-direction: column;
+  gap: 9px;
+  padding: 16px;
+  text-align: left;
+  cursor: pointer;
+}
+.rd-card-top { display: flex; align-items: center; justify-content: space-between; gap: 8px; }
+.rd-card-glyph { display: grid; place-items: center; width: 38px; height: 38px; border-radius: 11px; }
+.rd-card-chip { font-size: 10.5px; }
+.rd-card-title { font: 700 14.5px/1.35 var(--font-body); color: var(--tx); }
+.rd-card-subject { font: 600 11.5px var(--font-body); color: var(--primary); }
+.rd-card-meta { font: 500 11.5px var(--font-body); color: var(--muted); }
+.rd-card-module { color: var(--muted-decor); }
+
+.rd-card-resume { display: flex; flex-direction: column; gap: 5px; margin-top: 2px; }
+.rd-card-bar { display: block; height: 4px; border-radius: 99px; background: var(--surface-3); overflow: hidden; }
+.rd-card-bar > span { display: block; height: 100%; background: var(--success); }
+.rd-card-resume-label { font: 600 11.5px var(--font-body); color: var(--success); }
+.rd-card-start { margin-top: 2px; font: 600 11.5px var(--font-body); color: var(--primary); }
+
+.rd-shelf-empty {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 12px;
+  padding: 32px 24px;
+  text-align: center;
+}
+.rd-shelf-empty p { margin: 0; max-width: 44ch; font: 500 13px/1.6 var(--font-body); color: var(--muted); }
+.rd-shelf-empty-glyph { display: grid; place-items: center; width: 52px; height: 52px; border-radius: 15px; }
+
+/* ── Small screens ── */
+
+@media (max-width: 640px) {
+  .rd-head { height: 52px; }
+  .rd-overlay { padding: 60px 10px 10px; }
+  .rd-sheet { left: 6px; right: 6px; }
+}

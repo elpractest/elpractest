@@ -92,6 +92,27 @@ export default function Library() {
         </div>
       ) : (
         <div style={{ display: 'flex', flexDirection: 'column', gap: '26px' }}>
+          {/* A shelf holds books as well as courses. The PDFs live on
+              their own page because they cut across courses — a student
+              looking for "my Polity notes" does not want to remember
+              which course they came in. */}
+          <button
+            onClick={() => navigate('/materials')}
+            className="glass-panel"
+            style={{ display: 'flex', alignItems: 'center', gap: '12px', padding: '14px 16px', cursor: 'pointer', textAlign: 'left' }}
+          >
+            <span style={{ width: '38px', height: '38px', borderRadius: '11px', background: tint('violet').bg, color: tint('violet').c, display: 'grid', placeItems: 'center', flex: 'none' }}>
+              <Icon name="file-text" size={18} />
+            </span>
+            <span style={{ flex: 1, minWidth: 0 }}>
+              <span style={{ display: 'block', font: '700 14px var(--font-body)', color: 'var(--tx)' }}>Study material</span>
+              <span style={{ display: 'block', font: '500 11.5px var(--font-body)', color: 'var(--muted)' }}>
+                Notes, handouts and booklets you can read in the app
+              </span>
+            </span>
+            <Icon name="chevron-right" size={18} />
+          </button>
+
           {data.courses.length > 0 && (
             <section>
               <h2 style={{ margin: '0 0 12px', font: '700 15px var(--font-display)', color: 'var(--tx)' }}>
