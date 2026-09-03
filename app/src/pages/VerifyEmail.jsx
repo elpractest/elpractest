@@ -55,7 +55,7 @@ export default function VerifyEmail() {
     <div style={{ display: 'flex', flex: 1, justifyContent: 'center', alignItems: 'center', minHeight: '80vh', padding: '16px' }}>
       <div className="glass-panel" style={{ width: '100%', maxWidth: '460px', padding: '40px', textAlign: 'center', display: 'flex', flexDirection: 'column', gap: '20px' }}>
         <div style={{ display: 'flex', justifyContent: 'center' }}>{medallion}</div>
-        <h2 style={{ margin: 0, fontSize: '1.6rem', fontWeight: 800, color: status === 'error' ? 'var(--danger-text)' : 'var(--accent-color)' }}>
+        <h2 style={{ margin: 0, fontSize: '1.6rem', fontWeight: 700, color: status === 'error' ? 'var(--danger-text)' : 'var(--accent-color)' }}>
           {titles[status]}
         </h2>
         

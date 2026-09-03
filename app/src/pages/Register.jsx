@@ -78,7 +78,7 @@ export default function Register() {
       <div style={{ display: 'flex', flex: 1, justifyContent: 'center', alignItems: 'center', minHeight: '80vh', padding: '16px' }}>
         <div className="glass-panel" style={{ width: '100%', maxWidth: '460px', padding: '40px', textAlign: 'center' }}>
           <div style={{ display: 'flex', justifyContent: 'center', marginBottom: '16px' }}><span style={{ display: 'inline-flex', padding: '15px', borderRadius: '18px', background: 'var(--accent-soft)', color: 'var(--accent-color)', border: '1px solid var(--accent-border)' }}><Icon name="mail" size={34} /></span></div>
-          <h2 style={{ margin: '0 0 12px 0', fontSize: '1.6rem', fontWeight: 800, color: 'var(--accent-color)' }}>Check Your Inbox</h2>
+          <h2 style={{ margin: '0 0 12px 0', fontSize: '1.6rem', fontWeight: 700, color: 'var(--accent-color)' }}>Check Your Inbox</h2>
           <p style={{ margin: '0 0 24px 0', color: 'var(--text-secondary)', fontSize: '0.95rem', lineHeight: '1.6' }}>
             We've sent a verification link to <strong style={{ color: 'var(--text-primary)' }}>{form.email}</strong>. 
             Please click the link in the email to verify your account, then come back to log in.
@@ -110,7 +110,7 @@ export default function Register() {
     <div style={{ display: 'flex', flex: 1, justifyContent: 'center', alignItems: 'center', minHeight: '80vh', padding: '16px' }}>
       <div className="glass-panel" style={{ width: '100%', maxWidth: '460px', padding: '40px', display: 'flex', flexDirection: 'column', gap: '20px' }}>
         <div style={{ textAlign: 'center' }}>
-          <h2 style={{ margin: '0 0 8px 0', fontSize: '1.8rem', fontWeight: 800, color: 'var(--accent-color)' }}>Create Account</h2>
+          <h2 style={{ margin: '0 0 8px 0', fontSize: '1.8rem', fontWeight: 700, color: 'var(--accent-color)' }}>Create Account</h2>
           <p style={{ margin: 0, color: 'var(--text-secondary)', fontSize: '0.9rem' }}>Join e-Learning Practest and start your exam preparation</p>
         </div>
 
@@ -186,7 +186,7 @@ export default function Register() {
 
         <div style={{ textAlign: 'center', fontSize: '0.85rem', color: 'var(--text-secondary)' }}>
           Already have an account?{' '}
-          <Link to="/login" style={{ color: 'var(--accent-color)', textDecoration: 'none', fontWeight: 600 }}>Sign In</Link>
+          <Link to="/login" className="link-btn" style={{ textDecoration: 'none' }}>Sign in</Link>
         </div>
       </div>
     </div>

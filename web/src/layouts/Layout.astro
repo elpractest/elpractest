@@ -30,7 +30,7 @@ const orgSchema = JSON.stringify({
 ---
 
 <!doctype html>
-<html lang="en" data-theme="dark">
+<html lang="en" data-theme="light">
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
@@ -44,14 +44,15 @@ const orgSchema = JSON.stringify({
     {googleSiteVerification && <meta name="google-site-verification" content={googleSiteVerification} />}
     <meta name="generator" content={Astro.generator} />
 
-    <!-- Theme boot: cookie (shared with the app subdomain) → localStorage → dark -->
+    <!-- Theme boot: cookie (shared with the app subdomain) → localStorage → LIGHT.
+         Dark stays fully supported; it is simply no longer the default. -->
     <script is:inline>
       (function () {
         try {
           var m = document.cookie.match(/(?:^|; )practest_theme=(light|dark)/);
           var t = m ? m[1] : localStorage.getItem('practest-theme');
           if (t === 'light' || t === 'dark') document.documentElement.dataset.theme = t;
-        } catch (e) { /* default dark stands */ }
+        } catch (e) { /* the light default stands */ }
       })();
     </script>
 
@@ -59,8 +60,8 @@ const orgSchema = JSON.stringify({
     <title>{title}</title>
     <meta name="title" content={title} />
     <meta name="description" content={description} />
-    <meta name="theme-color" content="#0b0f1a" media="(prefers-color-scheme: dark)" />
-    <meta name="theme-color" content="#eaeef6" media="(prefers-color-scheme: light)" />
+    <meta name="theme-color" content="#0b0e18" media="(prefers-color-scheme: dark)" />
+    <meta name="theme-color" content="#f2f4f9" media="(prefers-color-scheme: light)" />
 
     <!-- Open Graph / Facebook -->
     <meta property="og:type" content="website" />
@@ -78,10 +79,11 @@ const orgSchema = JSON.stringify({
     <!-- Schema.org Organization -->
     <script type="application/ld+json" set:html={orgSchema} />
 
-    <!-- Fonts: Sora (display) · Plus Jakarta Sans (UI) · JetBrains Mono (data) · Noto Sans Devanagari (हिं) -->
+    <!-- Fonts: Bricolage Grotesque (display) · Hanken Grotesk (UI) ·
+         JetBrains Mono (data) · Noto Sans Devanagari (हिं) -->
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-    <link href="https://fonts.googleapis.com/css2?family=Sora:wght@400;500;600;700;800&family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=JetBrains+Mono:wght@500;700&family=Noto+Sans+Devanagari:wght@500;600;700&display=swap" rel="stylesheet" />
+    <link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,400;12..96,500;12..96,600;12..96,700;12..96,800&family=Hanken+Grotesk:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500;700&family=Noto+Sans+Devanagari:wght@400;500;600;700&display=swap" rel="stylesheet" />
   </head>
   <body>
     <Analytics />
@@ -355,7 +357,9 @@ const orgSchema = JSON.stringify({
     cursor: pointer;
     transition: transform 0.25s var(--ease-out), border-color 0.2s ease;
   }
-  .theme-toggle-btn:hover { transform: translateY(-1px) rotate(12deg); border-color: var(--accent-border); }
+  @media (hover: hover) {
+    .theme-toggle-btn:hover { border-color: var(--primary-border); color: var(--text-primary); }
+  }
   :global([data-theme='dark']) .icon-moon { display: none; }
   :global([data-theme='light']) .icon-sun { display: none; }
 

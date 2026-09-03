@@ -1,5 +1,10 @@
 import React, { useState, useEffect } from 'react';
 import api from '../api';
+import Icon from '../components/Icon';
+import {
+  PageHead, TableCard, Toolbar, Table, Row, Cell, CellTitle, CellSub, RowChevron,
+  EmptyState, SkeletonRows, Drawer, Modal, Field, Notice, Num, Badge,
+} from '../components/admin/ui';
 
 export default function AdminActivations() {
   const [requests, setRequests] = useState([]);
@@ -18,6 +23,9 @@ export default function AdminActivations() {
   // Approve/Reject Notes
   const [notes, setNotes] = useState('');
   const [actionLoading, setActionLoading] = useState(false);
+  // presentation only: the two confirmations, and the inline rejection-reason error
+  const [confirming, setConfirming] = useState(null); // 'approve' | 'reject'
+  const [notesError, setNotesError] = useState('');
 
   const fetchRequests = async () => {
     setLoading(true);
@@ -69,7 +77,6 @@ export default function AdminActivations() {
   };
 
   const handleApprove = async () => {
-    if (!window.confirm('Approve this course activation request? The student will be enrolled in the course immediately.')) return;
     setActionLoading(true);
     setError('');
     setSuccess('');
@@ -86,11 +93,6 @@ export default function AdminActivations() {
   };
 
   const handleReject = async () => {
-    if (!notes.trim()) {
-      alert('Please provide a rejection reason in the notes field.');
-      return;
-    }
-    if (!window.confirm('Reject this activation request?')) return;
     setActionLoading(true);
     setError('');
     setSuccess('');
@@ -106,209 +108,289 @@ export default function AdminActivations() {
     }
   };
 
+  const COLUMNS = [
+    { key: 'student', label: 'Student', width: 'minmax(0,1.5fr)' },
+    { key: 'target', label: 'Course / batch', width: 'minmax(0,1.3fr)' },
+    { key: 'ref', label: 'Reference', width: '150px', hideBelow: 'tablet' },
+    { key: 'when', label: 'Waiting', width: '130px' },
+    { key: 'go', label: '', width: '32px' },
+  ];
+
+  const waitedFor = (iso) => {
+    if (!iso) return '—';
+    const ms = Date.now() - new Date(iso).getTime();
+    const days = Math.floor(ms / 86400000);
+    if (days >= 1) return `${days} ${days === 1 ? 'day' : 'days'}`;
+    const hours = Math.max(1, Math.floor(ms / 3600000));
+    return `${hours} ${hours === 1 ? 'hour' : 'hours'}`;
+  };
+
+  const waitTone = (iso) => {
+    const days = iso ? (Date.now() - new Date(iso).getTime()) / 86400000 : 0;
+    return days >= 3 ? 'var(--danger)' : days >= 1 ? 'var(--reward-text)' : 'var(--tx2)';
+  };
+
   return (
-    <div style={{ display: 'flex', flexDirection: 'column', gap: '30px', width: '100%' }}>
-      
-      {/* Title Header */}
-      <div>
-        <h1 style={{ fontSize: '2rem', margin: 0, fontWeight: 800 }}>Course Activation Queue</h1>
-        <p style={{ color: 'var(--text-secondary)', margin: '4px 0 0 0' }}>Review manual bank transfers/receipt proof documents and approve course admissions.</p>
-      </div>
+    <div style={{ display: 'flex', flexDirection: 'column', gap: '18px', width: '100%' }}>
 
-      {success && (
-        <div style={{ padding: '16px', background: 'var(--success-bg)', border: '1px solid var(--success)', borderRadius: '8px', color: 'var(--success)' }}>
-          {success}
-        </div>
-      )}
+      <PageHead
+        title="Activation requests"
+        subtitle="Manual bank transfers waiting on a receipt check. Approving enrols the student immediately."
+      />
 
-      {error && (
-        <div style={{ padding: '16px', background: 'var(--danger-bg)', border: '1px solid var(--danger)', borderRadius: '8px', color: 'var(--danger)' }}>
-          {error}
-        </div>
-      )}
+      {success && <Notice tone="success" icon="check-circle" onDismiss={() => setSuccess('')}>{success}</Notice>}
+      {error && <Notice tone="danger" icon="alert" onDismiss={() => setError('')}>{error}</Notice>}
 
-      {/* Main Grid View */}
-      <div style={{ display: 'grid', gridTemplateColumns: '3fr 2fr', gap: '30px', alignItems: 'start' }}>
-        
-        {/* Left Side: Pending requests queue table */}
-        <div className="glass-panel" style={{ padding: '24px', overflowX: 'auto' }}>
-          <h2 style={{ fontSize: '1.2rem', margin: '0 0 16px 0', fontWeight: 700 }}>Pending Verification Queue</h2>
-          
-          <table style={{ width: '100%', borderCollapse: 'collapse', textAlign: 'left' }}>
-            <thead>
-              <tr style={{ borderBottom: '1px solid var(--border-color)', color: 'var(--text-secondary)', fontSize: '0.9rem' }}>
-                <th style={{ padding: '12px 16px' }}>Student Details</th>
-                <th style={{ padding: '12px 16px' }}>Course / Batch Target</th>
-                <th style={{ padding: '12px 16px' }}>Reference Code</th>
-                <th style={{ padding: '12px 16px' }}>Requested At</th>
-                <th style={{ padding: '12px 16px', textAlign: 'right' }}>Actions</th>
-              </tr>
-            </thead>
-            <tbody>
-              {loading && requests.length === 0 ? (
-                <tr>
-                  <td colSpan={5} style={{ textAlign: 'center', padding: '40px', color: 'var(--text-secondary)' }}>Loading activation queue...</td>
-                </tr>
-              ) : requests.length === 0 ? (
-                <tr>
-                  <td colSpan={5} style={{ textAlign: 'center', padding: '40px', color: 'var(--text-secondary)' }}>Queue is empty. No pending activation requests.</td>
-                </tr>
-              ) : (
-                requests.map((req) => (
-                  <tr key={req.id} style={{ borderBottom: '1px solid var(--surface-2)', fontSize: '0.9rem' }}>
-                    <td style={{ padding: '16px' }}>
-                      <div style={{ fontWeight: 600 }}>{req.user?.name}</div>
-                      <div style={{ fontSize: '0.8rem', color: 'var(--text-secondary)', marginTop: '2px' }}>{req.user?.email}</div>
-                    </td>
-                    <td style={{ padding: '16px' }}>
-                      <div>{req.course?.title}</div>
-                      {req.batch && (
-                        <div style={{ fontSize: '0.8rem', color: 'var(--accent-color)', fontWeight: 600, marginTop: '2px' }}>
-                          Batch: {req.batch.name}
-                        </div>
-                      )}
-                    </td>
-                    <td style={{ padding: '16px', fontFamily: 'var(--font-mono)', fontWeight: 'bold' }}>
-                      {req.payment_reference || 'N/A'}
-                    </td>
-                    <td style={{ padding: '16px' }}>
-                      {new Date(req.created_at).toLocaleString()}
-                    </td>
-                    <td style={{ padding: '16px', textAlign: 'right' }}>
-                      <button 
-                        onClick={() => selectRequestForVerification(req)}
-                        className="btn-primary" 
-                        style={{ padding: '6px 12px', fontSize: '0.85rem' }}
-                      >
-                        🔍 Verify
-                      </button>
-                    </td>
-                  </tr>
-                ))
+      <TableCard>
+        <Toolbar
+          trailing={
+            !loading && requests.length > 0 && (
+              <span style={{ font: '500 12.5px var(--font-body)', color: 'var(--muted)' }}>
+                Oldest first once you clear the top
+              </span>
+            )
+          }
+        >
+          <span className="adm-chip queue active">
+            Pending <Num style={{ color: 'inherit' }}>{requests.length}</Num>
+          </span>
+        </Toolbar>
+
+        {loading && requests.length === 0 ? (
+          <SkeletonRows />
+        ) : requests.length === 0 ? (
+          <EmptyState
+            icon="check-circle"
+            message="The queue is clear — no activation request is waiting on a review."
+          />
+        ) : (
+          <Table columns={COLUMNS}>
+            {requests.map((req) => (
+              <Row
+                key={req.id}
+                selected={selectedReq?.id === req.id}
+                onClick={() => selectRequestForVerification(req)}
+              >
+                <Cell label="Student">
+                  <CellTitle>{req.user?.name}</CellTitle>
+                  <CellSub>{req.user?.email}</CellSub>
+                </Cell>
+                <Cell label="Course / batch">
+                  <CellTitle>{req.course?.title}</CellTitle>
+                  {req.batch && <CellSub>{req.batch.name}</CellSub>}
+                </Cell>
+                <Cell label="Reference" hideBelow="tablet">
+                  <Num style={{ fontSize: '12.5px' }}>{req.payment_reference || '—'}</Num>
+                </Cell>
+                <Cell label="Waiting">
+                  <span style={{ font: '600 12.5px var(--font-body)', color: waitTone(req.created_at) }}>
+                    {waitedFor(req.created_at)}
+                  </span>
+                </Cell>
+                <Cell align="right">
+                  <RowChevron onClick={() => selectRequestForVerification(req)} label="Verify request" />
+                </Cell>
+              </Row>
+            ))}
+          </Table>
+        )}
+      </TableCard>
+
+      {/* Verification drawer — desktop right rail, bottom sheet on a phone */}
+      {selectedReq && (
+        <Drawer
+          title={`Request #${selectedReq.id}`}
+          subtitle={`${selectedReq.user?.name} · ${selectedReq.user?.email}`}
+          onClose={() => setSelectedReq(null)}
+          footer={
+            <>
+              <button
+                type="button"
+                onClick={() => {
+                  if (!notes.trim()) {
+                    setNotesError('A reason is required — the student is shown it.');
+                    return;
+                  }
+                  setNotesError('');
+                  setConfirming('reject');
+                }}
+                className="btn-secondary"
+                style={{ color: 'var(--danger)', borderColor: 'var(--danger-border)' }}
+                disabled={actionLoading}
+              >
+                Reject
+              </button>
+              <button type="button" onClick={() => setConfirming('approve')} className="btn-primary" disabled={actionLoading}>
+                <Icon name="check" size={16} strokeWidth={2.4} />
+                Approve
+              </button>
+            </>
+          }
+        >
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '18px' }}>
+
+            <div style={{ background: 'var(--card2)', border: '1px solid var(--line)', borderRadius: '14px', padding: '14px' }}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', gap: '12px', font: '400 12.5px var(--font-body)', color: 'var(--muted)' }}>
+                <span>Course</span>
+                <span style={{ color: 'var(--tx)', fontWeight: 600, textAlign: 'right' }}>{selectedReq.course?.title}</span>
+              </div>
+              {selectedReq.batch && (
+                <div style={{ marginTop: '9px', display: 'flex', justifyContent: 'space-between', gap: '12px', font: '400 12.5px var(--font-body)', color: 'var(--muted)' }}>
+                  <span>Batch</span>
+                  <span style={{ color: 'var(--tx)', fontWeight: 600, textAlign: 'right' }}>{selectedReq.batch?.name}</span>
+                </div>
               )}
-            </tbody>
-          </table>
-        </div>
-
-        {/* Right Side: Verification Details & Receipt Proof Viewer */}
-        <div className="glass-panel" style={{ padding: '32px', minHeight: '400px', display: 'flex', flexDirection: 'column' }}>
-          {selectedReq ? (
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '20px', height: '100%' }}>
-              
-              {/* Request Info */}
-              <div style={{ borderBottom: '1px solid var(--border-color)', paddingBottom: '16px' }}>
-                <h3 style={{ fontSize: '1.2rem', margin: 0, fontWeight: 800 }}>Verify Request #{selectedReq.id}</h3>
-                <p style={{ color: 'var(--text-secondary)', fontSize: '0.85rem', marginTop: '6px' }}>
-                  Submitted by: <strong>{selectedReq.user?.name}</strong> ({selectedReq.user?.email})
-                </p>
-                <div style={{ background: 'var(--surface-2)', padding: '12px', borderRadius: '8px', marginTop: '12px', fontSize: '0.85rem' }}>
-                  <div>Target Course: <strong>{selectedReq.course?.title}</strong></div>
-                  {selectedReq.batch && <div>Target Batch: <strong>{selectedReq.batch?.name}</strong></div>}
-                  <div style={{ marginTop: '4px' }}>Transaction Ref: <span style={{ fontFamily: 'var(--font-mono)', fontWeight: 'bold', color: 'var(--accent-color)' }}>{selectedReq.payment_reference}</span></div>
-                </div>
+              <div style={{ marginTop: '9px', display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: '12px', font: '400 12.5px var(--font-body)', color: 'var(--muted)' }}>
+                <span>Transaction ref</span>
+                <Badge tone="primary" mono>{selectedReq.payment_reference || '—'}</Badge>
               </div>
+            </div>
 
-              {/* Receipt File Previewer */}
-              <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
-                <label style={{ fontSize: '0.85rem', color: 'var(--text-secondary)', textTransform: 'uppercase', fontWeight: 600 }}>Uploaded Payment Proof</label>
-                
-                {loadingProof ? (
-                  <div style={{ height: '220px', background: 'var(--surface-sunken)', border: '1px solid var(--border-color)', borderRadius: '8px', display: 'flex', justifyContent: 'center', alignItems: 'center', color: 'var(--text-secondary)', fontSize: '0.9rem' }}>
-                    Downloading secure file...
-                  </div>
-                ) : proofUrl ? (
-                  <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
-                    
-                    {/* Render Image Inline if it is image type */}
-                    {proofType.startsWith('image/') ? (
-                      <div 
-                        style={{ 
-                          height: '220px', 
-                          border: '1px solid var(--border-color)', 
-                          borderRadius: '8px', 
-                          overflow: 'hidden', 
-                          background: '#000000',
-                          display: 'flex',
-                          justifyContent: 'center',
-                          alignItems: 'center'
-                        }}
-                      >
-                        <img 
-                          src={proofUrl} 
-                          alt="Receipt Proof" 
-                          style={{ maxWidth: '100%', maxHeight: '100%', objectFit: 'contain', cursor: 'zoom-in' }} 
-                          onClick={() => window.open(proofUrl, '_blank')}
-                        />
-                      </div>
-                    ) : (
-                      <div style={{ height: '100px', background: 'var(--surface-1)', border: '1px solid var(--border-color)', borderRadius: '8px', display: 'flex', flexDirection: 'column', justifyContent: 'center', alignItems: 'center', gap: '8px' }}>
-                        <span style={{ fontSize: '0.85rem', color: 'var(--text-secondary)' }}>PDF or Document Uploaded ({proofType})</span>
-                      </div>
-                    )}
-                    
-                    <a 
-                      href={proofUrl} 
-                      download={`proof_${selectedReq.payment_reference || selectedReq.id}`} 
-                      className="btn-secondary" 
-                      style={{ padding: '8px 12px', fontSize: '0.85rem', textAlign: 'center', textDecoration: 'none', display: 'block' }}
+            <div>
+              <div className="t-overline" style={{ color: 'var(--muted)', marginBottom: '9px' }}>PAYMENT PROOF</div>
+
+              {loadingProof ? (
+                <div className="skeleton" style={{ height: '200px', borderRadius: '14px' }} />
+              ) : proofUrl ? (
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
+                  {proofType.startsWith('image/') ? (
+                    <button
+                      type="button"
+                      onClick={() => window.open(proofUrl, '_blank')}
+                      style={{
+                        height: '200px',
+                        border: '1px solid var(--line)',
+                        borderRadius: '14px',
+                        overflow: 'hidden',
+                        background: 'var(--surf)',
+                        display: 'flex',
+                        justifyContent: 'center',
+                        alignItems: 'center',
+                        padding: 0,
+                        cursor: 'zoom-in',
+                      }}
+                      aria-label="Open the receipt full size"
                     >
-                      💾 Download Receipt File
-                    </a>
+                      <img src={proofUrl} alt="Payment receipt" style={{ maxWidth: '100%', maxHeight: '100%', objectFit: 'contain' }} />
+                    </button>
+                  ) : (
+                    <div
+                      style={{
+                        height: '100px',
+                        background: 'var(--surf)',
+                        border: '1px solid var(--line)',
+                        borderRadius: '14px',
+                        display: 'flex',
+                        flexDirection: 'column',
+                        justifyContent: 'center',
+                        alignItems: 'center',
+                        gap: '8px',
+                        color: 'var(--muted)',
+                        font: '400 12.5px var(--font-body)',
+                      }}
+                    >
+                      <Icon name="file-text" size={22} />
+                      Document uploaded ({proofType})
+                    </div>
+                  )}
 
-                  </div>
-                ) : (
-                  <div style={{ height: '100px', border: '1px dashed var(--border-color)', borderRadius: '8px', display: 'flex', justifyContent: 'center', alignItems: 'center', color: 'var(--text-secondary)', fontSize: '0.85rem' }}>
-                    Failed to fetch document
-                  </div>
-                )}
-              </div>
-
-              {/* Action Form */}
-              <div style={{ marginTop: 'auto', display: 'flex', flexDirection: 'column', gap: '12px' }}>
-                <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
-                  <label style={{ fontSize: '0.85rem', color: 'var(--text-secondary)' }}>Approval / Rejection Notes</label>
-                  <textarea 
-                    value={notes} 
-                    onChange={(e) => setNotes(e.target.value)} 
-                    placeholder="Provide comments (Required for rejection)..." 
-                    className="form-input" 
-                    rows={3} 
-                    disabled={actionLoading}
-                  />
-                </div>
-
-                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px' }}>
-                  <button 
-                    type="button" 
-                    onClick={handleReject} 
-                    className="btn-secondary" 
-                    style={{ color: 'var(--danger)', borderColor: 'var(--danger-border)', padding: '12px' }}
-                    disabled={actionLoading}
+                  <a
+                    href={proofUrl}
+                    download={`proof_${selectedReq.payment_reference || selectedReq.id}`}
+                    className="btn-secondary"
+                    style={{ textDecoration: 'none' }}
                   >
-                    ❌ Reject Request
-                  </button>
-                  <button 
-                    type="button" 
-                    onClick={handleApprove} 
-                    className="btn-primary" 
-                    style={{ background: 'var(--success)', boxShadow: 'none', padding: '12px' }}
-                    disabled={actionLoading}
-                  >
-                    ✓ Approve Request
-                  </button>
+                    <Icon name="download" size={16} />
+                    Download receipt
+                  </a>
                 </div>
-              </div>
-
+              ) : (
+                <div
+                  style={{
+                    padding: '22px',
+                    border: '1px dashed var(--line2)',
+                    borderRadius: '14px',
+                    display: 'flex',
+                    justifyContent: 'center',
+                    alignItems: 'center',
+                    color: 'var(--muted)',
+                    font: '400 12.5px var(--font-body)',
+                  }}
+                >
+                  No document could be fetched.
+                </div>
+              )}
             </div>
-          ) : (
-            <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', height: '100%', minHeight: '340px', color: 'var(--text-secondary)' }}>
-              Select an activation request from the queue to verify details and documents.
-            </div>
-          )}
-        </div>
 
-      </div>
+            <Field
+              label="Notes"
+              error={notesError}
+              hint="A reason is required to reject; it is shown to the student."
+              htmlFor="act-notes"
+            >
+              <textarea
+                id="act-notes"
+                value={notes}
+                onChange={(e) => { setNotes(e.target.value); if (notesError) setNotesError(''); }}
+                placeholder="Add a comment…"
+                className={`form-input${notesError ? ' has-error' : ''}`}
+                rows={3}
+                disabled={actionLoading}
+              />
+            </Field>
+          </div>
+        </Drawer>
+      )}
 
+      {/* ---- confirmations, naming the student and what happens next ---- */}
+      {confirming === 'approve' && selectedReq && (
+        <Modal
+          title={`Approve ${selectedReq.user?.name}?`}
+          description={`They are enrolled in ${selectedReq.course?.title || 'the course'}${selectedReq.batch ? ` · ${selectedReq.batch.name}` : ''} immediately, and can start straight away.`}
+          width={460}
+          onClose={() => setConfirming(null)}
+          footer={
+            <>
+              <button type="button" className="btn-secondary" onClick={() => setConfirming(null)}>Cancel</button>
+              <button
+                type="button"
+                className="btn-primary"
+                disabled={actionLoading}
+                onClick={() => { setConfirming(null); handleApprove(); }}
+              >
+                Approve & enrol
+              </button>
+            </>
+          }
+        />
+      )}
+
+      {confirming === 'reject' && selectedReq && (
+        <Modal
+          danger
+          title={`Reject ${selectedReq.user?.name}?`}
+          description="They are told why, and can submit a fresh request with a corrected receipt."
+          width={460}
+          onClose={() => setConfirming(null)}
+          footer={
+            <>
+              <button type="button" className="btn-secondary" onClick={() => setConfirming(null)}>Cancel</button>
+              <button
+                type="button"
+                className="btn-danger"
+                disabled={actionLoading}
+                onClick={() => { setConfirming(null); handleReject(); }}
+              >
+                Reject request
+              </button>
+            </>
+          }
+        >
+          <div style={{ background: 'var(--card2)', border: '1px solid var(--line)', borderRadius: '14px', padding: '14px', font: '400 13px/1.6 var(--font-body)', color: 'var(--tx2)' }}>
+            {notes}
+          </div>
+        </Modal>
+      )}
     </div>
   );
 }

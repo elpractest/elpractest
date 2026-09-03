@@ -111,7 +111,7 @@ export default function PracticeConsole() {
 
   return (
     <div style={{ padding: '16px 18px 24px', animation: 'fade-in .35s ease both' }}>
-      <h1 style={{ margin: '0 0 4px', font: '800 24px var(--font-display)', color: 'var(--tx)', letterSpacing: '-.02em' }}>
+      <h1 className="t-title" style={{ margin: '0 0 4px', color: 'var(--tx)' }}>
         Build a practice paper
       </h1>
       <p style={{ margin: '0 0 18px', font: '500 13px var(--font-body)', color: 'var(--muted)' }}>

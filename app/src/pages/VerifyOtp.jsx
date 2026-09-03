@@ -96,7 +96,7 @@ export default function VerifyOtp({ setUser }) {
       <div className="glass-panel" style={{ width: '100%', maxWidth: '420px', padding: '40px', display: 'flex', flexDirection: 'column', gap: '20px' }}>
         <div style={{ textAlign: 'center' }}>
           <div style={{ display: 'flex', justifyContent: 'center', marginBottom: '8px' }}><span style={{ display: 'inline-flex', padding: '15px', borderRadius: '18px', background: 'var(--accent-soft)', color: 'var(--accent-color)', border: '1px solid var(--accent-border)' }}><Icon name="phone" size={34} /></span></div>
-          <h2 style={{ margin: '0 0 8px 0', fontSize: '1.6rem', fontWeight: 800, color: 'var(--accent-color)' }}>Verify Phone Number</h2>
+          <h2 style={{ margin: '0 0 8px 0', fontSize: '1.6rem', fontWeight: 700, color: 'var(--accent-color)' }}>Verify Phone Number</h2>
           <p style={{ margin: 0, color: 'var(--text-secondary)', fontSize: '0.9rem', lineHeight: '1.5' }}>
             {step === 'phone' 
               ? 'Enter your mobile number to receive a one-time verification code.' 

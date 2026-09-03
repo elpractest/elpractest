@@ -2,7 +2,7 @@
 ---
 <div id="consent-banner" class="glass-panel consent-banner" style="display: none;">
   <div class="consent-content">
-    <span class="consent-icon">🍪</span>
+    <span class="consent-icon"><svg class="lucide" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 2a10 10 0 1 0 10 10 4 4 0 0 1-5-5 4 4 0 0 1-5-5"/><path d="M8.5 8.5v.01"/><path d="M16 15.5v.01"/><path d="M12 12v.01"/><path d="M11 17v.01"/><path d="M7 14v.01"/></svg></span>
     <p>
       We use cookies to improve your mock exam and learning experience. By clicking "Accept", you agree to our analytics trackers (GA4, Meta Pixel).
     </p>
@@ -79,7 +79,14 @@
   }
 
   .consent-icon {
-    font-size: 1.5rem;
+    display: grid;
+    place-items: center;
+    width: 36px;
+    height: 36px;
+    flex: none;
+    border-radius: 11px;
+    background: var(--primary-soft);
+    color: var(--primary);
   }
 
   .consent-banner p {

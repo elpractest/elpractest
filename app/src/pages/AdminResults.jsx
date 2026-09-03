@@ -1,5 +1,9 @@
 import React, { useState, useEffect } from 'react';
 import api from '../api';
+import {
+  PageHead, TableCard, Toolbar, Table, Row, Cell, CellTitle, CellSub, RowChevron,
+  EmptyState, SkeletonRows, Pagination, Field, Notice, Num,
+} from '../components/admin/ui';
 
 export default function AdminResults({ onViewDetail }) {
   const [results, setResults] = useState([]);
@@ -71,164 +75,142 @@ export default function AdminResults({ onViewDetail }) {
     setFilterBatchId('');
   }, [filterCourseId]);
 
+  const COLUMNS = [
+    { key: 'student', label: 'Student', width: 'minmax(0,1.4fr)' },
+    { key: 'test', label: 'Test', width: 'minmax(0,1.4fr)' },
+    { key: 'submitted', label: 'Submitted', width: '150px', hideBelow: 'tablet' },
+    { key: 'score', label: 'Score', width: '120px' },
+    { key: 'accuracy', label: 'Accuracy', width: '90px', hideBelow: 'tablet' },
+    { key: 'rank', label: 'Rank', width: '110px', hideBelow: 'tablet' },
+    { key: 'go', label: '', width: '32px' },
+  ];
+
+  const hasFilters = !!(filterCourseId || filterBatchId || filterTestId);
+
   return (
-    <div style={{ display: 'flex', flexDirection: 'column', gap: '30px', width: '100%' }}>
-      
-      {/* Title Header */}
-      <div>
-        <h1 style={{ fontSize: '2rem', margin: 0, fontWeight: 800 }}>Results Dashboard</h1>
-        <p style={{ color: 'var(--text-secondary)', margin: '4px 0 0 0' }}>Monitor student performance, cohort ranks, accuracy rates, and scorecard reviews.</p>
-      </div>
+    <div style={{ display: 'flex', flexDirection: 'column', gap: '18px', width: '100%' }}>
 
-      {error && (
-        <div style={{ padding: '16px', background: 'var(--danger-bg)', border: '1px solid var(--danger)', borderRadius: '8px', color: 'var(--danger)' }}>
-          {error}
-        </div>
-      )}
+      <PageHead
+        title="Results"
+        subtitle="Every submitted attempt, with the cohort rank and accuracy it earned. Open a row for the full scorecard."
+      />
 
-      {/* Filter panel */}
-      <div className="glass-panel" style={{ padding: '24px' }}>
-        <h2 style={{ fontSize: '1.1rem', margin: '0 0 16px 0', fontWeight: 700 }}>Filter Test Session Results</h2>
-        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: '16px' }}>
-          
-          <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
-            <label style={{ fontSize: '0.8rem', color: 'var(--text-secondary)' }}>Course</label>
-            <select 
-              value={filterCourseId} 
-              onChange={(e) => setFilterCourseId(e.target.value)} 
+      {error && <Notice tone="danger" icon="alert">{error}</Notice>}
+
+      {/* Filters */}
+      <div style={{ background: 'var(--card)', border: '1px solid var(--line)', borderRadius: '16px', padding: '18px 20px' }}>
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '14px' }}>
+          <Field label="Course" htmlFor="res-course">
+            <select
+              id="res-course"
+              value={filterCourseId}
+              onChange={(e) => setFilterCourseId(e.target.value)}
               className="form-input"
-              style={{ padding: '10px 12px', fontSize: '0.9rem' }}
             >
-              <option value="">All Courses</option>
-              {courses.map(c => <option key={c.id} value={c.id}>{c.title}</option>)}
+              <option value="">All courses</option>
+              {courses.map((c) => <option key={c.id} value={c.id}>{c.title}</option>)}
             </select>
-          </div>
+          </Field>
 
-          <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
-            <label style={{ fontSize: '0.8rem', color: 'var(--text-secondary)' }}>Batch</label>
-            <select 
-              value={filterBatchId} 
-              onChange={(e) => setFilterBatchId(e.target.value)} 
+          <Field label="Batch" htmlFor="res-batch">
+            <select
+              id="res-batch"
+              value={filterBatchId}
+              onChange={(e) => setFilterBatchId(e.target.value)}
               className="form-input"
-              style={{ padding: '10px 12px', fontSize: '0.9rem' }}
               disabled={!filterCourseId}
             >
-              <option value="">All Batches</option>
-              {batches.map(b => <option key={b.id} value={b.id}>{b.name}</option>)}
+              <option value="">All batches</option>
+              {batches.map((b) => <option key={b.id} value={b.id}>{b.name}</option>)}
             </select>
-          </div>
+          </Field>
 
-          <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
-            <label style={{ fontSize: '0.8rem', color: 'var(--text-secondary)' }}>Test</label>
-            <select 
-              value={filterTestId} 
-              onChange={(e) => setFilterTestId(e.target.value)} 
+          <Field label="Test" htmlFor="res-test">
+            <select
+              id="res-test"
+              value={filterTestId}
+              onChange={(e) => setFilterTestId(e.target.value)}
               className="form-input"
-              style={{ padding: '10px 12px', fontSize: '0.9rem' }}
             >
-              <option value="">All Tests</option>
-              {tests.map(t => <option key={t.id} value={t.id}>{t.title}</option>)}
+              <option value="">All tests</option>
+              {tests.map((t) => <option key={t.id} value={t.id}>{t.title}</option>)}
             </select>
-          </div>
-
+          </Field>
         </div>
       </div>
 
-      {/* Results Table */}
-      <div className="glass-panel" style={{ padding: '24px', overflowX: 'auto' }}>
-        <table style={{ width: '100%', borderCollapse: 'collapse', textAlign: 'left' }}>
-          <thead>
-            <tr style={{ borderBottom: '1px solid var(--border-color)', color: 'var(--text-secondary)', fontSize: '0.9rem' }}>
-              <th style={{ padding: '12px 16px' }}>Student Details</th>
-              <th style={{ padding: '12px 16px' }}>Test Name</th>
-              <th style={{ padding: '12px 16px' }}>Submitted At</th>
-              <th style={{ padding: '12px 16px' }}>Score</th>
-              <th style={{ padding: '12px 16px' }}>Accuracy</th>
-              <th style={{ padding: '12px 16px' }}>Batch Rank</th>
-              <th style={{ padding: '12px 16px', textAlign: 'right' }}>Actions</th>
-            </tr>
-          </thead>
-          <tbody>
-            {loading && results.length === 0 ? (
-              <tr>
-                <td colSpan={7} style={{ textAlign: 'center', padding: '40px', color: 'var(--text-secondary)' }}>Loading session results...</td>
-              </tr>
-            ) : results.length === 0 ? (
-              <tr>
-                <td colSpan={7} style={{ textAlign: 'center', padding: '40px', color: 'var(--text-secondary)' }}>No completed test attempts match the filters.</td>
-              </tr>
-            ) : (
-              results.map((res) => (
-                <tr key={res.id} style={{ borderBottom: '1px solid var(--surface-2)', fontSize: '0.9rem' }}>
-                  <td style={{ padding: '16px' }}>
-                    <div style={{ fontWeight: 600 }}>{res.user?.name}</div>
-                    <div style={{ fontSize: '0.8rem', color: 'var(--text-secondary)', marginTop: '2px' }}>{res.user?.email}</div>
-                  </td>
-                  <td style={{ padding: '16px' }}>
-                    <div style={{ fontWeight: 600 }}>{res.test?.title}</div>
-                    <div style={{ fontSize: '0.8rem', color: 'var(--text-secondary)', marginTop: '2px' }}>Course: {res.test?.course?.title}</div>
-                  </td>
-                  <td style={{ padding: '16px' }}>
-                    {new Date(res.submitted_at).toLocaleString()}
-                  </td>
-                  <td style={{ padding: '16px' }}>
-                    <span style={{ fontWeight: 'bold', color: 'var(--accent-color)', fontSize: '1rem' }}>
-                      {parseFloat(res.analytic?.total_score || 0).toFixed(2)}
+      {/* Results table */}
+      <TableCard>
+        <Toolbar
+          trailing={
+            !loading && (
+              <span style={{ font: '500 12.5px var(--font-body)', color: 'var(--muted)' }}>
+                <Num>{results.length}</Num> on this page
+              </span>
+            )
+          }
+        >
+          <span style={{ font: '600 12.5px var(--font-body)', color: 'var(--tx2)' }}>
+            {hasFilters ? 'Filtered attempts' : 'All attempts'}
+          </span>
+        </Toolbar>
+
+        {loading && results.length === 0 ? (
+          <SkeletonRows />
+        ) : results.length === 0 ? (
+          <EmptyState
+            icon="chart"
+            message={
+              hasFilters
+                ? 'No completed attempts match these filters. Clear one to widen the search.'
+                : 'No test has been submitted yet. Results appear here the moment a student submits.'
+            }
+          />
+        ) : (
+          <>
+            <Table columns={COLUMNS}>
+              {results.map((res) => (
+                <Row key={res.id} onClick={() => onViewDetail(res.id)}>
+                  <Cell label="Student">
+                    <CellTitle>{res.user?.name}</CellTitle>
+                    <CellSub>{res.user?.email}</CellSub>
+                  </Cell>
+                  <Cell label="Test">
+                    <CellTitle>{res.test?.title}</CellTitle>
+                    <CellSub>{res.test?.course?.title}</CellSub>
+                  </Cell>
+                  <Cell label="Submitted" hideBelow="tablet">
+                    <span style={{ font: '500 12.5px var(--font-body)', color: 'var(--tx2)' }}>
+                      {res.submitted_at ? new Date(res.submitted_at).toLocaleDateString() : '—'}
                     </span>
-                    <span style={{ color: 'var(--text-secondary)', fontSize: '0.8rem', marginLeft: '4px' }}>
+                  </Cell>
+                  <Cell label="Score">
+                    <Num style={{ fontSize: '13.5px', fontWeight: 700 }}>
+                      {parseFloat(res.analytic?.total_score || 0).toFixed(2)}
+                    </Num>
+                    <span style={{ font: '500 11.5px var(--font-mono)', color: 'var(--muted)', marginLeft: '4px' }}>
                       / {parseFloat(res.analytic?.max_score || 0).toFixed(2)}
                     </span>
-                  </td>
-                  <td style={{ padding: '16px', fontWeight: 'bold', color: 'var(--success)' }}>
-                    {parseFloat(res.analytic?.accuracy_percentage || 0).toFixed(1)}%
-                  </td>
-                  <td style={{ padding: '16px' }}>
-                    <div style={{ fontWeight: 'bold' }}>Rank #{res.rank}</div>
-                    <div style={{ fontSize: '0.75rem', color: 'var(--text-secondary)', marginTop: '2px' }}>
-                      Percentile: {parseFloat(res.percentile).toFixed(1)}%
-                    </div>
-                  </td>
-                  <td style={{ padding: '16px', textAlign: 'right' }}>
-                    <button 
-                      onClick={() => onViewDetail(res.id)}
-                      className="btn-primary" 
-                      style={{ padding: '6px 12px', fontSize: '0.85rem' }}
-                    >
-                      🔍 Scorecard
-                    </button>
-                  </td>
-                </tr>
-              ))
-            )}
-          </tbody>
-        </table>
-
-        {/* Pagination buttons */}
-        {!loading && lastPage > 1 && (
-          <div style={{ display: 'flex', justifyContent: 'center', gap: '12px', marginTop: '24px' }}>
-            <button 
-              onClick={() => setPage(p => Math.max(1, p - 1))} 
-              className="btn-secondary" 
-              style={{ padding: '6px 12px', fontSize: '0.85rem' }}
-              disabled={page === 1}
-            >
-              Previous
-            </button>
-            <span style={{ display: 'flex', alignItems: 'center', fontSize: '0.9rem', color: 'var(--text-secondary)' }}>
-              Page {page} of {lastPage}
-            </span>
-            <button 
-              onClick={() => setPage(p => Math.min(lastPage, p + 1))} 
-              className="btn-secondary" 
-              style={{ padding: '6px 12px', fontSize: '0.85rem' }}
-              disabled={page === lastPage}
-            >
-              Next
-            </button>
-          </div>
+                  </Cell>
+                  <Cell label="Accuracy" hideBelow="tablet">
+                    <Num style={{ fontSize: '13px' }}>
+                      {parseFloat(res.analytic?.accuracy_percentage || 0).toFixed(1)}%
+                    </Num>
+                  </Cell>
+                  <Cell label="Rank" hideBelow="tablet">
+                    <Num style={{ fontSize: '13px' }}>#{res.rank}</Num>
+                    <CellSub>{parseFloat(res.percentile).toFixed(1)} pct</CellSub>
+                  </Cell>
+                  <Cell align="right">
+                    <RowChevron onClick={() => onViewDetail(res.id)} label="Open scorecard" />
+                  </Cell>
+                </Row>
+              ))}
+            </Table>
+            <Pagination page={page} lastPage={lastPage} onPage={setPage} />
+          </>
         )}
-      </div>
-
+      </TableCard>
     </div>
   );
 }

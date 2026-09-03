@@ -19,44 +19,75 @@ function SalesDetail({ course }) {
 
   return (
     <div style={{ paddingBottom: '92px', animation: 'fade-in .35s ease both' }}>
-      {/* Hero */}
-      <div style={{ position: 'relative', height: '210px', background: course.grad, borderRadius: '0 0 24px 24px', overflow: 'hidden' }}>
-        <div style={{ position: 'absolute', inset: 0, background: 'linear-gradient(180deg,rgba(11,15,26,.15),transparent 38%,rgba(11,15,26,.92))' }} />
-        <button onClick={() => navigate('/student/test-series')} aria-label="Back" style={{ position: 'absolute', top: '14px', left: '16px', width: '40px', height: '40px', borderRadius: '12px', background: 'rgba(8,12,20,.5)', backdropFilter: 'blur(8px)', border: '1px solid rgba(255,255,255,.14)', color: '#fff', cursor: 'pointer', display: 'grid', placeItems: 'center' }}>
-          <Icon name="arrow-left" size={20} />
+      {/* Hero — a card on the app's own ground, not a dark plate */}
+      <div style={{ padding: '14px 18px 0' }}>
+        <button
+          onClick={() => navigate('/student/test-series')}
+          aria-label="Back"
+          className="chrome-btn"
+          style={{ marginBottom: '14px' }}
+        >
+          <Icon name="arrow-left" size={19} />
         </button>
-        <div style={{ position: 'absolute', left: '18px', right: '18px', bottom: '16px' }}>
-          <div style={{ display: 'flex', gap: '7px', marginBottom: '9px', flexWrap: 'wrap' }}>
-            <span style={{ font: '800 10px var(--font-body)', letterSpacing: '.06em', color: '#1A1206', background: '#FFC968', padding: '4px 9px', borderRadius: '999px' }}>{course.exam}</span>
-            <span style={{ font: '700 10px var(--font-hindi)', color: '#fff', background: 'rgba(8,12,20,.55)', backdropFilter: 'blur(6px)', padding: '4px 9px', borderRadius: '999px' }}>{course.lang}</span>
-            <span style={{ font: '700 10px var(--font-body)', color: '#fff', background: 'rgba(139,92,246,.7)', padding: '4px 9px', borderRadius: '999px' }}>{course.tag}</span>
+
+        <div
+          style={{
+            display: 'flex',
+            gap: '14px',
+            alignItems: 'center',
+            padding: '16px',
+            borderRadius: '20px',
+            background: 'var(--card)',
+            border: '1px solid var(--line)',
+          }}
+        >
+          <span
+            style={{
+              width: '72px',
+              height: '72px',
+              flex: 'none',
+              borderRadius: '18px',
+              background: course.grad,
+              display: 'grid',
+              placeItems: 'center',
+              color: 'var(--primary)',
+            }}
+          >
+            <Icon name="target" size={30} />
+          </span>
+          <div style={{ minWidth: 0 }}>
+            <div style={{ display: 'flex', gap: '6px', marginBottom: '7px', flexWrap: 'wrap' }}>
+              <span style={{ font: '600 10px var(--font-body)', letterSpacing: '.06em', color: 'var(--primary)', background: 'var(--primary-soft)', padding: '4px 9px', borderRadius: '999px' }}>{course.exam}</span>
+              <span style={{ font: '600 10px var(--font-hindi)', color: 'var(--tx2)', background: 'var(--surf)', border: '1px solid var(--line)', padding: '4px 9px', borderRadius: '999px' }}>{course.lang}</span>
+              <span style={{ font: '600 10px var(--font-body)', color: 'var(--ai)', background: 'var(--ai-bg)', padding: '4px 9px', borderRadius: '999px' }}>{course.tag}</span>
+            </div>
+            <h1 className="t-title" style={{ margin: 0, color: 'var(--tx)' }}>{course.title}</h1>
           </div>
-          <h1 style={{ margin: 0, font: '800 24px/1.14 var(--font-display)', color: '#fff', letterSpacing: '-.02em' }}>{course.title}</h1>
         </div>
       </div>
 
       <div style={{ padding: '18px 18px 24px' }}>
         {/* Rating row */}
         <div style={{ display: 'flex', alignItems: 'center', gap: '14px', font: '600 12px var(--font-body)', color: 'var(--muted)' }}>
-          <span style={{ display: 'flex', alignItems: 'center', gap: '5px', color: '#FFC968' }}>
-            <Icon name="star" size={15} /><span style={{ color: 'var(--tx)', fontWeight: 800 }}>{course.rating || 4.8}</span>
+          <span style={{ display: 'flex', alignItems: 'center', gap: '5px', color: 'var(--reward-text)' }}>
+            <Icon name="star" size={15} /><span className="t-num" style={{ fontSize: '12.5px', color: 'var(--tx)' }}>{course.rating || 4.8}</span>
           </span>
-          <span>· {course.ratingCount || '12.4k'} enrolled</span>
+          <span>· <span className="t-num" style={{ fontSize: '12px', fontWeight: 500 }}>{course.ratingCount || '12.4k'}</span> enrolled</span>
           <span>· Updated Aug 2026</span>
         </div>
 
         {/* Price card */}
-        <div style={{ marginTop: '16px', padding: '16px', borderRadius: '18px', background: 'var(--card2)', border: '1px solid var(--line)' }}>
+        <div style={{ marginTop: '16px', padding: '16px', borderRadius: '20px', background: 'var(--card)', border: '1px solid var(--line)' }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: '9px' }}>
-            <span style={{ font: '800 26px var(--font-display)', color: 'var(--tx)' }}>{course.price}</span>
-            <span style={{ font: '600 14px var(--font-body)', color: '#748099', textDecoration: 'line-through' }}>{course.mrp}</span>
-            <span style={{ font: '800 12px var(--font-body)', color: '#12B981', background: 'rgba(18,185,129,.14)', padding: '4px 10px', borderRadius: '999px', marginLeft: 'auto' }}>{course.off}</span>
+            <span className="t-num" style={{ fontSize: '24px', color: 'var(--tx)' }}>{course.price}</span>
+            <span className="t-num" style={{ fontSize: '13px', fontWeight: 500, color: 'var(--muted)', textDecoration: 'line-through' }}>{course.mrp}</span>
+            <span style={{ font: '600 12px var(--font-body)', color: 'var(--success)', background: 'var(--success-bg)', padding: '4px 10px', borderRadius: '999px', marginLeft: 'auto' }}>{course.off}</span>
           </div>
           <div style={{ font: '600 12px var(--font-body)', color: 'var(--muted)', marginTop: '8px' }}>or 3 × ₹500 · no-cost EMI · 1-year access</div>
         </div>
 
         {/* What's inside */}
-        <h2 style={{ margin: '22px 0 12px', font: '700 16px var(--font-display)', color: 'var(--tx)' }}>What's inside</h2>
+        <h2 className="t-heading" style={{ margin: '22px 0 12px', color: 'var(--tx)' }}>What's inside</h2>
         <div style={{ display: 'flex', flexDirection: 'column', gap: '11px' }}>
           {demoDetailFeatures.map((f) => {
             const t = tint(f.hue);
@@ -65,7 +96,7 @@ function SalesDetail({ course }) {
                 <span style={{ width: '36px', height: '36px', borderRadius: '11px', background: t.bg, display: 'grid', placeItems: 'center', flex: 'none', color: t.c }}>
                   <Icon name={f.icon} size={18} />
                 </span>
-                <span style={{ font: '600 14px var(--font-body)', color: 'var(--tx2)' }}>{f.k}</span>
+                <span style={{ font: '400 13.5px var(--font-body)', color: 'var(--tx2)' }}>{f.k}</span>
               </div>
             );
           })}
@@ -154,11 +185,11 @@ export default function TestSeriesDetail() {
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', flexWrap: 'wrap', gap: '16px' }}>
           <div style={{ flex: 1, minWidth: 0 }}>
             <span className="chip">{series.exam_category}</span>
-            <h1 style={{ font: '800 22px var(--font-display)', margin: '12px 0 8px', color: 'var(--tx)', letterSpacing: '-.02em' }}>{series.title}</h1>
+            <h1 className="t-title" style={{ margin: '12px 0 8px', color: 'var(--tx)' }}>{series.title}</h1>
             <p style={{ margin: 0, color: 'var(--muted)', lineHeight: 1.6 }}>{series.description || 'Guided study path tailored for your exam preparation.'}</p>
           </div>
           <div style={{ background: 'var(--surf)', padding: '16px 24px', borderRadius: '14px', textAlign: 'center', minWidth: '130px' }}>
-            <div style={{ font: '800 28px var(--font-display)', color: 'var(--accent-color)' }}>{series.total_tests}</div>
+            <div style={{ font: '700 28px var(--font-display)', letterSpacing: '-.02em', color: 'var(--accent-color)' }}>{series.total_tests}</div>
             <div style={{ font: '600 12px var(--font-body)', color: 'var(--muted)' }}>Total Tests</div>
           </div>
         </div>
@@ -196,8 +227,8 @@ export default function TestSeriesDetail() {
             {filteredTests.map((test, index) => (
               <div key={test.id} className="glass-panel" style={{ padding: '16px 18px', display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: '12px', borderLeft: test.id === series.next_test_id ? '4px solid var(--brand)' : undefined, flexWrap: 'wrap' }}>
                 <div style={{ display: 'flex', alignItems: 'center', gap: '14px', minWidth: 0 }}>
-                  <div style={{ width: '36px', height: '36px', borderRadius: '50%', background: test.status === 'completed' ? 'var(--success-bg)' : 'var(--surf)', color: test.status === 'completed' ? 'var(--success-text)' : 'var(--muted)', display: 'grid', placeItems: 'center', fontWeight: 800, flex: 'none' }}>
-                    {test.status === 'completed' ? '✓' : index + 1}
+                  <div style={{ width: '36px', height: '36px', borderRadius: '50%', background: test.status === 'completed' ? 'var(--success-bg)' : 'var(--surf)', color: test.status === 'completed' ? 'var(--success-text)' : 'var(--muted)', display: 'grid', placeItems: 'center', fontWeight: 700, flex: 'none' }}>
+                    {test.status === 'completed' ? <Icon name="check" size={14} /> : index + 1}
                   </div>
                   <div style={{ minWidth: 0 }}>
                     <div style={{ display: 'flex', alignItems: 'center', gap: '10px', flexWrap: 'wrap' }}>
@@ -212,7 +243,7 @@ export default function TestSeriesDetail() {
                   </div>
                 </div>
                 <button onClick={() => navigate(`/student/test/${test.id}`)} className={test.id === series.next_test_id ? 'btn-primary' : 'btn-secondary'} style={{ padding: '8px 16px', fontSize: '0.85rem' }}>
-                  {test.status === 'completed' ? 'Analysis' : 'Start →'}
+                  {test.status === 'completed' ? 'Analysis' : 'Start'}
                 </button>
               </div>
             ))}
@@ -238,10 +269,10 @@ export default function TestSeriesDetail() {
                 <tr><td colSpan="4" style={{ padding: '32px', textAlign: 'center', color: 'var(--muted)' }}>No submissions recorded yet.</td></tr>
               ) : leaderboardData.leaderboard.map((item) => (
                 <tr key={item.user_id} style={{ borderBottom: '1px solid var(--line)', background: item.is_current_user ? 'var(--accent-soft)' : 'transparent', fontWeight: item.is_current_user ? 700 : 400 }}>
-                  <td style={{ padding: '12px', fontWeight: 'bold' }}>#{item.rank}</td>
+                  <td style={{ padding: '12px', fontWeight: 700 }}>#{item.rank}</td>
                   <td style={{ padding: '12px', color: 'var(--tx)' }}>{item.name} {item.is_current_user && '(You)'}</td>
                   <td style={{ padding: '12px', textAlign: 'center' }}>{item.tests_completed}</td>
-                  <td style={{ padding: '12px', textAlign: 'right', fontWeight: 'bold', color: 'var(--accent-color)' }}>{item.total_score} pts</td>
+                  <td style={{ padding: '12px', textAlign: 'right', fontWeight: 700, color: 'var(--accent-color)' }}>{item.total_score} pts</td>
                 </tr>
               ))}
             </tbody>

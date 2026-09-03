@@ -40,7 +40,7 @@ const MathRenderer = ({ text }) => {
 export default function TestTaking() {
   const { session: sessionId } = useParams();
   const navigate = useNavigate();
-  const { t } = useTranslation();
+  const { t, i18n } = useTranslation();
 
   // Demo mode: reachable via "Free test" / "Attempt free". Renders the CBT
   // reference against local demo questions with NO backend calls. The real
@@ -68,6 +68,8 @@ export default function TestTaking() {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [autoAdvancing, setAutoAdvancing] = useState(false);
   const [showSubmitConfirm, setShowSubmitConfirm] = useState(false);
+  // Presentation only: the right rail becomes a sheet under 1024px.
+  const [paletteOpen, setPaletteOpen] = useState(false);
 
   // Keep track of active question start time for calculating time spent
   const questionStartTime = useRef(Date.now());
@@ -476,9 +478,9 @@ export default function TestTaking() {
 
   if (autoAdvancing) {
     return (
-      <div className="cbt-root" style={{ position: 'fixed', inset: 0, display: 'flex', justifyContent: 'center', alignItems: 'center', flexDirection: 'column', gap: '14px' }}>
-        <div style={{ color: '#F5A623', fontSize: '1.15rem', fontWeight: 800 }}>{t('exam.sectionExpired')}</div>
-        <div style={{ color: '#5A6A85' }}>{t('exam.autoAdvancing')}</div>
+      <div className="cbt-root" style={{ position: 'fixed', inset: 0, display: 'flex', justifyContent: 'center', alignItems: 'center', flexDirection: 'column', gap: '12px' }}>
+        <div style={{ font: '700 18px var(--font-display)', letterSpacing: '-.025em', color: '#1D2130' }}>{t('exam.sectionExpired')}</div>
+        <div style={{ font: '400 14px var(--font-body)', color: '#4A5060' }}>{t('exam.autoAdvancing')}</div>
       </div>
     );
   }
@@ -491,176 +493,606 @@ export default function TestTaking() {
   const cNotVisited = allQuestions.filter((q) => statusOf(q.id) === 'not_visited').length;
   const cNotAnswered = allQuestions.filter((q) => statusOf(q.id) === 'not_answered').length;
 
-  const clockLow = timeRemaining !== null && timeRemaining < 300;
+  const hasSectionalTiming = sections.some((sec) => sec.duration_seconds > 0);
+  const isLastQuestionOfSection = currentQuestionIndex === activeSection?.questions?.length - 1;
+  const isNotLastSection = currentSectionIndex < sections.length - 1;
+  const advanceInsteadOfNext = isLastQuestionOfSection && hasSectionalTiming && isNotLastSection;
+  const isMarked = !!markedForReview[activeQuestion?.id];
+  const isHindi = i18n.language.startsWith('hi');
+  const candidateName = session?.user_name || session?.student_name || '';
+  const initials = (candidateName || '?')
+    .split(' ')
+    .map((part) => part[0])
+    .join('')
+    .slice(0, 2)
+    .toUpperCase();
 
-  return (
-    <div className="cbt-root" style={{ position: 'fixed', inset: 0, display: 'flex', flexDirection: 'column' }}>
-      {/* ---- Deep header: title + section + clock ---- */}
-      <div style={{ flex: 'none', padding: 'max(env(safe-area-inset-top),18px) 16px 12px', background: 'linear-gradient(180deg,#12203A,#16264A)' }}>
-        <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
-          <div style={{ flex: 1, minWidth: 0 }}>
-            <div style={{ font: '700 14px var(--font-body)', color: '#fff', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{session.test_title || 'Mock Test'}</div>
-            <div style={{ font: '600 11px var(--font-body)', color: '#9AB0E0', marginTop: '2px' }}>{activeQuestion?.section || activeSection?.title}</div>
-          </div>
-          <div style={{ display: 'flex', alignItems: 'center', gap: '7px', padding: '8px 12px', borderRadius: '11px', background: clockLow ? 'rgba(229,72,77,.18)' : 'rgba(255,255,255,.1)', border: `1px solid ${clockLow ? 'rgba(251,143,146,.5)' : 'rgba(255,255,255,.18)'}` }}>
-            <Icon name="clock" size={15} style={{ color: clockLow ? '#FFB4B6' : '#DCE6FF' }} />
-            <span style={{ font: '800 15px var(--font-mono)', color: clockLow ? '#FFB4B6' : '#DCE6FF', letterSpacing: '.04em' }}>{formatTime(timeRemaining)}</span>
-          </div>
+  const goPrevious = () => {
+    if (currentQuestionIndex > 0) navigateToQuestion(currentSectionIndex, currentQuestionIndex - 1);
+  };
+
+  const legend = [
+    ['#0ea371', t('exam.legend.answered'), cAnswered],
+    ['#e5484d', t('exam.legend.notAnswered'), cNotAnswered],
+    ['#8b5cf6', t('exam.legend.marked'), cMarked],
+    ['#64748b', t('exam.legend.notVisited'), cNotVisited],
+  ];
+
+  const paletteGrid = (
+    <div className="cbt-palette-grid">
+      {activeSection?.questions?.map((q, idx) => {
+        const qStatus = statusOf(q.id);
+        const isActive = idx === currentQuestionIndex;
+        return (
+          <button
+            key={q.id}
+            onClick={() => { navigateToQuestion(currentSectionIndex, idx); setPaletteOpen(false); }}
+            className={`palette-btn ${qStatus} ${isActive ? 'active' : ''}`}
+            aria-label={`${t('exam.question')} ${idx + 1}`}
+            aria-current={isActive ? 'true' : undefined}
+          >
+            {idx + 1}
+          </button>
+        );
+      })}
+    </div>
+  );
+
+  const railBody = (
+    <>
+      {candidateName && (
+        <div className="cbt-candidate">
+          <span className="cbt-avatar">{initials}</span>
+          <span style={{ minWidth: 0 }}>
+            <span style={{ display: 'block', font: '600 13.5px var(--font-body)', color: '#1D2130', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+              {candidateName}
+            </span>
+            {session?.roll_number && (
+              <span style={{ display: 'block', marginTop: '3px', font: '500 10.5px var(--font-mono)', letterSpacing: '.06em', color: 'var(--muted)' }}>
+                ROLL {session.roll_number}
+              </span>
+            )}
+          </span>
         </div>
-        {sectionTimeRemaining !== null && (
-          <div style={{ marginTop: '8px', font: '700 11px var(--font-body)', color: sectionTimeRemaining < 60 ? '#FFB4B6' : '#9AB0E0' }}>
-            {t('exam.sectionTime')}: <span style={{ fontFamily: 'var(--font-mono)' }}>{formatTime(sectionTimeRemaining)}</span>
-          </div>
-        )}
+      )}
+
+      <div className="cbt-legend">
+        {legend.map(([c, label, n]) => (
+          <span key={label} className="cbt-legend-item">
+            <span aria-hidden="true" style={{ width: '14px', height: '14px', borderRadius: '4px 4px 4px 0', background: c, flex: 'none' }} />
+            <span>{label} <span className="t-num" style={{ fontSize: '11px', color: '#1D2130' }}>{n}</span></span>
+          </span>
+        ))}
       </div>
 
-      {/* ---- Section tabs ---- */}
+      <div className="cbt-palette-scroll">{paletteGrid}</div>
+
+      <button
+        type="button"
+        onClick={() => { flushIfNumeric(); setPaletteOpen(false); setShowSubmitConfirm(true); }}
+        className="cbt-submit-btn"
+      >
+        {t('exam.submit')}
+      </button>
+    </>
+  );
+
+  return (
+    <div className="cbt-root cbt-shell">
+      <style>{`
+        .cbt-shell { position: fixed; inset: 0; display: flex; flex-direction: column; background: #EEF1F7; }
+
+        .cbt-head {
+          flex: none;
+          display: flex;
+          align-items: center;
+          justify-content: space-between;
+          gap: 12px;
+          padding: max(env(safe-area-inset-top), 10px) 16px 10px;
+          background: #FFFFFF;
+          border-bottom: 1px solid #E2E7F0;
+        }
+        .cbt-title { font: 700 15px/1.15 var(--font-display); letter-spacing: -.025em; color: #1D2130;
+                     overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+        .cbt-sub { margin-top: 3px; font: 600 9.5px var(--font-mono); letter-spacing: .12em;
+                   text-transform: uppercase; color: var(--muted);
+                   overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+        .cbt-head-tabs { display: none; }
+        .cbt-icon-btn {
+          width: 40px; height: 40px; flex: none;
+          border-radius: 12px; border: 1px solid #DDE3EE; background: #FFFFFF;
+          color: #4A5060; display: grid; place-items: center; cursor: pointer;
+        }
+        .cbt-lang {
+          display: inline-flex; align-items: center; gap: 6px; flex: none;
+          height: 40px; padding: 0 13px; border-radius: 12px; border: 1px solid #DDE3EE;
+          background: #FFFFFF; color: #4A5060; font: 600 12.5px var(--font-body); cursor: pointer;
+        }
+        .cbt-grid-btn { display: grid; }
+        .cbt-card-lang {
+          display: inline-flex; align-items: center; gap: 5px; min-height: 32px;
+          padding: 0 8px; border: none; background: transparent; cursor: pointer;
+          font: 500 11px var(--font-body); color: var(--muted);
+        }
+        @media (min-width: 640px) { .cbt-card-lang { display: none; } }
+
+        .cbt-tabs {
+          flex: none; display: flex; gap: 6px; overflow-x: auto;
+          padding: 10px 16px; background: #FFFFFF; border-bottom: 1px solid #E2E7F0;
+          scrollbar-width: none;
+        }
+        .cbt-tabs::-webkit-scrollbar { display: none; }
+        .cbt-tab {
+          flex: none; padding: 7px 14px; border: none; border-radius: 999px;
+          font: 500 12px var(--font-body); color: #4A5060; background: #EEF1F7; cursor: pointer;
+        }
+        .cbt-tab.on { background: #0E1220; color: #FFFFFF; font-weight: 600; }
+        .cbt-tab[disabled] { opacity: .5; cursor: not-allowed; }
+
+        .cbt-body { flex: 1; min-height: 0; display: flex; gap: 20px; overflow: hidden; }
+        .cbt-col { flex: 1; min-width: 0; display: flex; flex-direction: column; min-height: 0; }
+        .cbt-scroll { flex: 1; min-height: 0; overflow-y: auto; padding: 16px; }
+        .cbt-card {
+          background: #FFFFFF; border: 1px solid #E4E8F0; border-radius: 18px; padding: 18px;
+        }
+        .cbt-qtext { margin: 0; font: 400 16px/1.62 var(--font-body); color: #1D2130; max-width: 70ch; }
+
+        .cbt-rail { display: none; }
+
+        .cbt-legendstrip {
+          margin-top: 16px; padding: 0 4px; display: flex; flex-wrap: wrap;
+          align-items: center; justify-content: space-between; gap: 12px;
+        }
+
+        .cbt-actionbar {
+          flex: none; display: flex; gap: 9px; align-items: center;
+          padding: 12px 16px calc(14px + env(safe-area-inset-bottom, 8px));
+          background: #FFFFFF; border-top: 1px solid #E2E7F0;
+        }
+        .cbt-btn {
+          height: 48px; padding: 0 16px; flex: none;
+          border-radius: 13px; border: 1px solid #DCE1EA; background: #FFFFFF; color: #4A5060;
+          font: 600 13px var(--font-body); cursor: pointer;
+          display: inline-flex; align-items: center; justify-content: center; gap: 8px;
+        }
+        .cbt-btn.icon { width: 48px; padding: 0; }
+        .cbt-btn.mark { color: #8b5cf6; }
+        .cbt-btn.mark.on { background: rgba(139,92,246,.1); border-color: rgba(139,92,246,.35); }
+        .cbt-next {
+          flex: 1; height: 48px; border: none; border-radius: 13px;
+          background: var(--primary); color: #FFFFFF; font: 700 14px var(--font-body); cursor: pointer;
+          display: inline-flex; align-items: center; justify-content: center; gap: 7px;
+        }
+        .cbt-next:active, .cbt-btn:active { transform: scale(.98); }
+
+        .cbt-candidate {
+          display: flex; align-items: center; gap: 12px;
+          padding-bottom: 16px; border-bottom: 1px solid #EEF1F6;
+        }
+        .cbt-avatar {
+          width: 40px; height: 40px; flex: none; border-radius: 999px; background: #EEF1F7;
+          display: grid; place-items: center; font: 600 13px var(--font-body); color: #4A5060;
+        }
+        .cbt-legend { display: grid; grid-template-columns: 1fr 1fr; gap: 9px 12px; }
+        .cbt-legend-item {
+          display: flex; align-items: center; gap: 8px;
+          font: 500 11px var(--font-body); color: #5A6070;
+        }
+        .cbt-palette-scroll { flex: 1; min-height: 0; overflow-y: auto; }
+        .cbt-palette-grid { display: grid; grid-template-columns: repeat(6, 1fr); gap: 8px; }
+        .cbt-palette-grid .palette-btn { width: 100%; height: auto; aspect-ratio: 1; }
+        .cbt-submit-btn {
+          width: 100%; min-height: 48px; padding: 14px;
+          border-radius: 12px; border: 1px solid #DDE3EE; background: #EEF1F7; color: #1D2130;
+          font: 700 13.5px var(--font-body); cursor: pointer;
+        }
+
+        /* --- phone: the rail is a sheet --- */
+        .cbt-sheet {
+          position: fixed; inset: 0; z-index: 1200; display: flex; align-items: flex-end;
+          background: rgba(14,18,32,.44); backdrop-filter: blur(6px); -webkit-backdrop-filter: blur(6px);
+        }
+        .cbt-sheet-panel {
+          width: 100%; max-height: 82vh; display: flex; flex-direction: column; gap: 16px;
+          padding: 8px 18px calc(18px + env(safe-area-inset-bottom, 0px));
+          background: #FFFFFF; border-radius: 20px 20px 0 0;
+          animation: rise-in var(--t-enter) var(--ease-out) both;
+        }
+        .cbt-sheet-handle { width: 38px; height: 4px; margin: 4px auto 6px; border-radius: 99px; background: #DDE3EE; }
+
+        /* --- tablet: the sheet slides over from the right --- */
+        /* phone: header keeps timer + palette only; the bar is
+           bookmark · Clear · Save & next, and Previous lives in the palette. */
+        @media (max-width: 639px) {
+          .cbt-lang { display: none; }
+          .cbt-prev, .cbt-prev-spacer { display: none; }
+          .cbt-next { white-space: nowrap; padding: 0 12px; font-size: 13.5px; }
+        }
+
+        @media (min-width: 640px) {
+          .cbt-sheet { align-items: stretch; justify-content: flex-end; }
+          .cbt-sheet-panel {
+            width: min(340px, 90vw); max-height: none; height: 100%;
+            border-radius: 0; padding: 18px;
+            animation-name: fade-in;
+          }
+          .cbt-sheet-handle { display: none; }
+        }
+
+        /* --- desktop: fixed 300px rail, tabs move into the header --- */
+        @media (min-width: 1024px) {
+          .cbt-head { height: 64px; padding: 0 24px; }
+          .cbt-head-tabs { display: flex; gap: 4px; }
+          .cbt-tabs { display: none; }
+          .cbt-grid-btn { display: none; }
+          .cbt-body { padding: 20px 24px; }
+          .cbt-col {
+            background: #FFFFFF; border: 1px solid #E4E8F0; border-radius: 20px;
+            padding: 28px 32px;
+          }
+          .cbt-scroll { padding: 0; }
+          .cbt-card { background: transparent; border: none; border-radius: 0; padding: 0; }
+          .cbt-qtext { font-size: 19px; }
+          .cbt-legendstrip { display: none; }
+          .cbt-rail {
+            width: 300px; flex: none; display: flex; flex-direction: column; gap: 18px;
+            background: #FFFFFF; border: 1px solid #E4E8F0; border-radius: 20px; padding: 20px;
+          }
+          .cbt-actionbar {
+            border-top: 1px solid #EEF1F6; background: transparent;
+            padding: 22px 0 0; margin-top: auto;
+          }
+          .cbt-btn.icon { width: auto; padding: 0 18px; }
+          .cbt-btn.mark.icon::after { content: 'Mark for review'; }
+        }
+      `}</style>
+
+      {/* ---- header ---- */}
+      <div className="cbt-head">
+        <div style={{ display: 'flex', alignItems: 'center', gap: '18px', minWidth: 0, flex: 1 }}>
+          <div style={{ minWidth: 0 }}>
+            <div className="cbt-title">{session.test_title || 'Mock Test'}</div>
+            <div className="cbt-sub">{activeQuestion?.section || activeSection?.title}</div>
+          </div>
+
+          {/* section tabs live in the header from 1024px up */}
+          {sections.length > 1 && (
+            <div className="cbt-head-tabs">
+              {sections.map((section, idx) => {
+                const isCurrent = idx === currentSectionIndex;
+                const isLocked = hasSectionalTiming && idx !== session.current_section_index;
+                return (
+                  <button
+                    key={section.id}
+                    type="button"
+                    disabled={isLocked}
+                    onClick={() => !isLocked && navigateToQuestion(idx, 0)}
+                    className={`cbt-tab${isCurrent ? ' on' : ''}`}
+                    style={{ borderRadius: '10px', padding: '8px 15px', background: isCurrent ? '#0E1220' : 'transparent' }}
+                  >
+                    {section.title}
+                    {isLocked && <Icon name="lock" size={13} style={{ marginLeft: 5, verticalAlign: '-2px' }} />}
+                  </button>
+                );
+              })}
+            </div>
+          )}
+        </div>
+
+        <div style={{ display: 'flex', alignItems: 'center', gap: '9px', flex: 'none' }}>
+          {/* The timer never animates — no pulse, no colour shift. */}
+          <span className="header-clock">
+            <Icon name="clock" size={16} />
+            {formatTime(timeRemaining)}
+          </span>
+
+          <button
+            type="button"
+            className="cbt-lang"
+            onClick={() => i18n.changeLanguage(isHindi ? 'en' : 'hi')}
+            aria-label="Toggle language"
+            title="Language"
+          >
+            <Icon name="languages" size={15} />
+            EN / <span style={{ fontFamily: 'var(--font-hindi)' }}>हिं</span>
+          </button>
+
+          <button
+            type="button"
+            className="cbt-icon-btn cbt-grid-btn"
+            onClick={() => setPaletteOpen(true)}
+            aria-label={t('exam.legend.answered')}
+            title="Palette"
+          >
+            <Icon name="grid" size={18} />
+          </button>
+        </div>
+      </div>
+
+      {sectionTimeRemaining !== null && (
+        <div
+          style={{
+            flex: 'none',
+            padding: '8px 16px',
+            background: '#FFFFFF',
+            borderBottom: '1px solid #E2E7F0',
+            font: '500 11.5px var(--font-body)',
+            color: sectionTimeRemaining < 60 ? '#C42B2B' : '#4A5060',
+          }}
+        >
+          {t('exam.sectionTime')}:{' '}
+          <span className="t-num" style={{ fontSize: '12.5px', color: sectionTimeRemaining < 60 ? '#C42B2B' : '#1D2130' }}>
+            {formatTime(sectionTimeRemaining)}
+          </span>
+        </div>
+      )}
+
+      {/* ---- section tabs (phone + tablet) ---- */}
       {sections.length > 1 && (
-        <div style={{ flex: 'none', display: 'flex', gap: '8px', overflowX: 'auto', padding: '11px 16px', background: '#fff', borderBottom: '1px solid #E2E7F0' }}>
+        <div className="cbt-tabs">
           {sections.map((section, idx) => {
             const isCurrent = idx === currentSectionIndex;
-            const hasSectionalTiming = sections.some((s) => s.duration_seconds > 0);
             const isLocked = hasSectionalTiming && idx !== session.current_section_index;
             return (
-              <span key={section.id} onClick={() => !isLocked && navigateToQuestion(idx, 0)}
-                style={{ flex: 'none', padding: '8px 15px', borderRadius: '999px', font: '700 12px var(--font-body)', cursor: isLocked ? 'not-allowed' : 'pointer', opacity: isLocked ? 0.5 : 1, color: isCurrent ? '#fff' : '#5A6A85', background: isCurrent ? '#12203A' : '#F0F3F8' }}>
-                {section.title}{isLocked ? ' 🔒' : ''}
-              </span>
+              <button
+                key={section.id}
+                type="button"
+                disabled={isLocked}
+                onClick={() => !isLocked && navigateToQuestion(idx, 0)}
+                className={`cbt-tab${isCurrent ? ' on' : ''}`}
+              >
+                {section.title}
+                {isLocked && <Icon name="lock" size={13} style={{ marginLeft: 5, verticalAlign: '-2px' }} />}
+              </button>
             );
           })}
         </div>
       )}
 
       {error && (
-        <div style={{ flex: 'none', margin: '10px 16px 0', background: 'rgba(229,72,77,.1)', border: '1px solid rgba(217,45,51,.3)', padding: '10px 14px', borderRadius: '10px', color: '#CB2F37', fontSize: '0.85rem' }}>{error}</div>
+        <div
+          style={{
+            flex: 'none',
+            margin: '10px 16px 0',
+            background: '#FCECEB',
+            border: '1px solid #F2C9C7',
+            padding: '10px 14px',
+            borderRadius: '12px',
+            color: '#C42B2B',
+            font: '500 12.5px var(--font-body)',
+            display: 'flex',
+            alignItems: 'center',
+            gap: '8px',
+          }}
+        >
+          <Icon name="alert" size={15} />
+          {error}
+        </div>
       )}
 
-      {/* ---- Scroll body ---- */}
-      <div style={{ flex: 1, minHeight: 0, overflowY: 'auto', padding: '16px' }}>
-        {activeQuestion ? (
-          <>
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '12px' }}>
-              <span style={{ font: '800 15px var(--font-display)', color: '#12203A' }}>
-                {t('exam.question')} {currentQuestionIndex + 1} <span style={{ color: '#93A0B5', fontWeight: 600 }}>/ {activeSection.questions.length}</span>
-              </span>
-              <div style={{ display: 'flex', gap: '6px' }}>
-                <span style={{ font: '800 11px var(--font-mono)', color: '#0B9E6D', background: 'rgba(11,158,109,.12)', padding: '4px 9px', borderRadius: '8px' }}>+{activeQuestion.marks}</span>
-                <span style={{ font: '800 11px var(--font-mono)', color: '#D92D33', background: 'rgba(217,45,51,.1)', padding: '4px 9px', borderRadius: '8px' }}>−{activeQuestion.negative_marks}</span>
-              </div>
-            </div>
-
-            {/* Passage, pinned above a comprehension-linked question */}
-            {activeQuestion.passage && (
-              <div style={{ padding: '14px 16px', borderRadius: '14px', background: '#F7F8FC', border: '1px solid #E2E7F0', marginBottom: '12px', maxHeight: '220px', overflowY: 'auto' }}>
-                {activeQuestion.passage.title && (
-                  <div style={{ font: '800 12.5px var(--font-display)', color: '#12203A', marginBottom: '6px' }}>{activeQuestion.passage.title}</div>
-                )}
-                <div style={{ font: '500 13.5px/1.6 var(--font-body)', color: '#3A4560', whiteSpace: 'pre-wrap' }}>{activeQuestion.passage.body}</div>
-              </div>
-            )}
-
-            {/* Question card */}
-            <div style={{ padding: '16px', borderRadius: '16px', background: '#fff', border: '1px solid #E2E7F0', boxShadow: '0 6px 20px -12px rgba(18,32,58,.25)' }}>
-              <div style={{ font: '600 15.5px/1.5 var(--font-body)', color: '#1A2233', margin: '0 0 16px' }}>
-                <MathRenderer text={activeQuestion.question_text} />
-              </div>
-
-              {activeQuestion.question_type === 'multi_select' && (
-                <div style={{ font: '700 11px var(--font-body)', color: '#8B5CF6', marginBottom: '10px' }}>{t('exam.selectAll')}</div>
-              )}
-
-              {activeQuestion.question_type === 'numeric' ? (
-                <input
-                  type="number"
-                  inputMode="decimal"
-                  step="any"
-                  value={answers[activeQuestion.id] ?? ''}
-                  onChange={(e) => setNumericLocal(e.target.value === '' ? '' : e.target.value)}
-                  onBlur={(e) => flushNumericResponse(activeQuestion.id, e.target.value === '' ? '' : e.target.value)}
-                  placeholder={t('exam.typeAnswer')}
-                  style={{ width: '100%', padding: '14px 16px', borderRadius: '12px', border: '1.5px solid #C9D2E0', font: '700 16px var(--font-mono)', color: '#12203A' }}
-                />
-              ) : activeQuestion.question_type === 'multi_select' ? (
-                activeQuestion.options?.map((option) => {
-                  const selectedIds = Array.isArray(answers[activeQuestion.id]) ? answers[activeQuestion.id] : [];
-                  const isSelected = selectedIds.includes(option.id);
-                  return (
-                    <div key={option.id} onClick={() => toggleMultiOption(option.id)} className={`mcq-option ${isSelected ? 'selected' : ''}`}>
-                      <span className="option-badge" style={{ borderRadius: '5px' }}>{isSelected ? '✓' : option.label}</span>
-                      <span style={{ fontSize: '14.5px' }}><MathRenderer text={option.option_text} /></span>
-                    </div>
-                  );
-                })
-              ) : (
-                activeQuestion.options?.map((option) => {
-                  const isSelected = answers[activeQuestion.id] === option.id;
-                  return (
-                    <div key={option.id} onClick={() => selectOption(option.id)} className={`mcq-option ${isSelected ? 'selected' : ''}`}>
-                      <span className="option-badge">{option.label}</span>
-                      <span style={{ fontSize: '14.5px' }}><MathRenderer text={option.option_text} /></span>
-                    </div>
-                  );
-                })
-              )}
-            </div>
-
-            {/* Legend + palette */}
-            <div style={{ marginTop: '16px', padding: '15px', borderRadius: '16px', background: '#fff', border: '1px solid #E2E7F0' }}>
-              <div style={{ display: 'flex', flexWrap: 'wrap', gap: '12px 16px' }}>
-                {[['#0ea371', t('exam.legend.answered'), cAnswered], ['#e5484d', t('exam.legend.notAnswered'), cNotAnswered], ['#8b5cf6', t('exam.legend.marked'), cMarked], ['#64748b', t('exam.legend.notVisited'), cNotVisited]].map(([c, label, n]) => (
-                  <span key={label} style={{ display: 'flex', alignItems: 'center', gap: '6px', font: '700 11px var(--font-body)', color: '#5A6A85' }}>
-                    <span style={{ width: '12px', height: '12px', borderRadius: '3px', background: c }} />{label} {n}
-                  </span>
-                ))}
-              </div>
-              <div style={{ display: 'flex', flexWrap: 'wrap', gap: '9px', marginTop: '14px' }}>
-                {activeSection?.questions?.map((q, idx) => {
-                  const qStatus = statusOf(q.id);
-                  const isActive = idx === currentQuestionIndex;
-                  return (
-                    <button key={q.id} onClick={() => navigateToQuestion(currentSectionIndex, idx)} className={`palette-btn ${qStatus} ${isActive ? 'active' : ''}`}>
-                      {idx + 1}
+      {/* ---- body ---- */}
+      <div className="cbt-body">
+        <div className="cbt-col">
+          {activeQuestion ? (
+            <>
+              <div className="cbt-scroll">
+              <div className="cbt-card">
+                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '12px', marginBottom: '16px', flexWrap: 'wrap' }}>
+                  <div style={{ display: 'flex', alignItems: 'baseline', gap: '10px' }}>
+                    <span style={{ font: '700 18px var(--font-display)', letterSpacing: '-.025em', color: '#1D2130' }}>
+                      {t('exam.question')} {currentQuestionIndex + 1}
+                    </span>
+                    <span style={{ font: '400 13.5px var(--font-body)', color: 'var(--muted)' }}>
+                      of {activeSection.questions.length}
+                    </span>
+                  </div>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '7px' }}>
+                    <span style={{ padding: '5px 11px', borderRadius: '8px', background: '#E5F2EC', color: '#0E7C5A', font: '600 11.5px var(--font-mono)', fontVariantNumeric: 'tabular-nums' }}>
+                      +{Number(activeQuestion.marks).toFixed(2)}
+                    </span>
+                    <span style={{ padding: '5px 11px', borderRadius: '8px', background: '#FCECEB', color: '#C42B2B', font: '600 11.5px var(--font-mono)', fontVariantNumeric: 'tabular-nums' }}>
+                      −{Number(activeQuestion.negative_marks).toFixed(2)}
+                    </span>
+                    <button
+                      type="button"
+                      className="cbt-card-lang"
+                      onClick={() => i18n.changeLanguage(isHindi ? 'en' : 'hi')}
+                      aria-label="Toggle language"
+                    >
+                      <Icon name="languages" size={13} />
+                      <span style={{ fontFamily: 'var(--font-hindi)' }}>हिंदी</span>
                     </button>
-                  );
-                })}
+                  </div>
+                </div>
+
+                {/* Passage, pinned above a comprehension-linked question */}
+                {activeQuestion.passage && (
+                  <div style={{ padding: '14px 16px', borderRadius: '14px', background: '#F7F9FC', border: '1px solid #E4E8F0', marginBottom: '14px', maxHeight: '220px', overflowY: 'auto' }}>
+                    {activeQuestion.passage.title && (
+                      <div style={{ font: '700 13px var(--font-display)', letterSpacing: '-.02em', color: '#1D2130', marginBottom: '6px' }}>
+                        {activeQuestion.passage.title}
+                      </div>
+                    )}
+                    <div style={{ font: '400 13.5px/1.62 var(--font-body)', color: '#4A5060', whiteSpace: 'pre-wrap' }}>
+                      {activeQuestion.passage.body}
+                    </div>
+                  </div>
+                )}
+
+                <p className="cbt-qtext">
+                  <MathRenderer text={activeQuestion.question_text} />
+                </p>
+
+                {activeQuestion.question_type === 'multi_select' && (
+                  <div style={{ marginTop: '14px', font: '600 11.5px var(--font-body)', color: '#8b5cf6' }}>{t('exam.selectAll')}</div>
+                )}
+
+                <div style={{ marginTop: '18px', display: 'flex', flexDirection: 'column', gap: '10px', maxWidth: '620px' }}>
+                  {activeQuestion.question_type === 'numeric' ? (
+                    <input
+                      type="number"
+                      inputMode="decimal"
+                      step="any"
+                      value={answers[activeQuestion.id] ?? ''}
+                      onChange={(e) => setNumericLocal(e.target.value === '' ? '' : e.target.value)}
+                      onBlur={(e) => flushNumericResponse(activeQuestion.id, e.target.value === '' ? '' : e.target.value)}
+                      placeholder={t('exam.typeAnswer')}
+                      style={{
+                        width: '100%',
+                        padding: '15px 16px',
+                        borderRadius: '14px',
+                        border: '1.5px solid #E4E8F0',
+                        font: '700 16px var(--font-mono)',
+                        fontVariantNumeric: 'tabular-nums',
+                        color: '#1D2130',
+                        background: '#FFFFFF',
+                      }}
+                    />
+                  ) : activeQuestion.question_type === 'multi_select' ? (
+                    activeQuestion.options?.map((option) => {
+                      const selectedIds = Array.isArray(answers[activeQuestion.id]) ? answers[activeQuestion.id] : [];
+                      const isSelected = selectedIds.includes(option.id);
+                      return (
+                        <div key={option.id} onClick={() => toggleMultiOption(option.id)} className={`mcq-option ${isSelected ? 'selected' : ''}`}>
+                          <span className="option-badge" style={{ borderRadius: '7px' }}>
+                            {isSelected ? <Icon name="check" size={15} strokeWidth={3} /> : option.label}
+                          </span>
+                          <span style={{ fontSize: '15px' }}><MathRenderer text={option.option_text} /></span>
+                        </div>
+                      );
+                    })
+                  ) : (
+                    activeQuestion.options?.map((option) => {
+                      const isSelected = answers[activeQuestion.id] === option.id;
+                      return (
+                        <div key={option.id} onClick={() => selectOption(option.id)} className={`mcq-option ${isSelected ? 'selected' : ''}`}>
+                          <span className="option-badge">{option.label}</span>
+                          <span style={{ fontSize: '15px' }}><MathRenderer text={option.option_text} /></span>
+                        </div>
+                      );
+                    })
+                  )}
+                </div>
               </div>
-            </div>
-          </>
-        ) : (
-          <div style={{ color: '#5A6A85' }}>{t('exam.noQuestions')}</div>
-        )}
+
+              {/* legend strip + the link that opens the palette sheet (under 1024px) */}
+              <div className="cbt-legendstrip">
+                <div style={{ display: 'flex', gap: '14px', flexWrap: 'wrap' }}>
+                  {legend.map(([c, label, n]) => (
+                    <span key={label} style={{ display: 'flex', alignItems: 'center', gap: '6px' }} title={label}>
+                      <span aria-hidden="true" style={{ width: '11px', height: '11px', borderRadius: '4px 4px 4px 0', background: c }} />
+                      <span className="t-num" style={{ font: '500 11px var(--font-mono)', color: '#5A6070' }}>{n}</span>
+                    </span>
+                  ))}
+                </div>
+                <button type="button" onClick={() => setPaletteOpen(true)} className="link-btn">
+                  Palette
+                </button>
+              </div>
+              </div>
+
+              {/* ---- action bar ---- */}
+              <div className="cbt-actionbar">
+                <button
+                  type="button"
+                  onClick={toggleMarkForReview}
+                  className={`cbt-btn mark icon${isMarked ? ' on' : ''}`}
+                  aria-pressed={isMarked}
+                  aria-label={isMarked ? t('exam.unmark') : t('exam.mark')}
+                  title={isMarked ? t('exam.unmark') : t('exam.mark')}
+                >
+                  <Icon name="bookmark" size={20} />
+                </button>
+
+                <button type="button" onClick={clearResponse} className="cbt-btn">
+                  {t('exam.clear')}
+                </button>
+
+                <span className="cbt-prev-spacer" style={{ flex: 1 }} />
+
+                <button
+                  type="button"
+                  onClick={goPrevious}
+                  className="cbt-btn cbt-prev"
+                  disabled={currentQuestionIndex === 0}
+                  style={{ opacity: currentQuestionIndex === 0 ? 0.45 : 1 }}
+                >
+                  <Icon name="arrow-left" size={16} strokeWidth={2.2} />
+                  Previous
+                </button>
+
+                <button
+                  type="button"
+                  onClick={advanceInsteadOfNext ? handleAdvanceSection : handleSaveAndNext}
+                  className="cbt-next"
+                >
+                  {advanceInsteadOfNext ? t('exam.submitSection') : t('exam.saveNext')}
+                  <Icon name="arrow-right" size={16} strokeWidth={2.4} />
+                </button>
+              </div>
+            </>
+          ) : (
+            <div style={{ font: '400 14px var(--font-body)', color: '#4A5060' }}>{t('exam.noQuestions')}</div>
+          )}
+        </div>
+
+        {/* ---- fixed right rail (>=1024px) ---- */}
+        <aside className="cbt-rail">{railBody}</aside>
       </div>
 
-      {/* ---- Bottom action bar ---- */}
-      <div style={{ flex: 'none', display: 'flex', gap: '8px', padding: '12px 14px calc(14px + env(safe-area-inset-bottom,8px))', background: '#fff', borderTop: '1px solid #E2E7F0' }}>
-        <button onClick={toggleMarkForReview} style={{ flex: 'none', padding: '13px 12px', border: '1px solid #C9D2E0', borderRadius: '12px', background: markedForReview[activeQuestion?.id] ? 'rgba(139,92,246,.1)' : '#fff', color: markedForReview[activeQuestion?.id] ? '#6A34DE' : '#5A6A85', font: '700 12px var(--font-body)', cursor: 'pointer' }}>
-          {markedForReview[activeQuestion?.id] ? t('exam.unmark') : t('exam.mark')}
-        </button>
-        <button onClick={clearResponse} style={{ flex: 'none', padding: '13px 12px', border: '1px solid #C9D2E0', borderRadius: '12px', background: '#fff', color: '#5A6A85', font: '700 12px var(--font-body)', cursor: 'pointer' }}>{t('exam.clear')}</button>
-        {(() => {
-          const isLastQuestionOfSection = currentQuestionIndex === activeSection?.questions?.length - 1;
-          const hasSectionalTiming = sections.some((s) => s.duration_seconds > 0);
-          const isNotLastSection = currentSectionIndex < sections.length - 1;
-          if (isLastQuestionOfSection && hasSectionalTiming && isNotLastSection) {
-            return <button onClick={handleAdvanceSection} style={{ flex: 1, padding: '13px', border: 'none', borderRadius: '12px', background: 'linear-gradient(135deg,#FFC968,#F5A623 55%,#E07C0A)', color: '#1A1206', font: '800 14px var(--font-display)', cursor: 'pointer' }}>{t('exam.submitSection')}</button>;
-          }
-          return <button onClick={handleSaveAndNext} style={{ flex: 1, padding: '13px', border: 'none', borderRadius: '12px', background: 'linear-gradient(135deg,#FFC968,#F5A623 55%,#E07C0A)', color: '#1A1206', font: '800 14px var(--font-display)', cursor: 'pointer' }}>{t('exam.saveNext')}</button>;
-        })()}
-        <button onClick={() => { flushIfNumeric(); setShowSubmitConfirm(true); }} style={{ flex: 'none', padding: '13px 16px', border: 'none', borderRadius: '12px', background: '#0B9E6D', color: '#fff', font: '800 13px var(--font-body)', cursor: 'pointer' }}>{t('exam.submit')}</button>
-      </div>
+      {/* ---- palette sheet / slide-over (<1024px) ---- */}
+      {paletteOpen && (
+        <div className="cbt-sheet" onClick={() => setPaletteOpen(false)} role="presentation">
+          <div className="cbt-sheet-panel" onClick={(e) => e.stopPropagation()} role="dialog" aria-modal="true" aria-label="Question palette">
+            <div className="cbt-sheet-handle" aria-hidden="true" />
+            {railBody}
+          </div>
+        </div>
+      )}
 
-      {/* Submit confirmation */}
+      {/* ---- submit confirmation ---- */}
       {showSubmitConfirm && (
-        <div style={{ position: 'fixed', inset: 0, background: 'rgba(18,24,48,.5)', display: 'flex', justifyContent: 'center', alignItems: 'center', zIndex: 1000, padding: '16px' }}>
-          <div style={{ width: '100%', maxWidth: '380px', padding: '26px', borderRadius: '20px', background: '#fff', border: '1px solid #E2E7F0', display: 'flex', flexDirection: 'column', gap: '18px' }}>
-            <h3 style={{ margin: 0, font: '800 19px var(--font-display)', color: '#12203A' }}>{t('exam.confirm.title')}</h3>
-            <p style={{ margin: 0, color: '#5A6A85', fontSize: '0.9rem', lineHeight: 1.5 }}>
+        <div className="cbt-sheet" onClick={() => setShowSubmitConfirm(false)} role="presentation" style={{ alignItems: 'center', justifyContent: 'center', padding: '16px' }}>
+          <div
+            onClick={(e) => e.stopPropagation()}
+            role="dialog"
+            aria-modal="true"
+            style={{
+              width: '100%',
+              maxWidth: '400px',
+              padding: '24px',
+              borderRadius: '20px',
+              background: '#FFFFFF',
+              border: '1px solid #E4E8F0',
+              display: 'flex',
+              flexDirection: 'column',
+              gap: '16px',
+            }}
+          >
+            <h3 style={{ margin: 0, font: '700 19px var(--font-display)', letterSpacing: '-.03em', color: '#1D2130' }}>
+              {t('exam.confirm.title')}
+            </h3>
+            <p style={{ margin: 0, font: '400 13.5px/1.6 var(--font-body)', color: '#4A5060' }}>
               {t('exam.confirm.body')}{' '}
               {cNotVisited + cNotAnswered > 0 && t('exam.confirm.unanswered', { count: cNotVisited + cNotAnswered })}
             </p>
-            <div style={{ display: 'flex', gap: '12px', justifyContent: 'flex-end' }}>
-              <button onClick={() => setShowSubmitConfirm(false)} style={{ padding: '10px 18px', border: '1px solid #C9D2E0', borderRadius: '12px', background: '#fff', color: '#5A6A85', font: '700 13px var(--font-body)', cursor: 'pointer' }}>{t('exam.confirm.cancel')}</button>
-              <button onClick={handleManualSubmit} disabled={isSubmitting} style={{ padding: '10px 18px', border: 'none', borderRadius: '12px', background: '#0B9E6D', color: '#fff', font: '800 13px var(--font-body)', cursor: 'pointer', opacity: isSubmitting ? 0.6 : 1 }}>{isSubmitting ? t('exam.confirm.submitting') : t('exam.confirm.yes')}</button>
+            <div style={{ display: 'flex', gap: '10px', justifyContent: 'flex-end' }}>
+              <button
+                type="button"
+                onClick={() => setShowSubmitConfirm(false)}
+                className="cbt-btn"
+              >
+                {t('exam.confirm.cancel')}
+              </button>
+              <button
+                type="button"
+                onClick={handleManualSubmit}
+                disabled={isSubmitting}
+                className="cbt-next"
+                style={{ flex: 'none', padding: '0 22px', opacity: isSubmitting ? 0.6 : 1 }}
+              >
+                {isSubmitting ? t('exam.confirm.submitting') : t('exam.confirm.yes')}
+              </button>
             </div>
           </div>
         </div>

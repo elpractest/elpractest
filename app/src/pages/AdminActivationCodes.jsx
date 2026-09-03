@@ -1,5 +1,10 @@
 import React, { useState, useEffect } from 'react';
 import api from '../api';
+import Icon from '../components/Icon';
+import {
+  PageHead, TableCard, Toolbar, Table, Row, Cell, CellTitle, CellSub, StatusDot,
+  EmptyState, SkeletonRows, Modal, Field, FormGrid, Notice, Num,
+} from '../components/admin/ui';
 
 export default function AdminActivationCodes() {
   const [codes, setCodes] = useState([]);
@@ -89,185 +94,173 @@ export default function AdminActivationCodes() {
     }
   };
 
+  const COLUMNS = [
+    { key: 'code', label: 'Code', width: 'minmax(0,1fr)' },
+    { key: 'scope', label: 'Scope', width: 'minmax(0,1.3fr)' },
+    { key: 'uses', label: 'Redemptions', width: '130px' },
+    { key: 'expires', label: 'Expires', width: '120px', hideBelow: 'tablet' },
+    { key: 'status', label: 'Status', width: '130px' },
+  ];
+
   return (
-    <div style={{ display: 'flex', flexDirection: 'column', gap: '30px', width: '100%' }}>
-      
-      {/* Header */}
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-        <div>
-          <h1 style={{ fontSize: '2rem', margin: 0, fontWeight: 800 }}>Activation Codes</h1>
-          <p style={{ color: 'var(--text-secondary)', margin: '4px 0 0 0' }}>Bulk-generate and distribute alphanumeric course registration codes to students.</p>
-        </div>
-        <button 
-          onClick={() => setShowForm(true)} 
-          className="btn-primary"
-        >
-          🔑 Generate Codes
+    <div style={{ display: 'flex', flexDirection: 'column', gap: '18px', width: '100%' }}>
+
+      <PageHead
+        title="Activation codes"
+        subtitle="Bulk-generate alphanumeric codes students redeem to enrol themselves."
+      >
+        <button type="button" onClick={() => setShowForm(true)} className="btn-primary">
+          <Icon name="plus" size={16} strokeWidth={2.4} />
+          Generate codes
         </button>
-      </div>
+      </PageHead>
 
-      {success && (
-        <div style={{ padding: '16px', background: 'var(--success-bg)', border: '1px solid var(--success)', borderRadius: '8px', color: 'var(--success)' }}>
-          {success}
-        </div>
-      )}
+      {success && <Notice tone="success" icon="check-circle" onDismiss={() => setSuccess('')}>{success}</Notice>}
+      {error && <Notice tone="danger" icon="alert" onDismiss={() => setError('')}>{error}</Notice>}
 
-      {error && (
-        <div style={{ padding: '16px', background: 'var(--danger-bg)', border: '1px solid var(--danger)', borderRadius: '8px', color: 'var(--danger)' }}>
-          {error}
-        </div>
-      )}
+      <TableCard>
+        <Toolbar
+          trailing={
+            !loading && (
+              <span style={{ font: '500 12.5px var(--font-body)', color: 'var(--muted)' }}>
+                <Num>{codes.length}</Num> issued
+              </span>
+            )
+          }
+        >
+          <span style={{ font: '600 12.5px var(--font-body)', color: 'var(--tx2)' }}>All codes</span>
+        </Toolbar>
 
-      {/* Codes Table List */}
-      <div className="glass-panel" style={{ padding: '24px', overflowX: 'auto' }}>
-        <h2 style={{ fontSize: '1.2rem', margin: '0 0 16px 0', fontWeight: 700 }}>Available Activation Codes</h2>
+        {loading && codes.length === 0 ? (
+          <SkeletonRows />
+        ) : codes.length === 0 ? (
+          <EmptyState
+            icon="key"
+            message="No activation codes yet. Generate a batch and hand them to students who paid offline."
+            action={
+              <button type="button" onClick={() => setShowForm(true)} className="btn-primary">
+                <Icon name="plus" size={16} strokeWidth={2.4} />
+                Generate codes
+              </button>
+            }
+          />
+        ) : (
+          <Table columns={COLUMNS}>
+            {codes.map((code) => {
+              const isExpired = code.expires_at && new Date(code.expires_at) < new Date();
+              const isFull = code.times_used >= code.max_uses;
+              const isValid = !isExpired && !isFull;
 
-        <table style={{ width: '100%', borderCollapse: 'collapse', textAlign: 'left' }}>
-          <thead>
-            <tr style={{ borderBottom: '1px solid var(--border-color)', color: 'var(--text-secondary)', fontSize: '0.9rem' }}>
-              <th style={{ padding: '12px 16px' }}>Code</th>
-              <th style={{ padding: '12px 16px' }}>Course / Batch Scope</th>
-              <th style={{ padding: '12px 16px' }}>Redemptions (Times Used)</th>
-              <th style={{ padding: '12px 16px' }}>Expires At</th>
-              <th style={{ padding: '12px 16px' }}>Status</th>
-            </tr>
-          </thead>
-          <tbody>
-            {loading && codes.length === 0 ? (
-              <tr>
-                <td colSpan={5} style={{ textAlign: 'center', padding: '40px', color: 'var(--text-secondary)' }}>Loading activation codes...</td>
-              </tr>
-            ) : codes.length === 0 ? (
-              <tr>
-                <td colSpan={5} style={{ textAlign: 'center', padding: '40px', color: 'var(--text-secondary)' }}>No activation codes generated yet.</td>
-              </tr>
-            ) : (
-              codes.map((code) => {
-                const isExpired = code.expires_at && new Date(code.expires_at) < new Date();
-                const isFull = code.times_used >= code.max_uses;
-                const isValid = !isExpired && !isFull;
-                
-                return (
-                  <tr key={code.id} style={{ borderBottom: '1px solid var(--surface-2)', fontSize: '0.9rem' }}>
-                    <td style={{ padding: '16px', fontFamily: 'var(--font-mono)', fontWeight: 'bold', fontSize: '1.1rem', color: 'var(--accent-color)' }}>
+              return (
+                <Row key={code.id}>
+                  <Cell label="Code">
+                    <Num style={{ fontSize: '14px', fontWeight: 700, color: 'var(--tx)', letterSpacing: '.04em' }}>
                       {code.code}
-                    </td>
-                    <td style={{ padding: '16px' }}>
-                      <div>{code.course?.title}</div>
-                      {code.batch && (
-                        <div style={{ fontSize: '0.8rem', color: 'var(--text-secondary)', marginTop: '2px' }}>
-                          Batch: {code.batch.name}
-                        </div>
-                      )}
-                    </td>
-                    <td style={{ padding: '16px' }}>
-                      <span style={{ fontWeight: 'bold' }}>{code.times_used}</span> / {code.max_uses} redemptions
-                    </td>
-                    <td style={{ padding: '16px' }}>
+                    </Num>
+                  </Cell>
+                  <Cell label="Scope">
+                    <CellTitle>{code.course?.title}</CellTitle>
+                    {code.batch && <CellSub>{code.batch.name}</CellSub>}
+                  </Cell>
+                  <Cell label="Redemptions">
+                    <Num style={{ fontSize: '13px', color: 'var(--tx)' }}>{code.times_used}</Num>
+                    <span style={{ font: '500 12px var(--font-mono)', color: 'var(--muted)' }}> / {code.max_uses}</span>
+                  </Cell>
+                  <Cell label="Expires" hideBelow="tablet">
+                    <span style={{ font: '500 12.5px var(--font-body)', color: 'var(--tx2)' }}>
                       {code.expires_at ? new Date(code.expires_at).toLocaleDateString() : 'Never'}
-                    </td>
-                    <td style={{ padding: '16px' }}>
-                      <span 
-                        style={{ 
-                          fontSize: '0.75rem', 
-                          fontWeight: 'bold', 
-                          padding: '2px 8px', 
-                          borderRadius: '4px',
-                          background: isValid ? 'var(--success-bg)' : 'var(--danger-bg)',
-                          color: isValid ? 'var(--success)' : 'var(--danger)'
-                        }}
-                      >
-                        {isValid ? 'Valid' : isExpired ? 'Expired' : 'Max Redeemed'}
-                      </span>
-                    </td>
-                  </tr>
-                );
-              })
-            )}
-          </tbody>
-        </table>
-      </div>
+                    </span>
+                  </Cell>
+                  <Cell label="Status">
+                    <StatusDot tone={isValid ? 'success' : isExpired ? 'danger' : 'reward'}>
+                      {isValid ? 'Valid' : isExpired ? 'Expired' : 'Fully redeemed'}
+                    </StatusDot>
+                  </Cell>
+                </Row>
+              );
+            })}
+          </Table>
+        )}
+      </TableCard>
 
-      {/* Code Generation Form Modal */}
+      {/* Generator — a modal on desktop, a bottom sheet on a phone */}
       {showForm && (
-        <div style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, background: 'var(--overlay)', display: 'flex', justifyContent: 'center', alignItems: 'center', zIndex: 1000, padding: '20px' }}>
-          <div className="glass-panel" style={{ width: '100%', maxWidth: '480px', padding: '30px', display: 'flex', flexDirection: 'column', gap: '20px' }}>
-            <h3 style={{ fontSize: '1.3rem', margin: 0, fontWeight: 700 }}>
-              Bulk Code Generator
-            </h3>
-            
-            <form onSubmit={handleGenerateSubmit} style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
-              <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
-                <label style={{ fontSize: '0.85rem', color: 'var(--text-secondary)' }}>Target Course</label>
-                <select 
-                  value={form.course_id} 
-                  onChange={(e) => setForm({ ...form, course_id: e.target.value, batch_id: '' })}
+        <Modal
+          title="Bulk code generator"
+          description="Codes are unique, single-course and redeemable until they expire or run out of uses."
+          onClose={() => setShowForm(false)}
+          footer={
+            <>
+              <button type="button" onClick={() => setShowForm(false)} className="btn-secondary">Cancel</button>
+              <button type="submit" form="code-gen-form" className="btn-primary">Generate</button>
+            </>
+          }
+        >
+          <form id="code-gen-form" onSubmit={handleGenerateSubmit} style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
+            <Field label="Target course" htmlFor="code-course">
+              <select
+                id="code-course"
+                value={form.course_id}
+                onChange={(e) => setForm({ ...form, course_id: e.target.value, batch_id: '' })}
+                className="form-input"
+                required
+              >
+                <option value="">Select a course</option>
+                {courses.map((c) => <option key={c.id} value={c.id}>{c.title}</option>)}
+              </select>
+            </Field>
+
+            <Field label="Target batch" hint="Leave unset to let the code work across every batch." htmlFor="code-batch">
+              <select
+                id="code-batch"
+                value={form.batch_id}
+                onChange={(e) => setForm({ ...form, batch_id: e.target.value })}
+                className="form-input"
+                disabled={!form.course_id}
+              >
+                <option value="">All batches</option>
+                {batches.map((b) => <option key={b.id} value={b.id}>{b.name}</option>)}
+              </select>
+            </Field>
+
+            <FormGrid min="160px">
+              <Field label="How many codes" htmlFor="code-qty">
+                <input
+                  id="code-qty"
+                  type="number"
+                  value={form.quantity}
+                  onChange={(e) => setForm({ ...form, quantity: parseInt(e.target.value) })}
                   className="form-input"
+                  min={1}
+                  max={100}
                   required
-                >
-                  <option value="">Select Course</option>
-                  {courses.map(c => <option key={c.id} value={c.id}>{c.title}</option>)}
-                </select>
-              </div>
-
-              <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
-                <label style={{ fontSize: '0.85rem', color: 'var(--text-secondary)' }}>Target Batch (Optional)</label>
-                <select 
-                  value={form.batch_id} 
-                  onChange={(e) => setForm({ ...form, batch_id: e.target.value })}
-                  className="form-input"
-                  disabled={!form.course_id}
-                >
-                  <option value="">All Batches (No Scope)</option>
-                  {batches.map(b => <option key={b.id} value={b.id}>{b.name}</option>)}
-                </select>
-              </div>
-
-              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px' }}>
-                <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
-                  <label style={{ fontSize: '0.85rem', color: 'var(--text-secondary)' }}>Quantity to Generate</label>
-                  <input 
-                    type="number" 
-                    value={form.quantity} 
-                    onChange={(e) => setForm({ ...form, quantity: parseInt(e.target.value) })} 
-                    className="form-input" 
-                    min={1} 
-                    max={100}
-                    required 
-                  />
-                </div>
-                <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
-                  <label style={{ fontSize: '0.85rem', color: 'var(--text-secondary)' }}>Max Uses Per Code</label>
-                  <input 
-                    type="number" 
-                    value={form.max_uses} 
-                    onChange={(e) => setForm({ ...form, max_uses: parseInt(e.target.value) })} 
-                    className="form-input" 
-                    min={1} 
-                    required 
-                  />
-                </div>
-              </div>
-
-              <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
-                <label style={{ fontSize: '0.85rem', color: 'var(--text-secondary)' }}>Expiration Date (Optional)</label>
-                <input 
-                  type="date" 
-                  value={form.expires_at} 
-                  onChange={(e) => setForm({ ...form, expires_at: e.target.value })} 
-                  className="form-input" 
                 />
-              </div>
+              </Field>
+              <Field label="Max uses per code" htmlFor="code-uses">
+                <input
+                  id="code-uses"
+                  type="number"
+                  value={form.max_uses}
+                  onChange={(e) => setForm({ ...form, max_uses: parseInt(e.target.value) })}
+                  className="form-input"
+                  min={1}
+                  required
+                />
+              </Field>
+            </FormGrid>
 
-              <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '12px', marginTop: '10px' }}>
-                <button type="button" onClick={() => setShowForm(false)} className="btn-secondary" style={{ padding: '8px 16px', fontSize: '0.9rem' }}>Cancel</button>
-                <button type="submit" className="btn-primary" style={{ padding: '8px 20px', fontSize: '0.9rem' }}>Generate</button>
-              </div>
-            </form>
-          </div>
-        </div>
+            <Field label="Expires on" hint="Optional — leave empty for codes that never lapse." htmlFor="code-exp">
+              <input
+                id="code-exp"
+                type="date"
+                value={form.expires_at}
+                onChange={(e) => setForm({ ...form, expires_at: e.target.value })}
+                className="form-input"
+              />
+            </Field>
+          </form>
+        </Modal>
       )}
-
     </div>
   );
 }

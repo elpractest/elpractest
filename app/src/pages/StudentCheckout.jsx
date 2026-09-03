@@ -1,5 +1,6 @@
 import { useCallback, useState, useEffect } from "react";
 import api from "../api";
+import Icon from "../components/Icon";
 import { trackEvent } from "../lib/analytics";
 
 /**
@@ -210,9 +211,10 @@ export default function StudentCheckout({ batch, product, onClose, onEnrolled, u
 
   if (status === "success") {
     return (
-      <div style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, background: 'var(--overlay)', display: 'flex', justifyContent: 'center', alignItems: 'center', zIndex: 1000, padding: '20px' }}>
-        <div className="glass-panel" style={{ width: '100%', maxWidth: '400px', padding: '32px', textAlign: 'center', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '16px' }}>
-          <div style={{ fontSize: '3rem', margin: '0 auto 8px auto' }}>🎉</div>
+      <div className="sheet-overlay" style={{ zIndex: 1000 }}>
+        <div className="sheet-panel" style={{ maxWidth: '400px', padding: '28px', textAlign: 'center', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '16px' }}>
+          <div className="sheet-handle" aria-hidden="true" />
+          <span style={{ display: 'grid', placeItems: 'center', width: '56px', height: '56px', margin: '0 auto 10px', borderRadius: '999px', background: 'var(--success-bg)', color: 'var(--success)' }}><Icon name="check-circle" size={26} /></span>
           <h2 style={{ fontSize: '1.25rem', fontWeight: 700, margin: 0, color: 'var(--text-primary)' }}>You're enrolled</h2>
           <p style={{ fontSize: '0.9rem', color: 'var(--text-secondary)', margin: 0 }}>
             {item.title} is now in your library.
@@ -230,19 +232,16 @@ export default function StudentCheckout({ batch, product, onClose, onEnrolled, u
   }
 
   return (
-    <div style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, background: 'var(--overlay)', display: 'flex', justifyContent: 'center', alignItems: 'center', zIndex: 1000, padding: '20px' }}>
-      <div className="glass-panel" style={{ width: '100%', maxWidth: '400px', padding: '32px', display: 'flex', flexDirection: 'column', gap: '20px' }}>
+    <div className="sheet-overlay" style={{ zIndex: 1000 }}>
+      <div className="sheet-panel" style={{ maxWidth: '400px', padding: '28px', display: 'flex', flexDirection: 'column', gap: '20px' }}>
+        <div className="sheet-handle" aria-hidden="true" />
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
           <div>
             <h2 style={{ fontSize: '1.25rem', fontWeight: 700, margin: '0 0 4px 0' }}>{item.title}</h2>
             <p style={{ fontSize: '0.9rem', color: 'var(--text-secondary)', margin: 0 }}>{item.subtitle}</p>
           </div>
-          <button 
-            onClick={onClose} 
-            style={{ background: 'none', border: 'none', color: 'var(--text-secondary)', cursor: 'pointer', fontSize: '1.2rem', padding: '4px' }}
-            aria-label="Close"
-          >
-            ✕
+          <button onClick={onClose} className="adm-rowaction" aria-label="Close">
+            <Icon name="x" size={17} />
           </button>
         </div>
 
@@ -251,7 +250,8 @@ export default function StudentCheckout({ batch, product, onClose, onEnrolled, u
             <button
               type="button"
               onClick={() => setShowCouponInput((s) => !s)}
-              style={{ background: 'none', border: 'none', color: 'var(--accent-color)', cursor: 'pointer', fontSize: '0.85rem', fontWeight: 600, padding: 0, textAlign: 'left', width: 'fit-content' }}
+              className="link-btn"
+              style={{ width: 'fit-content' }}
             >
               Have a coupon?
             </button>

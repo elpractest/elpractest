@@ -24,12 +24,14 @@ export function withDemo(real, demo) {
   return USE_DEMO_DATA ? demo : real;
 }
 
-/* ---- gradients used by promo banners & course/store card headers ---- */
+/* ---- card art for promo banners & course/store headers ----
+   Signal has no dark gradient plates: a card header is a flat soft tint
+   from the token palette, so it themes with everything else. */
 export const GRAD = {
-  blue: 'linear-gradient(120deg,#10243F,#0B1830)',
-  gold: 'linear-gradient(120deg,#3A2A08,#1A1206)',
-  violet: 'linear-gradient(120deg,#241046,#140A2A)',
-  green: 'linear-gradient(120deg,#0B3320,#052015)',
+  blue: 'var(--primary-soft)',
+  gold: 'var(--reward-bg)',
+  violet: 'var(--ai-bg)',
+  green: 'var(--success-bg)',
 };
 
 /* ---- Home: promo banner carousel ---- */
@@ -124,7 +126,7 @@ export const demoNotifs = [
   { title: 'Activation approved', body: 'Your request for SBI PO 2026 Prelims was approved. Redeem your code now.', time: '1h', hue: 'gold', icon: 'key' },
   { title: 'New mock added', body: 'SSC CGL 2026 Tier-1 Mock #25 is live. Attempt before Sunday for rank.', time: '5h', hue: 'blue', icon: 'target' },
   { title: 'Scholarship test', body: 'Only 2 days left to attempt the free Practest Scholarship Test.', time: '1d', hue: 'violet', icon: 'graduation-cap' },
-  { title: 'Streak: 7 days 🔥', body: 'You studied 7 days in a row. Keep it going for a bonus mock!', time: '2d', hue: 'red', icon: 'zap' },
+  { title: 'Streak: 7 days', body: 'You studied 7 days in a row. Keep it going for a bonus mock!', time: '2d', hue: 'red', icon: 'zap' },
 ];
 
 /* ---- Search ---- */

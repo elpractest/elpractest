@@ -36,7 +36,7 @@ export default function Notifications() {
         <button onClick={() => navigate(-1)} aria-label={t('common.back')} className="chrome-btn" style={{ background: 'var(--surf)', border: '1px solid var(--line2)', color: 'var(--tx2)' }}>
           <Icon name="arrow-left" size={20} />
         </button>
-        <h1 style={{ margin: 0, font: '800 19px var(--font-display)', color: 'var(--tx)' }}>{t('notif.title')}</h1>
+        <h1 style={{ margin: 0, font: '700 19px var(--font-display)', letterSpacing: '-.02em', color: 'var(--tx)' }}>{t('notif.title')}</h1>
       </div>
 
       {loading ? (

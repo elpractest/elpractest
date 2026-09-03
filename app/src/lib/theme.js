@@ -17,8 +17,8 @@
 const THEME_KEY = 'practest-theme';
 
 function readTheme() {
-  if (typeof document === 'undefined') return 'dark';
-  return document.documentElement.dataset.theme === 'light' ? 'light' : 'dark';
+  if (typeof document === 'undefined') return 'light';
+  return document.documentElement.dataset.theme === 'dark' ? 'dark' : 'light';
 }
 
 let state = { theme: readTheme() };
@@ -37,7 +37,7 @@ function getSnapshot() {
 }
 
 export function setTheme(next) {
-  const theme = next === 'light' ? 'light' : 'dark';
+  const theme = next === 'dark' ? 'dark' : 'light';
   if (typeof document !== 'undefined') document.documentElement.dataset.theme = theme;
   try {
     localStorage.setItem(THEME_KEY, theme);
@@ -63,33 +63,36 @@ export function toggleTheme() {
    per theme so light mode is not washed out. Mirrors the mockup's TN.
    ------------------------------------------------------------ */
 const TINTS = {
+  /* gold is the REWARD hue only — streaks, badges, rank-ups. Never a nav
+     state, never a button. Everything that used to be "gold as brand" now
+     asks for `blue`, which is the Signal ultramarine primary. */
   gold: {
-    dark: { c: '#FFC968', bg: 'rgba(245,166,35,.16)', bd: 'rgba(245,166,35,.3)' },
-    light: { c: '#A85F00', bg: 'rgba(245,166,35,.2)', bd: 'rgba(168,95,0,.35)' },
+    dark: { c: '#F0B451', bg: 'rgba(240,180,81,.13)', bd: 'rgba(240,180,81,.34)' },
+    light: { c: '#96601A', bg: '#FDF3E2', bd: '#F0D9AC' },
   },
   blue: {
-    dark: { c: '#8FB0FF', bg: 'rgba(59,111,246,.16)', bd: 'rgba(59,111,246,.3)' },
-    light: { c: '#2450CC', bg: 'rgba(59,111,246,.14)', bd: 'rgba(36,80,204,.32)' },
+    dark: { c: '#7C8CFF', bg: 'rgba(124,140,255,.14)', bd: 'rgba(124,140,255,.34)' },
+    light: { c: '#2E3FCC', bg: '#EAECFD', bd: '#C9CFFA' },
   },
   violet: {
-    dark: { c: '#B9A6FF', bg: 'rgba(139,92,246,.16)', bd: 'rgba(139,92,246,.3)' },
-    light: { c: '#6A34DE', bg: 'rgba(139,92,246,.14)', bd: 'rgba(106,52,222,.32)' },
+    dark: { c: '#A98BFF', bg: 'rgba(169,139,255,.14)', bd: 'rgba(169,139,255,.32)' },
+    light: { c: '#6134C9', bg: '#EFEAFB', bd: '#DACEF6' },
   },
   green: {
-    dark: { c: '#3DDBA9', bg: 'rgba(18,185,129,.16)', bd: 'rgba(18,185,129,.3)' },
-    light: { c: '#08805A', bg: 'rgba(18,185,129,.16)', bd: 'rgba(8,128,90,.32)' },
+    dark: { c: '#26E0A6', bg: 'rgba(38,224,166,.13)', bd: 'rgba(38,224,166,.32)' },
+    light: { c: '#0E7C5A', bg: '#E5F2EC', bd: '#BFE0D2' },
   },
   red: {
-    dark: { c: '#FB8F92', bg: 'rgba(229,72,77,.16)', bd: 'rgba(229,72,77,.3)' },
-    light: { c: '#CB2F37', bg: 'rgba(229,72,77,.13)', bd: 'rgba(203,47,55,.3)' },
+    dark: { c: '#FF7B7B', bg: 'rgba(255,123,123,.13)', bd: 'rgba(255,123,123,.32)' },
+    light: { c: '#C42B2B', bg: '#FCECEB', bd: '#F2C9C7' },
   },
   sky: {
-    dark: { c: '#7DD3FC', bg: 'rgba(14,165,233,.16)', bd: 'rgba(14,165,233,.3)' },
-    light: { c: '#0A78B4', bg: 'rgba(14,165,233,.15)', bd: 'rgba(10,120,180,.3)' },
+    dark: { c: '#8FC7FF', bg: 'rgba(96,165,250,.14)', bd: 'rgba(96,165,250,.3)' },
+    light: { c: '#1D5FA8', bg: '#E7F0FB', bd: '#C6DCF3' },
   },
   neutral: {
-    dark: { c: '#C7D0E4', bg: 'rgba(255,255,255,.08)', bd: 'rgba(255,255,255,.14)' },
-    light: { c: '#465065', bg: 'rgba(18,22,35,.07)', bd: 'rgba(18,22,35,.14)' },
+    dark: { c: '#C0C7D8', bg: 'rgba(255,255,255,.06)', bd: 'rgba(255,255,255,.12)' },
+    light: { c: '#3A425A', bg: '#F2F4F9', bd: '#E1E5EF' },
   },
 };
 
@@ -99,7 +102,7 @@ const TINTS = {
  *   bg — tile background tint
  *   bd — tile border
  */
-export function tint(hue, isDark = true) {
+export function tint(hue, isDark = false) {
   const t = TINTS[hue] || TINTS.neutral;
   return isDark ? t.dark : t.light;
 }

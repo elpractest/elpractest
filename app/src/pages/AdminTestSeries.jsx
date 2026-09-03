@@ -1,6 +1,12 @@
 import React, { useState, useEffect } from 'react';
 import api from '../api';
+import Icon from '../components/Icon';
 import { useExamCategories } from '../lib/examCategories';
+import {
+  PageHead, TableCard, Toolbar, Chip, Table, Row, Cell, CellTitle, CellSub, RowChevron,
+  StatusDot, Badge, EmptyState, SkeletonRows, Modal, Drawer, Field, FormGrid, FormSection,
+  Notice, Num,
+} from '../components/admin/ui';
 
 export default function AdminTestSeries() {
   const examCategories = useExamCategories();
@@ -18,6 +24,9 @@ export default function AdminTestSeries() {
   const [editingSeries, setEditingSeries] = useState(null);
   const [buildingSeries, setBuildingSeries] = useState(null);
   const [assigningSeries, setAssigningSeries] = useState(null);
+  const [detailSeries, setDetailSeries] = useState(null);
+  const [pendingDelete, setPendingDelete] = useState(null);
+  const [publishFilter, setPublishFilter] = useState('all');
 
   // Form states
   const [formData, setFormData] = useState({
@@ -121,7 +130,6 @@ export default function AdminTestSeries() {
   };
 
   const handleDelete = async (series) => {
-    if (!window.confirm(`Delete test series "${series.title}"? Attached tests will be detached.`)) return;
     setSaving(true);
     try {
       await api.delete(`/api/admin/test-series/${series.id}`);
@@ -260,135 +268,240 @@ export default function AdminTestSeries() {
     });
   };
 
-  if (loading) {
-    return (
-      <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', height: '200px', color: 'var(--text-secondary)' }}>
-        <span>⏳ Loading Test Series catalog...</span>
-      </div>
-    );
-  }
+  const COLUMNS = [
+    { key: 'title', label: 'Series', width: 'minmax(0,1.8fr)' },
+    { key: 'exam', label: 'Exam', width: '110px', hideBelow: 'tablet' },
+    { key: 'tests', label: 'Tests', width: '110px' },
+    { key: 'status', label: 'Status', width: '110px' },
+    { key: 'go', label: '', width: '32px' },
+  ];
+
+  const visible = seriesList.filter((x) =>
+    publishFilter === 'all' ? true : publishFilter === 'live' ? x.is_published : !x.is_published,
+  );
+  const liveCount = seriesList.filter((x) => x.is_published).length;
+
+  const openDetail = (series) => {
+    setDetailSeries(series);
+    setError('');
+    setSuccess('');
+  };
 
   return (
-    <div style={{ maxWidth: '1100px', margin: '0 auto' }}>
-      
-      {/* Page Header */}
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '32px' }}>
-        <div>
-          <h1 style={{ fontSize: '2rem', fontWeight: 800, margin: '0 0 8px 0', color: 'var(--text-primary)', fontFamily: 'var(--font-display)' }}>
-            Test Series &amp; Builder
-          </h1>
-          <p style={{ margin: 0, color: 'var(--text-secondary)' }}>
-            Build reusable master test series, order tests into guided Study Paths, and assign to batch cohorts.
-          </p>
-        </div>
+    <div style={{ display: 'flex', flexDirection: 'column', gap: '18px', width: '100%' }}>
+
+      <PageHead
+        title="Test series"
+        subtitle="Reusable master series: order tests into a guided study path, then assign the series to batch cohorts."
+      >
         <button
+          type="button"
           onClick={() => { resetForm(); setEditingSeries(null); setShowCreateModal(true); }}
           className="btn-primary"
-          style={{ display: 'flex', alignItems: 'center', gap: '8px', padding: '12px 20px', fontWeight: 700 }}
         >
-          <span>✨ Create Test Series</span>
+          <Icon name="plus" size={16} strokeWidth={2.4} />
+          New series
         </button>
-      </div>
+      </PageHead>
 
-      {error && (
-        <div style={{ background: 'var(--danger-bg)', border: '1px solid var(--danger-border)', padding: '12px 16px', borderRadius: '8px', color: 'var(--danger-text)', marginBottom: '24px', fontSize: '0.9rem' }}>
-          ⚠️ {error}
-        </div>
-      )}
+      {error && <Notice tone="danger" icon="alert" onDismiss={() => setError('')}>{error}</Notice>}
+      {success && <Notice tone="success" icon="check-circle" onDismiss={() => setSuccess('')}>{success}</Notice>}
 
-      {success && (
-        <div style={{ background: 'var(--success-bg)', border: '1px solid var(--success-border)', padding: '12px 16px', borderRadius: '8px', color: 'var(--success-text)', marginBottom: '24px', fontSize: '0.9rem' }}>
-          ✅ {success}
-        </div>
-      )}
+      <TableCard>
+        <Toolbar
+          trailing={
+            !loading && (
+              <span style={{ font: '500 12.5px var(--font-body)', color: 'var(--muted)' }}>
+                <Num>{liveCount}</Num> live of <Num>{seriesList.length}</Num>
+              </span>
+            )
+          }
+        >
+          <Chip active={publishFilter === 'all'} onClick={() => setPublishFilter('all')}>All</Chip>
+          <Chip active={publishFilter === 'live'} onClick={() => setPublishFilter('live')}>Published</Chip>
+          <Chip active={publishFilter === 'draft'} onClick={() => setPublishFilter('draft')}>Draft</Chip>
+        </Toolbar>
 
-      {/* Test Series Grid */}
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(320px, 1fr))', gap: '24px' }}>
-        {seriesList.length === 0 ? (
-          <div className="glass-panel" style={{ gridColumn: '1 / -1', padding: '48px', textAlign: 'center', color: 'var(--text-secondary)' }}>
-            🎯 No Test Series created yet. Click <strong>Create Test Series</strong> to get started.
-          </div>
+        {loading ? (
+          <SkeletonRows />
+        ) : visible.length === 0 ? (
+          <EmptyState
+            icon="target"
+            message={
+              seriesList.length === 0
+                ? 'No test series yet. Create one, attach tests in the builder, then publish it.'
+                : 'No series in that state.'
+            }
+            action={
+              seriesList.length === 0 && (
+                <button
+                  type="button"
+                  onClick={() => { resetForm(); setEditingSeries(null); setShowCreateModal(true); }}
+                  className="btn-primary"
+                >
+                  <Icon name="plus" size={16} strokeWidth={2.4} />
+                  New series
+                </button>
+              )
+            }
+          />
         ) : (
-          seriesList.map((series) => (
-            <div key={series.id} className="glass-panel" style={{ padding: '24px', display: 'flex', flexDirection: 'column', justifyContent: 'space-between' }}>
-              <div>
-                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '12px' }}>
-                  <span style={{ fontSize: '0.75rem', fontWeight: 700, padding: '4px 10px', borderRadius: '20px', background: 'var(--accent-soft)', color: 'var(--accent-color)', textTransform: 'uppercase', letterSpacing: '0.5px' }}>
-                    {series.exam_category}
-                  </span>
-                  <span style={{ fontSize: '0.75rem', fontWeight: 700, padding: '4px 10px', borderRadius: '20px', background: series.is_published ? 'var(--success-bg)' : 'var(--surface-2)', color: series.is_published ? 'var(--success)' : 'var(--text-secondary)' }}>
+          <Table columns={COLUMNS}>
+            {visible.map((series) => (
+              <Row key={series.id} selected={detailSeries?.id === series.id} onClick={() => openDetail(series)}>
+                <Cell label="Series">
+                  <CellTitle>{series.title}</CellTitle>
+                  <CellSub>{series.course ? series.course.title : 'Standalone series'}</CellSub>
+                </Cell>
+                <Cell label="Exam" hideBelow="tablet">
+                  <Badge tone="primary">{series.exam_category}</Badge>
+                </Cell>
+                <Cell label="Tests">
+                  <Num style={{ fontSize: '13px', color: 'var(--tx)' }}>{series.total_tests || 0}</Num>
+                  <CellSub>{series.free_tests_count || 0} free</CellSub>
+                </Cell>
+                <Cell label="Status">
+                  <StatusDot tone={series.is_published ? 'success' : 'reward'}>
                     {series.is_published ? 'Published' : 'Draft'}
-                  </span>
+                  </StatusDot>
+                </Cell>
+                <Cell align="right">
+                  <RowChevron onClick={() => openDetail(series)} label="Open series" />
+                </Cell>
+              </Row>
+            ))}
+          </Table>
+        )}
+      </TableCard>
+
+      {/* ---- detail drawer: every row action lives here ---- */}
+      {detailSeries && (
+        <Drawer
+          title={detailSeries.title}
+          subtitle={`${detailSeries.exam_category} · ${detailSeries.course ? detailSeries.course.title : 'Standalone'}`}
+          onClose={() => setDetailSeries(null)}
+          footer={
+            <>
+              <button
+                type="button"
+                className="btn-secondary"
+                style={{ color: 'var(--danger)', borderColor: 'var(--danger-border)' }}
+                onClick={() => setPendingDelete(detailSeries)}
+              >
+                <Icon name="trash" size={15} />
+                Delete
+              </button>
+              <button
+                type="button"
+                className="btn-primary"
+                disabled={saving}
+                onClick={() => { const target = detailSeries; setDetailSeries(null); openBuilder(target); }}
+              >
+                Open builder
+              </button>
+            </>
+          }
+        >
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '18px' }}>
+            <p style={{ margin: 0, font: '400 13.5px/1.6 var(--font-body)', color: 'var(--tx2)' }}>
+              {detailSeries.description || 'No description provided.'}
+            </p>
+
+            <div style={{ background: 'var(--card2)', border: '1px solid var(--line)', borderRadius: '14px', padding: '14px' }}>
+              {[
+                ['Tests attached', detailSeries.total_tests || 0],
+                ['Free to attempt', detailSeries.free_tests_count || 0],
+                ['Sort order', detailSeries.sort_order ?? 0],
+              ].map(([label, value], i) => (
+                <div
+                  key={label}
+                  style={{
+                    display: 'flex',
+                    justifyContent: 'space-between',
+                    gap: '12px',
+                    marginTop: i === 0 ? 0 : '9px',
+                    font: '400 12.5px var(--font-body)',
+                    color: 'var(--muted)',
+                  }}
+                >
+                  <span>{label}</span>
+                  <Num style={{ color: 'var(--tx)', fontSize: '12.5px' }}>{value}</Num>
                 </div>
-
-                <h3 style={{ fontSize: '1.2rem', fontWeight: 700, margin: '0 0 8px 0', color: 'var(--text-primary)' }}>
-                  {series.title}
-                </h3>
-                <p style={{ fontSize: '0.85rem', color: 'var(--text-secondary)', margin: '0 0 16px 0', lineHeight: 1.5, display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical', overflow: 'hidden' }}>
-                  {series.description || 'No description provided.'}
-                </p>
-
-                <div style={{ display: 'flex', gap: '16px', fontSize: '0.8rem', color: 'var(--text-secondary)', borderTop: '1px solid var(--border-color)', paddingTop: '12px', marginBottom: '20px' }}>
-                  <span>📚 <strong>{series.total_tests || 0}</strong> Tests</span>
-                  <span>🎁 <strong>{series.free_tests_count || 0}</strong> Free</span>
-                  {series.course && <span>🏷️ {series.course.title}</span>}
-                </div>
-              </div>
-
-              {/* Action Buttons */}
-              <div style={{ display: 'flex', flexWrap: 'wrap', gap: '8px' }}>
-                <button
-                  onClick={() => openBuilder(series)}
-                  className="btn-secondary"
-                  style={{ flex: 1, padding: '8px 12px', fontSize: '0.82rem', fontWeight: 600 }}
-                >
-                  🛠️ Builder
-                </button>
-                <button
-                  onClick={() => openAssignModal(series)}
-                  className="btn-secondary"
-                  style={{ flex: 1, padding: '8px 12px', fontSize: '0.82rem', fontWeight: 600, borderColor: 'var(--accent-border)', color: 'var(--accent-color)' }}
-                >
-                  📌 Assign
-                </button>
-                <button
-                  onClick={() => openEditModal(series)}
-                  className="btn-secondary"
-                  style={{ padding: '8px 12px', fontSize: '0.82rem', fontWeight: 600 }}
-                >
-                  ✏️ Edit
-                </button>
-                <button
-                  onClick={() => handlePublishToggle(series)}
-                  className="btn-secondary"
-                  style={{ padding: '8px 12px', fontSize: '0.82rem' }}
-                >
-                  {series.is_published ? 'Unpublish' : 'Publish'}
-                </button>
-                <button
-                  onClick={() => handleDelete(series)}
-                  className="btn-secondary"
-                  style={{ padding: '8px 12px', fontSize: '0.82rem', color: 'var(--danger-text)' }}
-                >
-                  🗑️
-                </button>
+              ))}
+              <div
+                style={{
+                  display: 'flex',
+                  justifyContent: 'space-between',
+                  alignItems: 'center',
+                  gap: '12px',
+                  marginTop: '9px',
+                  font: '400 12.5px var(--font-body)',
+                  color: 'var(--muted)',
+                }}
+              >
+                <span>Status</span>
+                <StatusDot tone={detailSeries.is_published ? 'success' : 'reward'}>
+                  {detailSeries.is_published ? 'Published' : 'Draft'}
+                </StatusDot>
               </div>
             </div>
-          ))
-        )}
-      </div>
 
-      {/* CREATE / EDIT MODAL */}
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '9px' }}>
+              <button
+                type="button"
+                className="btn-secondary"
+                onClick={() => { const target = detailSeries; setDetailSeries(null); openAssignModal(target); }}
+              >
+                <Icon name="users" size={15} />
+                Assign to batches
+              </button>
+              <button
+                type="button"
+                className="btn-secondary"
+                onClick={() => { const target = detailSeries; setDetailSeries(null); openEditModal(target); }}
+              >
+                <Icon name="edit" size={15} />
+                Edit details
+              </button>
+              <button
+                type="button"
+                className="btn-secondary"
+                disabled={saving}
+                onClick={() => { handlePublishToggle(detailSeries); setDetailSeries(null); }}
+              >
+                <Icon name={detailSeries.is_published ? 'eye-off' : 'check-circle'} size={15} />
+                {detailSeries.is_published ? 'Unpublish' : 'Publish'}
+              </button>
+            </div>
+          </div>
+        </Drawer>
+      )}
+
+      {/* ---- create / edit ---- */}
       {showCreateModal && (
-        <div style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, background: 'var(--overlay)', backdropFilter: 'blur(4px)', display: 'flex', justifyContent: 'center', alignItems: 'center', zIndex: 1000 }}>
-          <form onSubmit={handleCreateOrUpdate} className="glass-panel" style={{ width: '480px', padding: '28px', display: 'flex', flexDirection: 'column', gap: '20px' }}>
-            <h2 style={{ margin: 0, fontSize: '1.3rem', fontWeight: 700, color: 'var(--text-primary)' }}>
-              {editingSeries ? 'Edit Test Series' : 'Create New Test Series'}
-            </h2>
-
-            <div>
-              <label style={{ display: 'block', fontSize: '0.85rem', fontWeight: 600, color: 'var(--text-secondary)', marginBottom: '6px' }}>Series Title *</label>
+        <Modal
+          title={editingSeries ? 'Edit test series' : 'New test series'}
+          description="A series is the shell; the builder decides which papers sit inside it and in what order."
+          onClose={() => { setShowCreateModal(false); setEditingSeries(null); }}
+          footer={
+            <>
+              <button
+                type="button"
+                onClick={() => { setShowCreateModal(false); setEditingSeries(null); }}
+                className="btn-secondary"
+              >
+                Cancel
+              </button>
+              <button type="submit" form="series-form" disabled={saving} className="btn-primary">
+                {saving ? 'Saving…' : editingSeries ? 'Update series' : 'Create series'}
+              </button>
+            </>
+          }
+        >
+          <form id="series-form" onSubmit={handleCreateOrUpdate} style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
+            <Field label="Series title" htmlFor="ts-title">
               <input
+                id="ts-title"
                 type="text"
                 required
                 className="form-input"
@@ -396,12 +509,12 @@ export default function AdminTestSeries() {
                 onChange={(e) => setFormData({ ...formData, title: e.target.value })}
                 placeholder="e.g. SSC CGL 2026 Tier I Mock Series"
               />
-            </div>
+            </Field>
 
-            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px' }}>
-              <div>
-                <label style={{ display: 'block', fontSize: '0.85rem', fontWeight: 600, color: 'var(--text-secondary)', marginBottom: '6px' }}>Exam Category *</label>
+            <FormGrid min="180px">
+              <Field label="Exam category" htmlFor="ts-exam">
                 <select
+                  id="ts-exam"
                   className="form-input"
                   value={formData.exam_category}
                   onChange={(e) => setFormData({ ...formData, exam_category: e.target.value })}
@@ -410,191 +523,205 @@ export default function AdminTestSeries() {
                     <option key={cat} value={cat}>{cat}</option>
                   ))}
                 </select>
-              </div>
-
-              <div>
-                <label style={{ display: 'block', fontSize: '0.85rem', fontWeight: 600, color: 'var(--text-secondary)', marginBottom: '6px' }}>Course (Optional)</label>
+              </Field>
+              <Field label="Course" hint="Leave unset for a standalone series." htmlFor="ts-course">
                 <select
+                  id="ts-course"
                   className="form-input"
                   value={formData.course_id}
                   onChange={(e) => setFormData({ ...formData, course_id: e.target.value })}
                 >
-                  <option value="">-- Standalone Series --</option>
+                  <option value="">Standalone series</option>
                   {courses.map((c) => (
                     <option key={c.id} value={c.id}>{c.title}</option>
                   ))}
                 </select>
-              </div>
-            </div>
+              </Field>
+            </FormGrid>
 
-            <div>
-              <label style={{ display: 'block', fontSize: '0.85rem', fontWeight: 600, color: 'var(--text-secondary)', marginBottom: '6px' }}>Description</label>
+            <Field label="Description" htmlFor="ts-desc">
               <textarea
+                id="ts-desc"
                 className="form-input"
-                style={{ height: '80px', resize: 'vertical' }}
+                style={{ height: '84px', resize: 'vertical' }}
                 value={formData.description}
                 onChange={(e) => setFormData({ ...formData, description: e.target.value })}
-                placeholder="Overview of the test series syllabus, pattern, and total tests..."
+                placeholder="Syllabus, pattern and how many papers the series holds…"
               />
-            </div>
-
-            <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '12px', marginTop: '12px' }}>
-              <button type="button" onClick={() => { setShowCreateModal(false); setEditingSeries(null); }} className="btn-secondary" style={{ padding: '10px 18px' }}>
-                Cancel
-              </button>
-              <button type="submit" disabled={saving} className="btn-primary" style={{ padding: '10px 20px', fontWeight: 700 }}>
-                {saving ? 'Saving...' : editingSeries ? 'Update Series' : 'Create Series'}
-              </button>
-            </div>
+            </Field>
           </form>
-        </div>
+        </Modal>
       )}
 
-      {/* SERIES BUILDER PANEL */}
+      {/* ---- series builder ---- */}
       {buildingSeries && (
-        <div style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, background: 'var(--overlay)', backdropFilter: 'blur(4px)', display: 'flex', justifyContent: 'center', alignItems: 'center', zIndex: 1000 }}>
-          <div className="glass-panel" style={{ width: '800px', maxHeight: '90vh', padding: '28px', display: 'flex', flexDirection: 'column', overflow: 'hidden' }}>
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px', borderBottom: '1px solid var(--border-color)', paddingBottom: '16px' }}>
-              <div>
-                <h2 style={{ margin: 0, fontSize: '1.3rem', fontWeight: 700, color: 'var(--text-primary)' }}>
-                  Series Builder: {buildingSeries.title}
-                </h2>
-                <span style={{ fontSize: '0.8rem', color: 'var(--text-secondary)' }}>
-                  Attach tests from question bank, assign Study Path order, set categories &amp; free access flags.
-                </span>
-              </div>
-              <button onClick={() => setBuildingSeries(null)} className="btn-secondary" style={{ padding: '6px 12px' }}>✕ Close</button>
-            </div>
-
-            {/* Add Test Bar */}
-            <div style={{ display: 'flex', gap: '12px', marginBottom: '20px' }}>
-              <select
-                className="form-input"
-                style={{ flex: 1 }}
-                value={selectedTestToAdd}
-                onChange={(e) => setSelectedTestToAdd(e.target.value)}
-              >
-                <option value="">-- Select Test from Bank to Attach --</option>
-                {availableTestsToAdd.map((t) => (
-                  <option key={t.id} value={t.id}>{t.title} ({t.type})</option>
-                ))}
-              </select>
-              <button
-                type="button"
-                onClick={handleAddTestToBuilder}
-                disabled={!selectedTestToAdd}
-                className="btn-primary"
-                style={{ padding: '8px 16px' }}
-              >
-                + Add to Series
+        <Modal
+          title={`Builder — ${buildingSeries.title}`}
+          description="Attach papers from the bank, set the study-path order, and mark which ones are free to attempt."
+          width={860}
+          onClose={() => setBuildingSeries(null)}
+          footer={
+            <>
+              <button type="button" onClick={() => setBuildingSeries(null)} className="btn-secondary">Cancel</button>
+              <button type="button" onClick={handleSaveBuilder} disabled={saving} className="btn-primary">
+                {saving ? 'Saving…' : 'Save study path'}
               </button>
-            </div>
+            </>
+          }
+        >
+          <div style={{ display: 'flex', gap: '10px', marginBottom: '18px', flexWrap: 'wrap' }}>
+            <select
+              className="form-input"
+              style={{ flex: 1, minWidth: '220px' }}
+              aria-label="Test to attach"
+              value={selectedTestToAdd}
+              onChange={(e) => setSelectedTestToAdd(e.target.value)}
+            >
+              <option value="">Select a paper from the bank…</option>
+              {availableTestsToAdd.map((t) => (
+                <option key={t.id} value={t.id}>{t.title} ({t.type})</option>
+              ))}
+            </select>
+            <button
+              type="button"
+              onClick={handleAddTestToBuilder}
+              disabled={!selectedTestToAdd}
+              className="btn-secondary"
+              style={{ flex: 'none' }}
+            >
+              <Icon name="plus" size={15} strokeWidth={2.4} />
+              Attach
+            </button>
+          </div>
 
-            {/* Attached Tests Table */}
-            <div style={{ flex: 1, overflowY: 'auto', border: '1px solid var(--border-color)', borderRadius: '8px', marginBottom: '20px' }}>
-              <table style={{ width: '100%', borderCollapse: 'collapse', textAlign: 'left', fontSize: '0.88rem' }}>
-                <thead>
-                  <tr style={{ background: 'var(--surface-1)', borderBottom: '1px solid var(--border-color)' }}>
-                    <th style={{ padding: '12px', width: '60px' }}>Order</th>
-                    <th style={{ padding: '12px' }}>Test Title</th>
-                    <th style={{ padding: '12px', width: '160px' }}>Category</th>
-                    <th style={{ padding: '12px', width: '90px' }}>Free Access</th>
-                    <th style={{ padding: '12px', width: '60px', textAlign: 'center' }}>Remove</th>
+          <div className="adm-tablecard" style={{ overflowX: 'auto' }}>
+            <table className="adm-ltable">
+              <thead>
+                <tr>
+                  <th style={{ width: '64px' }}>Order</th>
+                  <th>Paper</th>
+                  <th style={{ width: '170px' }}>Category</th>
+                  <th className="ta-c" style={{ width: '80px' }}>Free</th>
+                  <th className="ta-c" style={{ width: '60px' }}>Remove</th>
+                </tr>
+              </thead>
+              <tbody>
+                {builderTests.length === 0 ? (
+                  <tr>
+                    <td colSpan="5" style={{ padding: 0 }}>
+                      <div className="adm-empty">
+                        <span className="adm-empty-tile"><Icon name="award" size={24} /></span>
+                        <p className="adm-empty-msg">No paper is attached yet. Pick one above to add it to the path.</p>
+                      </div>
+                    </td>
                   </tr>
-                </thead>
-                <tbody>
-                  {builderTests.length === 0 ? (
-                    <tr>
-                      <td colSpan="5" style={{ padding: '32px', textAlign: 'center', color: 'var(--text-secondary)' }}>
-                        No tests attached to this series yet. Pick a test above to add.
+                ) : (
+                  builderTests.map((t, idx) => (
+                    <tr key={t.id}>
+                      <td>
+                        <Num style={{ fontSize: '12.5px', color: 'var(--primary)' }}>{idx + 1}</Num>
+                      </td>
+                      <td style={{ fontWeight: 600 }}>{t.title}</td>
+                      <td>
+                        <select
+                          className="form-input"
+                          aria-label={`Category for ${t.title}`}
+                          style={{ padding: '7px 10px', fontSize: '12.5px' }}
+                          value={t.category || 'full_mock'}
+                          onChange={(e) => {
+                            const updated = [...builderTests];
+                            updated[idx].category = e.target.value;
+                            setBuilderTests(updated);
+                          }}
+                        >
+                          <option value="full_mock">Full mock</option>
+                          <option value="sectional">Sectional</option>
+                          <option value="pyp">Previous year</option>
+                          <option value="topic">Topic test</option>
+                          <option value="current_affairs">Current affairs</option>
+                        </select>
+                      </td>
+                      <td className="ta-c">
+                        <input
+                          type="checkbox"
+                          aria-label={`Free access for ${t.title}`}
+                          checked={!!t.is_free}
+                          onChange={(e) => {
+                            const updated = [...builderTests];
+                            updated[idx].is_free = e.target.checked;
+                            setBuilderTests(updated);
+                          }}
+                        />
+                      </td>
+                      <td className="ta-c">
+                        <button
+                          type="button"
+                          className="adm-rowaction"
+                          onClick={() => handleRemoveTestFromBuilder(idx)}
+                          aria-label={`Remove ${t.title}`}
+                          title="Remove"
+                        >
+                          <Icon name="trash" size={16} />
+                        </button>
                       </td>
                     </tr>
-                  ) : (
-                    builderTests.map((t, idx) => (
-                      <tr key={t.id} style={{ borderBottom: '1px solid var(--border-color)' }}>
-                        <td style={{ padding: '12px', fontWeight: 'bold', color: 'var(--accent-color)' }}>
-                          #{idx + 1}
-                        </td>
-                        <td style={{ padding: '12px', fontWeight: 600, color: 'var(--text-primary)' }}>
-                          {t.title}
-                        </td>
-                        <td style={{ padding: '12px' }}>
-                          <select
-                            className="form-input"
-                            style={{ padding: '4px 8px', fontSize: '0.8rem' }}
-                            value={t.category || 'full_mock'}
-                            onChange={(e) => {
-                              const updated = [...builderTests];
-                              updated[idx].category = e.target.value;
-                              setBuilderTests(updated);
-                            }}
-                          >
-                            <option value="full_mock">Full Mock</option>
-                            <option value="sectional">Sectional</option>
-                            <option value="pyp">Previous Year (PYP)</option>
-                            <option value="topic">Topic Test</option>
-                            <option value="current_affairs">Current Affairs</option>
-                          </select>
-                        </td>
-                        <td style={{ padding: '12px', textAlign: 'center' }}>
-                          <input
-                            type="checkbox"
-                            checked={!!t.is_free}
-                            onChange={(e) => {
-                              const updated = [...builderTests];
-                              updated[idx].is_free = e.target.checked;
-                              setBuilderTests(updated);
-                            }}
-                          />
-                        </td>
-                        <td style={{ padding: '12px', textAlign: 'center' }}>
-                          <button
-                            onClick={() => handleRemoveTestFromBuilder(idx)}
-                            style={{ background: 'none', border: 'none', cursor: 'pointer', fontSize: '1rem' }}
-                          >
-                            🗑️
-                          </button>
-                        </td>
-                      </tr>
-                    ))
-                  )}
-                </tbody>
-              </table>
-            </div>
-
-            <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '12px' }}>
-              <button onClick={() => setBuildingSeries(null)} className="btn-secondary" style={{ padding: '10px 18px' }}>
-                Cancel
-              </button>
-              <button onClick={handleSaveBuilder} disabled={saving} className="btn-primary" style={{ padding: '10px 20px', fontWeight: 700 }}>
-                {saving ? 'Saving...' : 'Save Study Path'}
-              </button>
-            </div>
+                  ))
+                )}
+              </tbody>
+            </table>
           </div>
-        </div>
+        </Modal>
       )}
 
-      {/* ASSIGN MODAL */}
+      {/* ---- assign to batches ---- */}
       {assigningSeries && (
-        <div style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, background: 'var(--overlay)', backdropFilter: 'blur(4px)', display: 'flex', justifyContent: 'center', alignItems: 'center', zIndex: 1000 }}>
-          <form onSubmit={handleSaveAssignment} className="glass-panel" style={{ width: '500px', padding: '28px', display: 'flex', flexDirection: 'column', gap: '20px' }}>
-            <div>
-              <h2 style={{ margin: 0, fontSize: '1.3rem', fontWeight: 700, color: 'var(--text-primary)' }}>
-                Assign Series: {assigningSeries.title}
-              </h2>
-              <p style={{ margin: '4px 0 0 0', fontSize: '0.85rem', color: 'var(--text-secondary)' }}>
-                Assign this series to target student batch cohorts with optional homework deadlines.
-              </p>
-            </div>
-
-            <div>
-              <label style={{ display: 'block', fontSize: '0.85rem', fontWeight: 600, color: 'var(--text-secondary)', marginBottom: '8px' }}>Select Target Batches *</label>
-              <div style={{ maxHeight: '160px', overflowY: 'auto', border: '1px solid var(--border-color)', borderRadius: '8px', padding: '12px', display: 'flex', flexDirection: 'column', gap: '8px' }}>
+        <Modal
+          title={`Assign — ${assigningSeries.title}`}
+          description="Give the series to one or more batches, with an optional window."
+          onClose={() => setAssigningSeries(null)}
+          footer={
+            <>
+              <button type="button" onClick={() => setAssigningSeries(null)} className="btn-secondary">Cancel</button>
+              <button type="submit" form="assign-form" disabled={saving} className="btn-primary">
+                {saving ? 'Assigning…' : 'Assign series'}
+              </button>
+            </>
+          }
+        >
+          <form id="assign-form" onSubmit={handleSaveAssignment}>
+            <FormSection title="Target batches">
+              <div
+                style={{
+                  maxHeight: '190px',
+                  overflowY: 'auto',
+                  border: '1px solid var(--line)',
+                  borderRadius: '14px',
+                  padding: '10px',
+                  display: 'flex',
+                  flexDirection: 'column',
+                  gap: '4px',
+                }}
+              >
                 {batches.length === 0 ? (
-                  <span style={{ fontSize: '0.85rem', color: 'var(--text-secondary)' }}>No batches available. Create a batch under a course first.</span>
+                  <span style={{ font: '400 13px var(--font-body)', color: 'var(--muted)', padding: '10px' }}>
+                    No batch exists yet. Create one under a course first.
+                  </span>
                 ) : (
                   batches.map((b) => (
-                    <label key={b.id} style={{ display: 'flex', alignItems: 'center', gap: '10px', fontSize: '0.9rem', cursor: 'pointer' }}>
+                    <label
+                      key={b.id}
+                      style={{
+                        display: 'flex',
+                        alignItems: 'center',
+                        gap: '10px',
+                        minHeight: '44px',
+                        padding: '0 10px',
+                        borderRadius: '10px',
+                        font: '400 13px var(--font-body)',
+                        color: 'var(--tx)',
+                        cursor: 'pointer',
+                      }}
+                    >
                       <input
                         type="checkbox"
                         checked={selectedBatchIds.includes(b.id)}
@@ -603,47 +730,64 @@ export default function AdminTestSeries() {
                           else setSelectedBatchIds(selectedBatchIds.filter((id) => id !== b.id));
                         }}
                       />
-                      <span><strong>{b.name}</strong> ({b.course_title})</span>
+                      <span style={{ minWidth: 0 }}>
+                        <span style={{ fontWeight: 600 }}>{b.name}</span>
+                        <span style={{ color: 'var(--muted)' }}> · {b.course_title}</span>
+                      </span>
                     </label>
                   ))
                 )}
               </div>
-            </div>
+            </FormSection>
 
-            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px' }}>
-              <div>
-                <label style={{ display: 'block', fontSize: '0.85rem', fontWeight: 600, color: 'var(--text-secondary)', marginBottom: '6px' }}>Available From (Optional)</label>
-                <input
-                  type="datetime-local"
-                  className="form-input"
-                  value={availableFrom}
-                  onChange={(e) => setAvailableFrom(e.target.value)}
-                />
-              </div>
-
-              <div>
-                <label style={{ display: 'block', fontSize: '0.85rem', fontWeight: 600, color: 'var(--text-secondary)', marginBottom: '6px' }}>Due Date / Deadline (Optional)</label>
-                <input
-                  type="datetime-local"
-                  className="form-input"
-                  value={dueAt}
-                  onChange={(e) => setDueAt(e.target.value)}
-                />
-              </div>
-            </div>
-
-            <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '12px', marginTop: '12px' }}>
-              <button type="button" onClick={() => setAssigningSeries(null)} className="btn-secondary" style={{ padding: '10px 18px' }}>
-                Cancel
-              </button>
-              <button type="submit" disabled={saving} className="btn-primary" style={{ padding: '10px 20px', fontWeight: 700 }}>
-                {saving ? 'Assigning...' : 'Confirm Assignment'}
-              </button>
-            </div>
+            <FormSection title="Window" description="Both are optional — leave them empty for immediate, open-ended access.">
+              <FormGrid min="180px">
+                <Field label="Available from" htmlFor="ts-from">
+                  <input
+                    id="ts-from"
+                    type="datetime-local"
+                    className="form-input"
+                    value={availableFrom}
+                    onChange={(e) => setAvailableFrom(e.target.value)}
+                  />
+                </Field>
+                <Field label="Due at" htmlFor="ts-due">
+                  <input
+                    id="ts-due"
+                    type="datetime-local"
+                    className="form-input"
+                    value={dueAt}
+                    onChange={(e) => setDueAt(e.target.value)}
+                  />
+                </Field>
+              </FormGrid>
+            </FormSection>
           </form>
-        </div>
+        </Modal>
       )}
 
+      {/* ---- destructive confirmation ---- */}
+      {pendingDelete && (
+        <Modal
+          danger
+          title={`Delete “${pendingDelete.title}”?`}
+          description={`Its ${pendingDelete.total_tests || 0} attached ${(pendingDelete.total_tests || 0) === 1 ? 'paper is' : 'papers are'} detached, not deleted. Students lose access to the series.`}
+          width={480}
+          onClose={() => setPendingDelete(null)}
+          footer={
+            <>
+              <button type="button" className="btn-secondary" onClick={() => setPendingDelete(null)}>Cancel</button>
+              <button
+                type="button"
+                className="btn-danger"
+                onClick={() => { const target = pendingDelete; setPendingDelete(null); setDetailSeries(null); handleDelete(target); }}
+              >
+                Delete series
+              </button>
+            </>
+          }
+        />
+      )}
     </div>
   );
 }

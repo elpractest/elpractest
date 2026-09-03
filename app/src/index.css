@@ -1,40 +1,41 @@
 /* ============================================================
-   PRACTEST DESIGN SYSTEM — "deep-ink + amber/gold", two themes
+   PRACTEST DESIGN SYSTEM v2 — "SIGNAL", two themes
    ------------------------------------------------------------
-   Fonts: Sora (display) · Plus Jakarta Sans (UI/body) ·
+   Fonts: Bricolage Grotesque (display) · Hanken Grotesk (UI/body) ·
           JetBrains Mono (numerals/timers) · Noto Sans Devanagari (हिं)
+   Light is the default; dark is fully supported and toggleable.
    Theme is set as <html data-theme="dark|light"> before first paint
    (boot script in index.html) and toggled by <ThemeToggle/> / header.
 
    STRATEGY: the whole SPA styles itself through these tokens (via
    inline styles + the shared classes below). Retargeting the token
-   VALUES here reskins every page at once. The canonical new-design
-   token names (--bg / --card / --tx / ...) are first-class; the older
-   names (--bg-color / --panel-bg / --text-primary / ...) are kept as
-   aliases so existing pages keep working untouched.
+   VALUES here reskins every page at once. The canonical tokens
+   (--bg / --card / --tx / --primary / ...) are first-class; the older
+   names (--bg-color / --accent-color / --brand / ...) are kept as
+   aliases pointed at the new values so existing pages keep working.
+
+   Gold (#E8A33D) is NOT the brand accent any more. It survives only as
+   the --reward-* family: streaks, badges, rank-ups and the logo.
+   Ultramarine #2E3FCC is the primary.
    ============================================================ */
 
 :root {
   /* type — Noto Sans Devanagari sits in every stack so Hindi glyphs render
      in the loaded webfont via per-glyph fallback, in either language. */
-  --font-body: 'Plus Jakarta Sans', 'Noto Sans Devanagari', system-ui, -apple-system, 'Segoe UI', Arial, sans-serif;
-  --font-display: 'Sora', 'Noto Sans Devanagari', 'Plus Jakarta Sans', system-ui, sans-serif;
+  --font-display: 'Bricolage Grotesque', 'Noto Sans Devanagari', system-ui, sans-serif;
+  --font-body: 'Hanken Grotesk', 'Noto Sans Devanagari', system-ui, -apple-system, 'Segoe UI', Arial, sans-serif;
   --font-mono: 'JetBrains Mono', 'Cascadia Code', Consolas, monospace;
-  --font-hindi: 'Noto Sans Devanagari', 'Plus Jakarta Sans', system-ui, sans-serif;
+  --font-hindi: 'Noto Sans Devanagari', 'Hanken Grotesk', system-ui, sans-serif;
 
   /* shape + motion */
   --radius-sm: 12px;
   --radius-md: 16px;
   --radius-lg: 20px;
   --ease-out: cubic-bezier(0.22, 1, 0.36, 1);
-  --speed: 0.25s;
-
-  /* brand — constant across both themes */
-  --brand: #f5a623;                 /* amber/gold primary          */
-  --brand-2: #3b6ff6;               /* royal-blue secondary        */
-  --brand-ink: #1a1206;             /* dark ink for text ON gold   */
-  --grad-primary: linear-gradient(135deg, #ffc968, #f5a623 55%, #e07c0a);
-  --grad-violet: linear-gradient(135deg, #8b5cf6, #3b6ff6);   /* AI Guru */
+  --t-micro: 120ms;
+  --t-base: 180ms;
+  --t-enter: 280ms;
+  --speed: var(--t-base);
 
   /* CBT palette statuses — deliberately saturated + identical in both
      themes: the most safety-critical colours in the product. DO NOT EDIT. */
@@ -58,62 +59,60 @@
   -moz-osx-font-smoothing: grayscale;
 }
 
-/* ---------- NIGHT (default) ---------- */
+/* ---------- DAY (default) ---------- */
 :root,
-:root[data-theme='dark'] {
-  color-scheme: dark;
+:root[data-theme='light'] {
+  color-scheme: light;
 
   /* canonical design tokens */
-  --bg: #0b0f1a;
-  --card: #141b2b;
-  --card2: #1b2438;
-  --tx: #f3f6ff;
-  --tx2: #c7d0e4;
-  --muted: #8a96b4;
-  --line: rgba(255, 255, 255, 0.08);
-  --line2: rgba(255, 255, 255, 0.12);
-  --surf: rgba(255, 255, 255, 0.05);
-  --nav: rgba(9, 13, 21, 0.92);
-  --cardsh: 0 1px 2px rgba(0, 0, 0, 0.25);
+  --bg: #f2f4f9;
+  --card: #ffffff;
+  --card2: #f7f9fc;
+  --tx: #0e1220;
+  --tx2: #3a425a;
+  /* The design system specifies #7C859B, but that lands at 3.7:1 on white —
+     under its own 4.5:1 body floor. Darkened to the nearest value in the same
+     hue that clears the floor on both --card and --bg. Decorative greys that
+     are NOT text still use #7C859B via --muted-decor. */
+  --muted: #656d80;
+  --muted-decor: #7c859b;
+  --line: #e1e5ef;
+  --line2: #d3d9e7;
+  --surf: #f2f4f9;
+  --nav: rgba(255, 255, 255, 0.92);
 
-  /* deep-ink chrome (header stays branded in both themes) */
-  --chrome-grad: linear-gradient(180deg, #12203a, #0b0f1a);
-  --chrome-tx: #f3f6ff;
+  --primary: #2e3fcc;
+  --primary-hover: #2433a8;
+  --primary-soft: #eaecfd;
+  --primary-border: #c9cffa;
+  --primary-ring: rgba(46, 63, 204, 0.14);
 
-  /* aurora backdrop accents (subtle) */
-  --bg-accent-1: rgba(245, 166, 35, 0.12);
-  --bg-accent-2: rgba(59, 111, 246, 0.12);
-  --bg-accent-3: rgba(139, 92, 246, 0.08);
+  --success: #0e7c5a;
+  --success-bg: #e5f2ec;
+  --success-border: #bfe0d2;
+  --success-text: var(--success);
 
-  /* brand accent — theme-aware readable gold */
-  --accent-color: #ffc968;
-  --accent-hover: #ffd98a;
-  --accent-contrast: var(--brand-ink);
-  --accent-glow: rgba(245, 166, 35, 0.4);
-  --accent-soft: rgba(245, 166, 35, 0.16);
-  --accent-border: rgba(245, 166, 35, 0.3);
-  --grad-text: linear-gradient(92deg, #ffc968 0%, #f5a623 55%, #ffb04a 100%);
+  --danger: #c42b2b;
+  --danger-bg: #fceceb;
+  --danger-border: #f2c9c7;
+  --danger-text: var(--danger);
 
-  --danger: #e5484d;
-  --danger-text: #fb8f92;
-  --danger-bg: rgba(229, 72, 77, 0.14);
-  --danger-border: rgba(229, 72, 77, 0.32);
+  --reward: #e8a33d;
+  --reward-bg: #fdf3e2;
+  --reward-text: #96601a;
+  --reward-border: #f0d9ac;
 
-  --success: #12b981;
-  --success-text: #3ddba9;
-  --success-bg: rgba(18, 185, 129, 0.14);
-  --success-border: rgba(18, 185, 129, 0.32);
+  --ai: #6134c9;
+  --ai-bg: #efeafb;
 
-  --warning: #f5a623;
-  --warning-text: #ffc968;
-  --warning-bg: rgba(245, 166, 35, 0.14);
-  --warning-border: rgba(245, 166, 35, 0.32);
-
-  --violet: #8b5cf6;
-  --violet-text: #b9a6ff;
-
+  --cardsh: 0 1px 2px rgba(14, 18, 32, 0.06);
+  --shadow-2: 0 4px 14px -6px rgba(14, 18, 32, 0.16);
+  --shadow-pop: 0 18px 40px -20px rgba(14, 18, 32, 0.4);
   --shadow-panel: var(--cardsh);
-  --shadow-pop: 0 24px 70px -16px rgba(2, 6, 18, 0.7);
+
+  /* page chrome — the header is a plain card surface now, not a dark plate */
+  --chrome-grad: var(--card);
+  --chrome-tx: var(--tx);
 
   /* ---- legacy aliases (older pages reference these names) ---- */
   --bg-color: var(--bg);
@@ -124,67 +123,94 @@
   --text-primary: var(--tx);
   --text-secondary: var(--muted);
   --surface-1: var(--surf);
-  --surface-2: rgba(255, 255, 255, 0.08);
-  --surface-3: rgba(255, 255, 255, 0.12);
-  --surface-strong: rgba(255, 255, 255, 0.28);
-  --surface-sunken: rgba(0, 0, 0, 0.25);
-  --overlay: rgba(3, 6, 14, 0.72);
-  --input-bg: rgba(255, 255, 255, 0.05);
-  --input-bg-focus: rgba(255, 255, 255, 0.08);
+  --surface-2: #edeff5;
+  --surface-3: #e4e8f1;
+  --surface-strong: #c3cadb;
+  --surface-sunken: #f2f4f9;
+  --overlay: rgba(14, 18, 32, 0.44);
+  --input-bg: #ffffff;
+  --input-bg-focus: #ffffff;
+
+  --brand: var(--primary);
+  --brand-2: var(--ai);
+  --brand-ink: #ffffff;                       /* text ON the primary fill */
+  /* A filled-primary surface (the readiness card, a promo plate) needs its
+     own ink family: in dark the primary is a LIGHT lavender, so white text
+     on it would fail contrast. These flip with the theme. */
+  --on-primary: #ffffff;
+  --on-primary-soft: rgba(255, 255, 255, 0.88);
+  --on-primary-veil: rgba(255, 255, 255, 0.15);
+  --on-primary-line: rgba(255, 255, 255, 0.24);
+  --on-primary-track: rgba(255, 255, 255, 0.22);
+  --on-primary-btn-bg: #ffffff;
+  --on-primary-btn-fg: var(--primary);
+  --on-ai: #ffffff;                           /* text ON the AI fill */
+  --accent-color: var(--primary);
+  --accent-hover: var(--primary-hover);
+  --accent-contrast: #ffffff;
+  --accent-soft: var(--primary-soft);
+  --accent-border: var(--primary-border);
+  --accent-glow: var(--primary-ring);
+  --grad-primary: linear-gradient(135deg, #3a4bd8, #2e3fcc);
+  --grad-text: var(--tx);                     /* flat — no gold text gradient */
+  --grad-violet: var(--ai);
+
+  --warning: var(--reward);
+  --warning-text: var(--reward-text);
+  --warning-bg: var(--reward-bg);
+  --warning-border: var(--reward-border);
+
+  --violet: #8b5cf6;                          /* CBT "marked" — frozen */
+  --violet-text: var(--ai);
 }
 
-/* ---------- DAY ---------- */
-:root[data-theme='light'] {
-  color-scheme: light;
+/* ---------- NIGHT ---------- */
+:root[data-theme='dark'] {
+  color-scheme: dark;
 
-  --bg: #eaeef6;
-  --card: #ffffff;
-  --card2: #f4f7fc;
-  --tx: #131722;
-  --tx2: #39424f;
-  --muted: #616b7a;
-  --line: rgba(18, 22, 35, 0.1);
-  --line2: rgba(18, 22, 35, 0.16);
-  --surf: rgba(18, 22, 35, 0.05);
-  --nav: rgba(255, 255, 255, 0.96);
-  --cardsh: 0 6px 18px -8px rgba(24, 36, 64, 0.18);
+  --bg: #0b0e18;
+  --card: #141926;
+  --card2: #1b2233;
+  --tx: #eef1f8;
+  --tx2: #c0c7d8;
+  --muted: #8791a8;
+  --muted-decor: #8791a8;
+  --line: rgba(255, 255, 255, 0.09);
+  --line2: rgba(255, 255, 255, 0.14);
+  --surf: rgba(255, 255, 255, 0.05);
+  --nav: rgba(11, 14, 24, 0.92);
 
-  /* header stays intentionally deep/branded in light mode too */
-  --chrome-grad: linear-gradient(180deg, #12203a, #0b0f1a);
-  --chrome-tx: #f3f6ff;
+  --primary: #7c8cff;
+  --primary-hover: #96a3ff;
+  --primary-soft: rgba(124, 140, 255, 0.14);
+  --primary-border: rgba(124, 140, 255, 0.34);
+  --primary-ring: rgba(124, 140, 255, 0.22);
 
-  --bg-accent-1: rgba(245, 166, 35, 0.1);
-  --bg-accent-2: rgba(59, 111, 246, 0.08);
-  --bg-accent-3: rgba(139, 92, 246, 0.06);
+  --success: #26e0a6;
+  --success-bg: rgba(38, 224, 166, 0.13);
+  --success-border: rgba(38, 224, 166, 0.32);
+  --success-text: var(--success);
 
-  --accent-color: #a85f00;   /* readable gold on light (WCAG AA)   */
-  --accent-hover: #8a4e00;
-  --accent-contrast: var(--brand-ink);
-  --accent-glow: rgba(245, 166, 35, 0.3);
-  --accent-soft: rgba(245, 166, 35, 0.16);
-  --accent-border: rgba(168, 95, 0, 0.32);
-  --grad-text: linear-gradient(92deg, #b5720a 0%, #a85f00 55%, #8a4e00 100%);
+  --danger: #ff7b7b;
+  --danger-bg: rgba(255, 123, 123, 0.13);
+  --danger-border: rgba(255, 123, 123, 0.32);
+  --danger-text: var(--danger);
 
-  --danger: #cb2f37;
-  --danger-text: #cb2f37;
-  --danger-bg: rgba(229, 72, 77, 0.1);
-  --danger-border: rgba(203, 47, 55, 0.3);
+  --reward: #f0b451;
+  --reward-bg: rgba(240, 180, 81, 0.13);
+  --reward-text: #f0b451;
+  --reward-border: rgba(240, 180, 81, 0.34);
 
-  --success: #08805a;
-  --success-text: #08805a;
-  --success-bg: rgba(18, 185, 129, 0.12);
-  --success-border: rgba(8, 128, 90, 0.3);
+  --ai: #a98bff;
+  --ai-bg: rgba(169, 139, 255, 0.14);
 
-  --warning: #a85f00;
-  --warning-text: #a85f00;
-  --warning-bg: rgba(245, 166, 35, 0.14);
-  --warning-border: rgba(168, 95, 0, 0.3);
-
-  --violet: #6a34de;
-  --violet-text: #6a34de;
-
+  --cardsh: 0 1px 2px rgba(0, 0, 0, 0.3);
+  --shadow-2: 0 4px 14px -6px rgba(0, 0, 0, 0.55);
+  --shadow-pop: 0 18px 40px -20px rgba(0, 0, 0, 0.85);
   --shadow-panel: var(--cardsh);
-  --shadow-pop: 0 26px 70px -18px rgba(38, 50, 105, 0.32);
+
+  --chrome-grad: var(--card);
+  --chrome-tx: var(--tx);
 
   /* legacy aliases */
   --bg-color: var(--bg);
@@ -195,13 +221,65 @@
   --text-primary: var(--tx);
   --text-secondary: var(--muted);
   --surface-1: var(--surf);
-  --surface-2: rgba(18, 22, 35, 0.08);
-  --surface-3: rgba(18, 22, 35, 0.12);
-  --surface-strong: rgba(18, 22, 35, 0.25);
-  --surface-sunken: rgba(18, 22, 35, 0.05);
-  --overlay: rgba(18, 24, 48, 0.5);
-  --input-bg: #ffffff;
-  --input-bg-focus: #ffffff;
+  --surface-2: rgba(255, 255, 255, 0.08);
+  --surface-3: rgba(255, 255, 255, 0.12);
+  --surface-strong: rgba(255, 255, 255, 0.24);
+  --surface-sunken: rgba(0, 0, 0, 0.25);
+  --overlay: rgba(3, 6, 14, 0.72);
+  --input-bg: rgba(255, 255, 255, 0.05);
+  --input-bg-focus: rgba(255, 255, 255, 0.08);
+
+  --brand: var(--primary);
+  --brand-2: var(--ai);
+  --brand-ink: #0b0e18;                       /* dark ink on the light primary */
+  --on-primary: #0b0e18;
+  --on-primary-soft: rgba(11, 14, 24, 0.92);
+  --on-primary-veil: rgba(11, 14, 24, 0.14);
+  --on-primary-line: rgba(11, 14, 24, 0.22);
+  --on-primary-track: rgba(11, 14, 24, 0.22);
+  --on-primary-btn-bg: #0b0e18;
+  --on-primary-btn-fg: var(--primary);
+  --on-ai: #0b0e18;
+  --accent-color: var(--primary);
+  --accent-hover: var(--primary-hover);
+  --accent-contrast: #0b0e18;
+  --accent-soft: var(--primary-soft);
+  --accent-border: var(--primary-border);
+  --accent-glow: var(--primary-ring);
+  --grad-primary: linear-gradient(135deg, #8c9bff, #7c8cff);
+  --grad-text: var(--tx);
+  --grad-violet: var(--ai);
+
+  --warning: var(--reward);
+  --warning-text: var(--reward-text);
+  --warning-bg: var(--reward-bg);
+  --warning-border: var(--reward-border);
+
+  --violet: #8b5cf6;
+  --violet-text: var(--ai);
+}
+
+/* ============================================================
+   TYPE SCALE — the design-system ramp as utility classes.
+   ============================================================ */
+
+.t-display-xl { font: 700 52px/1.02 var(--font-display); letter-spacing: -0.04em; }
+.t-display-l  { font: 700 36px/1.05 var(--font-display); letter-spacing: -0.035em; }
+.t-title      { font: 700 22px/1.15 var(--font-display); letter-spacing: -0.03em; }
+.t-heading    { font: 700 17px/1.25 var(--font-display); letter-spacing: -0.02em; }
+.t-body-l     { font: 400 16px/1.6 var(--font-body); }
+.t-body       { font: 400 14.5px/1.55 var(--font-body); }
+.t-label      { font: 600 13px/1.3 var(--font-body); }
+.t-caption    { font: 500 12px/1.4 var(--font-body); }
+.t-overline {
+  font: 600 10px/1 var(--font-mono);
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+}
+.t-num {
+  font-family: var(--font-mono);
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
 }
 
 /* ============================================================
@@ -223,41 +301,6 @@ body {
   position: relative;
 }
 
-/* deep-ink aurora backdrop — two slow blurred orbs (gold + blue). */
-body::before,
-body::after {
-  content: '';
-  position: fixed;
-  z-index: -1;
-  border-radius: 50%;
-  filter: blur(90px);
-  pointer-events: none;
-  will-change: transform;
-}
-body::before {
-  width: 60vmax;
-  height: 60vmax;
-  top: -22vmax;
-  right: -16vmax;
-  background: radial-gradient(circle at 40% 40%, var(--bg-accent-1), transparent 60%);
-  animation: aurora-a 24s ease-in-out infinite alternate;
-}
-body::after {
-  width: 48vmax;
-  height: 48vmax;
-  bottom: -18vmax;
-  left: -12vmax;
-  background: radial-gradient(circle at 55% 45%, var(--bg-accent-2), transparent 60%);
-  animation: aurora-b 30s ease-in-out infinite alternate;
-}
-@keyframes aurora-a {
-  from { transform: translate3d(0, 0, 0) scale(1); }
-  to   { transform: translate3d(3vmax, -2vmax, 0) scale(1.1); }
-}
-@keyframes aurora-b {
-  from { transform: translate3d(0, 0, 0) scale(1.05); }
-  to   { transform: translate3d(-3vmax, 2vmax, 0) scale(0.95); }
-}
 
 #root {
   display: flex;
@@ -278,9 +321,9 @@ a { color: var(--accent-color); }
 ::selection { background: var(--accent-soft); color: var(--tx); }
 
 :focus-visible {
-  outline: 2px solid var(--brand);
+  outline: 2px solid var(--primary);
   outline-offset: 2px;
-  border-radius: 4px;
+  border-radius: 6px;
 }
 
 /* slim, theme-aware scrollbars */
@@ -299,8 +342,7 @@ a { color: var(--accent-color); }
   background: var(--card);
   border: 1px solid var(--line);
   border-radius: var(--radius-lg);
-  box-shadow: var(--cardsh);
-  animation: rise-in 0.45s var(--ease-out) both;
+  animation: rise-in var(--t-enter) var(--ease-out) both;
   transition:
     border-color var(--speed) ease,
     box-shadow var(--speed) ease,
@@ -340,7 +382,8 @@ div > .glass-panel:nth-child(6) { animation-delay: 0.2s; }
 
 .form-input {
   width: 100%;
-  padding: 14px 16px;
+  min-height: 44px;
+  padding: 13px 15px;
   background: var(--input-bg);
   border: 1px solid var(--line2);
   border-radius: var(--radius-sm);
@@ -350,60 +393,103 @@ div > .glass-panel:nth-child(6) { animation-delay: 0.2s; }
   transition: all var(--speed) ease;
 }
 .form-input::placeholder { color: var(--muted); opacity: 0.9; }
-.form-input:hover { border-color: var(--border-strong); }
+@media (hover: hover) { .form-input:hover { border-color: var(--primary-border); } }
 .form-input:focus {
   outline: none;
-  border-color: var(--brand);
-  box-shadow: 0 0 0 4px var(--accent-glow);
+  border: 1.5px solid var(--primary);
+  box-shadow: 0 0 0 4px var(--primary-ring);
   background: var(--input-bg-focus);
 }
+.form-input.has-error { border: 1.5px solid var(--danger); }
+.form-label { display: block; font: 600 12.5px var(--font-body); color: var(--tx2); margin-bottom: 7px; }
+.form-label.is-error { color: var(--danger); }
+.form-error {
+  margin-top: 7px;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font: 500 12px var(--font-body);
+  color: var(--danger);
+}
 select.form-input option { background: var(--card); color: var(--tx); }
+
+/* ---- range slider ----
+   The track stays slim; the CONTROL is 44px tall so a thumb can find it. */
+input[type='range'] {
+  -webkit-appearance: none;
+  appearance: none;
+  width: 100%;
+  height: 44px;
+  background: transparent;
+  cursor: pointer;
+  accent-color: var(--primary);
+}
+input[type='range']::-webkit-slider-runnable-track {
+  height: 6px;
+  border-radius: 99px;
+  background: var(--line);
+}
+input[type='range']::-moz-range-track {
+  height: 6px;
+  border-radius: 99px;
+  background: var(--line);
+}
+input[type='range']::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  appearance: none;
+  margin-top: -6px;
+  width: 18px;
+  height: 18px;
+  border-radius: 50%;
+  background: var(--primary);
+  border: 2px solid var(--card);
+  box-shadow: var(--shadow-2);
+}
+input[type='range']::-moz-range-thumb {
+  width: 18px;
+  height: 18px;
+  border-radius: 50%;
+  background: var(--primary);
+  border: 2px solid var(--card);
+}
+input[type='range']:focus-visible { outline-offset: -2px; }
 
 /* ============================================================
    BUTTONS
    ============================================================ */
 
 .btn-primary {
-  position: relative;
-  overflow: hidden;
   display: inline-flex;
   align-items: center;
   justify-content: center;
   gap: 8px;
-  padding: 13px 24px;
-  background: var(--grad-primary);
+  padding: 13px 22px;
+  min-height: 44px;
+  background: var(--primary);
   color: var(--brand-ink);
   border: none;
   border-radius: var(--radius-sm);
-  font-weight: 800;
-  font-family: var(--font-display);
-  font-size: 0.95rem;
-  letter-spacing: 0.01em;
+  font-weight: 600;
+  font-family: var(--font-body);
+  font-size: 0.9rem;
   cursor: pointer;
-  transition: transform var(--speed) var(--ease-out), box-shadow var(--speed) ease, filter var(--speed) ease;
-  box-shadow: 0 12px 26px -10px var(--accent-glow);
+  transition: background var(--t-base) var(--ease-out), transform var(--t-micro) var(--ease-out),
+    box-shadow var(--t-base) ease;
+  box-shadow: 0 6px 18px -8px var(--primary-ring);
 }
-.btn-primary::after {                       /* light sweep on hover */
-  content: '';
-  position: absolute;
-  inset: 0;
-  background: linear-gradient(105deg, transparent 35%, rgba(255, 255, 255, 0.4) 50%, transparent 65%);
-  background-size: 250% 100%;
-  background-position: 200% 0;
-  opacity: 0;
-  transition: opacity var(--speed) ease;
-}
-.btn-primary:hover {
-  transform: translateY(-2px);
-  box-shadow: 0 16px 34px -10px var(--accent-glow);
-}
-.btn-primary:hover::after { opacity: 1; animation: shimmer 1.1s ease; }
-.btn-primary:active { transform: translateY(0) scale(0.99); }
+.btn-primary:active { transform: scale(0.98); }
+/* A disabled control is exempt from the contrast floor, but there is no
+   reason to fail it: card2 + muted clears 4.5:1 and still reads as inert. */
 .btn-primary:disabled {
-  filter: grayscale(0.35) brightness(0.8);
+  background: var(--card2);
+  border: 1px solid var(--line2);
+  color: var(--muted);
   cursor: not-allowed;
   transform: none;
   box-shadow: none;
+}
+@media (hover: hover) {
+  .btn-primary:hover:not(:disabled) { background: var(--primary-hover); transform: translateY(-1px); }
 }
 
 .btn-secondary {
@@ -411,43 +497,91 @@ select.form-input option { background: var(--card); color: var(--tx); }
   align-items: center;
   justify-content: center;
   gap: 8px;
-  padding: 13px 24px;
-  background: var(--surf);
+  padding: 13px 22px;
+  min-height: 44px;
+  background: var(--card);
   color: var(--tx);
   border: 1px solid var(--line2);
   border-radius: var(--radius-sm);
-  font-weight: 700;
+  font-weight: 600;
   font-family: var(--font-body);
-  font-size: 0.95rem;
+  font-size: 0.9rem;
   cursor: pointer;
-  transition: all var(--speed) ease;
+  transition: background var(--t-base) ease, border-color var(--t-base) ease,
+    transform var(--t-micro) var(--ease-out);
 }
-.btn-secondary:hover {
-  background: var(--surface-2);
-  border-color: var(--border-strong);
-  transform: translateY(-1px);
-}
-.btn-secondary:active { transform: translateY(0); }
+.btn-secondary:active { transform: scale(0.98); }
 .btn-secondary:disabled { opacity: 0.55; cursor: not-allowed; transform: none; }
+@media (hover: hover) {
+  .btn-secondary:hover:not(:disabled) { background: var(--card2); border-color: var(--primary-border); }
+}
+
+/* tinted — primary-soft fill, primary text. Never counts as the filled primary. */
+.btn-tinted {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  padding: 13px 22px;
+  min-height: 44px;
+  background: var(--primary-soft);
+  color: var(--primary);
+  border: none;
+  border-radius: var(--radius-sm);
+  font: 600 0.9rem var(--font-body);
+  cursor: pointer;
+  transition: background var(--t-base) ease, transform var(--t-micro) var(--ease-out);
+}
+.btn-tinted:active { transform: scale(0.98); }
+
+.btn-ghost {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  padding: 13px 18px;
+  min-height: 44px;
+  background: transparent;
+  color: var(--tx2);
+  border: none;
+  border-radius: var(--radius-sm);
+  font: 600 0.9rem var(--font-body);
+  cursor: pointer;
+  transition: background var(--t-base) ease;
+}
+@media (hover: hover) { .btn-ghost:hover { background: var(--surf); } }
+
+.btn-danger {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  padding: 13px 22px;
+  min-height: 44px;
+  background: var(--danger);
+  color: #fff;
+  border: none;
+  border-radius: var(--radius-sm);
+  font: 600 0.9rem var(--font-body);
+  cursor: pointer;
+  transition: filter var(--t-base) ease, transform var(--t-micro) var(--ease-out);
+}
+.btn-danger:active { transform: scale(0.98); }
 
 /* violet→blue "AI" action */
 .btn-ai {
-  background: var(--grad-violet);
-  color: #fff;
-  box-shadow: 0 14px 30px -10px rgba(59, 111, 246, 0.6);
+  background: var(--ai);
+  color: var(--on-ai);
+  box-shadow: 0 10px 24px -10px rgba(97, 52, 201, 0.55);
 }
+@media (hover: hover) { .btn-ai:hover:not(:disabled) { filter: brightness(1.08); } }
 
 /* ============================================================
    UTILITIES
    ============================================================ */
 
-.text-gradient {
-  background: var(--grad-text);
-  -webkit-background-clip: text;
-  background-clip: text;
-  -webkit-text-fill-color: transparent;
-  color: transparent;
-}
+/* Kept as a class name only — Signal has no text gradient. Renders flat. */
+.text-gradient { color: var(--tx); }
 
 .spinner {
   width: 34px;
@@ -493,11 +627,13 @@ select.form-input option { background: var(--card); color: var(--tx); }
   transition: all var(--speed) ease;
   white-space: nowrap;
 }
-.chip-filter:hover { border-color: var(--accent-border); color: var(--tx); }
+@media (hover: hover) {
+  .chip-filter:hover { border-color: var(--primary-border); color: var(--tx); }
+}
 .chip-filter.active {
   color: var(--brand-ink);
-  background: var(--brand);
-  border-color: var(--brand);
+  background: var(--primary);
+  border-color: var(--primary);
 }
 
 /* square rounded icon tile — pass bg/colour inline via tint() */
@@ -512,34 +648,36 @@ select.form-input option { background: var(--card); color: var(--tx); }
    BRANDED HEADER (deep/coloured in BOTH themes)
    ============================================================ */
 
+/* Retired as a dark plate. Kept as a name so nothing breaks; it is now a
+   plain card surface with a hairline, like every other header. */
 .branded-header {
-  background: var(--chrome-grad);
-  color: var(--chrome-tx);
-  border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+  background: var(--card);
+  color: var(--tx);
+  border-bottom: 1px solid var(--line);
 }
 .brand-mark {
   display: grid;
   place-items: center;
-  background: #fff;
+  background: var(--card);
+  border: 1px solid var(--line);
   border-radius: 11px;
   flex: none;
-  box-shadow: 0 8px 22px -10px rgba(0, 0, 0, 0.55);
 }
 
 /* EN / हिं language pill */
 .lang-pill {
   display: inline-flex;
+  align-items: center;
   gap: 2px;
   padding: 4px;
+  min-height: 38px;
+  flex: none;
   border-radius: 999px;
   background: var(--surf);
-  border: 1px solid var(--line2);
+  border: 1px solid var(--line);
   cursor: pointer;
 }
-.branded-header .lang-pill {
-  background: rgba(255, 255, 255, 0.06);
-  border-color: rgba(255, 255, 255, 0.12);
-}
+
 .lang-pill span {
   padding: 3px 9px;
   border-radius: 999px;
@@ -547,28 +685,35 @@ select.form-input option { background: var(--card); color: var(--tx); }
   color: var(--tx2);
   transition: all var(--speed) ease;
 }
-.lang-pill span.on { color: var(--brand-ink); background: var(--brand); }
+.lang-pill span.on { color: var(--brand-ink); background: var(--primary); }
 .lang-pill span.hi { font-family: var(--font-hindi); }
 
 /* small round chrome icon-button used in the header */
 .chrome-btn {
   width: 38px;
   height: 38px;
-  border-radius: 11px;
+  border-radius: 12px;
   display: grid;
   place-items: center;
   flex: none;
   cursor: pointer;
-  background: rgba(255, 255, 255, 0.06);
-  border: 1px solid rgba(255, 255, 255, 0.12);
+  background: var(--surf);
+  border: 1px solid var(--line);
   color: var(--tx2);
-  transition: all var(--speed) ease;
+  transition: background var(--t-base) ease, border-color var(--t-base) ease;
 }
-.branded-header .chrome-btn { color: #c7d0e4; }
-.chrome-btn:hover { background: rgba(255, 255, 255, 0.12); }
+@media (hover: hover) { .chrome-btn:hover { background: var(--card2); } }
 
 /* ============================================================
-   APP SHELL — bottom tab bar (mobile) → left sidebar (>=1024px)
+   STUDENT APP SHELL
+   ------------------------------------------------------------
+   One element, three behaviours:
+     phone   <640px   fixed bottom tab bar, AI Guru as the centre item
+     tablet  640–1023 fixed 72px left icon rail
+     desktop ≥1024px  fixed 232px left sidebar, content capped at 1200px
+   Nothing floats over the content: the old .fab-ai and the floating
+   .theme-toggle are gone from student surfaces; the header owns the
+   theme toggle and the bar owns the AI action.
    ============================================================ */
 
 .app-shell {
@@ -583,7 +728,7 @@ select.form-input option { background: var(--card); color: var(--tx); }
   width: 100%;
   max-width: 1200px;
   margin: 0 auto;
-  padding-bottom: 96px;                 /* clearance for bottom nav */
+  padding-bottom: 104px;                /* clearance for the bottom bar */
 }
 
 .bottom-nav {
@@ -591,52 +736,125 @@ select.form-input option { background: var(--card); color: var(--tx); }
   left: 0; right: 0; bottom: 0;
   z-index: 40;
   display: flex;
-  align-items: stretch;
-  padding: 8px 8px calc(14px + env(safe-area-inset-bottom, 8px));
+  align-items: flex-end;
+  padding: 9px 10px calc(12px + env(safe-area-inset-bottom, 10px));
   background: var(--nav);
   backdrop-filter: blur(20px) saturate(140%);
   -webkit-backdrop-filter: blur(20px) saturate(140%);
   border-top: 1px solid var(--line);
 }
+
 .nav-item {
   flex: 1;
+  min-width: 0;
+  min-height: 48px;
   background: none;
   border: none;
   cursor: pointer;
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: 5px;
-  padding: 6px 0;
+  gap: 6px;
+  padding: 4px 0;
   color: var(--muted);
-  font: 700 0.62rem var(--font-body);
-  transition: color var(--speed) ease;
+  font: 500 9.5px var(--font-body);
+  transition: color var(--t-base) ease, transform var(--t-micro) var(--ease-out);
 }
-.nav-item.active { color: var(--accent-color); }
-.nav-item:hover { color: var(--tx2); }
+.nav-item:active { transform: scale(0.98); }
 
-/* floating AI-Guru action */
-.fab-ai {
-  position: fixed;
-  right: 16px;
-  bottom: calc(84px + env(safe-area-inset-bottom, 8px));
-  z-index: 50;
-  width: 58px;
-  height: 58px;
-  border-radius: 20px;
-  border: none;
-  background: var(--grad-violet);
-  cursor: pointer;
+/* the pill sits BEHIND the glyph only, so the label never shifts */
+.nav-item-glyph {
+  position: relative;
   display: grid;
   place-items: center;
-  color: #fff;
-  box-shadow: 0 16px 34px -10px rgba(59, 111, 246, 0.7);
-  transition: transform var(--speed) var(--ease-out);
 }
-.fab-ai:hover { transform: translateY(-3px) scale(1.04); }
-.fab-ai:active { transform: scale(0.96); }
+.nav-item-glyph::before {
+  content: '';
+  position: absolute;
+  inset: -7px -14px;
+  border-radius: 999px;
+  background: transparent;
+  transition: background var(--t-base) ease;
+}
+.nav-item-glyph > * { position: relative; }
 
-/* ≥1024px — promote bottom bar to a fixed left sidebar */
+.nav-item.active { color: var(--primary); font-weight: 700; }
+.nav-item.active .nav-item-glyph::before { background: var(--primary-soft); }
+
+/* AI Guru — 52px round violet button, centred in the phone bar */
+.nav-ai-slot {
+  width: 58px;
+  flex: none;
+  display: flex;
+  justify-content: center;
+}
+.nav-ai {
+  width: 52px;
+  height: 52px;
+  margin-bottom: 4px;
+  border: none;
+  border-radius: 999px;
+  background: var(--ai);
+  color: var(--on-ai);
+  display: grid;
+  place-items: center;
+  cursor: pointer;
+  box-shadow: 0 14px 26px -12px rgba(97, 52, 201, 0.6);
+  transition: transform var(--t-micro) var(--ease-out), background var(--t-base) ease;
+}
+.nav-ai:active { transform: scale(0.98); }
+.nav-ai-glyph { display: grid; place-items: center; }
+.nav-ai-label { display: none; }
+
+/* Store is a header button on the phone, a full nav row from 640px up */
+.nav-store-slot { display: none; }
+.nav-sidebar-brand { display: none; }
+
+@media (hover: hover) {
+  .nav-item:hover { color: var(--tx2); }
+  .nav-item.active:hover { color: var(--primary); }
+  .nav-ai:hover { background: var(--ai); filter: brightness(1.08); }
+}
+
+/* ---- tablet 640–1023px: 72px icon rail ---- */
+@media (min-width: 640px) and (max-width: 1023px) {
+  .app-shell { flex-direction: row; }
+  .app-shell-body {
+    flex: 1;
+    min-width: 0;
+    margin-left: 72px;
+    display: flex;
+    flex-direction: column;
+  }
+  .app-main { padding-bottom: 40px; }
+
+  .bottom-nav {
+    top: 0; bottom: 0; right: auto;
+    width: 72px;
+    flex-direction: column;
+    align-items: stretch;
+    justify-content: flex-start;
+    gap: 6px;
+    padding: 14px 10px;
+    border-top: none;
+    border-right: 1px solid var(--line);
+    background: var(--card);
+    backdrop-filter: none;
+    -webkit-backdrop-filter: none;
+  }
+  .nav-item {
+    flex: none;
+    justify-content: center;
+    padding: 11px 0;
+    border-radius: var(--radius-sm);
+  }
+  .nav-item > span:last-child { display: none; }
+  .nav-store-slot { display: block; }
+  .nav-ai-slot { width: auto; margin: 2px 0 6px; }
+  .nav-ai { width: 44px; height: 44px; margin: 0 auto; border-radius: 14px; }
+}
+
+/* ---- desktop ≥1024px: 232px sidebar ---- */
 @media (min-width: 1024px) {
   .app-shell { flex-direction: row; }
   .app-shell-body {
@@ -654,11 +872,13 @@ select.form-input option { background: var(--card); color: var(--tx); }
     flex-direction: column;
     align-items: stretch;
     justify-content: flex-start;
-    gap: 4px;
+    gap: 3px;
     padding: 22px 14px;
     border-top: none;
     border-right: 1px solid var(--line);
     background: var(--card);
+    backdrop-filter: none;
+    -webkit-backdrop-filter: none;
   }
   .bottom-nav .nav-sidebar-brand { display: flex; }
   .nav-item {
@@ -666,54 +886,33 @@ select.form-input option { background: var(--card); color: var(--tx); }
     flex-direction: row;
     justify-content: flex-start;
     gap: 13px;
-    padding: 12px 14px;
+    padding: 11px 13px;
     border-radius: var(--radius-sm);
-    font-size: 0.9rem;
+    font-size: 13px;
   }
-  .nav-item.active { background: var(--accent-soft); }
-  .fab-ai { right: auto; left: 150px; bottom: 26px; }
-}
-.nav-sidebar-brand { display: none; }
+  .nav-item-glyph::before { inset: -6px -8px; }
+  .nav-item.active { background: var(--primary-soft); }
+  .nav-item.active .nav-item-glyph::before { background: transparent; }
+  .nav-store-slot { display: block; }
 
-/* 640–1023px — tablet tier: the same bottom bar becomes a fixed, icon-only
-   left rail (64px, no labels). Middle state between the phone bar and the
-   ≥1024px sidebar — same 5 tabs + the Vajini FAB, zero new nav items. */
-@media (min-width: 640px) and (max-width: 1023px) {
-  .app-shell { flex-direction: row; }
-  .app-shell-body {
-    flex: 1;
-    min-width: 0;
-    margin-left: 64px;
+  .nav-ai-slot { width: auto; order: 99; margin-top: auto; }
+  .nav-ai {
+    width: 100%;
+    height: 46px;
+    margin: 0;
+    border-radius: var(--radius-sm);
     display: flex;
-    flex-direction: column;
-  }
-  .app-main { padding-bottom: 40px; }
-
-  .bottom-nav {
-    top: 0; bottom: 0; right: auto;
-    width: 64px;
-    flex-direction: column;
-    align-items: stretch;
-    justify-content: flex-start;
-    gap: 6px;
-    padding: 16px 8px;
-    border-top: none;
-    border-right: 1px solid var(--line);
-    background: var(--card);
-  }
-  .nav-item {
-    flex: none;
+    align-items: center;
     justify-content: center;
-    padding: 12px 0;
-    border-radius: var(--radius-sm);
+    gap: 10px;
+    box-shadow: none;
   }
-  .nav-item span { display: none; }
-  .nav-item.active { background: var(--accent-soft); }
-  .fab-ai { left: 12px; right: auto; bottom: 20px; }
+  .nav-ai-label { display: inline; font: 700 13px var(--font-body); }
 }
 
 /* ============================================================
-   THEME TOGGLE — floating fallback (still present app-wide)
+   THEME TOGGLE — floating fallback, auth surfaces only.
+   The student header and the admin page header each own their own.
    ============================================================ */
 
 .theme-toggle {
@@ -729,18 +928,98 @@ select.form-input option { background: var(--card); color: var(--tx); }
   justify-content: center;
   background: var(--card);
   border: 1px solid var(--line2);
-  color: var(--tx);
+  color: var(--tx2);
   cursor: pointer;
-  box-shadow: var(--shadow-pop);
-  transition: transform var(--speed) var(--ease-out), border-color var(--speed) ease, box-shadow var(--speed) ease;
+  box-shadow: var(--shadow-2);
+  transition: transform var(--t-micro) var(--ease-out), border-color var(--t-base) ease;
 }
-.theme-toggle:hover {
-  transform: translateY(-2px) rotate(12deg);
-  border-color: var(--accent-border);
-  box-shadow: 0 10px 28px -6px var(--accent-glow);
+.theme-toggle:active { transform: scale(0.96); }
+@media (hover: hover) {
+  .theme-toggle:hover { border-color: var(--primary-border); color: var(--tx); }
 }
-.theme-toggle:active { transform: scale(0.94); }
-.theme-toggle svg { transition: transform 0.45s var(--ease-out), opacity 0.3s ease; }
+
+/* ============================================================
+   TOUCH TARGETS
+   ------------------------------------------------------------
+   A 38px chrome button and a 15px text link both read correctly at
+   their drawn size; what they must not do is present a sub-44px hit
+   box. This expands the target with a centred pseudo-element, so the
+   visual size is untouched and the thumb target is not.
+   ============================================================ */
+
+.student-header-btn,
+.student-brand,
+.lang-pill,
+.chrome-btn,
+.cbt-icon-btn,
+.cbt-lang,
+.cbt-card-lang,
+.link-btn,
+.notice-dismiss,
+.adm-chip,
+.chip-filter,
+.pt-carousel-dot {
+  position: relative;
+}
+.student-header-btn::after,
+.student-brand::after,
+.lang-pill::after,
+.chrome-btn::after,
+.cbt-icon-btn::after,
+.cbt-lang::after,
+.cbt-card-lang::after,
+.link-btn::after,
+.notice-dismiss::after,
+.adm-chip::after,
+.chip-filter::after,
+.pt-carousel-dot::after {
+  content: '';
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  width: max(100%, 44px);
+  height: max(100%, 44px);
+  transform: translate(-50%, -50%);
+}
+@media (pointer: coarse) {
+  .student-header-btn::after,
+  .student-brand::after,
+  .lang-pill::after,
+  .chrome-btn::after,
+  .cbt-icon-btn::after,
+  .cbt-lang::after,
+  .cbt-card-lang::after,
+  .link-btn::after,
+  .notice-dismiss::after,
+  .adm-chip::after,
+  .chip-filter::after,
+  .pt-carousel-dot::after {
+    width: max(100%, 48px);
+    height: max(100%, 48px);
+  }
+}
+
+.notice-dismiss {
+  display: inline-flex;
+  padding: 0;
+  border: none;
+  background: transparent;
+  color: inherit;
+  cursor: pointer;
+}
+
+/* a quiet text action — the "See all" / "Full report" / "Palette" links */
+.link-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 0;
+  border: none;
+  background: none;
+  cursor: pointer;
+  font: 600 11.5px var(--font-body);
+  color: var(--primary);
+}
 
 /* ============================================================
    CBT — question palette, options, clock
@@ -748,20 +1027,58 @@ select.form-input option { background: var(--card); color: var(--tx); }
    the app theme (see .cbt-root). Status colours are locked above.
    ============================================================ */
 
-/* Immersive CBT room always renders on a light surface. */
+/* Immersive CBT room always renders on a light surface, in BOTH themes.
+   Signal cool greys — exam software, zero decoration. */
 .cbt-root {
   color-scheme: light;
-  --tx: #1a2233;
-  --tx2: #39424f;
-  --muted: #5a6a85;
+
+  /* The room is light in BOTH themes, so it pins the WHOLE light palette —
+     not just the neutrals. Leaving --primary on the dark theme's lavender
+     would put a 2.9:1 button on a white card. */
+  --tx: #1d2130;
+  --tx2: #4a5060;
+  --muted: #6f7484;
+  --muted-decor: #8a8f9c;
   --card: #ffffff;
-  --card2: #f4f7fc;
+  --card2: #f7f9fc;
   --bg: #eef1f7;
   --line: #e2e7f0;
   --line2: #dde3ee;
-  --surf: #f0f3f8;
+  --surf: #eef1f7;
+
+  --primary: #2e3fcc;
+  --primary-hover: #2433a8;
+  --primary-soft: #eaecfd;
+  --primary-border: #c9cffa;
+  --primary-ring: rgba(46, 63, 204, 0.14);
+  --brand: var(--primary);
+  --brand-ink: #ffffff;
+  --accent-color: var(--primary);
+  --accent-soft: var(--primary-soft);
+  --accent-border: var(--primary-border);
+  --accent-glow: var(--primary-ring);
+
+  --success: #0e7c5a;
+  --success-bg: #e5f2ec;
+  --success-border: #bfe0d2;
+  --danger: #c42b2b;
+  --danger-bg: #fceceb;
+  --danger-border: #f2c9c7;
+  --reward: #e8a33d;
+  --reward-bg: #fdf3e2;
+  --reward-text: #96601a;
+  --reward-border: #f0d9ac;
+  --ai: #6134c9;
+  --ai-bg: #efeafb;
+  --on-ai: #ffffff;
+
+  --overlay: rgba(14, 18, 32, 0.44);
+  --input-bg: #ffffff;
+  --input-bg-focus: #ffffff;
+  --shadow-pop: 0 18px 40px -20px rgba(14, 18, 32, 0.4);
+
   background: #eef1f7;
-  color: #1a2233;
+  color: #1d2130;
 }
 
 .palette-btn {
@@ -770,7 +1087,7 @@ select.form-input option { background: var(--card); color: var(--tx); }
   justify-content: center;
   width: 40px;
   height: 40px;
-  border-radius: 10px 10px 10px 0;      /* speech-bubble tab, per mockup */
+  border-radius: 9px 9px 9px 0;         /* speech-bubble tab, per mockup */
   border: 2px solid transparent;
   font-weight: 800;
   font-family: var(--font-mono);
@@ -779,8 +1096,8 @@ select.form-input option { background: var(--card); color: var(--tx); }
   cursor: pointer;
   transition: transform 0.15s var(--ease-out), box-shadow 0.15s ease;
 }
-.palette-btn:hover { transform: scale(1.08); }
-.palette-btn.active { box-shadow: 0 0 0 2.5px var(--brand); }
+@media (hover: hover) { .palette-btn:hover { transform: scale(1.06); } }
+.palette-btn.active { box-shadow: 0 0 0 2.5px #0e1220; }
 
 .palette-btn.not_visited { background-color: var(--status-not-visited-bg); color: var(--status-not-visited-text); }
 .palette-btn.not_answered { background-color: var(--status-not-answered-bg); color: var(--status-not-answered-text); }
@@ -807,13 +1124,12 @@ select.form-input option { background: var(--card); color: var(--tx); }
   user-select: none;
   text-align: left;
 }
-.mcq-option:hover {
-  border-color: var(--accent-border);
-  background: var(--surf);
+@media (hover: hover) {
+  .mcq-option:hover { border-color: var(--primary-border); background: #fafbff; }
 }
 .mcq-option.selected {
-  background: rgba(245, 166, 35, 0.1);
-  border-color: var(--brand);
+  background: #f3f5ff;
+  border-color: var(--primary);
 }
 
 .option-badge {
@@ -831,24 +1147,26 @@ select.form-input option { background: var(--card); color: var(--tx); }
   transition: all var(--speed) ease;
 }
 .mcq-option.selected .option-badge {
-  background: var(--brand);
-  border-color: var(--brand);
-  color: var(--brand-ink);
+  background: var(--primary);
+  border-color: var(--primary);
+  color: #fff;
 }
 
+/* The timer NEVER animates — no pulse, no colour shift, no scale. */
 .header-clock {
   display: inline-flex;
   align-items: center;
   gap: 8px;
-  padding: 8px 12px;
-  background: var(--surface-sunken);
-  border: 1px solid var(--line2);
+  padding: 9px 14px;
+  background: #eef1f7;
+  border: 1px solid #dde3ee;
   border-radius: var(--radius-sm);
+  color: #1d2130;
   font-family: var(--font-mono);
-  font-size: 1.05rem;
-  font-weight: 800;
-  letter-spacing: 0.04em;
+  font-size: 17px;
+  font-weight: 700;
   font-variant-numeric: tabular-nums;
+  animation: none !important;
 }
 
 /* ============================================================
@@ -914,11 +1232,9 @@ select.form-input option { background: var(--card); color: var(--tx); }
   cursor: pointer;
   transition: width var(--speed) var(--ease-out), background var(--speed) ease;
 }
-/* the dot is 7px, the thumb target is 24px */
-.pt-carousel-dot::after { content: ''; position: absolute; inset: -9px -7px; }
 .pt-carousel-dot.active {
   width: 20px;
-  background: var(--accent-color);
+  background: var(--primary);
 }
 
 /* Arrows, dots and auto-advance all scroll with behavior:'auto', so turning
@@ -928,13 +1244,465 @@ select.form-input option { background: var(--card); color: var(--tx); }
 }
 
 /* ============================================================
+   ADMIN CONSOLE KIT  (components/admin/ui.jsx)
+   ------------------------------------------------------------
+   One table pattern, one toolbar, one empty state, one modal —
+   used by every list screen in the console. The table is a grid,
+   so a row can restack into a card on a phone without a second
+   copy of the markup.
+   ============================================================ */
+
+.adm-pagehead {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 14px;
+  margin-bottom: 18px;
+}
+.adm-pagehead-actions {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 10px;
+}
+
+/* ---- chips ---- */
+
+.adm-chip {
+  flex: none;
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  min-height: 34px;
+  padding: 7px 14px;
+  border-radius: 999px;
+  background: var(--card);
+  border: 1px solid var(--line2);
+  color: var(--tx2);
+  font: 500 12.5px var(--font-body);
+  cursor: pointer;
+  white-space: nowrap;
+  transition: background var(--t-base) ease, border-color var(--t-base) ease, color var(--t-base) ease;
+}
+.adm-chip.active {
+  background: var(--primary);
+  border-color: var(--primary);
+  color: var(--brand-ink);
+  font-weight: 600;
+}
+.adm-chip.queue {
+  background: var(--reward-bg);
+  border-color: var(--reward-border);
+  color: var(--reward-text);
+  font-weight: 600;
+}
+.adm-chip.queue.active {
+  background: var(--reward-text);
+  border-color: var(--reward-text);
+  color: #fff;
+}
+@media (hover: hover) {
+  .adm-chip:not(.active):hover { border-color: var(--primary-border); color: var(--tx); }
+}
+
+/* ---- table card ---- */
+
+.adm-tablecard {
+  background: var(--card);
+  border: 1px solid var(--line);
+  border-radius: 16px;
+  overflow: hidden;
+}
+
+.adm-toolbar {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
+  padding: 12px 16px;
+  background: var(--card2);
+  border-bottom: 1px solid var(--line);
+}
+.adm-toolbar-chips { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; min-width: 0; }
+.adm-toolbar-trailing { display: flex; align-items: center; gap: 8px; margin-left: auto; flex-wrap: wrap; }
+
+.adm-table { display: block; }
+
+.adm-thead {
+  display: grid;
+  grid-template-columns: var(--adm-cols);
+  gap: 14px;
+  padding: 10px 16px;
+  background: var(--card2);
+  border-bottom: 1px solid var(--line);
+}
+.adm-th {
+  font: 600 10px var(--font-mono);
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--muted);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.adm-tbody { display: block; }
+
+.adm-tr {
+  display: grid;
+  grid-template-columns: var(--adm-cols);
+  gap: 14px;
+  align-items: center;
+  min-height: 52px;
+  padding: 15px 16px;
+  border-bottom: 1px solid var(--line);
+  transition: background var(--t-base) ease;
+}
+.adm-tr:last-child { border-bottom: none; }
+.adm-tr.clickable { cursor: pointer; }
+.adm-tr.selected { background: var(--primary-soft); }
+@media (hover: hover) {
+  .adm-tr:not(.selected):hover { background: var(--card2); }
+}
+
+.adm-td {
+  display: flex;
+  align-items: center;
+  min-width: 0;
+  font: 400 13.5px var(--font-body);
+  color: var(--tx);
+}
+.adm-td-inner { min-width: 0; max-width: 100%; }
+
+/* row action — chevron / ellipsis, 44px hit box on a 32px glyph */
+.adm-rowaction {
+  position: relative;
+  display: inline-grid;
+  place-items: center;
+  width: 32px;
+  height: 32px;
+  flex: none;
+  padding: 0;
+  border: none;
+  border-radius: 9px;
+  background: transparent;
+  color: var(--muted);
+  cursor: pointer;
+  transition: background var(--t-base) ease, color var(--t-base) ease;
+}
+.adm-rowaction::after { content: ''; position: absolute; inset: -6px; }
+@media (hover: hover) {
+  .adm-rowaction:hover { background: var(--surf); color: var(--tx); }
+}
+
+/* checkbox */
+.adm-check {
+  width: 17px;
+  height: 17px;
+  flex: none;
+  border-radius: 5px;
+  border: 1.5px solid var(--line2);
+  background: var(--card);
+  display: grid;
+  place-items: center;
+  cursor: pointer;
+  padding: 0;
+  color: transparent;
+}
+.adm-check.on { background: var(--primary); border-color: var(--primary); color: #fff; }
+
+/* ---- empty + pagination ---- */
+
+.adm-empty {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 12px;
+  padding: 46px 24px;
+  text-align: center;
+}
+.adm-empty-tile {
+  display: grid;
+  place-items: center;
+  width: 48px;
+  height: 48px;
+  border-radius: 999px;
+  background: var(--surf);
+  color: var(--muted);
+}
+.adm-empty-msg {
+  margin: 0;
+  max-width: 46ch;
+  font: 400 13.5px/1.6 var(--font-body);
+  color: var(--muted);
+}
+
+.adm-pagination {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 14px;
+  padding: 14px 16px;
+  border-top: 1px solid var(--line);
+}
+.adm-page-btn { padding: 8px 14px; min-height: 40px; font-size: 12.5px; }
+
+/* ---- forms ---- */
+
+.adm-formsection { padding: 20px 0; border-bottom: 1px solid var(--line); }
+.adm-formsection:first-child { padding-top: 0; }
+.adm-formsection:last-child { border-bottom: none; padding-bottom: 0; }
+
+.adm-formfoot {
+  position: sticky;
+  bottom: 0;
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 10px;
+  padding: 14px 0 0;
+  margin-top: 18px;
+  border-top: 1px solid var(--line);
+  background: var(--card);
+}
+
+/* ---- overlay, modal, drawer ---- */
+
+/* Shared modal/sheet chrome. `.adm-*` is the historical name; `.sheet-*`
+   is the same thing for the student surfaces, so a centre modal on desktop
+   becomes a bottom sheet on a phone everywhere in the app. */
+.adm-overlay,
+.sheet-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 1200;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 24px;
+  background: var(--overlay);
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+  animation: fade-in var(--t-base) ease both;
+}
+.adm-overlay-drawer { align-items: stretch; justify-content: flex-end; padding: 0; }
+
+.adm-modal,
+.sheet-panel {
+  width: 100%;
+  max-height: min(86vh, 760px);
+  display: flex;
+  flex-direction: column;
+  background: var(--card);
+  border: 1px solid var(--line);
+  border-radius: 20px;
+  box-shadow: var(--shadow-pop);
+  overflow: hidden;
+  animation: pop-in var(--t-enter) var(--ease-out) both;
+}
+.adm-drawer {
+  width: min(420px, 100vw);
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  background: var(--card);
+  border-left: 1px solid var(--line);
+  box-shadow: var(--shadow-pop);
+}
+.adm-modal-handle,
+.sheet-handle { display: none; }
+
+.adm-modal-head {
+  flex: none;
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 14px;
+  padding: 20px 22px 14px;
+  border-bottom: 1px solid var(--line);
+}
+.adm-modal-body { flex: 1; min-height: 0; overflow-y: auto; padding: 20px 22px; }
+.adm-drawer-body { flex: 1; min-height: 0; overflow-y: auto; padding: 18px 20px; }
+.adm-modal-foot {
+  flex: none;
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 10px;
+  padding: 14px 22px calc(14px + env(safe-area-inset-bottom, 0px));
+  border-top: 1px solid var(--line);
+  background: var(--card2);
+}
+
+/* ---- stat cards ---- */
+
+.adm-statgrid {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 14px;
+}
+.adm-statcard {
+  background: var(--card);
+  border: 1px solid var(--line);
+  border-radius: 18px;
+  padding: 18px;
+  display: flex;
+  gap: 15px;
+  align-items: flex-start;
+  min-width: 0;
+}
+.adm-statcard-tile {
+  display: grid;
+  place-items: center;
+  width: 44px;
+  height: 44px;
+  flex: none;
+  border-radius: 14px;
+}
+@media (min-width: 640px) { .adm-statgrid { grid-template-columns: repeat(2, 1fr); } }
+@media (min-width: 1180px) { .adm-statgrid { grid-template-columns: repeat(4, 1fr); } }
+
+/* A self-contained panel inside .adm-overlay — the authoring screens build
+   their own modal bodies, so they get the chrome without the head/body/foot. */
+.adm-modal-plain {
+  background: var(--card);
+  border: 1px solid var(--line);
+  border-radius: 20px;
+  box-shadow: var(--shadow-pop);
+  animation: pop-in var(--t-enter) var(--ease-out) both;
+}
+@media (max-width: 639px) {
+  .adm-modal-plain {
+    width: 100% !important;
+    max-width: none !important;
+    height: auto !important;
+    max-height: 90vh !important;
+    border-radius: 20px 20px 0 0;
+    overflow-y: auto;
+    animation-name: rise-in;
+  }
+  /* a grid-based editor panel cannot stay multi-column on a 390px screen */
+  .adm-modal-plain { grid-template-columns: 1fr !important; }
+}
+
+/* ---- legacy semantic tables (the authoring screens) ----
+   Same visual contract as .adm-table: 52px rows, mono overline headers,
+   hairline dividers, tint-only selection. The markup stays a real <table>
+   because those screens nest colspans and editors inside their rows. */
+
+.adm-ltable {
+  width: 100%;
+  border-collapse: collapse;
+  text-align: left;
+}
+.adm-ltable thead tr { background: var(--card2); }
+.adm-ltable th {
+  padding: 10px 16px;
+  font: 600 10px var(--font-mono);
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--muted);
+  border-bottom: 1px solid var(--line);
+  white-space: nowrap;
+}
+.adm-ltable td {
+  padding: 15px 16px;
+  font: 400 13.5px var(--font-body);
+  color: var(--tx);
+  border-bottom: 1px solid var(--line);
+  vertical-align: middle;
+}
+.adm-ltable tbody tr:last-child td { border-bottom: none; }
+.adm-ltable td .adm-num,
+.adm-ltable td.mono { font-family: var(--font-mono); font-variant-numeric: tabular-nums; }
+.adm-ltable .ta-r { text-align: right; }
+.adm-ltable .ta-c { text-align: center; }
+@media (hover: hover) {
+  .adm-ltable tbody tr:hover { background: var(--card2); }
+}
+
+/* three shimmer rows in place of the word "Loading" */
+.adm-rowskeleton {
+  padding: 8px 16px;
+}
+.adm-rowskeleton::before,
+.adm-rowskeleton::after {
+  content: '';
+  display: block;
+  height: 28px;
+  margin: 12px 0;
+  border-radius: 9px;
+  background: linear-gradient(90deg, var(--surf) 25%, var(--surface-3) 50%, var(--surf) 75%);
+  background-size: 200% 100%;
+  animation: shimmer 1.4s ease infinite;
+}
+
+/* the phone tier scrolls these inside their card rather than restacking:
+   an authoring table has editors in its rows and cannot become a card list */
+.adm-tablecard > .adm-ltable { min-width: 640px; }
+
+/* ---- tablet: keep tables to 4 columns ---- */
+@media (max-width: 1023px) {
+  .adm-th.hide-tablet, .adm-td.hide-tablet { display: none; }
+}
+
+/* ---- phone: rows become stacked cards, modals become sheets ---- */
+@media (max-width: 639px) {
+  .adm-thead { display: none; }
+  .adm-tr {
+    grid-template-columns: 1fr auto;
+    gap: 8px 12px;
+    padding: 14px 14px;
+    align-items: start;
+  }
+  .adm-td { flex-direction: column; align-items: flex-start; gap: 3px; }
+  .adm-td[data-label]::before {
+    content: attr(data-label);
+    font: 600 9.5px var(--font-mono);
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+    color: var(--muted);
+  }
+  .adm-td-inner { width: 100%; }
+
+  .adm-overlay, .sheet-overlay { align-items: flex-end; padding: 0; }
+  .adm-overlay-drawer { align-items: flex-end; }
+  .adm-modal, .adm-drawer, .sheet-panel {
+    width: 100%;
+    max-width: none;
+    height: auto;
+    max-height: 90vh;
+    border-radius: 20px 20px 0 0;
+    border-left: none;
+    animation: rise-in var(--t-enter) var(--ease-out) both;
+  }
+  .adm-modal-handle,
+  .sheet-handle {
+    display: block;
+    width: 38px;
+    height: 4px;
+    margin: 10px auto 0;
+    border-radius: 99px;
+    background: var(--line2);
+  }
+  .adm-modal-head { padding: 14px 18px 12px; }
+  .adm-modal-body, .adm-drawer-body { padding: 16px 18px; }
+  .adm-modal-foot { padding: 12px 18px calc(12px + env(safe-area-inset-bottom, 0px)); }
+  .adm-modal-foot > * { flex: 1; }
+  .adm-pagination { flex-wrap: wrap; }
+}
+
+/* ============================================================
    MOTION SAFETY
    ============================================================ */
 
 @media (prefers-reduced-motion: reduce) {
   *, *::before, *::after {
     animation-duration: 0.01ms !important;
+    animation-delay: 0ms !important;
     animation-iteration-count: 1 !important;
     transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
   }
 }

@@ -3,7 +3,6 @@ import { useParams, useNavigate, Link } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import katex from 'katex';
 import api from '../api';
-import { useTheme } from '../lib/theme';
 import { demoResultSummary, demoResultBars } from '../lib/demoData';
 
 // Math Renderer helper
@@ -40,7 +39,6 @@ const MathRenderer = ({ text }) => {
 export default function TestResult() {
   const { session: sessionId } = useParams();
   const navigate = useNavigate();
-  const { tint } = useTheme();
   const { t } = useTranslation();
   const isDemo = sessionId === 'demo';
 
@@ -123,50 +121,54 @@ export default function TestResult() {
   const num = (v) => (v === null || v === undefined || v === '' ? '—' : String(Number(v)));
 
   const R = 56, C = 2 * Math.PI * R;
+  const barPeak = bars.length ? Math.max(...bars.map((b) => Number(b.pct) || 0)) : null;
   const verdict = pct >= 80 ? t('result.verdictHigh') : pct >= 60 ? t('result.verdictMid') : t('result.verdictLow');
 
-  const statCard = (value, label, hue) => (
+  /* Every figure a candidate reads is mono and tabular, so digits do not
+     jitter between one paper and the next. */
+  const statCard = (value, label) => (
     <div style={{ padding: '14px 10px', borderRadius: '16px', background: 'var(--card)', border: '1px solid var(--line)', textAlign: 'center' }}>
-      <div style={{ font: '800 19px var(--font-display)', color: tint(hue).c }}>{value}</div>
-      <div style={{ font: '600 10.5px var(--font-body)', color: 'var(--muted)', marginTop: '2px' }}>{label}</div>
+      <div className="t-num" style={{ fontSize: '19px', lineHeight: 1, color: 'var(--tx)' }}>{value}</div>
+      <div className="t-overline" style={{ marginTop: '7px', letterSpacing: '.12em', color: 'var(--muted)' }}>{label}</div>
     </div>
   );
-  const countCell = (value, label, color, mono) => (
-    <div style={{ flex: 1 }}>
-      <div style={{ font: `800 16px ${mono ? 'var(--font-mono)' : 'var(--font-display)'}`, color }}>{value}</div>
-      <div style={{ font: '600 11px var(--font-body)', color: 'var(--muted)' }}>{label}</div>
+  const countCell = (value, label, color) => (
+    <div style={{ flex: 1, minWidth: 0 }}>
+      <div className="t-num" style={{ fontSize: '17px', lineHeight: 1, color: color || 'var(--tx)' }}>{value}</div>
+      <div style={{ marginTop: '5px', font: '400 11px var(--font-body)', color: 'var(--muted)' }}>{label}</div>
     </div>
   );
 
   return (
     <div style={{ padding: '10px 18px 30px', animation: 'fade-in .35s ease both' }}>
-      <h1 style={{ margin: '0 0 14px', font: '800 19px var(--font-display)', color: 'var(--tx)' }}>{t('result.title')}</h1>
+      <h1 className="t-title" style={{ margin: '0 0 14px', color: 'var(--tx)' }}>{t('result.title')}</h1>
 
       {/* Score hero */}
-      <div style={{ padding: '24px', borderRadius: '22px', background: 'var(--card2)', border: '1px solid var(--line)', display: 'flex', flexDirection: 'column', alignItems: 'center', textAlign: 'center', position: 'relative', overflow: 'hidden' }}>
-        <div style={{ position: 'absolute', top: '-30px', left: '50%', transform: 'translateX(-50%)', width: '180px', height: '120px', background: 'radial-gradient(circle,rgba(245,166,35,.28),transparent 70%)' }} />
+      <div style={{ padding: '24px', borderRadius: '20px', background: 'var(--card)', border: '1px solid var(--line)', display: 'flex', flexDirection: 'column', alignItems: 'center', textAlign: 'center', position: 'relative', overflow: 'hidden' }}>
         <div style={{ position: 'relative', width: '130px', height: '130px' }}>
           <svg width="130" height="130" viewBox="0 0 130 130">
-            <circle cx="65" cy="65" r={R} fill="none" stroke="var(--line2)" strokeWidth="10" />
-            <circle cx="65" cy="65" r={R} fill="none" stroke="#F5A623" strokeWidth="10" strokeLinecap="round" strokeDasharray={C} strokeDashoffset={C * (1 - pct / 100)} transform="rotate(-90 65 65)" />
+            <circle cx="65" cy="65" r={R} fill="none" stroke="var(--line)" strokeWidth="10" />
+            <circle cx="65" cy="65" r={R} fill="none" stroke="var(--primary)" strokeWidth="10" strokeLinecap="round" strokeDasharray={C} strokeDashoffset={C * (1 - pct / 100)} transform="rotate(-90 65 65)" />
           </svg>
           <div style={{ position: 'absolute', inset: 0, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center' }}>
-            <span style={{ font: '800 30px var(--font-display)', color: 'var(--tx)', lineHeight: 1 }}>{score}</span>
-            <span style={{ font: '600 12px var(--font-body)', color: 'var(--muted)' }}>{t('result.outOf')} {maxScore}</span>
+            <span className="t-num" style={{ fontSize: '30px', color: 'var(--tx)', lineHeight: 1 }}>{score}</span>
+            <span style={{ marginTop: '4px', font: '400 12px var(--font-body)', color: 'var(--muted)' }}>{t('result.outOf')} <span className="t-num" style={{ fontSize: '12px', fontWeight: 500 }}>{maxScore}</span></span>
           </div>
         </div>
-        <div style={{ font: '800 18px var(--font-display)', color: '#FFC968', marginTop: '14px' }}>{verdict}</div>
+        <div style={{ font: '700 18px var(--font-display)', letterSpacing: '-.02em', color: 'var(--tx)', marginTop: '14px' }}>{verdict}</div>
         <div style={{ font: '600 12px var(--font-body)', color: 'var(--muted)', marginTop: '3px' }}>{vm.title}</div>
 
         {isQualified !== null && (
           <div
             style={{
-              marginTop: '12px', padding: '6px 16px', borderRadius: '999px',
-              font: '800 12px var(--font-body)',
+              display: 'inline-flex', alignItems: 'center', gap: '7px',
+              marginTop: '12px', padding: '6px 14px', borderRadius: '999px',
+              font: '600 12px var(--font-body)',
               background: isQualified ? 'var(--success-bg)' : 'var(--danger-bg)',
               color: isQualified ? 'var(--success)' : 'var(--danger)',
             }}
           >
+            <span aria-hidden="true" style={{ width: '6px', height: '6px', borderRadius: '50%', background: 'currentColor' }} />
             {isQualified ? t('result.qualified') : t('result.notQualified')}
           </div>
         )}
@@ -182,9 +184,9 @@ export default function TestResult() {
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3,1fr)', gap: '10px', marginTop: '14px' }}>
         {/* Merit rank is the strict published order; `rank` lets equal scores
             share a place, which is what a percentile is computed against. */}
-        {statCard(meritRank !== null ? `${meritRank}` : vm.rank, meritRank !== null ? t('result.meritRank') : t('result.batchRank'), 'gold')}
-        {statCard(vm.percentile, t('result.percentile'), 'blue')}
-        {statCard(vm.accuracy, t('result.accuracy'), 'green')}
+        {statCard(meritRank !== null ? `${meritRank}` : vm.rank, meritRank !== null ? t('result.meritRank') : t('result.batchRank'))}
+        {statCard(vm.percentile, t('result.percentile'))}
+        {statCard(vm.accuracy, t('result.accuracy'))}
       </div>
 
       {hasQualifyingSection && meritScore !== null && (
@@ -195,16 +197,16 @@ export default function TestResult() {
 
       {/* Correct / wrong / skipped / time */}
       <div style={{ display: 'flex', gap: '16px', marginTop: '14px', padding: '15px 16px', borderRadius: '16px', background: 'var(--card)', border: '1px solid var(--line)' }}>
-        {countCell(vm.correct, t('result.correct'), tint('green').c)}
-        {countCell(vm.wrong, t('result.wrong'), tint('red').c)}
-        {countCell(vm.skipped, t('result.skipped'), 'var(--tx2)')}
-        {countCell(vm.time, t('result.time'), 'var(--tx2)', true)}
+        {countCell(vm.correct, t('result.correct'), 'var(--success)')}
+        {countCell(vm.wrong, t('result.wrong'), 'var(--danger)')}
+        {countCell(vm.skipped, t('result.skipped'))}
+        {countCell(vm.time, t('result.time'))}
       </div>
 
       {/* Sectional performance against each cut-off */}
       {sectionBreakdown.length > 0 && (
         <>
-          <h2 style={{ margin: '22px 0 12px', font: '700 16px var(--font-display)', color: 'var(--tx)' }}>{t('result.sectionWise')}</h2>
+          <h2 className="t-heading" style={{ margin: '22px 0 12px', color: 'var(--tx)' }}>{t('result.sectionWise')}</h2>
           <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
             {sectionBreakdown.map((sec) => {
               const pctOf = sec.max_score > 0 ? Math.max(0, Math.min(100, (sec.score / sec.max_score) * 100)) : 0;
@@ -218,19 +220,19 @@ export default function TestResult() {
                   }}
                 >
                   <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: '10px', flexWrap: 'wrap' }}>
-                    <span style={{ font: '700 13.5px var(--font-display)', color: 'var(--tx)' }}>
+                    <span className="t-heading" style={{ fontSize: '13.5px', color: 'var(--tx)' }}>
                       {sec.title}
                       {sec.is_qualifying && (
-                        <span style={{ marginLeft: '8px', font: '700 10px var(--font-body)', color: 'var(--muted)' }}>{t('result.qualifyingOnly')}</span>
+                        <span className="t-overline" style={{ marginLeft: '8px', fontSize: '9px', color: 'var(--muted)' }}>{t('result.qualifyingOnly')}</span>
                       )}
                     </span>
-                    <span style={{ font: '800 13px var(--font-mono)', color: 'var(--tx)' }}>
+                    <span className="t-num" style={{ fontSize: '13px', color: 'var(--tx)' }}>
                       {fmt(sec.score)} / {fmt(sec.max_score)}
                     </span>
                   </div>
 
-                  <div style={{ position: 'relative', height: '8px', borderRadius: '999px', background: 'var(--surf)', overflow: 'visible', marginTop: '9px' }}>
-                    <div style={{ height: '100%', borderRadius: '999px', width: `${pctOf}%`, background: sec.cleared ? 'var(--success)' : 'var(--danger)' }} />
+                  <div style={{ position: 'relative', height: '8px', borderRadius: '999px', background: 'var(--line)', overflow: 'visible', marginTop: '9px' }}>
+                    <div style={{ height: '100%', borderRadius: '999px', width: `${pctOf}%`, background: barred ? (sec.cleared ? 'var(--success)' : 'var(--danger)') : 'var(--primary)' }} />
                     {/* The bar the candidate had to clear, drawn where it falls. */}
                     {barred && sec.max_score > 0 && (
                       <span
@@ -259,7 +261,7 @@ export default function TestResult() {
       )}
 
       {/* Subject-wise accuracy */}
-      <h2 style={{ margin: '22px 0 12px', font: '700 16px var(--font-display)', color: 'var(--tx)' }}>{t('result.subjectWise')}</h2>
+      <h2 className="t-heading" style={{ margin: '22px 0 12px', color: 'var(--tx)' }}>{t('result.subjectWise')}</h2>
       <div style={{ display: 'flex', flexDirection: 'column', gap: '14px' }}>
         {bars.length === 0 && (
           <p style={{ font: '600 12px var(--font-body)', color: 'var(--muted)', margin: 0 }}>
@@ -267,18 +269,27 @@ export default function TestResult() {
           </p>
         )}
         {bars.map((b) => {
-          const c = tint(b.hue).c;
+          /* One bar carries the primary — the strongest subject. The rest sit in
+             the soft tint, so the eye lands on the comparison, not the rainbow. */
+          const isPeak = barPeak !== null && b.pct === barPeak;
           return (
             <div key={b.k}>
-              <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '6px' }}>
-                <span style={{ font: '600 12.5px var(--font-body)', color: 'var(--tx2)' }}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', gap: '12px', marginBottom: '6px' }}>
+                <span style={{ font: '500 12.5px var(--font-body)', color: 'var(--tx2)', minWidth: 0 }}>
                   {b.k}
-                  {b.detail && <span style={{ font: '600 10.5px var(--font-body)', color: 'var(--muted)', marginLeft: '7px' }}>{b.detail}</span>}
+                  {b.detail && <span style={{ font: '400 11px var(--font-body)', color: 'var(--muted)', marginLeft: '7px' }}>{b.detail}</span>}
                 </span>
-                <span style={{ font: '800 12px var(--font-mono)', color: c }}>{b.pct}%</span>
+                <span className="t-num" style={{ fontSize: '12.5px', color: 'var(--tx)', flex: 'none' }}>{b.pct}%</span>
               </div>
-              <div style={{ height: '8px', borderRadius: '999px', background: 'var(--surf)', overflow: 'hidden' }}>
-                <div style={{ height: '100%', borderRadius: '999px', width: `${b.pct}%`, background: c }} />
+              <div style={{ height: '8px', borderRadius: '999px', background: 'var(--line)', overflow: 'hidden' }}>
+                <div
+                  style={{
+                    height: '100%',
+                    borderRadius: '999px',
+                    width: `${b.pct}%`,
+                    background: isPeak ? 'var(--primary)' : 'var(--primary-soft)',
+                  }}
+                />
               </div>
             </div>
           );
@@ -294,7 +305,7 @@ export default function TestResult() {
       {/* Question-by-question review (real sessions only) */}
       {answers.length > 0 && (
         <div id="answer-review" style={{ marginTop: '30px' }}>
-          <h2 style={{ font: '800 18px var(--font-display)', marginBottom: '16px', color: 'var(--tx)' }}>{t('result.answerReview')}</h2>
+          <h2 className="t-heading" style={{ marginBottom: '16px', color: 'var(--tx)' }}>{t('result.answerReview')}</h2>
           <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
             {answers.map((ans, idx) => {
               const isNumeric = ans.question_type === 'numeric';
@@ -314,7 +325,7 @@ export default function TestResult() {
 
                   {ans.passage && (
                     <div style={{ padding: '12px 14px', borderRadius: '10px', background: 'var(--surf)', border: '1px solid var(--line)', marginBottom: '14px', maxHeight: '160px', overflowY: 'auto' }}>
-                      {ans.passage.title && <div style={{ font: '800 12px var(--font-display)', color: 'var(--tx)', marginBottom: '4px' }}>{ans.passage.title}</div>}
+                      {ans.passage.title && <div style={{ font: '700 12px var(--font-display)', letterSpacing: '-.02em', color: 'var(--tx)', marginBottom: '4px' }}>{ans.passage.title}</div>}
                       <div style={{ font: '500 12.5px/1.6 var(--font-body)', color: 'var(--tx2)', whiteSpace: 'pre-wrap' }}>{ans.passage.body}</div>
                     </div>
                   )}
@@ -347,7 +358,7 @@ export default function TestResult() {
                         else if (wasSelected) { bg = 'var(--danger-bg)'; border = 'var(--danger-border)'; }
                         return (
                           <div key={opt.id} style={{ display: 'flex', alignItems: 'center', padding: '10px 14px', borderRadius: '10px', background: bg, border: `1px solid ${border}`, fontSize: '0.95rem', color: 'var(--tx)' }}>
-                            <span style={{ display: 'inline-flex', alignItems: 'center', justifyContent: 'center', width: '24px', height: '24px', borderRadius: isMulti ? '6px' : '50%', background: isRight ? 'var(--success)' : wasSelected ? 'var(--danger)' : 'var(--surf)', color: '#fff', marginRight: '12px', fontWeight: 'bold', fontSize: '0.8rem' }}>{isMulti ? (wasSelected || isRight ? '✓' : opt.label) : opt.label}</span>
+                            <span style={{ display: 'inline-flex', alignItems: 'center', justifyContent: 'center', width: '24px', height: '24px', borderRadius: isMulti ? '6px' : '50%', background: isRight ? 'var(--success)' : wasSelected ? 'var(--danger)' : 'var(--surf)', color: '#fff', marginRight: '12px', fontWeight: 700, fontSize: '0.8rem' }}>{isMulti ? (wasSelected || isRight ? '✓' : opt.label) : opt.label}</span>
                             <span><MathRenderer text={opt.option_text} /></span>
                           </div>
                         );

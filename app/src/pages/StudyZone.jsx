@@ -33,15 +33,15 @@ export default function StudyZone() {
         @media (min-width: 640px) { .study-tiles { grid-template-columns: repeat(3, 1fr); } }
         @media (min-width: 1024px) { .study-tiles { grid-template-columns: repeat(4, 1fr); } }
       `}</style>
-      <h1 style={{ margin: '0 0 4px', font: '800 24px var(--font-display)', color: 'var(--tx)', letterSpacing: '-.02em' }}>{t('study.title')}</h1>
-      <p style={{ margin: '0 0 18px', font: '500 13px var(--font-body)', color: 'var(--muted)' }}>{t('study.subtitle')}</p>
+      <h1 className="t-title" style={{ margin: '0 0 4px', color: 'var(--tx)' }}>{t('study.title')}</h1>
+      <p style={{ margin: '0 0 18px', font: '400 13.5px var(--font-body)', color: 'var(--muted)' }}>{t('study.subtitle')}</p>
 
-      {/* Stat header */}
-      <div style={{ padding: '16px', borderRadius: '20px', background: 'var(--card2)', border: '1px solid var(--line)', marginBottom: '18px', display: 'flex', justifyContent: 'space-between', gap: '10px' }}>
+      {/* Stat header — a figure is mono and tabular; the label is the overline */}
+      <div style={{ padding: '16px', borderRadius: '20px', background: 'var(--card)', border: '1px solid var(--line)', marginBottom: '18px', display: 'flex', justifyContent: 'space-between', gap: '10px' }}>
         {demoStudyStats.map((s) => (
           <div key={s.label}>
-            <div style={{ font: '800 26px var(--font-display)', color: tint(s.hue).c }}>{s.value}</div>
-            <div style={{ font: '600 11px var(--font-body)', color: 'var(--muted)' }}>{s.label}</div>
+            <div className="t-num" style={{ fontSize: '24px', lineHeight: 1, color: 'var(--tx)' }}>{s.value}</div>
+            <div className="t-overline" style={{ marginTop: '7px', letterSpacing: '.14em', color: 'var(--muted)' }}>{s.label}</div>
           </div>
         ))}
       </div>
@@ -55,8 +55,8 @@ export default function StudyZone() {
               onClick={() => (t.todo ? null : navigate(t.to))}
               className="glass-panel"
               style={{
-                textAlign: 'left', cursor: t.todo ? 'default' : 'pointer', padding: '16px',
-                borderRadius: '18px', display: 'flex', flexDirection: 'column', gap: '11px',
+                textAlign: 'left', cursor: t.todo ? 'default' : 'pointer', padding: '16px', minHeight: '48px',
+                borderRadius: '20px', display: 'flex', flexDirection: 'column', gap: '11px',
                 opacity: t.todo ? 0.72 : 1,
               }}
               disabled={t.todo}
@@ -65,8 +65,8 @@ export default function StudyZone() {
                 <Icon name={t.icon} size={20} />
               </span>
               <span>
-                <span style={{ display: 'block', font: '700 14px var(--font-body)', color: 'var(--tx)' }}>{t.label}</span>
-                <span style={{ display: 'block', font: '600 11px var(--font-body)', color: 'var(--muted)', marginTop: '2px' }}>{t.sub}</span>
+                <span style={{ display: 'block', font: '600 13.5px var(--font-body)', color: 'var(--tx)' }}>{t.label}</span>
+                <span style={{ display: 'block', font: '400 11.5px var(--font-body)', color: 'var(--muted)', marginTop: '3px' }}>{t.sub}</span>
               </span>
             </button>
           );

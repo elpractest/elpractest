@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import api from '../api';
+import { PageHead, Chip, Notice } from '../components/admin/ui';
 
 export default function SuperAdminSettings() {
   const [settings, setSettings] = useState({});
@@ -82,74 +83,49 @@ export default function SuperAdminSettings() {
 
   if (loading) {
     return (
-      <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', height: '200px', color: 'var(--text-secondary)' }}>
-        <span>⏳ Loading platform settings...</span>
+      <div style={{ display: 'flex', flexDirection: 'column', gap: '16px', maxWidth: '900px' }}>
+        <div className="skeleton" style={{ height: '68px', borderRadius: '16px' }} />
+        <div className="skeleton" style={{ height: '360px', borderRadius: '20px' }} />
       </div>
     );
   }
 
   return (
-    <div style={{ maxWidth: '900px', margin: '0 auto' }}>
-      <div style={{ marginBottom: '32px' }}>
-        <h1 style={{ fontSize: '2rem', fontWeight: 800, margin: '0 0 8px 0', color: 'var(--text-primary)', fontFamily: 'var(--font-display)' }}>
-          White-Label &amp; Platform Settings
-        </h1>
-        <p style={{ margin: 0, color: 'var(--text-secondary)' }}>
-          Configure branding assets, feature toggles, SEO preferences, and analytics tracking for this tenant deployment.
-        </p>
-      </div>
+    <div style={{ display: 'flex', flexDirection: 'column', gap: '18px', maxWidth: '900px' }}>
+      <PageHead
+        title="White-label settings"
+        subtitle="Branding, contact details, SEO, invoicing and feature toggles for this tenant deployment."
+      />
 
-      {error && (
-        <div style={{ background: 'var(--danger-bg)', border: '1px solid var(--danger-border)', padding: '12px 16px', borderRadius: '8px', color: 'var(--danger-text)', marginBottom: '24px', fontSize: '0.9rem' }}>
-          ⚠️ {error}
-        </div>
-      )}
+      {error && <Notice tone="danger" icon="alert" onDismiss={() => setError('')}>{error}</Notice>}
+      {success && <Notice tone="success" icon="check-circle" onDismiss={() => setSuccess('')}>{success}</Notice>}
 
-      {success && (
-        <div style={{ background: 'var(--success-bg)', border: '1px solid var(--success-border)', padding: '12px 16px', borderRadius: '8px', color: 'var(--success-text)', marginBottom: '24px', fontSize: '0.9rem' }}>
-          ✅ {success}
-        </div>
-      )}
-
-      {/* Sub tabs */}
-      <div style={{ display: 'flex', gap: '8px', borderBottom: '1px solid var(--border-color)', paddingBottom: '12px', marginBottom: '32px' }}>
+      {/* Sub-sections */}
+      <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
         {[
-          { id: 'branding', label: '🎨 Branding & Theme' },
-          { id: 'contact', label: '📞 Contact & Social' },
-          { id: 'seo', label: '🔍 SEO & Analytics' },
-          { id: 'invoicing', label: '🧾 Invoicing & GST' },
-          { id: 'features', label: '⚡ Feature Toggles' },
+          { id: 'branding', label: 'Branding & theme' },
+          { id: 'contact', label: 'Contact & social' },
+          { id: 'seo', label: 'SEO & analytics' },
+          { id: 'invoicing', label: 'Invoicing & GST' },
+          { id: 'features', label: 'Feature toggles' },
         ].map((subTab) => (
-          <button
-            key={subTab.id}
-            type="button"
-            onClick={() => setActiveSubTab(subTab.id)}
-            style={{
-              padding: '8px 16px',
-              background: activeSubTab === subTab.id ? 'var(--accent-soft)' : 'transparent',
-              border: 'none',
-              borderBottom: activeSubTab === subTab.id ? '2px solid var(--accent-color)' : '2px solid transparent',
-              color: activeSubTab === subTab.id ? '#ffffff' : 'var(--text-secondary)',
-              fontWeight: 600,
-              fontSize: '0.9rem',
-              cursor: 'pointer',
-              borderRadius: '4px 4px 0 0',
-              transition: 'all 0.2s ease',
-            }}
-          >
+          <Chip key={subTab.id} active={activeSubTab === subTab.id} onClick={() => setActiveSubTab(subTab.id)}>
             {subTab.label}
-          </button>
+          </Chip>
         ))}
       </div>
 
-      <form onSubmit={handleSave} className="glass-panel" style={{ padding: '32px' }}>
+      <form
+        onSubmit={handleSave}
+        style={{ background: 'var(--card)', border: '1px solid var(--line)', borderRadius: '20px', padding: '22px 24px' }}
+      >
         
         {/* BRANDING SUB-TAB */}
         {activeSubTab === 'branding' && (
           <div style={{ display: 'flex', flexDirection: 'column', gap: '24px' }}>
             <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '20px' }}>
               <div>
-                <label style={{ display: 'block', fontSize: '0.85rem', fontWeight: 600, color: 'var(--text-secondary)', marginBottom: '8px', textTransform: 'uppercase', letterSpacing: '0.5px' }}>
+                <label className="form-label">
                   Site Name
                 </label>
                 <input
@@ -161,7 +137,7 @@ export default function SuperAdminSettings() {
                 />
               </div>
               <div>
-                <label style={{ display: 'block', fontSize: '0.85rem', fontWeight: 600, color: 'var(--text-secondary)', marginBottom: '8px', textTransform: 'uppercase', letterSpacing: '0.5px' }}>
+                <label className="form-label">
                   Footer Copyright Text
                 </label>
                 <input
@@ -176,13 +152,13 @@ export default function SuperAdminSettings() {
 
             <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '20px' }}>
               <div>
-                <label style={{ display: 'block', fontSize: '0.85rem', fontWeight: 600, color: 'var(--text-secondary)', marginBottom: '8px', textTransform: 'uppercase', letterSpacing: '0.5px' }}>
+                <label className="form-label">
                   Primary Color (Hex)
                 </label>
                 <div style={{ display: 'flex', gap: '8px' }}>
                   <input
                     type="color"
-                    style={{ width: '48px', height: '42px', border: '1px solid var(--border-color)', borderRadius: '6px', cursor: 'pointer', background: 'transparent', padding: 0 }}
+                    style={{ width: '48px', height: '42px', border: '1px solid var(--line)', borderRadius: '6px', cursor: 'pointer', background: 'transparent', padding: 0 }}
                     value={settings.primary_color || '#2563EB'}
                     onChange={(e) => handleTextChange('primary_color', e.target.value)}
                   />
@@ -197,13 +173,13 @@ export default function SuperAdminSettings() {
               </div>
 
               <div>
-                <label style={{ display: 'block', fontSize: '0.85rem', fontWeight: 600, color: 'var(--text-secondary)', marginBottom: '8px', textTransform: 'uppercase', letterSpacing: '0.5px' }}>
+                <label className="form-label">
                   Accent Color (Hex)
                 </label>
                 <div style={{ display: 'flex', gap: '8px' }}>
                   <input
                     type="color"
-                    style={{ width: '48px', height: '42px', border: '1px solid var(--border-color)', borderRadius: '6px', cursor: 'pointer', background: 'transparent', padding: 0 }}
+                    style={{ width: '48px', height: '42px', border: '1px solid var(--line)', borderRadius: '6px', cursor: 'pointer', background: 'transparent', padding: 0 }}
                     value={settings.accent_color || '#7C3AED'}
                     onChange={(e) => handleTextChange('accent_color', e.target.value)}
                   />
@@ -218,16 +194,16 @@ export default function SuperAdminSettings() {
               </div>
             </div>
 
-            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '24px', borderTop: '1px solid var(--border-color)', paddingTop: '24px' }}>
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '24px', borderTop: '1px solid var(--line)', paddingTop: '24px' }}>
               <div>
-                <label style={{ display: 'block', fontSize: '0.85rem', fontWeight: 600, color: 'var(--text-secondary)', marginBottom: '8px', textTransform: 'uppercase', letterSpacing: '0.5px' }}>
+                <label className="form-label">
                   Site Logo
                 </label>
                 <div style={{ display: 'flex', alignItems: 'center', gap: '16px' }}>
                   {settings.site_logo ? (
-                    <img src={settings.site_logo} alt="Logo" style={{ maxHeight: '48px', maxWidth: '120px', objectFit: 'contain', border: '1px solid var(--border-color)', borderRadius: '6px', padding: '6px', background: 'var(--surface-1)' }} />
+                    <img src={settings.site_logo} alt="Logo" style={{ maxHeight: '48px', maxWidth: '120px', objectFit: 'contain', border: '1px solid var(--line)', borderRadius: '6px', padding: '6px', background: 'var(--card2)' }} />
                   ) : (
-                    <div style={{ height: '48px', width: '100px', display: 'flex', alignItems: 'center', justifyContent: 'center', border: '1px dashed var(--border-color)', borderRadius: '6px', fontSize: '0.8rem', color: 'var(--text-secondary)' }}>
+                    <div style={{ height: '48px', width: '100px', display: 'flex', alignItems: 'center', justifyContent: 'center', border: '1px dashed var(--line2)', borderRadius: '6px', fontSize: '0.8rem', color: 'var(--text-secondary)' }}>
                       No Logo
                     </div>
                   )}
@@ -246,14 +222,14 @@ export default function SuperAdminSettings() {
               </div>
 
               <div>
-                <label style={{ display: 'block', fontSize: '0.85rem', fontWeight: 600, color: 'var(--text-secondary)', marginBottom: '8px', textTransform: 'uppercase', letterSpacing: '0.5px' }}>
+                <label className="form-label">
                   Site Favicon
                 </label>
                 <div style={{ display: 'flex', alignItems: 'center', gap: '16px' }}>
                   {settings.site_favicon ? (
-                    <img src={settings.site_favicon} alt="Favicon" style={{ height: '32px', width: '32px', objectFit: 'contain', border: '1px solid var(--border-color)', borderRadius: '6px', padding: '4px', background: 'var(--surface-1)' }} />
+                    <img src={settings.site_favicon} alt="Favicon" style={{ height: '32px', width: '32px', objectFit: 'contain', border: '1px solid var(--line)', borderRadius: '6px', padding: '4px', background: 'var(--card2)' }} />
                   ) : (
-                    <div style={{ height: '32px', width: '32px', display: 'flex', alignItems: 'center', justifyContent: 'center', border: '1px dashed var(--border-color)', borderRadius: '6px', fontSize: '0.8rem', color: 'var(--text-secondary)' }}>
+                    <div style={{ height: '32px', width: '32px', display: 'flex', alignItems: 'center', justifyContent: 'center', border: '1px dashed var(--line2)', borderRadius: '6px', fontSize: '0.8rem', color: 'var(--text-secondary)' }}>
                       -
                     </div>
                   )}
@@ -279,7 +255,7 @@ export default function SuperAdminSettings() {
           <div style={{ display: 'flex', flexDirection: 'column', gap: '24px' }}>
             <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '20px' }}>
               <div>
-                <label style={{ display: 'block', fontSize: '0.85rem', fontWeight: 600, color: 'var(--text-secondary)', marginBottom: '8px', textTransform: 'uppercase', letterSpacing: '0.5px' }}>
+                <label className="form-label">
                   Contact Email
                 </label>
                 <input
@@ -291,7 +267,7 @@ export default function SuperAdminSettings() {
                 />
               </div>
               <div>
-                <label style={{ display: 'block', fontSize: '0.85rem', fontWeight: 600, color: 'var(--text-secondary)', marginBottom: '8px', textTransform: 'uppercase', letterSpacing: '0.5px' }}>
+                <label className="form-label">
                   Contact Phone
                 </label>
                 <input
@@ -305,7 +281,7 @@ export default function SuperAdminSettings() {
             </div>
 
             <div>
-              <label style={{ display: 'block', fontSize: '0.85rem', fontWeight: 600, color: 'var(--text-secondary)', marginBottom: '8px', textTransform: 'uppercase', letterSpacing: '0.5px' }}>
+              <label className="form-label">
                 Contact Address
               </label>
               <textarea
@@ -317,7 +293,7 @@ export default function SuperAdminSettings() {
               />
             </div>
 
-            <div style={{ borderTop: '1px solid var(--border-color)', paddingTop: '24px', display: 'flex', flexDirection: 'column', gap: '20px' }}>
+            <div style={{ borderTop: '1px solid var(--line)', paddingTop: '24px', display: 'flex', flexDirection: 'column', gap: '20px' }}>
               <h3 style={{ margin: '0 0 8px 0', fontSize: '1rem', fontWeight: 700, color: 'var(--text-primary)' }}>Social Links</h3>
               
               <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '20px' }}>
@@ -384,7 +360,7 @@ export default function SuperAdminSettings() {
         {activeSubTab === 'seo' && (
           <div style={{ display: 'flex', flexDirection: 'column', gap: '24px' }}>
             <div>
-              <label style={{ display: 'block', fontSize: '0.85rem', fontWeight: 600, color: 'var(--text-secondary)', marginBottom: '8px', textTransform: 'uppercase', letterSpacing: '0.5px' }}>
+              <label className="form-label">
                 Default SEO Title
               </label>
               <input
@@ -397,7 +373,7 @@ export default function SuperAdminSettings() {
             </div>
 
             <div>
-              <label style={{ display: 'block', fontSize: '0.85rem', fontWeight: 600, color: 'var(--text-secondary)', marginBottom: '8px', textTransform: 'uppercase', letterSpacing: '0.5px' }}>
+              <label className="form-label">
                 Default SEO Meta Description
               </label>
               <textarea
@@ -409,7 +385,7 @@ export default function SuperAdminSettings() {
               />
             </div>
 
-            <div style={{ borderTop: '1px solid var(--border-color)', paddingTop: '24px', display: 'flex', flexDirection: 'column', gap: '20px' }}>
+            <div style={{ borderTop: '1px solid var(--line)', paddingTop: '24px', display: 'flex', flexDirection: 'column', gap: '20px' }}>
               <h3 style={{ margin: '0 0 8px 0', fontSize: '1rem', fontWeight: 700, color: 'var(--text-primary)' }}>Tracking &amp; Analytics IDs</h3>
               
               <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '20px' }}>
@@ -464,7 +440,7 @@ export default function SuperAdminSettings() {
             </div>
 
             <div>
-              <label style={{ display: 'block', fontSize: '0.85rem', fontWeight: 600, color: 'var(--text-secondary)', marginBottom: '8px', textTransform: 'uppercase', letterSpacing: '0.5px' }}>
+              <label className="form-label">
                 Legal / billing name
               </label>
               <input
@@ -476,7 +452,7 @@ export default function SuperAdminSettings() {
             </div>
 
             <div>
-              <label style={{ display: 'block', fontSize: '0.85rem', fontWeight: 600, color: 'var(--text-secondary)', marginBottom: '8px', textTransform: 'uppercase', letterSpacing: '0.5px' }}>
+              <label className="form-label">
                 Billing address
               </label>
               <textarea
@@ -489,7 +465,7 @@ export default function SuperAdminSettings() {
 
             <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '20px' }}>
               <div>
-                <label style={{ display: 'block', fontSize: '0.85rem', fontWeight: 600, color: 'var(--text-secondary)', marginBottom: '8px', textTransform: 'uppercase', letterSpacing: '0.5px' }}>
+                <label className="form-label">
                   GSTIN
                 </label>
                 <input
@@ -500,7 +476,7 @@ export default function SuperAdminSettings() {
                 />
               </div>
               <div>
-                <label style={{ display: 'block', fontSize: '0.85rem', fontWeight: 600, color: 'var(--text-secondary)', marginBottom: '8px', textTransform: 'uppercase', letterSpacing: '0.5px' }}>
+                <label className="form-label">
                   State
                 </label>
                 <input
@@ -514,7 +490,7 @@ export default function SuperAdminSettings() {
 
             <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: '20px' }}>
               <div>
-                <label style={{ display: 'block', fontSize: '0.85rem', fontWeight: 600, color: 'var(--text-secondary)', marginBottom: '8px', textTransform: 'uppercase', letterSpacing: '0.5px' }}>
+                <label className="form-label">
                   GST rate (%)
                 </label>
                 <input
@@ -525,7 +501,7 @@ export default function SuperAdminSettings() {
                 />
               </div>
               <div>
-                <label style={{ display: 'block', fontSize: '0.85rem', fontWeight: 600, color: 'var(--text-secondary)', marginBottom: '8px', textTransform: 'uppercase', letterSpacing: '0.5px' }}>
+                <label className="form-label">
                   SAC code
                 </label>
                 <input
@@ -536,7 +512,7 @@ export default function SuperAdminSettings() {
                 />
               </div>
               <div>
-                <label style={{ display: 'block', fontSize: '0.85rem', fontWeight: 600, color: 'var(--text-secondary)', marginBottom: '8px', textTransform: 'uppercase', letterSpacing: '0.5px' }}>
+                <label className="form-label">
                   Invoice prefix
                 </label>
                 <input
@@ -567,7 +543,7 @@ export default function SuperAdminSettings() {
             <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
               
               {/* Payment Gateway Switch */}
-              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '20px', background: 'var(--surface-1)', border: '1px solid var(--border-color)', borderRadius: '10px' }}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '20px', background: 'var(--card2)', border: '1px solid var(--line)', borderRadius: '10px' }}>
                 <div style={{ flex: 1, paddingRight: '20px' }}>
                   <div style={{ fontSize: '0.95rem', fontWeight: 700, color: 'var(--text-primary)', marginBottom: '4px' }}>Razorpay Online Payments</div>
                   <div style={{ fontSize: '0.8rem', color: 'var(--text-secondary)' }}>
@@ -581,12 +557,12 @@ export default function SuperAdminSettings() {
                     position: 'relative',
                     width: '60px',
                     height: '32px',
-                    background: (settings.payment_gateway_enabled === 'true' || settings.payment_gateway_enabled === true) ? 'var(--accent-color)' : 'var(--surface-3)',
+                    background: (settings.payment_gateway_enabled === 'true' || settings.payment_gateway_enabled === true) ? 'var(--primary)' : 'var(--line2)',
                     border: 'none',
                     borderRadius: '32px',
                     cursor: 'pointer',
                     transition: 'all 0.3s ease',
-                    boxShadow: (settings.payment_gateway_enabled === 'true' || settings.payment_gateway_enabled === true) ? '0 0 10px var(--accent-border)' : 'none',
+                    boxShadow: 'none',
                     padding: 0,
                   }}
                 >
@@ -606,7 +582,7 @@ export default function SuperAdminSettings() {
               </div>
 
               {/* Social Login Switch */}
-              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '20px', background: 'var(--surface-1)', border: '1px solid var(--border-color)', borderRadius: '10px' }}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '20px', background: 'var(--card2)', border: '1px solid var(--line)', borderRadius: '10px' }}>
                 <div style={{ flex: 1, paddingRight: '20px' }}>
                   <div style={{ fontSize: '0.95rem', fontWeight: 700, color: 'var(--text-primary)', marginBottom: '4px' }}>OAuth Social Login (Google &amp; Facebook)</div>
                   <div style={{ fontSize: '0.8rem', color: 'var(--text-secondary)' }}>
@@ -620,12 +596,12 @@ export default function SuperAdminSettings() {
                     position: 'relative',
                     width: '60px',
                     height: '32px',
-                    background: (settings.social_login_enabled === 'true' || settings.social_login_enabled === true) ? 'var(--accent-color)' : 'var(--surface-3)',
+                    background: (settings.social_login_enabled === 'true' || settings.social_login_enabled === true) ? 'var(--primary)' : 'var(--line2)',
                     border: 'none',
                     borderRadius: '32px',
                     cursor: 'pointer',
                     transition: 'all 0.3s ease',
-                    boxShadow: (settings.social_login_enabled === 'true' || settings.social_login_enabled === true) ? '0 0 10px var(--accent-border)' : 'none',
+                    boxShadow: 'none',
                     padding: 0,
                   }}
                 >
@@ -645,7 +621,7 @@ export default function SuperAdminSettings() {
               </div>
 
               {/* LMS Video Module Switch */}
-              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '20px', background: 'var(--surface-1)', border: '1px solid var(--border-color)', borderRadius: '10px' }}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '20px', background: 'var(--card2)', border: '1px solid var(--line)', borderRadius: '10px' }}>
                 <div style={{ flex: 1, paddingRight: '20px' }}>
                   <div style={{ fontSize: '0.95rem', fontWeight: 700, color: 'var(--text-primary)', marginBottom: '4px' }}>LMS Video Course Player</div>
                   <div style={{ fontSize: '0.8rem', color: 'var(--text-secondary)' }}>
@@ -659,12 +635,12 @@ export default function SuperAdminSettings() {
                     position: 'relative',
                     width: '60px',
                     height: '32px',
-                    background: (settings.lms_video_enabled === 'true' || settings.lms_video_enabled === true) ? 'var(--accent-color)' : 'var(--surface-3)',
+                    background: (settings.lms_video_enabled === 'true' || settings.lms_video_enabled === true) ? 'var(--primary)' : 'var(--line2)',
                     border: 'none',
                     borderRadius: '32px',
                     cursor: 'pointer',
                     transition: 'all 0.3s ease',
-                    boxShadow: (settings.lms_video_enabled === 'true' || settings.lms_video_enabled === true) ? '0 0 10px var(--accent-border)' : 'none',
+                    boxShadow: 'none',
                     padding: 0,
                   }}
                 >
@@ -687,14 +663,9 @@ export default function SuperAdminSettings() {
           </div>
         )}
 
-        <div style={{ marginTop: '32px', borderTop: '1px solid var(--border-color)', paddingTop: '24px', display: 'flex', justifyContent: 'flex-end' }}>
-          <button
-            type="submit"
-            className="btn-primary"
-            disabled={saving}
-            style={{ minWidth: '150px' }}
-          >
-            {saving ? '⏳ Saving...' : 'Save Settings'}
+        <div className="adm-formfoot">
+          <button type="submit" className="btn-primary" disabled={saving} style={{ minWidth: '150px' }}>
+            {saving ? 'Saving…' : 'Save settings'}
           </button>
         </div>
 

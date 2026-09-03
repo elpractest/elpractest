@@ -49,7 +49,7 @@ export default function ResetPassword() {
       <div style={{ display: 'flex', flex: 1, justifyContent: 'center', alignItems: 'center', minHeight: '80vh', padding: '16px' }}>
         <div className="glass-panel" style={{ width: '100%', maxWidth: '420px', padding: '40px', textAlign: 'center', display: 'flex', flexDirection: 'column', gap: '20px' }}>
           <div style={{ display: 'flex', justifyContent: 'center' }}><span style={{ display: 'inline-flex', padding: '15px', borderRadius: '18px', background: 'var(--danger-bg)', color: 'var(--danger-text)', border: '1px solid var(--danger-border)' }}><Icon name="x" size={34} /></span></div>
-          <h2 style={{ margin: 0, fontSize: '1.6rem', fontWeight: 800, color: 'var(--danger-text)' }}>Invalid Reset Link</h2>
+          <h2 style={{ margin: 0, fontSize: '1.6rem', fontWeight: 700, color: 'var(--danger-text)' }}>Invalid Reset Link</h2>
           <p style={{ margin: 0, color: 'var(--text-secondary)', fontSize: '0.95rem' }}>
             This password reset link is invalid. Please request a new one.
           </p>
@@ -66,7 +66,7 @@ export default function ResetPassword() {
       <div style={{ display: 'flex', flex: 1, justifyContent: 'center', alignItems: 'center', minHeight: '80vh', padding: '16px' }}>
         <div className="glass-panel" style={{ width: '100%', maxWidth: '420px', padding: '40px', textAlign: 'center', display: 'flex', flexDirection: 'column', gap: '20px' }}>
           <div style={{ display: 'flex', justifyContent: 'center' }}><span style={{ display: 'inline-flex', padding: '15px', borderRadius: '18px', background: 'var(--success-bg)', color: 'var(--success-text)', border: '1px solid var(--success-border)' }}><Icon name="check-circle" size={34} /></span></div>
-          <h2 style={{ margin: 0, fontSize: '1.6rem', fontWeight: 800, color: 'var(--accent-color)' }}>Password Reset!</h2>
+          <h2 style={{ margin: 0, fontSize: '1.6rem', fontWeight: 700, color: 'var(--accent-color)' }}>Password Reset!</h2>
           <p style={{ margin: 0, color: 'var(--text-secondary)', fontSize: '0.95rem' }}>
             Your password has been reset successfully. You can now log in with your new password.
           </p>
@@ -92,7 +92,7 @@ export default function ResetPassword() {
     <div style={{ display: 'flex', flex: 1, justifyContent: 'center', alignItems: 'center', minHeight: '80vh', padding: '16px' }}>
       <div className="glass-panel" style={{ width: '100%', maxWidth: '420px', padding: '40px', display: 'flex', flexDirection: 'column', gap: '20px' }}>
         <div style={{ textAlign: 'center' }}>
-          <h2 style={{ margin: '0 0 8px 0', fontSize: '1.6rem', fontWeight: 800, color: 'var(--accent-color)' }}>Reset Password</h2>
+          <h2 style={{ margin: '0 0 8px 0', fontSize: '1.6rem', fontWeight: 700, color: 'var(--accent-color)' }}>Reset Password</h2>
           <p style={{ margin: 0, color: 'var(--text-secondary)', fontSize: '0.9rem' }}>
             Choose a new password for your account.
           </p>

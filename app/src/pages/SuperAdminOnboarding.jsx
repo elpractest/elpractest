@@ -1,5 +1,9 @@
 import React, { useState, useEffect } from 'react';
 import api from '../api';
+import Icon from '../components/Icon';
+import {
+  PageHead, EmptyState, Modal, Field, FormSection, Notice, Num,
+} from '../components/admin/ui';
 
 export default function SuperAdminOnboarding() {
   const [admins, setAdmins] = useState([]);
@@ -15,6 +19,7 @@ export default function SuperAdminOnboarding() {
   // Password reset modal state
   const [resettingUser, setResettingUser] = useState(null);
   const [newPassword, setNewPassword] = useState('');
+  const [resetError, setResetError] = useState('');
 
   const [error, setError] = useState('');
   const [success, setSuccess] = useState('');
@@ -69,9 +74,10 @@ export default function SuperAdminOnboarding() {
   const handleResetPassword = async (e) => {
     e.preventDefault();
     if (!newPassword || newPassword.length < 8) {
-      alert('Password must be at least 8 characters long.');
+      setResetError('Use at least 8 characters.');
       return;
     }
+    setResetError('');
 
     setActionLoading(true);
     setError('');
@@ -93,221 +99,189 @@ export default function SuperAdminOnboarding() {
 
   const adminExists = admins.length > 0;
 
-  if (loading) {
-    return (
-      <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', height: '200px', color: 'var(--text-secondary)' }}>
-        <span>⏳ Loading account directory...</span>
-      </div>
-    );
-  }
-
   return (
-    <div style={{ maxWidth: '1000px', margin: '0 auto' }}>
-      
-      <div style={{ marginBottom: '32px' }}>
-        <h1 style={{ fontSize: '2rem', fontWeight: 800, margin: '0 0 8px 0', color: 'var(--text-primary)', fontFamily: 'var(--font-display)' }}>
-          Onboarding &amp; Support Tooling
-        </h1>
-        <p style={{ margin: 0, color: 'var(--text-secondary)' }}>
-          Onboard the coaching institute's Admin owner or assist them with support tasks like password resets.
-        </p>
-      </div>
+    <div style={{ display: 'flex', flexDirection: 'column', gap: '18px', maxWidth: '1040px' }}>
+      <PageHead
+        title="Admin accounts"
+        subtitle="Onboard this deployment’s Admin owner, and help them back in when they are locked out."
+      />
 
-      {error && (
-        <div style={{ background: 'var(--danger-bg)', border: '1px solid var(--danger-border)', padding: '12px 16px', borderRadius: '8px', color: 'var(--danger-text)', marginBottom: '24px', fontSize: '0.9rem' }}>
-          ⚠️ {error}
+      {error && <Notice tone="danger" icon="alert" onDismiss={() => setError('')}>{error}</Notice>}
+      {success && <Notice tone="success" icon="check-circle" onDismiss={() => setSuccess('')}>{success}</Notice>}
+
+      <div className="adm-onboard-grid">
+        {/* Onboarding form */}
+        <div style={{ background: 'var(--card)', border: '1px solid var(--line)', borderRadius: '20px', padding: '20px 22px' }}>
+          <FormSection
+            title="Onboard the Admin"
+            description="One Admin account per tenant deployment — that is the white-label model, not a limit that can be raised here."
+          >
+            {loading ? (
+              <div className="skeleton" style={{ height: '220px', borderRadius: '14px' }} />
+            ) : adminExists ? (
+              <Notice tone="primary" icon="shield-check">
+                This deployment already has an active Admin account. To hand the console to someone else, reset the
+                existing account’s password rather than creating a second owner.
+              </Notice>
+            ) : (
+              <form onSubmit={handleCreateAdmin} style={{ display: 'flex', flexDirection: 'column', gap: '14px' }}>
+                <Field label="Full name" htmlFor="ob-name">
+                  <input
+                    id="ob-name"
+                    type="text"
+                    className="form-input"
+                    value={name}
+                    onChange={(e) => setName(e.target.value)}
+                    placeholder="e.g. Raj Sharma"
+                    required
+                  />
+                </Field>
+                <Field label="Email address" htmlFor="ob-email">
+                  <input
+                    id="ob-email"
+                    type="email"
+                    className="form-input"
+                    value={email}
+                    onChange={(e) => setEmail(e.target.value)}
+                    placeholder="e.g. raj@sharmaclasses.com"
+                    required
+                  />
+                </Field>
+                <Field label="Initial password" hint="At least 8 characters. They set up 2FA on first sign-in." htmlFor="ob-pass">
+                  <input
+                    id="ob-pass"
+                    type="password"
+                    className="form-input"
+                    value={password}
+                    onChange={(e) => setPassword(e.target.value)}
+                    placeholder="At least 8 characters"
+                    required
+                  />
+                </Field>
+                <Field label="Phone number" hint="Optional." htmlFor="ob-phone">
+                  <input
+                    id="ob-phone"
+                    type="text"
+                    className="form-input"
+                    value={phone}
+                    onChange={(e) => setPhone(e.target.value)}
+                    placeholder="e.g. 9876543210"
+                  />
+                </Field>
+
+                <div className="adm-formfoot">
+                  <button type="submit" className="btn-primary" disabled={actionLoading}>
+                    {actionLoading ? 'Onboarding…' : 'Onboard & set up 2FA'}
+                  </button>
+                </div>
+              </form>
+            )}
+          </FormSection>
         </div>
-      )}
 
-      {success && (
-        <div style={{ background: 'var(--success-bg)', border: '1px solid var(--success-border)', padding: '12px 16px', borderRadius: '8px', color: 'var(--success-text)', marginBottom: '24px', fontSize: '0.9rem' }}>
-          ✅ {success}
-        </div>
-      )}
+        {/* Directory */}
+        <div style={{ background: 'var(--card)', border: '1px solid var(--line)', borderRadius: '20px', overflow: 'hidden' }}>
+          <div style={{ padding: '18px 20px', borderBottom: '1px solid var(--line)' }}>
+            <h3 className="t-heading" style={{ margin: 0, color: 'var(--tx)' }}>Support directory</h3>
+            <p style={{ margin: '5px 0 0', font: '400 12.5px/1.55 var(--font-body)', color: 'var(--muted)' }}>
+              Resetting a password signs the admin out everywhere.
+            </p>
+          </div>
 
-      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '32px' }}>
-        
-        {/* Onboarding Form */}
-        <div className="glass-panel" style={{ padding: '24px' }}>
-          <h2 style={{ fontSize: '1.2rem', fontWeight: 700, margin: '0 0 16px 0', color: 'var(--text-primary)' }}>Onboard Admin Account</h2>
-          
-          {adminExists ? (
-            <div style={{ background: 'var(--accent-soft)', border: '1px solid var(--accent-soft)', padding: '16px', borderRadius: '8px', color: 'var(--text-secondary)', fontSize: '0.85rem', lineHeight: '1.5' }}>
-              ℹ️ <strong>Limit Reached:</strong> This deployment already has an active Admin account. In alignment with our white-label business model, only exactly one Admin account is allowed per tenant deployment.
+          {loading ? (
+            <div style={{ padding: '14px' }}>
+              <div className="skeleton" style={{ height: '96px', borderRadius: '14px' }} />
             </div>
+          ) : admins.length === 0 ? (
+            <EmptyState icon="users" message="No Admin account exists yet. Use the panel on the left to create one." />
           ) : (
-            <form onSubmit={handleCreateAdmin} style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
-              <div>
-                <label style={{ display: 'block', fontSize: '0.8rem', color: 'var(--text-secondary)', marginBottom: '6px' }}>Full Name *</label>
-                <input
-                  type="text"
-                  className="form-input"
-                  value={name}
-                  onChange={(e) => setName(e.target.value)}
-                  placeholder="e.g. Raj Sharma"
-                  required
-                />
-              </div>
+            <div style={{ padding: '14px', display: 'flex', flexDirection: 'column', gap: '12px' }}>
+              {admins.map((admin) => (
+                <div
+                  key={admin.id}
+                  style={{
+                    background: 'var(--card2)',
+                    border: '1px solid var(--line)',
+                    borderRadius: '14px',
+                    padding: '14px',
+                    display: 'flex',
+                    justifyContent: 'space-between',
+                    alignItems: 'center',
+                    gap: '12px',
+                    flexWrap: 'wrap',
+                  }}
+                >
+                  <div style={{ minWidth: 0 }}>
+                    <div style={{ font: '600 13.5px var(--font-body)', color: 'var(--tx)' }}>{admin.name}</div>
+                    <div style={{ font: '400 12.5px var(--font-body)', color: 'var(--muted)', marginTop: '2px' }}>{admin.email}</div>
+                    {admin.phone && (
+                      <div style={{ marginTop: '2px' }}>
+                        <Num style={{ fontSize: '12px', fontWeight: 500, color: 'var(--muted)' }}>{admin.phone}</Num>
+                      </div>
+                    )}
+                    <div className="t-overline" style={{ marginTop: '6px', fontSize: '9.5px', color: 'var(--muted)' }}>
+                      CREATED {new Date(admin.created_at).toLocaleDateString()}
+                    </div>
+                  </div>
 
-              <div>
-                <label style={{ display: 'block', fontSize: '0.8', color: 'var(--text-secondary)', marginBottom: '6px' }}>Email Address *</label>
-                <input
-                  type="email"
-                  className="form-input"
-                  value={email}
-                  onChange={(e) => setEmail(e.target.value)}
-                  placeholder="e.g. raj@sharmaclasses.com"
-                  required
-                />
-              </div>
-
-              <div>
-                <label style={{ display: 'block', fontSize: '0.8rem', color: 'var(--text-secondary)', marginBottom: '6px' }}>Initial Password *</label>
-                <input
-                  type="password"
-                  className="form-input"
-                  value={password}
-                  onChange={(e) => setPassword(e.target.value)}
-                  placeholder="At least 8 characters"
-                  required
-                />
-              </div>
-
-              <div>
-                <label style={{ display: 'block', fontSize: '0.8rem', color: 'var(--text-secondary)', marginBottom: '6px' }}>Phone Number (Optional)</label>
-                <input
-                  type="text"
-                  className="form-input"
-                  value={phone}
-                  onChange={(e) => setPhone(e.target.value)}
-                  placeholder="e.g. 9876543210"
-                />
-              </div>
-
-              <button
-                type="submit"
-                className="btn-primary"
-                disabled={actionLoading}
-                style={{ marginTop: '8px' }}
-              >
-                {actionLoading ? '⏳ Onboarding...' : 'Onboard & Setup 2FA'}
-              </button>
-            </form>
+                  <button
+                    type="button"
+                    onClick={() => { setResettingUser(admin); setResetError(''); }}
+                    className="btn-secondary"
+                    style={{ padding: '8px 14px', minHeight: '40px', fontSize: '12px' }}
+                  >
+                    <Icon name="key" size={15} />
+                    Reset password
+                  </button>
+                </div>
+              ))}
+            </div>
           )}
         </div>
-
-        {/* Support Tooling */}
-        <div className="glass-panel" style={{ padding: '24px', display: 'flex', flexDirection: 'column', justifyBetween: 'space-between' }}>
-          <div>
-            <h2 style={{ fontSize: '1.2rem', fontWeight: 700, margin: '0 0 16px 0', color: 'var(--text-primary)' }}>Support Directory</h2>
-            
-            {admins.length === 0 ? (
-              <div style={{ color: 'var(--text-secondary)', fontSize: '0.9rem', textAlign: 'center', padding: '40px 0' }}>
-                No active Admin account detected. Use the onboarding panel to create one.
-              </div>
-            ) : (
-              <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
-                {admins.map((admin) => (
-                  <div
-                    key={admin.id}
-                    style={{
-                      background: 'var(--surface-1)',
-                      border: '1px solid var(--border-color)',
-                      borderRadius: '8px',
-                      padding: '16px',
-                      display: 'flex',
-                      justifyContent: 'space-between',
-                      alignItems: 'center',
-                    }}
-                  >
-                    <div>
-                      <div style={{ fontWeight: 'bold', fontSize: '0.95rem', color: 'var(--text-primary)' }}>{admin.name}</div>
-                      <div style={{ fontSize: '0.8rem', color: 'var(--text-secondary)', marginTop: '2px' }}>{admin.email}</div>
-                      {admin.phone && <div style={{ fontSize: '0.8rem', color: 'var(--text-secondary)' }}>📞 {admin.phone}</div>}
-                      <div style={{ fontSize: '0.7rem', color: 'var(--surface-strong)', marginTop: '6px' }}>
-                        Created: {new Date(admin.created_at).toLocaleDateString()}
-                      </div>
-                    </div>
-
-                    <button
-                      onClick={() => setResettingUser(admin)}
-                      className="btn-secondary"
-                      style={{ padding: '8px 12px', fontSize: '0.8rem', borderColor: 'var(--warning)', color: 'var(--warning-text)' }}
-                    >
-                      Reset Password
-                    </button>
-                  </div>
-                ))}
-              </div>
-            )}
-          </div>
-        </div>
-
       </div>
 
-      {/* Password Reset Modal */}
-      {resettingUser && (
-        <div
-          style={{
-            position: 'fixed',
-            top: 0,
-            left: 0,
-            right: 0,
-            bottom: 0,
-            background: 'var(--overlay)',
-            backdropFilter: 'blur(4px)',
-            display: 'flex',
-            justifyContent: 'center',
-            alignItems: 'center',
-            zIndex: 1000,
-          }}
-        >
-          <form
-            onSubmit={handleResetPassword}
-            className="glass-panel"
-            style={{ width: '400px', padding: '24px', display: 'flex', flexDirection: 'column', gap: '16px' }}
-          >
-            <h3 style={{ margin: 0, fontSize: '1.1rem', fontWeight: 700, color: 'var(--text-primary)' }}>
-              Reset Admin Password
-            </h3>
-            <p style={{ margin: 0, fontSize: '0.85rem', color: 'var(--text-secondary)' }}>
-              Enter a new password for <strong>{resettingUser.name}</strong> ({resettingUser.email}).
-            </p>
+      <style>{`
+        .adm-onboard-grid { display: grid; grid-template-columns: 1fr; gap: 18px; align-items: start; }
+        @media (min-width: 1024px) { .adm-onboard-grid { grid-template-columns: 1fr 1fr; } }
+      `}</style>
 
-            <div>
-              <label style={{ display: 'block', fontSize: '0.8rem', color: 'var(--text-secondary)', marginBottom: '6px' }}>New Password</label>
+      {/* Password reset */}
+      {resettingUser && (
+        <Modal
+          title="Reset admin password"
+          description={`A new password for ${resettingUser.name} (${resettingUser.email}).`}
+          width={460}
+          onClose={() => { setResettingUser(null); setNewPassword(''); setResetError(''); }}
+          footer={
+            <>
+              <button
+                type="button"
+                className="btn-secondary"
+                onClick={() => { setResettingUser(null); setNewPassword(''); setResetError(''); }}
+              >
+                Cancel
+              </button>
+              <button type="submit" form="admin-reset-form" className="btn-primary" disabled={actionLoading}>
+                {actionLoading ? 'Resetting…' : 'Reset password'}
+              </button>
+            </>
+          }
+        >
+          <form id="admin-reset-form" onSubmit={handleResetPassword}>
+            <Field label="New password" error={resetError} hint="At least 8 characters." htmlFor="ob-newpass">
               <input
+                id="ob-newpass"
                 type="password"
-                className="form-input"
+                className={`form-input${resetError ? ' has-error' : ''}`}
                 value={newPassword}
                 onChange={(e) => setNewPassword(e.target.value)}
                 placeholder="At least 8 characters"
                 required
               />
-            </div>
-
-            <div style={{ display: 'flex', gap: '12px', marginTop: '8px' }}>
-              <button
-                type="submit"
-                className="btn-primary"
-                disabled={actionLoading}
-                style={{ flex: 1, background: 'var(--warning)', boxShadow: 'none' }}
-              >
-                {actionLoading ? '⏳ Resetting...' : 'Reset Password'}
-              </button>
-              <button
-                type="button"
-                onClick={() => { setResettingUser(null); setNewPassword(''); }}
-                className="btn-secondary"
-                style={{ flex: 1 }}
-              >
-                Cancel
-              </button>
-            </div>
+            </Field>
           </form>
-        </div>
+        </Modal>
       )}
-
     </div>
   );
 }

@@ -50,7 +50,7 @@ export default function Admin2FASetup({ setUser }) {
     <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', minHeight: '100vh', padding: '20px', backgroundColor: 'var(--bg-color)' }}>
       <div className="glass-panel" style={{ width: '100%', maxWidth: '500px', padding: '40px', display: 'flex', flexDirection: 'col', gap: '24px', boxSizing: 'border-box' }}>
         <div style={{ textAlign: 'center' }}>
-          <h2 style={{ fontSize: '1.8rem', fontWeight: 800, margin: '0 0 8px 0', color: 'var(--text-primary)' }}>Secure Admin Account</h2>
+          <h2 className="t-title" style={{ margin: '0 0 8px', color: 'var(--tx)' }}>Secure Admin Account</h2>
           <p style={{ color: 'var(--text-secondary)', fontSize: '0.95rem', margin: 0 }}>Two-Factor Authentication (2FA) is mandatory for administrator accounts.</p>
         </div>
 
@@ -79,7 +79,7 @@ export default function Admin2FASetup({ setUser }) {
               />
               <div style={{ textAlign: 'center' }}>
                 <span style={{ fontSize: '0.85rem', color: 'var(--text-secondary)' }}>Or enter secret key manually:</span>
-                <div style={{ fontFamily: 'var(--font-mono)', fontSize: '1.1rem', letterSpacing: '2px', color: 'var(--accent-color)', fontWeight: 'bold', marginTop: '4px', background: 'var(--surface-2)', padding: '6px 12px', borderRadius: '6px' }}>
+                <div style={{ fontFamily: 'var(--font-mono)', fontSize: '1.1rem', letterSpacing: '2px', color: 'var(--primary)', fontWeight: 700, marginTop: '4px', background: 'var(--surface-2)', padding: '6px 12px', borderRadius: '6px' }}>
                   {secretKey}
                 </div>
               </div>
@@ -105,7 +105,7 @@ export default function Admin2FASetup({ setUser }) {
                 value={code}
                 onChange={(e) => setCode(e.target.value.replace(/\D/g, ''))}
                 className="form-input"
-                style={{ textAlign: 'center', fontSize: '1.5rem', letterSpacing: '6px', fontWeight: 'bold' }}
+                style={{ textAlign: 'center', fontSize: '1.5rem', letterSpacing: '6px', fontWeight: 700 }}
                 required
                 disabled={loading}
               />

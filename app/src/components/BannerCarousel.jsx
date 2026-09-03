@@ -13,7 +13,9 @@ import { USE_DEMO_DATA, demoBanners } from '../lib/demoData';
  * A banner's cta_url may be an internal path ("/student/test-series") or an
  * external URL ("https://…"); the card routes accordingly.
  */
-const SCRIMS = ['rgba(11,24,48,.86)', 'rgba(26,18,6,.86)', 'rgba(20,10,42,.86)', 'rgba(5,32,21,.86)'];
+/* The scrim only exists to keep the text legible over an uploaded image.
+   With no image the card is a flat tint and needs no scrim at all. */
+const SCRIM = 'rgba(14,18,32,.62)';
 
 export default function BannerCarousel({ onDemoCta }) {
   const navigate = useNavigate();
@@ -38,9 +40,9 @@ export default function BannerCarousel({ onDemoCta }) {
   const items = useDemo
     ? demoBanners.map((b, i) => ({
         id: `demo-${i}`, kicker: b.kicker, title: b.title, subtitle: b.subtitle,
-        cta_label: b.cta, grad: b.grad, scrim: SCRIMS[i % SCRIMS.length], demo: true,
+        cta_label: b.cta, grad: b.grad, scrim: SCRIM, demo: true,
       }))
-    : banners.map((b) => ({ ...b, grad: 'linear-gradient(120deg,#12203A,#0B1830)', scrim: 'rgba(18,32,58,.86)' }));
+    : banners.map((b) => ({ ...b, grad: 'var(--primary-soft)', scrim: SCRIM }));
 
   if (items.length === 0) return null;
 
@@ -50,14 +52,19 @@ export default function BannerCarousel({ onDemoCta }) {
       autoPlay
       trackStyle={{ display: 'flex', gap: '13px', overflowX: 'auto', padding: '4px 18px', scrollSnapType: 'x mandatory' }}
     >
-      {items.map((b) => (
+      {items.map((b) => {
+        // Text sits on the image when there is one, on a soft tint otherwise.
+        const ink = b.image_url
+          ? { title: '#fff', sub: 'rgba(255,255,255,.82)', ctaBg: '#fff', ctaText: 'var(--primary)' }
+          : { title: 'var(--tx)', sub: 'var(--tx2)', ctaBg: 'var(--primary)', ctaText: 'var(--brand-ink)' };
+        return (
         <div
           key={b.id}
           onClick={() => (b.demo ? onDemoCta?.() : go(b.cta_url))}
           style={{
             flex: 'none', width: '296px', aspectRatio: '16 / 9', borderRadius: '20px', scrollSnapAlign: 'start',
             position: 'relative', overflow: 'hidden', cursor: 'pointer',
-            background: b.grad, border: '1px solid var(--line2)',
+            background: b.grad, border: '1px solid var(--line)',
           }}
         >
           {/* Full-bleed at 16:9 — the same crop the Android carousel and the
@@ -66,19 +73,22 @@ export default function BannerCarousel({ onDemoCta }) {
           {b.image_url && (
             <div style={{ position: 'absolute', inset: 0, backgroundImage: `url(${b.image_url})`, backgroundSize: 'cover', backgroundPosition: 'center' }} />
           )}
-          <div style={{ position: 'absolute', inset: 0, background: `linear-gradient(90deg,${b.scrim} 0%,${b.scrim} 52%,transparent 100%)`, pointerEvents: 'none' }} />
+          {b.image_url && (
+            <div style={{ position: 'absolute', inset: 0, background: `linear-gradient(90deg,${b.scrim} 0%,${b.scrim} 52%,transparent 100%)`, pointerEvents: 'none' }} />
+          )}
           <div style={{ position: 'absolute', inset: '0 34% 0 0', padding: '18px 16px 18px 20px', display: 'flex', flexDirection: 'column', pointerEvents: 'none' }}>
             {b.kicker && (
-              <span style={{ alignSelf: 'flex-start', font: '800 10px var(--font-body)', letterSpacing: '.14em', color: '#1A1206', background: '#FFC968', padding: '4px 9px', borderRadius: '999px' }}>{b.kicker}</span>
+              <span className="t-overline" style={{ alignSelf: 'flex-start', color: ink.sub }}>{b.kicker}</span>
             )}
-            <div style={{ font: '800 19px/1.12 var(--font-display)', color: '#fff', marginTop: 'auto', letterSpacing: '-.02em' }}>{b.title}</div>
-            {b.subtitle && <div style={{ font: '600 12px var(--font-body)', color: 'rgba(255,255,255,.82)', marginTop: '4px' }}>{b.subtitle}</div>}
+            <div style={{ font: '700 19px/1.12 var(--font-display)', color: ink.title, marginTop: 'auto', letterSpacing: '-.025em' }}>{b.title}</div>
+            {b.subtitle && <div style={{ font: '400 12.5px var(--font-body)', color: ink.sub, marginTop: '4px' }}>{b.subtitle}</div>}
             {b.cta_label && (
-              <span style={{ alignSelf: 'flex-start', marginTop: '11px', font: '800 12px var(--font-body)', color: '#1A1206', background: '#F5A623', padding: '7px 14px', borderRadius: '999px' }}>{b.cta_label}</span>
+              <span style={{ alignSelf: 'flex-start', marginTop: '11px', font: '600 12px var(--font-body)', color: ink.ctaText, background: ink.ctaBg, padding: '7px 14px', borderRadius: '999px' }}>{b.cta_label}</span>
             )}
           </div>
         </div>
-      ))}
+        );
+      })}
     </Carousel>
   );
 }

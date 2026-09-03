@@ -168,7 +168,7 @@ export default function LessonPlayer() {
 
         {progress?.is_completed && (
           <span style={{ fontSize: '0.82rem', padding: '4px 12px', borderRadius: '12px', background: 'var(--success-bg)', color: 'var(--success-text)', border: '1px solid var(--success-border)', fontWeight: 600 }}>
-            ✓ Completed
+            <Icon name="check" size={15} /> Completed
           </span>
         )}
       </div>
@@ -187,7 +187,7 @@ export default function LessonPlayer() {
       {/* Lesson Details & Description */}
       <div className="glass-panel" style={{ padding: '28px', display: 'flex', flexDirection: 'column', gap: '12px' }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
-          <h1 style={{ margin: 0, fontSize: '1.5rem', fontWeight: 800 }}>{lesson.title}</h1>
+          <h1 style={{ margin: 0, fontSize: '1.5rem', fontWeight: 700 }}>{lesson.title}</h1>
           {lesson.is_free_preview && (
             <span style={{ fontSize: '0.75rem', padding: '3px 8px', borderRadius: '6px', background: 'var(--success-bg)', color: 'var(--success-text)', border: '1px solid var(--success-border)' }}>
               Free Preview

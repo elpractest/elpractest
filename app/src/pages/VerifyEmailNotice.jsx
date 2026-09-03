@@ -41,7 +41,7 @@ export default function VerifyEmailNotice() {
     <div style={{ display: 'flex', flex: 1, justifyContent: 'center', alignItems: 'center', minHeight: '80vh', padding: '16px' }}>
       <div className="glass-panel" style={{ width: '100%', maxWidth: '460px', padding: '40px', textAlign: 'center', display: 'flex', flexDirection: 'column', gap: '20px' }}>
         <div style={{ display: 'flex', justifyContent: 'center' }}><span style={{ display: 'inline-flex', padding: '15px', borderRadius: '18px', background: 'var(--accent-soft)', color: 'var(--accent-color)', border: '1px solid var(--accent-border)' }}><Icon name="mail" size={34} /></span></div>
-        <h2 style={{ margin: 0, fontSize: '1.6rem', fontWeight: 800, color: 'var(--accent-color)' }}>Verify Your Email</h2>
+        <h2 style={{ margin: 0, fontSize: '1.6rem', fontWeight: 700, color: 'var(--accent-color)' }}>Verify Your Email</h2>
         <p style={{ margin: 0, color: 'var(--text-secondary)', fontSize: '0.95rem', lineHeight: '1.6' }}>
           We've sent a verification link to your email. Please click the link to verify your account before logging in.
         </p>

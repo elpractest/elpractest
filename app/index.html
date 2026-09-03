@@ -1,5 +1,5 @@
 <!doctype html>
-<html lang="en" data-theme="dark">
+<html lang="en" data-theme="light">
   <head>
     <meta charset="UTF-8" />
     <!-- The owner's mark, same artwork the header renders and the Android app
@@ -11,24 +11,26 @@
     <link rel="manifest" href="/manifest.webmanifest" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>e-Learning Practest — Exam Prep</title>
-    <meta name="theme-color" content="#0b0f1a" media="(prefers-color-scheme: dark)" />
-    <meta name="theme-color" content="#eaeef6" media="(prefers-color-scheme: light)" />
-    <!-- Theme boot: cookie (shared with the public site) → localStorage → dark, before first paint -->
+    <meta name="theme-color" content="#0b0e18" media="(prefers-color-scheme: dark)" />
+    <meta name="theme-color" content="#f2f4f9" media="(prefers-color-scheme: light)" />
+    <!-- Theme boot: cookie (shared with the public site) → localStorage → LIGHT, before first paint.
+         Dark stays fully supported; it is simply no longer the default. -->
     <script>
       (function () {
         try {
           var m = document.cookie.match(/(?:^|; )practest_theme=(light|dark)/);
           var t = m ? m[1] : localStorage.getItem('practest-theme');
           if (t === 'light' || t === 'dark') document.documentElement.dataset.theme = t;
-        } catch (e) { /* private mode etc. — default dark stands */ }
+        } catch (e) { /* private mode etc. — the light default stands */ }
       })();
     </script>
-    <!-- Fonts: Sora (display) · Plus Jakarta Sans (UI) · JetBrains Mono (numerals) · Noto Sans Devanagari (हिं) -->
+    <!-- Fonts: Bricolage Grotesque (display) · Hanken Grotesk (UI) ·
+         JetBrains Mono (numerals) · Noto Sans Devanagari (हिं) -->
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
     <link
       rel="stylesheet"
-      href="https://fonts.googleapis.com/css2?family=Sora:wght@400;500;600;700;800&family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=JetBrains+Mono:wght@500;700&family=Noto+Sans+Devanagari:wght@500;600;700&display=swap"
+      href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,400;12..96,500;12..96,600;12..96,700;12..96,800&family=Hanken+Grotesk:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500;700&family=Noto+Sans+Devanagari:wght@400;500;600;700&display=swap"
     />
     <!-- GTM Script Loader gated by cookie consent -->
     <script>

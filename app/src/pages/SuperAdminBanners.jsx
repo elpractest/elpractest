@@ -1,6 +1,9 @@
 import React, { useState, useEffect, useRef } from 'react';
 import api from '../api';
 import Icon from '../components/Icon';
+import {
+  PageHead, EmptyState, Modal, Field, FormGrid, Notice, StatusDot, Badge, Num,
+} from '../components/admin/ui';
 
 /**
  * Super-admin management for Home promo banners (Phase 4). Full CRUD + image
@@ -10,7 +13,7 @@ import Icon from '../components/Icon';
  */
 const EMPTY = { title: '', subtitle: '', kicker: '', cta_label: '', cta_url: '', exam_category: '', sort_order: 0, is_active: true };
 
-function BannerRow({ banner, onEdit, onDelete, onUploaded }) {
+function BannerRow({ banner, onEdit, onDelete, onUploaded, onError }) {
   const fileRef = useRef(null);
   const [busy, setBusy] = useState(false);
 
@@ -26,7 +29,7 @@ function BannerRow({ banner, onEdit, onDelete, onUploaded }) {
       });
       onUploaded(banner.id, res.data.image_url);
     } catch (err) {
-      alert(err.response?.data?.message || 'Image upload failed. Use a 16:9 image (1920×1080) under 2MB.');
+      onError(err.response?.data?.message || 'Image upload failed. Use a 16:9 image (1920×1080) under 2MB.');
     } finally {
       setBusy(false);
       if (fileRef.current) fileRef.current.value = '';
@@ -34,33 +37,82 @@ function BannerRow({ banner, onEdit, onDelete, onUploaded }) {
   };
 
   return (
-    <div className="glass-panel" style={{ padding: '14px', display: 'flex', gap: '14px', alignItems: 'center', opacity: banner.is_active ? 1 : 0.6 }}>
+    <div
+      style={{
+        display: 'flex',
+        gap: '14px',
+        alignItems: 'center',
+        padding: '14px 16px',
+        borderBottom: '1px solid var(--line)',
+        opacity: banner.is_active ? 1 : 0.6,
+      }}
+    >
       {/* 16:9, matching what students actually see — a preview at any other
           ratio would show a crop the student app never renders. */}
-      <div style={{ width: '120px', aspectRatio: '16 / 9', borderRadius: '10px', flex: 'none', overflow: 'hidden', background: banner.image_url ? `center/cover url(${banner.image_url})` : 'linear-gradient(120deg,#12203A,#0B1830)', display: 'grid', placeItems: 'center' }}>
-        {!banner.image_url && <Icon name="upload" size={18} style={{ color: 'rgba(255,255,255,.6)' }} />}
+      <div
+        style={{
+          width: '112px',
+          aspectRatio: '16 / 9',
+          borderRadius: '12px',
+          flex: 'none',
+          overflow: 'hidden',
+          border: '1px solid var(--line)',
+          background: banner.image_url ? `center/cover url(${banner.image_url})` : 'var(--surf)',
+          display: 'grid',
+          placeItems: 'center',
+          color: 'var(--muted)',
+        }}
+      >
+        {!banner.image_url && <Icon name="image" size={18} />}
       </div>
+
       <div style={{ flex: 1, minWidth: 0 }}>
         <div style={{ display: 'flex', gap: '8px', alignItems: 'center', flexWrap: 'wrap' }}>
-          <strong style={{ color: 'var(--tx)' }}>{banner.title}</strong>
-          {banner.kicker && <span className="chip" style={{ fontSize: '0.6rem' }}>{banner.kicker}</span>}
-          {!banner.is_active && <span style={{ fontSize: '0.62rem', fontWeight: 700, color: 'var(--muted)', border: '1px solid var(--line2)', padding: '2px 7px', borderRadius: '999px' }}>HIDDEN</span>}
+          <span style={{ font: '600 13.5px var(--font-body)', color: 'var(--tx)' }}>{banner.title}</span>
+          {banner.kicker && <Badge tone="primary">{banner.kicker}</Badge>}
+          <StatusDot tone={banner.is_active ? 'success' : 'neutral'}>{banner.is_active ? 'Visible' : 'Hidden'}</StatusDot>
         </div>
-        {banner.subtitle && <div style={{ fontSize: '0.82rem', color: 'var(--muted)', marginTop: '2px' }}>{banner.subtitle}</div>}
-        <div style={{ fontSize: '0.72rem', color: 'var(--muted)', marginTop: '4px' }}>
-          order {banner.sort_order}{banner.exam_category ? ` · ${banner.exam_category}` : ''}{banner.cta_url ? ` · → ${banner.cta_url}` : ''}
+        {banner.subtitle && (
+          <div style={{ font: '400 12.5px var(--font-body)', color: 'var(--muted)', marginTop: '3px' }}>{banner.subtitle}</div>
+        )}
+        <div style={{ font: '400 11.5px var(--font-body)', color: 'var(--muted)', marginTop: '4px' }}>
+          Order <Num style={{ fontSize: '11.5px' }}>{banner.sort_order}</Num>
+          {banner.exam_category ? ` · ${banner.exam_category}` : ''}
+          {banner.cta_url ? ` · → ${banner.cta_url}` : ''}
         </div>
       </div>
+
       <input ref={fileRef} type="file" accept="image/*" onChange={upload} style={{ display: 'none' }} />
-      <button className="btn-secondary" style={{ padding: '8px 12px', fontSize: '0.8rem' }} disabled={busy} onClick={() => fileRef.current?.click()}>
-        <Icon name="upload" size={15} /> {busy ? '…' : 'Image'}
-      </button>
-      <button className="btn-secondary" style={{ padding: '8px 12px', fontSize: '0.8rem' }} onClick={() => onEdit(banner)}>
-        <Icon name="edit" size={15} /> Edit
-      </button>
-      <button className="btn-secondary" style={{ padding: '8px 12px', fontSize: '0.8rem', color: 'var(--danger-text)', borderColor: 'var(--danger-border)' }} onClick={() => onDelete(banner)}>
-        <Icon name="x" size={15} />
-      </button>
+      <div style={{ display: 'flex', gap: '7px', flex: 'none', flexWrap: 'wrap', justifyContent: 'flex-end' }}>
+        <button
+          type="button"
+          className="btn-secondary"
+          style={{ padding: '7px 12px', minHeight: '36px', fontSize: '11.5px' }}
+          disabled={busy}
+          onClick={() => fileRef.current?.click()}
+        >
+          <Icon name="upload" size={15} />
+          {busy ? 'Uploading…' : 'Image'}
+        </button>
+        <button
+          type="button"
+          className="btn-secondary"
+          style={{ padding: '7px 12px', minHeight: '36px', fontSize: '11.5px' }}
+          onClick={() => onEdit(banner)}
+        >
+          <Icon name="edit" size={15} />
+          Edit
+        </button>
+        <button
+          type="button"
+          className="btn-secondary"
+          aria-label={`Delete ${banner.title}`}
+          style={{ padding: '7px 10px', minHeight: '36px', fontSize: '11.5px', color: 'var(--danger)', borderColor: 'var(--danger-border)' }}
+          onClick={() => onDelete(banner)}
+        >
+          <Icon name="trash" size={15} />
+        </button>
+      </div>
     </div>
   );
 }
@@ -71,6 +123,7 @@ export default function SuperAdminBanners() {
   const [form, setForm] = useState(null); // null | EMPTY (new) | banner (edit)
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState('');
+  const [pendingDelete, setPendingDelete] = useState(null);
 
   const load = () => {
     setLoading(true);
@@ -101,77 +154,146 @@ export default function SuperAdminBanners() {
   };
 
   const remove = async (banner) => {
-    if (!window.confirm(`Delete banner “${banner.title}”? This also removes its image.`)) return;
     try {
       await api.delete(`/api/super-admin/banners/${banner.id}`);
       load();
     } catch {
-      alert('Delete failed.');
+      setError('Delete failed.');
     }
   };
 
   const onUploaded = (id, url) => setBanners((bs) => bs.map((b) => (b.id === id ? { ...b, image_url: url } : b)));
 
-  const field = (label, key, type = 'text') => (
-    <label style={{ display: 'flex', flexDirection: 'column', gap: '6px', fontSize: '0.8rem', fontWeight: 600, color: 'var(--text-secondary)' }}>
-      {label}
-      <input className="form-input" type={type} value={form[key] ?? ''} onChange={(e) => set(key, e.target.value)} />
-    </label>
-  );
-
   return (
-    <div style={{ maxWidth: '860px' }}>
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px', flexWrap: 'wrap', gap: '12px' }}>
-        <div>
-          <h1 style={{ margin: '0 0 4px', fontSize: '1.6rem', fontWeight: 800, fontFamily: 'var(--font-display)' }}>Home Banners</h1>
-          <p style={{ margin: 0, color: 'var(--text-secondary)', fontSize: '0.88rem' }}>Promo cards shown on the student app’s Home carousel.</p>
-        </div>
-        {!form && (
-          <button className="btn-primary" onClick={() => setForm({ ...EMPTY })}>
-            <Icon name="plus" size={16} /> New banner
-          </button>
+    <div style={{ display: 'flex', flexDirection: 'column', gap: '18px', maxWidth: '940px' }}>
+      <PageHead
+        title="Home banners"
+        subtitle="Promo cards on the student app’s Home carousel. A new banner appears for every student immediately."
+      >
+        <button type="button" className="btn-primary" onClick={() => setForm({ ...EMPTY })}>
+          <Icon name="plus" size={16} strokeWidth={2.4} />
+          New banner
+        </button>
+      </PageHead>
+
+      {error && !form && <Notice tone="danger" icon="alert" onDismiss={() => setError('')}>{error}</Notice>}
+
+      <div style={{ background: 'var(--card)', border: '1px solid var(--line)', borderRadius: '16px', overflow: 'hidden' }}>
+        {loading ? (
+          <div style={{ padding: '12px' }}>
+            {[0, 1, 2].map((i) => (
+              <div key={i} className="skeleton" style={{ height: '76px', borderRadius: '12px', marginBottom: '10px' }} />
+            ))}
+          </div>
+        ) : banners.length === 0 ? (
+          <EmptyState
+            icon="image"
+            message="No banners yet. Create one and it appears on every student’s Home immediately."
+            action={
+              <button type="button" className="btn-primary" onClick={() => setForm({ ...EMPTY })}>
+                <Icon name="plus" size={16} strokeWidth={2.4} />
+                New banner
+              </button>
+            }
+          />
+        ) : (
+          <div>
+            {banners.map((b) => (
+              <BannerRow key={b.id} banner={b} onEdit={(bn) => setForm({ ...bn })} onDelete={setPendingDelete} onUploaded={onUploaded} onError={setError} />
+            ))}
+          </div>
         )}
       </div>
 
-      {error && (
-        <div style={{ background: 'var(--danger-bg)', border: '1px solid var(--danger-border)', padding: '12px 16px', borderRadius: '8px', color: 'var(--danger-text)', fontSize: '0.85rem', marginBottom: '16px' }}>{error}</div>
-      )}
-
       {form && (
-        <div className="glass-panel" style={{ padding: '20px', marginBottom: '24px', display: 'flex', flexDirection: 'column', gap: '14px' }}>
-          <h3 style={{ margin: 0, fontSize: '1.05rem', fontWeight: 700 }}>{form.id ? 'Edit banner' : 'New banner'}</h3>
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))', gap: '14px' }}>
-            {field('Title *', 'title')}
-            {field('Subtitle', 'subtitle')}
-            {field('Kicker (eyebrow)', 'kicker')}
-            {field('CTA label', 'cta_label')}
-            {field('CTA link (/path or https://)', 'cta_url')}
-            {field('Exam category', 'exam_category')}
-            {field('Sort order', 'sort_order', 'number')}
-            <label style={{ display: 'flex', alignItems: 'center', gap: '8px', fontSize: '0.85rem', fontWeight: 600, color: 'var(--text-secondary)', alignSelf: 'end', paddingBottom: '10px' }}>
-              <input type="checkbox" checked={!!form.is_active} onChange={(e) => set('is_active', e.target.checked)} /> Active (visible)
-            </label>
-          </div>
-          <div style={{ display: 'flex', gap: '10px' }}>
-            <button className="btn-primary" onClick={save} disabled={saving}>{saving ? 'Saving…' : 'Save banner'}</button>
-            <button className="btn-secondary" onClick={() => { setForm(null); setError(''); }}>Cancel</button>
-          </div>
-          {form.id && <p style={{ margin: 0, fontSize: '0.78rem', color: 'var(--text-secondary)' }}>Tip: save first, then use the “Image” button on the row to upload/replace the picture. Use a <strong>16:9 image — 1920×1080</strong>, under 2MB. Keep the subject on the right; the left third sits under the text.</p>}
-        </div>
+        <Modal
+          title={form.id ? 'Edit banner' : 'New banner'}
+          description="Use a 16:9 image (1920×1080) under 2MB. Keep the subject to the right — the left third sits under the text."
+          onClose={() => { setForm(null); setError(''); }}
+          footer={
+            <>
+              <button type="button" className="btn-secondary" onClick={() => { setForm(null); setError(''); }}>Cancel</button>
+              <button type="button" className="btn-primary" onClick={save} disabled={saving}>
+                {saving ? 'Saving…' : 'Save banner'}
+              </button>
+            </>
+          }
+        >
+          {error && (
+            <div style={{ marginBottom: '14px' }}>
+              <Notice tone="danger" icon="alert">{error}</Notice>
+            </div>
+          )}
+
+          <FormGrid>
+            <Field label="Title" htmlFor="bn-title">
+              <input id="bn-title" className="form-input" value={form.title ?? ''} onChange={(e) => set('title', e.target.value)} />
+            </Field>
+            <Field label="Subtitle" htmlFor="bn-sub">
+              <input id="bn-sub" className="form-input" value={form.subtitle ?? ''} onChange={(e) => set('subtitle', e.target.value)} />
+            </Field>
+            <Field label="Kicker (eyebrow)" htmlFor="bn-kick">
+              <input id="bn-kick" className="form-input" value={form.kicker ?? ''} onChange={(e) => set('kicker', e.target.value)} />
+            </Field>
+            <Field label="CTA label" htmlFor="bn-cta">
+              <input id="bn-cta" className="form-input" value={form.cta_label ?? ''} onChange={(e) => set('cta_label', e.target.value)} />
+            </Field>
+            <Field label="CTA link" hint="A /path inside the app, or a full https:// URL." htmlFor="bn-url">
+              <input id="bn-url" className="form-input" value={form.cta_url ?? ''} onChange={(e) => set('cta_url', e.target.value)} />
+            </Field>
+            <Field label="Exam category" htmlFor="bn-exam">
+              <input id="bn-exam" className="form-input" value={form.exam_category ?? ''} onChange={(e) => set('exam_category', e.target.value)} />
+            </Field>
+            <Field label="Sort order" htmlFor="bn-order">
+              <input id="bn-order" className="form-input" type="number" value={form.sort_order ?? 0} onChange={(e) => set('sort_order', e.target.value)} />
+            </Field>
+            <Field label="Visibility">
+              <label
+                style={{
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '9px',
+                  minHeight: '46px',
+                  padding: '0 4px',
+                  font: '500 13px var(--font-body)',
+                  color: 'var(--tx2)',
+                  cursor: 'pointer',
+                }}
+              >
+                <input type="checkbox" checked={!!form.is_active} onChange={(e) => set('is_active', e.target.checked)} />
+                Show on Home
+              </label>
+            </Field>
+          </FormGrid>
+
+          {form.id && (
+            <p style={{ margin: '16px 0 0', font: '400 12px/1.55 var(--font-body)', color: 'var(--muted)' }}>
+              Save first, then use the row’s <strong>Image</strong> button to upload or replace the picture.
+            </p>
+          )}
+        </Modal>
       )}
 
-      {loading ? (
-        <div style={{ display: 'flex', justifyContent: 'center', padding: '40px' }}><div className="spinner" /></div>
-      ) : banners.length === 0 ? (
-        <div className="glass-panel" style={{ padding: '32px', textAlign: 'center', color: 'var(--text-secondary)' }}>
-          No banners yet. Create one — it appears on every student’s Home immediately.
-        </div>
-      ) : (
-        <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
-          {banners.map((b) => (
-            <BannerRow key={b.id} banner={b} onEdit={(bn) => setForm({ ...bn })} onDelete={remove} onUploaded={onUploaded} />
-          ))}
-        </div>
+      {pendingDelete && (
+        <Modal
+          danger
+          title={`Delete “${pendingDelete.title}”?`}
+          description="The banner and its image are removed. Students stop seeing it immediately."
+          width={460}
+          onClose={() => setPendingDelete(null)}
+          footer={
+            <>
+              <button type="button" className="btn-secondary" onClick={() => setPendingDelete(null)}>Cancel</button>
+              <button
+                type="button"
+                className="btn-danger"
+                onClick={() => { const target = pendingDelete; setPendingDelete(null); remove(target); }}
+              >
+                Delete banner
+              </button>
+            </>
+          }
+        />
       )}
     </div>
   );

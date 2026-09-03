@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { BrowserRouter, Routes, Route, Navigate, useNavigate } from 'react-router-dom';
+import { BrowserRouter, Routes, Route, Navigate, useNavigate, useLocation } from 'react-router-dom';
 import api, { setOn2FARequired } from './api';
 import ThemeToggle from './components/ThemeToggle';
 import StudentShell from './components/StudentShell';
@@ -32,7 +32,6 @@ import SearchPage from './pages/SearchPage';
 
 // Admin screens
 import AdminDashboard from './pages/AdminDashboard';
-import SuperAdminDashboard from './pages/SuperAdminDashboard';
 import Admin2FASetup from './pages/Admin2FASetup';
 import Admin2FAVerify from './pages/Admin2FAVerify';
 
@@ -98,6 +97,7 @@ const SuperAdminGuard = ({ user, loading, children }) => {
 
 function AppContent({ user, setUser, loading }) {
   const navigate = useNavigate();
+  const location = useLocation();
 
   const handleLogout = async () => {
     try {
@@ -122,15 +122,18 @@ function AppContent({ user, setUser, loading }) {
   }, [navigate]);
 
   const isStudent = user && !user.roles?.includes('admin') && !user.roles?.includes('super-admin');
+  const isAdmin = !!(user?.roles?.includes('admin') || user?.roles?.includes('super-admin'));
+  // /welcome carries its own toggle in the hero, next to the language pill.
+  const ownsThemeToggle = location.pathname === '/welcome';
 
   // Wrap a student page in the branded shell (header + bottom-tab/sidebar nav).
   const shell = (node) => <StudentShell user={user}>{node}</StudentShell>;
 
   return (
     <>
-      {/* Floating theme toggle only where there is no branded header
-          (auth + admin surfaces); inside the student shell the header owns it. */}
-      {!isStudent && <ThemeToggle />}
+      {/* Floating theme toggle only on the auth/public surfaces. The student
+          header and the admin page header each own their own toggle now. */}
+      {!isStudent && !isAdmin && !ownsThemeToggle && <ThemeToggle />}
 
       <Routes>
         {/* Public Auth & Onboarding Routes */}

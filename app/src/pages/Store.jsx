@@ -75,7 +75,7 @@ export default function Store({ user }) {
 
   return (
     <div style={{ padding: '16px 18px 24px', animation: 'fade-in .35s ease both' }}>
-      <h1 style={{ margin: '0 0 4px', font: '800 24px var(--font-display)', color: 'var(--tx)', letterSpacing: '-.02em' }}>
+      <h1 className="t-title" style={{ margin: '0 0 4px', color: 'var(--tx)' }}>
         {t('store.title')}
       </h1>
       <p style={{ margin: '0 0 16px', font: '500 13px var(--font-body)', color: 'var(--muted)' }}>
@@ -161,7 +161,7 @@ export default function Store({ user }) {
                   <div style={{ borderTop: '1px solid var(--line)', paddingTop: '12px', display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: '10px' }}>
                     <div style={{ minWidth: 0 }}>
                       <div style={{ display: 'flex', alignItems: 'baseline', gap: '7px' }}>
-                        <span style={{ font: '800 17px var(--font-display)', color: 'var(--tx)' }}>{formatRupees(product.price_paise)}</span>
+                        <span style={{ font: '700 17px var(--font-display)', letterSpacing: '-.02em', color: 'var(--tx)' }}>{formatRupees(product.price_paise)}</span>
                         {product.list_price_paise > product.price_paise && (
                           <span style={{ font: '500 12px var(--font-body)', color: 'var(--muted)', textDecoration: 'line-through' }}>
                             {formatRupees(product.list_price_paise)}

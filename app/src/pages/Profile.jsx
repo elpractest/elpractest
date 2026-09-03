@@ -29,11 +29,11 @@ export default function Profile({ user, onLogout }) {
     <div style={{ padding: '18px 18px 8px', animation: 'fade-in .35s ease both' }}>
       {/* identity card */}
       <div className="glass-panel card-2" style={{ display: 'flex', alignItems: 'center', gap: '14px', padding: '18px', borderRadius: '20px' }}>
-        <div style={{ width: '60px', height: '60px', borderRadius: '18px', background: 'var(--grad-primary)', display: 'grid', placeItems: 'center', font: '800 24px var(--font-display)', color: 'var(--brand-ink)', flex: 'none' }}>
+        <div style={{ width: '60px', height: '60px', borderRadius: '18px', background: 'var(--primary)', display: 'grid', placeItems: 'center', font: '700 24px var(--font-display)', letterSpacing: '-.02em', color: 'var(--brand-ink)', flex: 'none' }}>
           {initial}
         </div>
         <div style={{ flex: 1, minWidth: 0 }}>
-          <div style={{ font: '800 18px var(--font-display)', color: 'var(--tx)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{user?.name || 'Student'}</div>
+          <div style={{ font: '700 18px var(--font-display)', letterSpacing: '-.02em', color: 'var(--tx)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{user?.name || 'Student'}</div>
           <div style={{ font: '600 12px var(--font-body)', color: 'var(--muted)', marginTop: '2px' }}>
             {user?.phone ? `+91 ${user.phone}` : user?.email || t('profile.aspirant')}
           </div>

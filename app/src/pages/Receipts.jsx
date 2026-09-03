@@ -32,7 +32,7 @@ export default function Receipts() {
 
   return (
     <div style={{ padding: '18px 18px 30px', animation: 'fade-in .35s ease both' }}>
-      <h1 style={{ margin: '0 0 4px', font: '800 19px var(--font-display)', color: 'var(--tx)' }}>
+      <h1 style={{ margin: '0 0 4px', font: '700 19px var(--font-display)', letterSpacing: '-.02em', color: 'var(--tx)' }}>
         {t('receipts.title')}
       </h1>
       <p style={{ margin: '0 0 18px', font: '600 12.5px var(--font-body)', color: 'var(--muted)' }}>
@@ -47,7 +47,7 @@ export default function Receipts() {
 
       {invoices.length === 0 && !error ? (
         <div style={{ padding: '36px 20px', borderRadius: '18px', background: 'var(--card)', border: '1px solid var(--line)', textAlign: 'center' }}>
-          <div style={{ font: '800 15px var(--font-display)', color: 'var(--tx)' }}>{t('receipts.emptyTitle')}</div>
+          <div style={{ font: '700 15px var(--font-display)', letterSpacing: '-.02em', color: 'var(--tx)' }}>{t('receipts.emptyTitle')}</div>
           <div style={{ font: '600 12.5px var(--font-body)', color: 'var(--muted)', marginTop: '6px' }}>{t('receipts.emptyBody')}</div>
         </div>
       ) : (
@@ -81,7 +81,7 @@ export default function Receipts() {
                 </div>
               </div>
               <div style={{ textAlign: 'right', flex: 'none' }}>
-                <div style={{ font: '800 14px var(--font-mono)', color: 'var(--tx)' }}>₹{inv.total}</div>
+                <div style={{ font: '700 14px var(--font-mono)', color: 'var(--tx)' }}>₹{inv.total}</div>
                 <div style={{ font: '600 10.5px var(--font-body)', color: 'var(--accent-color)', marginTop: '2px' }}>{t('receipts.view')}</div>
               </div>
             </a>

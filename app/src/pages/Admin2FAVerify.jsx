@@ -43,7 +43,7 @@ export default function Admin2FAVerify({ setUser }) {
     <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', minHeight: '100vh', padding: '20px', backgroundColor: 'var(--bg-color)' }}>
       <div className="glass-panel" style={{ width: '100%', maxWidth: '440px', padding: '40px', display: 'flex', flexDirection: 'column', gap: '24px', boxSizing: 'border-box' }}>
         <div style={{ textAlign: 'center' }}>
-          <h2 style={{ fontSize: '1.8rem', fontWeight: 800, margin: '0 0 8px 0', color: 'var(--text-primary)' }}>Two-Factor Security</h2>
+          <h2 className="t-title" style={{ margin: '0 0 8px', color: 'var(--tx)' }}>Two-Factor Security</h2>
           <p style={{ color: 'var(--text-secondary)', fontSize: '0.95rem', margin: 0 }}>Enter the 6-digit verification code from your authenticator app.</p>
         </div>
 
@@ -63,7 +63,7 @@ export default function Admin2FAVerify({ setUser }) {
               value={code}
               onChange={(e) => setCode(e.target.value.replace(/\D/g, ''))}
               className="form-input"
-              style={{ textAlign: 'center', fontSize: '1.6rem', letterSpacing: '8px', fontWeight: 'bold' }}
+              style={{ textAlign: 'center', fontSize: '1.6rem', letterSpacing: '8px', fontWeight: 700 }}
               required
               disabled={loading}
               autoFocus

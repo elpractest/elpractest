@@ -1,5 +1,10 @@
 import React, { useState, useEffect } from 'react';
 import api from '../api';
+import Icon from '../components/Icon';
+import {
+  PageHead, TableCard, Toolbar, Chip, Table, Row, Cell, CellTitle, CellSub, StatusDot,
+  Badge, EmptyState, SkeletonRows, Pagination, Modal, Field, FormGrid, FormSection, Notice, Num,
+} from '../components/admin/ui';
 
 export default function AdminEnrollments() {
   const [courses, setCourses] = useState([]);
@@ -21,6 +26,8 @@ export default function AdminEnrollments() {
 
   // Enrollment Form State
   const [showEnrollForm, setShowEnrollForm] = useState(false);
+  // presentation only: the destructive confirmation for a batch
+  const [pendingBatch, setPendingBatch] = useState(null);
   const [studentSearch, setStudentSearch] = useState('');
   const [studentSearchResults, setStudentSearchResults] = useState([]);
   const [selectedStudent, setSelectedStudent] = useState(null);
@@ -188,7 +195,6 @@ export default function AdminEnrollments() {
   };
 
   const handleDeactivateBatch = async (batch) => {
-    if (!window.confirm(`Deactivate batch "${batch.name}"? Active students will remain enrolled but no new registrations can join.`)) return;
     setError('');
     setSuccess('');
     try {
@@ -242,464 +248,439 @@ export default function AdminEnrollments() {
     }
   };
 
+  const ENROL_COLUMNS = [
+    { key: 'student', label: 'Student', width: 'minmax(0,1.5fr)' },
+    { key: 'scope', label: 'Course / batch', width: 'minmax(0,1.3fr)', hideBelow: 'tablet' },
+    { key: 'from', label: 'Enrolled', width: '120px' },
+    { key: 'to', label: 'Expires', width: '120px', hideBelow: 'tablet' },
+    { key: 'status', label: 'Status', width: '110px' },
+    { key: 'act', label: '', width: '120px' },
+  ];
+
+  const PAY_COLUMNS = [
+    { key: 'student', label: 'Student', width: 'minmax(0,1.4fr)' },
+    { key: 'item', label: 'Bought', width: 'minmax(0,1.3fr)' },
+    { key: 'ref', label: 'Reference', width: '190px', hideBelow: 'tablet' },
+    { key: 'amount', label: 'Amount', width: '110px' },
+    { key: 'status', label: 'Status', width: '110px' },
+    { key: 'when', label: 'Date', width: '130px', hideBelow: 'tablet' },
+    { key: 'act', label: '', width: '100px' },
+  ];
+
+  const activeEnrolments = enrollments.filter((en) => en.is_active).length;
+
   return (
-    <div style={{ display: 'flex', flexDirection: 'column', gap: '30px', width: '100%' }}>
-      
-      {/* Header */}
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-        <div>
-          <h1 style={{ fontSize: '2rem', margin: 0, fontWeight: 800 }}>Batches & Enrollments</h1>
-          <p style={{ color: 'var(--text-secondary)', margin: '4px 0 0 0' }}>Manage student class groups, batch capacities, pricing, and active learning enrollments.</p>
-        </div>
+    <div style={{ display: 'flex', flexDirection: 'column', gap: '18px', width: '100%' }}>
+      <style>{`
+        .enr-split { display: grid; grid-template-columns: 1fr; gap: 18px; align-items: start; }
+        @media (min-width: 1100px) { .enr-split { grid-template-columns: minmax(240px, 0.9fr) minmax(0, 3fr); } }
+      `}</style>
+
+      <PageHead
+        title="Batches & enrollments"
+        subtitle="Class groups, their capacity and price, and who is actually in them."
+      >
         {activeTab === 'enrollments' && (
-          <div style={{ display: 'flex', gap: '12px' }}>
-            <button 
+          <>
+            <button
+              type="button"
               onClick={() => {
                 setBatchForm({ id: null, name: '', max_students: '', starts_at: '', ends_at: '', is_active: true, price_paise: null, play_product_id: '' });
                 setShowBatchForm(true);
-              }} 
+              }}
               className="btn-secondary"
-              style={{ padding: '10px 20px', fontSize: '0.9rem' }}
               disabled={!selectedCourse}
             >
-              ➕ Create Batch
+              <Icon name="plus" size={16} strokeWidth={2.4} />
+              New batch
             </button>
-            <button 
+            <button
+              type="button"
               onClick={() => {
                 setSelectedStudent(null);
                 setStudentSearch('');
                 setStudentSearchResults([]);
                 setEnrollForm({ expires_at: '' });
                 setShowEnrollForm(true);
-              }} 
+              }}
               className="btn-primary"
               disabled={!selectedCourse}
             >
-              ➕ Enroll Student
+              <Icon name="plus" size={16} strokeWidth={2.4} />
+              Enroll student
             </button>
-          </div>
+          </>
         )}
-      </div>
+        {activeTab === 'payments' && (
+          <button type="button" className="btn-secondary" onClick={() => fetchPayments(1)}>
+            <Icon name="refresh" size={16} />
+            Refresh
+          </button>
+        )}
+      </PageHead>
 
-      {success && (
-        <div style={{ padding: '16px', background: 'var(--success-bg)', border: '1px solid var(--success)', borderRadius: '8px', color: 'var(--success)' }}>
-          {success}
-        </div>
-      )}
+      {success && <Notice tone="success" icon="check-circle" onDismiss={() => setSuccess('')}>{success}</Notice>}
+      {error && <Notice tone="danger" icon="alert" onDismiss={() => setError('')}>{error}</Notice>}
 
-      {error && (
-        <div style={{ padding: '16px', background: 'var(--danger-bg)', border: '1px solid var(--danger)', borderRadius: '8px', color: 'var(--danger)' }}>
-          {error}
-        </div>
-      )}
-
-      {/* Tabs */}
-      <div style={{ display: 'flex', gap: '16px', borderBottom: '1px solid var(--border-color)', paddingBottom: '12px' }}>
-        <button
-          onClick={() => setActiveTab('enrollments')}
-          style={{
-            background: 'none',
-            border: 'none',
-            color: activeTab === 'enrollments' ? 'var(--accent-color)' : 'var(--text-secondary)',
-            fontSize: '1rem',
-            fontWeight: 700,
-            cursor: 'pointer',
-            paddingBottom: '8px',
-            borderBottom: activeTab === 'enrollments' ? '2px solid var(--accent-color)' : 'none',
-            marginBottom: '-13px'
-          }}
-        >
-          🎓 Enrollments
-        </button>
-        <button
-          onClick={() => setActiveTab('payments')}
-          style={{
-            background: 'none',
-            border: 'none',
-            color: activeTab === 'payments' ? 'var(--accent-color)' : 'var(--text-secondary)',
-            fontSize: '1rem',
-            fontWeight: 700,
-            cursor: 'pointer',
-            paddingBottom: '8px',
-            borderBottom: activeTab === 'payments' ? '2px solid var(--accent-color)' : 'none',
-            marginBottom: '-13px'
-          }}
-        >
-          💳 Payment History
-        </button>
+      <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
+        <Chip active={activeTab === 'enrollments'} onClick={() => setActiveTab('enrollments')}>Enrollments</Chip>
+        <Chip active={activeTab === 'payments'} onClick={() => setActiveTab('payments')}>Payment history</Chip>
       </div>
 
       {activeTab === 'enrollments' ? (
-        /* Main Grid View */
-        <div style={{ display: 'grid', gridTemplateColumns: '1fr 3fr', gap: '30px', alignItems: 'start' }}>
-          
-          {/* Left Side: Course and Batch selection list */}
-          <div className="glass-panel" style={{ padding: '24px', display: 'flex', flexDirection: 'column', gap: '20px' }}>
-            
-            {/* Course Selector */}
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
-              <label style={{ fontSize: '0.8rem', color: 'var(--text-secondary)', textTransform: 'uppercase', fontWeight: 600 }}>1. Select Course</label>
-              <select 
-                value={selectedCourse?.id || ''} 
-                onChange={(e) => setSelectedCourse(courses.find(c => c.id === parseInt(e.target.value)))}
+        <div className="enr-split">
+          {/* ---- scope picker ---- */}
+          <div style={{ background: 'var(--card)', border: '1px solid var(--line)', borderRadius: '16px', padding: '18px 20px', display: 'flex', flexDirection: 'column', gap: '18px' }}>
+            <Field label="Course" htmlFor="enr-course">
+              <select
+                id="enr-course"
+                value={selectedCourse?.id || ''}
+                onChange={(e) => setSelectedCourse(courses.find((c) => c.id === parseInt(e.target.value)))}
                 className="form-input"
               >
-                {courses.map(c => <option key={c.id} value={c.id}>{c.title}</option>)}
+                {courses.map((c) => <option key={c.id} value={c.id}>{c.title}</option>)}
               </select>
-            </div>
+            </Field>
 
-            {/* Batch Selector */}
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '8px', borderTop: '1px solid var(--border-color)', paddingTop: '16px' }}>
-              <label style={{ fontSize: '0.8rem', color: 'var(--text-secondary)', textTransform: 'uppercase', fontWeight: 600 }}>2. Filter Batch</label>
-              
+            <div style={{ borderTop: '1px solid var(--line)', paddingTop: '16px' }}>
+              <div className="t-overline" style={{ color: 'var(--muted)', marginBottom: '10px' }}>BATCH</div>
+
               {batches.length === 0 ? (
-                <div style={{ fontSize: '0.85rem', color: 'var(--text-secondary)', textAlign: 'center', padding: '10px' }}>
-                  No batches created yet.
-                </div>
+                <p style={{ margin: 0, font: '400 12.5px/1.55 var(--font-body)', color: 'var(--muted)' }}>
+                  No batch under this course yet.
+                </p>
               ) : (
                 <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
                   <button
+                    type="button"
                     onClick={() => setSelectedBatch(null)}
                     style={{
-                      padding: '10px 12px',
-                      borderRadius: '6px',
+                      padding: '11px 12px',
+                      minHeight: '44px',
+                      borderRadius: '12px',
                       textAlign: 'left',
-                      background: selectedBatch === null ? 'var(--accent-soft)' : 'transparent',
-                      border: selectedBatch === null ? '1px solid var(--accent-color)' : '1px solid var(--border-color)',
-                      color: selectedBatch === null ? '#ffffff' : 'var(--text-secondary)',
-                      fontWeight: 600,
+                      background: selectedBatch === null ? 'var(--primary-soft)' : 'transparent',
+                      border: `1px solid ${selectedBatch === null ? 'var(--primary-border)' : 'var(--line)'}`,
+                      color: selectedBatch === null ? 'var(--primary)' : 'var(--tx2)',
+                      font: '600 12.5px var(--font-body)',
                       cursor: 'pointer',
-                      fontSize: '0.85rem'
                     }}
                   >
-                    📁 All Batches
+                    All batches
                   </button>
-                  {batches.map((b) => (
-                    <div
-                      key={b.id}
-                      onClick={() => setSelectedBatch(b)}
-                      style={{
-                        padding: '10px 12px',
-                        borderRadius: '6px',
-                        background: selectedBatch?.id === b.id ? 'var(--accent-soft)' : 'var(--surface-1)',
-                        border: selectedBatch?.id === b.id ? '1px solid var(--accent-color)' : '1px solid var(--border-color)',
-                        cursor: 'pointer',
-                        fontSize: '0.85rem',
-                        display: 'flex',
-                        justifyContent: 'space-between',
-                        alignItems: 'center'
-                      }}
-                    >
-                      <div>
-                        <div style={{ fontWeight: 600, color: b.is_active ? 'var(--text-primary)' : 'var(--text-secondary)' }}>
-                          {b.name} {!b.is_active && '(Suspended)'}
+
+                  {batches.map((b) => {
+                    const picked = selectedBatch?.id === b.id;
+                    return (
+                      <div
+                        key={b.id}
+                        onClick={() => setSelectedBatch(b)}
+                        style={{
+                          padding: '11px 12px',
+                          borderRadius: '12px',
+                          background: picked ? 'var(--primary-soft)' : 'var(--card2)',
+                          border: `1px solid ${picked ? 'var(--primary-border)' : 'var(--line)'}`,
+                          cursor: 'pointer',
+                          display: 'flex',
+                          justifyContent: 'space-between',
+                          alignItems: 'center',
+                          gap: '8px',
+                        }}
+                      >
+                        <div style={{ minWidth: 0 }}>
+                          <div style={{ display: 'flex', alignItems: 'center', gap: '7px', flexWrap: 'wrap' }}>
+                            <span style={{ font: '600 12.5px var(--font-body)', color: picked ? 'var(--primary)' : 'var(--tx)' }}>{b.name}</span>
+                            {!b.is_active && <Badge tone="neutral">Suspended</Badge>}
+                          </div>
+                          <div style={{ marginTop: '3px', font: '400 11.5px var(--font-body)', color: 'var(--muted)' }}>
+                            {b.max_students ? <>Cap <Num style={{ fontSize: '11.5px' }}>{b.max_students}</Num></> : 'No cap'}
+                            {' · '}
+                            {b.price_paise ? <Num style={{ fontSize: '11.5px' }}>₹{b.price_paise / 100}</Num> : 'Free / manual'}
+                          </div>
                         </div>
-                        <div style={{ fontSize: '0.75rem', color: 'var(--text-secondary)', marginTop: '2px' }}>
-                          Limit: {b.max_students || 'No Limit'} | Price: {b.price_paise ? `₹${b.price_paise/100}` : 'Free/Manual'}
-                        </div>
-                      </div>
-                      <div style={{ display: 'flex', gap: '8px' }}>
-                        <button
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            setBatchForm(b);
-                            setShowBatchForm(true);
-                          }}
-                          style={{ background: 'transparent', border: 'none', cursor: 'pointer', fontSize: '0.85rem' }}
-                        >
-                          ✏️
-                        </button>
-                        {b.is_active && (
+                        <div style={{ display: 'flex', gap: '2px', flex: 'none' }}>
                           <button
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              handleDeactivateBatch(b);
-                            }}
-                            style={{ background: 'transparent', border: 'none', cursor: 'pointer', fontSize: '0.85rem' }}
+                            type="button"
+                            className="adm-rowaction"
+                            onClick={(e) => { e.stopPropagation(); setBatchForm(b); setShowBatchForm(true); }}
+                            aria-label={`Edit ${b.name}`}
+                            title="Edit batch"
                           >
-                            🗑️
+                            <Icon name="edit" size={16} />
                           </button>
-                        )}
+                          {b.is_active && (
+                            <button
+                              type="button"
+                              className="adm-rowaction"
+                              onClick={(e) => { e.stopPropagation(); setPendingBatch(b); }}
+                              aria-label={`Suspend ${b.name}`}
+                              title="Suspend batch"
+                            >
+                              <Icon name="trash" size={16} />
+                            </button>
+                          )}
+                        </div>
                       </div>
-                    </div>
-                  ))}
+                    );
+                  })}
                 </div>
               )}
             </div>
-
           </div>
 
-          {/* Right Side: Enrollments List Table */}
-          <div className="glass-panel" style={{ padding: '24px', overflowX: 'auto' }}>
-            <h2 style={{ fontSize: '1.2rem', margin: '0 0 16px 0', fontWeight: 700 }}>
-              Enrolled Students {selectedBatch ? `in: ${selectedBatch.name}` : ''}
-            </h2>
+          {/* ---- enrolled students ---- */}
+          <TableCard>
+            <Toolbar
+              trailing={
+                enrollments.length > 0 && (
+                  <span style={{ font: '500 12.5px var(--font-body)', color: 'var(--muted)' }}>
+                    <Num>{activeEnrolments}</Num> active of <Num>{enrollments.length}</Num>
+                  </span>
+                )
+              }
+            >
+              <span style={{ font: '600 12.5px var(--font-body)', color: 'var(--tx2)' }}>
+                {selectedBatch ? selectedBatch.name : 'All batches'}
+              </span>
+            </Toolbar>
 
-            <table style={{ width: '100%', borderCollapse: 'collapse', textAlign: 'left' }}>
-              <thead>
-                <tr style={{ borderBottom: '1px solid var(--border-color)', color: 'var(--text-secondary)', fontSize: '0.9rem' }}>
-                  <th style={{ padding: '12px 16px' }}>Student Details</th>
-                  <th style={{ padding: '12px 16px' }}>Course / Batch</th>
-                  <th style={{ padding: '12px 16px' }}>Enrolled At</th>
-                  <th style={{ padding: '12px 16px' }}>Expires At</th>
-                  <th style={{ padding: '12px 16px' }}>Status</th>
-                  <th style={{ padding: '12px 16px', textAlign: 'right' }}>Actions</th>
-                </tr>
-              </thead>
-              <tbody>
-                {enrollments.length === 0 ? (
-                  <tr>
-                    <td colSpan={6} style={{ textAlign: 'center', padding: '40px', color: 'var(--text-secondary)' }}>No student enrollments found.</td>
-                  </tr>
-                ) : (
-                  enrollments.map((en) => (
-                    <tr key={en.id} style={{ borderBottom: '1px solid var(--surface-2)', fontSize: '0.9rem' }}>
-                      <td style={{ padding: '16px' }}>
-                        <div style={{ fontWeight: 600 }}>{en.user?.name}</div>
-                        <div style={{ fontSize: '0.8rem', color: 'var(--text-secondary)', marginTop: '2px' }}>{en.user?.email}</div>
-                      </td>
-                      <td style={{ padding: '16px' }}>
-                        <div>{en.course?.title}</div>
-                        <div style={{ fontSize: '0.8rem', color: 'var(--text-secondary)', marginTop: '2px' }}>
-                          Batch: {en.batch?.name || 'All'}
-                        </div>
-                      </td>
-                      <td style={{ padding: '16px' }}>
+            {enrollments.length === 0 ? (
+              <EmptyState
+                icon="users"
+                message="Nobody is enrolled in this scope yet. Enrol a student, or hand out an activation code."
+              />
+            ) : (
+              <Table columns={ENROL_COLUMNS}>
+                {enrollments.map((en) => (
+                  <Row key={en.id}>
+                    <Cell label="Student">
+                      <CellTitle>{en.user?.name}</CellTitle>
+                      <CellSub>{en.user?.email}</CellSub>
+                    </Cell>
+                    <Cell label="Course / batch" hideBelow="tablet">
+                      <CellTitle>{en.course?.title}</CellTitle>
+                      <CellSub>{en.batch?.name || 'All batches'}</CellSub>
+                    </Cell>
+                    <Cell label="Enrolled">
+                      <Num style={{ fontSize: '12.5px', fontWeight: 500, color: 'var(--tx2)' }}>
                         {new Date(en.enrolled_at).toLocaleDateString()}
-                      </td>
-                      <td style={{ padding: '16px' }}>
-                        {en.expires_at ? new Date(en.expires_at).toLocaleDateString() : 'Lifetime'}
-                      </td>
-                      <td style={{ padding: '16px' }}>
-                        <span 
-                          style={{ 
-                            fontSize: '0.75rem', 
-                            fontWeight: 'bold', 
-                            padding: '2px 8px', 
-                            borderRadius: '4px',
-                            background: en.is_active ? 'var(--success-bg)' : 'var(--danger-bg)',
-                            color: en.is_active ? 'var(--success)' : 'var(--danger)'
-                          }}
-                        >
-                          {en.is_active ? 'Active' : 'Suspended'}
-                        </span>
-                      </td>
-                      <td style={{ padding: '16px', textAlign: 'right' }}>
-                        <button 
-                          onClick={() => handleToggleEnrollmentStatus(en)}
-                          className="btn-secondary"
-                          style={{ 
-                            padding: '4px 10px', 
-                            fontSize: '0.8rem', 
-                            color: en.is_active ? 'var(--danger)' : 'var(--success)',
-                            borderColor: en.is_active ? 'var(--danger-border)' : 'var(--success-border)',
-                            whiteSpace: 'nowrap'
-                          }}
-                        >
-                          {en.is_active ? 'Suspend' : 'Reactivate'}
-                        </button>
-                      </td>
-                    </tr>
-                  ))
-                )}
-              </tbody>
-            </table>
-          </div>
-
+                      </Num>
+                    </Cell>
+                    <Cell label="Expires" hideBelow="tablet">
+                      {en.expires_at ? (
+                        <Num style={{ fontSize: '12.5px', fontWeight: 500, color: 'var(--tx2)' }}>
+                          {new Date(en.expires_at).toLocaleDateString()}
+                        </Num>
+                      ) : (
+                        <span style={{ font: '500 12.5px var(--font-body)', color: 'var(--muted)' }}>Lifetime</span>
+                      )}
+                    </Cell>
+                    <Cell label="Status">
+                      <StatusDot tone={en.is_active ? 'success' : 'danger'}>
+                        {en.is_active ? 'Active' : 'Suspended'}
+                      </StatusDot>
+                    </Cell>
+                    <Cell align="right">
+                      <button
+                        type="button"
+                        onClick={() => handleToggleEnrollmentStatus(en)}
+                        className="btn-secondary"
+                        style={{
+                          padding: '7px 12px',
+                          minHeight: '36px',
+                          fontSize: '11.5px',
+                          whiteSpace: 'nowrap',
+                          color: en.is_active ? 'var(--danger)' : 'var(--success)',
+                          borderColor: en.is_active ? 'var(--danger-border)' : 'var(--success-border)',
+                        }}
+                      >
+                        {en.is_active ? 'Suspend' : 'Reactivate'}
+                      </button>
+                    </Cell>
+                  </Row>
+                ))}
+              </Table>
+            )}
+          </TableCard>
         </div>
       ) : (
-        /* Payment History View */
-        <div className="glass-panel" style={{ padding: '24px', overflowX: 'auto', display: 'flex', flexDirection: 'column', gap: '20px' }}>
-          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-            <h2 style={{ fontSize: '1.2rem', margin: 0, fontWeight: 700 }}>Transaction History</h2>
-            <button className="btn-secondary" style={{ padding: '6px 12px', fontSize: '0.8rem' }} onClick={() => fetchPayments(1)}>🔄 Refresh</button>
-          </div>
-          
-          <table style={{ width: '100%', borderCollapse: 'collapse', textAlign: 'left' }}>
-            <thead>
-              <tr style={{ borderBottom: '1px solid var(--border-color)', color: 'var(--text-secondary)', fontSize: '0.9rem' }}>
-                <th style={{ padding: '12px 16px' }}>Student</th>
-                <th style={{ padding: '12px 16px' }}>Course / Batch</th>
-                <th style={{ padding: '12px 16px' }}>Order ID / Payment ID</th>
-                <th style={{ padding: '12px 16px' }}>Amount</th>
-                <th style={{ padding: '12px 16px' }}>Coupon</th>
-                <th style={{ padding: '12px 16px' }}>Status</th>
-                <th style={{ padding: '12px 16px' }}>Invoice</th>
-                <th style={{ padding: '12px 16px' }}>Date</th>
-                <th style={{ padding: '12px 16px', textAlign: 'right' }}>Actions</th>
-              </tr>
-            </thead>
-            <tbody>
-              {loadingPayments ? (
-                <tr>
-                  <td colSpan={9} style={{ textAlign: 'center', padding: '40px', color: 'var(--text-secondary)' }}>Loading transactions...</td>
-                </tr>
-              ) : payments.length === 0 ? (
-                <tr>
-                  <td colSpan={9} style={{ textAlign: 'center', padding: '40px', color: 'var(--text-secondary)' }}>No payment records found.</td>
-                </tr>
-              ) : (
-                payments.map((p) => (
-                  <tr key={p.id} style={{ borderBottom: '1px solid var(--surface-2)', fontSize: '0.9rem' }}>
-                    <td style={{ padding: '16px' }}>
-                      <div style={{ fontWeight: 600 }}>{p.user?.name}</div>
-                      <div style={{ fontSize: '0.8rem', color: 'var(--text-secondary)', marginTop: '2px' }}>{p.user?.email}</div>
-                    </td>
-                    <td style={{ padding: '16px' }}>
+        /* ---- payment history ---- */
+        <TableCard>
+          <Toolbar
+            trailing={
+              !loadingPayments && payments.length > 0 && (
+                <span style={{ font: '500 12.5px var(--font-body)', color: 'var(--muted)' }}>
+                  Page <Num>{paymentsPage}</Num> of <Num>{paymentsLastPage}</Num>
+                </span>
+              )
+            }
+          >
+            <span style={{ font: '600 12.5px var(--font-body)', color: 'var(--tx2)' }}>Transactions</span>
+          </Toolbar>
+
+          {loadingPayments ? (
+            <SkeletonRows />
+          ) : payments.length === 0 ? (
+            <EmptyState
+              icon="shopping-bag"
+              message="No payment has been recorded yet. They appear here the moment one settles."
+            />
+          ) : (
+            <>
+              <Table columns={PAY_COLUMNS}>
+                {payments.map((pmt) => (
+                  <Row key={pmt.id}>
+                    <Cell label="Student">
+                      <CellTitle>{pmt.user?.name}</CellTitle>
+                      <CellSub>{pmt.user?.email}</CellSub>
+                    </Cell>
+                    <Cell label="Bought">
                       {/* Two rails land in this table: a batch enrolment and a
                           store product (a series or bundle has no batch at all,
                           which used to render as two blank lines). */}
-                      <div>{p.product?.title || p.batch?.course?.title || '—'}</div>
-                      <div style={{ fontSize: '0.8rem', color: 'var(--text-secondary)', marginTop: '2px' }}>
-                        {p.product
-                          ? (p.product.type === 'bundle' ? 'Bundle' : p.product.type === 'test_series' ? 'Test series' : 'Course')
-                          : p.batch?.name ? `Batch: ${p.batch.name}` : 'Batch enrolment'}
-                      </div>
-                    </td>
-                    <td style={{ padding: '16px' }}>
-                      <div style={{ fontSize: '0.85rem' }}>Order: <span style={{ color: 'var(--text-secondary)' }}>{p.razorpay_order_id || 'N/A'}</span></div>
-                      <div style={{ fontSize: '0.8rem', marginTop: '2px' }}>Pay ID: <span style={{ color: 'var(--text-secondary)' }}>{p.razorpay_payment_id || 'N/A'}</span></div>
-                    </td>
-                    <td style={{ padding: '16px', fontWeight: 'bold' }}>
-                      ₹{p.amount / 100}
-                    </td>
-                    <td style={{ padding: '16px' }}>
-                      {p.coupon?.code ? (
-                        <span style={{ fontSize: '0.8rem', padding: '2px 6px', background: 'var(--accent-soft)', color: 'var(--accent-color)', borderRadius: '4px', fontWeight: 600 }}>
-                          {p.coupon.code}
-                        </span>
-                      ) : (
-                        <span style={{ color: 'var(--text-secondary)' }}>None</span>
-                      )}
-                    </td>
-                    <td style={{ padding: '16px' }}>
-                      <span 
-                        style={{ 
-                          fontSize: '0.75rem', 
-                          fontWeight: 'bold', 
-                          padding: '2px 8px', 
-                          borderRadius: '4px',
-                          background: p.status === 'paid' ? 'var(--success-bg)' : p.status === 'failed' ? 'var(--danger-bg)' : 'var(--warning-bg)',
-                          color: p.status === 'paid' ? 'var(--success)' : p.status === 'failed' ? 'var(--danger)' : 'var(--warning)'
-                        }}
-                      >
-                        {p.status}
-                      </span>
-                    </td>
-                    <td style={{ padding: '16px', fontSize: '0.8rem' }}>
-                      {p.invoice ? (
-                        <span title={p.invoice.is_tax_invoice ? 'Tax invoice' : 'Payment receipt'} style={{ color: 'var(--text-secondary)' }}>
-                          {p.invoice.invoice_number}
-                        </span>
-                      ) : (
-                        <span style={{ color: 'var(--text-secondary)' }}>—</span>
-                      )}
-                    </td>
-                    <td style={{ padding: '16px', color: 'var(--text-secondary)' }}>
-                      {new Date(p.created_at).toLocaleString()}
-                    </td>
-                    <td style={{ padding: '16px', textAlign: 'right' }}>
-                      {p.status === 'paid' && p.razorpay_payment_id ? (
+                      <CellTitle>{pmt.product?.title || pmt.batch?.course?.title || '—'}</CellTitle>
+                      <CellSub>
+                        {pmt.product
+                          ? (pmt.product.type === 'bundle' ? 'Bundle' : pmt.product.type === 'test_series' ? 'Test series' : 'Course')
+                          : pmt.batch?.name ? pmt.batch.name : 'Batch enrolment'}
+                      </CellSub>
+                    </Cell>
+                    <Cell label="Reference" hideBelow="tablet">
+                      <Num style={{ display: 'block', fontSize: '11.5px', fontWeight: 500, color: 'var(--tx2)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                        {pmt.razorpay_order_id || '—'}
+                      </Num>
+                      <Num style={{ display: 'block', marginTop: '2px', fontSize: '11px', fontWeight: 500, color: 'var(--muted)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                        {pmt.razorpay_payment_id || '—'}
+                      </Num>
+                    </Cell>
+                    <Cell label="Amount">
+                      <Num style={{ fontSize: '13px', fontWeight: 700, color: 'var(--tx)' }}>₹{pmt.amount / 100}</Num>
+                      {pmt.coupon?.code && <CellSub>{pmt.coupon.code}</CellSub>}
+                    </Cell>
+                    <Cell label="Status">
+                      <StatusDot tone={pmt.status === 'paid' ? 'success' : pmt.status === 'failed' ? 'danger' : 'reward'}>
+                        {pmt.status}
+                      </StatusDot>
+                      {pmt.invoice && <CellSub>{pmt.invoice.invoice_number}</CellSub>}
+                    </Cell>
+                    <Cell label="Date" hideBelow="tablet">
+                      <Num style={{ fontSize: '11.5px', fontWeight: 500, color: 'var(--tx2)' }}>
+                        {new Date(pmt.created_at).toLocaleDateString()}
+                      </Num>
+                    </Cell>
+                    <Cell align="right">
+                      {pmt.status === 'paid' && pmt.razorpay_payment_id ? (
                         <button
-                          onClick={() => setRefundTarget(p)}
+                          type="button"
+                          onClick={() => setRefundTarget(pmt)}
                           className="btn-secondary"
-                          style={{ padding: '4px 12px', fontSize: '0.78rem' }}
+                          style={{ padding: '7px 12px', minHeight: '36px', fontSize: '11.5px' }}
                         >
                           Refund
                         </button>
                       ) : (
-                        <span style={{ color: 'var(--text-secondary)', fontSize: '0.8rem' }}>—</span>
+                        <span style={{ color: 'var(--muted)' }}>—</span>
                       )}
-                    </td>
-                  </tr>
-                ))
-              )}
-            </tbody>
-          </table>
-
-          {/* Pagination */}
-          {paymentsLastPage > 1 && (
-            <div style={{ display: 'flex', justifyContent: 'center', gap: '8px', marginTop: '16px' }}>
-              <button 
-                onClick={() => setPaymentsPage(p => Math.max(p - 1, 1))}
-                disabled={paymentsPage === 1 || loadingPayments}
-                className="btn-secondary"
-                style={{ padding: '6px 12px', fontSize: '0.8rem' }}
-              >
-                Previous
-              </button>
-              <span style={{ display: 'flex', alignItems: 'center', fontSize: '0.9rem', color: 'var(--text-secondary)' }}>
-                Page {paymentsPage} of {paymentsLastPage}
-              </span>
-              <button 
-                onClick={() => setPaymentsPage(p => Math.min(p + 1, paymentsLastPage))}
-                disabled={paymentsPage === paymentsLastPage || loadingPayments}
-                className="btn-secondary"
-                style={{ padding: '6px 12px', fontSize: '0.8rem' }}
-              >
-                Next
-              </button>
-            </div>
+                    </Cell>
+                  </Row>
+                ))}
+              </Table>
+              <Pagination
+                page={paymentsPage}
+                lastPage={paymentsLastPage}
+                onPage={(next) => setPaymentsPage(next)}
+              />
+            </>
           )}
-        </div>
+        </TableCard>
       )}
 
-      {/* Batch Form Modal */}
+      {/* ---- batch form ---- */}
       {showBatchForm && (
-        <div style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, background: 'var(--overlay)', display: 'flex', justifyContent: 'center', alignItems: 'center', zIndex: 1000, padding: '20px' }}>
-          <div className="glass-panel" style={{ width: '100%', maxWidth: '480px', padding: '30px', display: 'flex', flexDirection: 'column', gap: '20px' }}>
-            <h3 style={{ fontSize: '1.3rem', margin: 0, fontWeight: 700 }}>
-              {batchForm.id ? 'Edit Batch' : 'Create Batch'}
-            </h3>
-            
-            <form onSubmit={handleBatchSubmit} style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
-              <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
-                <label style={{ fontSize: '0.85rem', color: 'var(--text-secondary)' }}>Batch Name</label>
-                <input 
-                  type="text" 
-                  value={batchForm.name} 
-                  onChange={(e) => setBatchForm({ ...batchForm, name: e.target.value })} 
-                  className="form-input" 
-                  required 
-                />
+        <Modal
+          title={batchForm.id ? 'Edit batch' : 'New batch'}
+          description="A batch is the class group students are enrolled into — its capacity, dates and price live here."
+          onClose={() => setShowBatchForm(false)}
+          footer={
+            <>
+              <button type="button" onClick={() => setShowBatchForm(false)} className="btn-secondary">Cancel</button>
+              <button type="submit" form="batch-form" className="btn-primary">Save batch</button>
+            </>
+          }
+        >
+          <form id="batch-form" onSubmit={handleBatchSubmit}>
+            <FormSection title="Identity">
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '14px' }}>
+                <Field label="Batch name" htmlFor="bt-name">
+                  <input
+                    id="bt-name"
+                    type="text"
+                    value={batchForm.name}
+                    onChange={(e) => setBatchForm({ ...batchForm, name: e.target.value })}
+                    className="form-input"
+                    required
+                  />
+                </Field>
+                <FormGrid min="170px">
+                  <Field label="Capacity" hint="Blank means no cap." htmlFor="bt-max">
+                    <input
+                      id="bt-max"
+                      type="number"
+                      value={batchForm.max_students || ''}
+                      onChange={(e) => setBatchForm({ ...batchForm, max_students: e.target.value })}
+                      className="form-input"
+                      min={1}
+                    />
+                  </Field>
+                  <Field label="Price (₹)" hint="Blank means free or manual-only." htmlFor="bt-price">
+                    <input
+                      id="bt-price"
+                      type="number"
+                      value={batchForm.price_paise ? (batchForm.price_paise / 100).toString() : ''}
+                      onChange={(e) => {
+                        const val = e.target.value;
+                        setBatchForm({ ...batchForm, price_paise: val ? Math.round(parseFloat(val) * 100) : null });
+                      }}
+                      className="form-input"
+                      min={0}
+                      step="any"
+                      placeholder="Free / manual"
+                    />
+                  </Field>
+                </FormGrid>
               </div>
+            </FormSection>
 
-              <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
-                <label style={{ fontSize: '0.85rem', color: 'var(--text-secondary)' }}>Max Students Capacity (Optional)</label>
-                <input 
-                  type="number" 
-                  value={batchForm.max_students || ''} 
-                  onChange={(e) => setBatchForm({ ...batchForm, max_students: e.target.value })} 
-                  className="form-input" 
-                  min={1}
-                />
-              </div>
+            <FormSection title="Window">
+              <FormGrid min="170px">
+                <Field label="Starts at" htmlFor="bt-from">
+                  <input
+                    id="bt-from"
+                    type="date"
+                    value={batchForm.starts_at ? batchForm.starts_at.substring(0, 10) : ''}
+                    onChange={(e) => setBatchForm({ ...batchForm, starts_at: e.target.value })}
+                    className="form-input"
+                  />
+                </Field>
+                <Field label="Ends at" htmlFor="bt-to">
+                  <input
+                    id="bt-to"
+                    type="date"
+                    value={batchForm.ends_at ? batchForm.ends_at.substring(0, 10) : ''}
+                    onChange={(e) => setBatchForm({ ...batchForm, ends_at: e.target.value })}
+                    className="form-input"
+                  />
+                </Field>
+              </FormGrid>
+            </FormSection>
 
-              <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
-                <label style={{ fontSize: '0.85rem', color: 'var(--text-secondary)' }}>Price (₹, Optional)</label>
-                <input 
-                  type="number" 
-                  value={batchForm.price_paise ? (batchForm.price_paise / 100).toString() : ''} 
-                  onChange={(e) => {
-                    const val = e.target.value;
-                    setBatchForm({ 
-                      ...batchForm, 
-                      price_paise: val ? Math.round(parseFloat(val) * 100) : null 
-                    });
-                  }} 
-                  className="form-input" 
-                  min={0}
-                  step="any"
-                  placeholder="Leave empty for free / manual-only"
-                />
-              </div>
-
-              {/* The Android app resolves a Play purchase back to a batch by
-                  this id alone. It had no field here at all, so in-app purchase
-                  could only be configured by writing to the database by hand. */}
-              <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
-                <label style={{ fontSize: '0.85rem', color: 'var(--text-secondary)' }}>Google Play Product ID (Optional)</label>
+            <FormSection
+              title="In-app purchase"
+              description="The Android app resolves a Play purchase back to a batch by this id alone. Leave it blank unless the batch is sold inside the app — the web checkout uses the price above, not this."
+            >
+              <Field label="Google Play product id" hint="Must match the Play Console entry exactly." htmlFor="bt-play">
                 <input
+                  id="bt-play"
                   type="text"
                   value={batchForm.play_product_id || ''}
                   onChange={(e) => setBatchForm({ ...batchForm, play_product_id: e.target.value })}
@@ -708,212 +689,213 @@ export default function AdminEnrollments() {
                   autoCapitalize="none"
                   spellCheck={false}
                 />
-                <span style={{ fontSize: '0.75rem', color: 'var(--text-secondary)' }}>
-                  Must match the in-app product id in the Play Console exactly. Leave
-                  blank unless this batch is sold inside the Android app — the web
-                  checkout uses the price above, not this.
-                </span>
-              </div>
+              </Field>
+            </FormSection>
 
-              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px' }}>
-                <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
-                  <label style={{ fontSize: '0.85rem', color: 'var(--text-secondary)' }}>Starts At</label>
-                  <input 
-                    type="date" 
-                    value={batchForm.starts_at ? batchForm.starts_at.substring(0, 10) : ''} 
-                    onChange={(e) => setBatchForm({ ...batchForm, starts_at: e.target.value })} 
-                    className="form-input" 
-                  />
-                </div>
-                <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
-                  <label style={{ fontSize: '0.85rem', color: 'var(--text-secondary)' }}>Ends At</label>
-                  <input 
-                    type="date" 
-                    value={batchForm.ends_at ? batchForm.ends_at.substring(0, 10) : ''} 
-                    onChange={(e) => setBatchForm({ ...batchForm, ends_at: e.target.value })} 
-                    className="form-input" 
-                  />
-                </div>
-              </div>
-
-              <div style={{ display: 'flex', alignItems: 'center', gap: '8px', margin: '4px 0' }}>
-                <input 
-                  type="checkbox" 
+            <FormSection title="Registration">
+              <label
+                htmlFor="batch_active"
+                style={{ display: 'flex', alignItems: 'center', gap: '10px', minHeight: '44px', cursor: 'pointer', font: '400 13px var(--font-body)', color: 'var(--tx)' }}
+              >
+                <input
+                  type="checkbox"
                   id="batch_active"
-                  checked={batchForm.is_active} 
-                  onChange={(e) => setBatchForm({ ...batchForm, is_active: e.target.checked })} 
+                  checked={batchForm.is_active}
+                  onChange={(e) => setBatchForm({ ...batchForm, is_active: e.target.checked })}
                   style={{ width: '18px', height: '18px', cursor: 'pointer' }}
                 />
-                <label htmlFor="batch_active" style={{ fontSize: '0.9rem', color: 'var(--text-primary)', cursor: 'pointer', userSelect: 'none' }}>
-                  Batch Active & Registrations open
-                </label>
-              </div>
-
-              <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '12px', marginTop: '10px' }}>
-                <button type="button" onClick={() => setShowBatchForm(false)} className="btn-secondary" style={{ padding: '8px 16px', fontSize: '0.9rem' }}>Cancel</button>
-                <button type="submit" className="btn-primary" style={{ padding: '8px 20px', fontSize: '0.9rem' }}>Save</button>
-              </div>
-            </form>
-          </div>
-        </div>
+                Active — registrations are open
+              </label>
+            </FormSection>
+          </form>
+        </Modal>
       )}
 
-      {/* Manual Enrollment Modal */}
+      {/* ---- manual enrolment ---- */}
       {showEnrollForm && (
-        <div style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, background: 'var(--overlay)', display: 'flex', justifyContent: 'center', alignItems: 'center', zIndex: 1000, padding: '20px' }}>
-          <div className="glass-panel" style={{ width: '100%', maxWidth: '500px', padding: '30px', display: 'flex', flexDirection: 'column', gap: '20px' }}>
-            <h3 style={{ fontSize: '1.3rem', margin: 0, fontWeight: 700 }}>
-              Enroll Student Manual Form
-            </h3>
-            
-            <form onSubmit={handleEnrollSubmit} style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
-              
-              {/* Course detail readout */}
-              <div style={{ background: 'var(--surface-2)', padding: '12px', borderRadius: '6px', fontSize: '0.85rem' }}>
-                <div style={{ color: 'var(--text-secondary)' }}>Target Scoping:</div>
-                <div style={{ fontWeight: 'bold', color: 'var(--text-primary)', marginTop: '2px' }}>
-                  Course: {selectedCourse?.title}
-                </div>
-                <div style={{ color: 'var(--accent-color)', fontWeight: 'bold', marginTop: '2px' }}>
-                  Batch: {selectedBatch ? selectedBatch.name : 'All Batches (No Group)'}
-                </div>
-              </div>
-
-              {/* Student Picker Dropdown with Search */}
-              <div style={{ display: 'flex', flexDirection: 'column', gap: '6px', position: 'relative' }}>
-                <label style={{ fontSize: '0.85rem', color: 'var(--text-secondary)' }}>Search Student (Name or Email)</label>
-                <input 
-                  type="text" 
-                  value={studentSearch} 
-                  onChange={(e) => searchStudents(e.target.value)} 
-                  className="form-input" 
-                  placeholder="Type to search..."
+        <Modal
+          title="Enroll a student"
+          description={`${selectedCourse?.title || 'Course'} · ${selectedBatch ? selectedBatch.name : 'all batches'}`}
+          onClose={() => setShowEnrollForm(false)}
+          footer={
+            <>
+              <button type="button" onClick={() => setShowEnrollForm(false)} className="btn-secondary">Cancel</button>
+              <button type="submit" form="enroll-form" className="btn-primary" disabled={!selectedStudent}>Enroll</button>
+            </>
+          }
+        >
+          <form id="enroll-form" onSubmit={handleEnrollSubmit} style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
+            <div style={{ position: 'relative' }}>
+              <Field
+                label="Student"
+                hint={selectedStudent ? `Selected — student #${selectedStudent.id}` : 'Search by name or email.'}
+                htmlFor="enr-search"
+              >
+                <input
+                  id="enr-search"
+                  type="text"
+                  value={studentSearch}
+                  onChange={(e) => searchStudents(e.target.value)}
+                  className="form-input"
+                  placeholder="Type to search…"
+                  autoComplete="off"
                   required={!selectedStudent}
                 />
-                
-                {/* Search Results Dropdown Overlay */}
-                {studentSearchResults.length > 0 && (
-                  <div 
-                    className="glass-panel"
-                    style={{ 
-                      position: 'absolute', 
-                      top: '100%', 
-                      left: 0, 
-                      right: 0, 
-                      maxHeight: '180px', 
-                      overflowY: 'auto', 
-                      zIndex: 1010, 
-                      marginTop: '4px',
-                      background: 'var(--panel-bg-solid)',
-                      boxShadow: '0 10px 20px var(--overlay)'
-                    }}
-                  >
-                    {studentSearchResults.map(student => (
-                      <div 
-                        key={student.id} 
-                        onClick={() => {
-                          setSelectedStudent(student);
-                          setStudentSearch(`${student.name} (${student.email})`);
-                          setStudentSearchResults([]);
-                        }}
-                        style={{ 
-                          padding: '10px 14px', 
-                          cursor: 'pointer', 
-                          borderBottom: '1px solid var(--surface-2)',
-                          fontSize: '0.85rem'
-                        }}
-                        onMouseOver={(e) => e.currentTarget.style.background = 'var(--surface-2)'}
-                        onMouseOut={(e) => e.currentTarget.style.background = 'transparent'}
-                      >
-                        <div style={{ fontWeight: 'bold' }}>{student.name}</div>
-                        <div style={{ fontSize: '0.75rem', color: 'var(--text-secondary)' }}>{student.email}</div>
-                      </div>
-                    ))}
-                  </div>
-                )}
+              </Field>
 
-                {selectedStudent && (
-                  <div style={{ fontSize: '0.8rem', color: 'var(--success)', marginTop: '4px', fontWeight: 'bold' }}>
-                    Selected student ID: #{selectedStudent.id}
-                  </div>
-                )}
-              </div>
+              {studentSearchResults.length > 0 && (
+                <div
+                  style={{
+                    position: 'absolute',
+                    top: '100%',
+                    left: 0,
+                    right: 0,
+                    maxHeight: '190px',
+                    overflowY: 'auto',
+                    zIndex: 1010,
+                    marginTop: '4px',
+                    background: 'var(--card)',
+                    border: '1px solid var(--line)',
+                    borderRadius: '14px',
+                    boxShadow: 'var(--shadow-2)',
+                    padding: '6px',
+                  }}
+                >
+                  {studentSearchResults.map((student) => (
+                    <button
+                      key={student.id}
+                      type="button"
+                      className="admin-jump-item"
+                      onClick={() => {
+                        setSelectedStudent(student);
+                        setStudentSearch(`${student.name} (${student.email})`);
+                        setStudentSearchResults([]);
+                      }}
+                      style={{
+                        display: 'block',
+                        width: '100%',
+                        minHeight: '44px',
+                        padding: '9px 10px',
+                        borderRadius: '10px',
+                        background: 'transparent',
+                        border: 'none',
+                        cursor: 'pointer',
+                        textAlign: 'left',
+                      }}
+                    >
+                      <span style={{ display: 'block', font: '600 12.5px var(--font-body)', color: 'var(--tx)' }}>{student.name}</span>
+                      <span style={{ display: 'block', marginTop: '2px', font: '400 11.5px var(--font-body)', color: 'var(--muted)' }}>{student.email}</span>
+                    </button>
+                  ))}
+                </div>
+              )}
+            </div>
 
-              {/* Expiry date */}
-              <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
-                <label style={{ fontSize: '0.85rem', color: 'var(--text-secondary)' }}>Expiration Date (Optional)</label>
-                <input 
-                  type="date" 
-                  value={enrollForm.expires_at} 
-                  onChange={(e) => setEnrollForm({ ...enrollForm, expires_at: e.target.value })} 
-                  className="form-input" 
-                />
-                <span style={{ fontSize: '0.75rem', color: 'var(--text-secondary)' }}>Leave blank for lifetime access.</span>
-              </div>
-
-              <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '12px', marginTop: '10px' }}>
-                <button type="button" onClick={() => setShowEnrollForm(false)} className="btn-secondary" style={{ padding: '8px 16px', fontSize: '0.9rem' }}>Cancel</button>
-                <button type="submit" className="btn-primary" style={{ padding: '8px 20px', fontSize: '0.9rem' }} disabled={!selectedStudent}>Enroll</button>
-              </div>
-            </form>
-          </div>
-        </div>
+            <Field label="Expires on" hint="Leave blank for lifetime access." htmlFor="enr-exp">
+              <input
+                id="enr-exp"
+                type="date"
+                value={enrollForm.expires_at}
+                onChange={(e) => setEnrollForm({ ...enrollForm, expires_at: e.target.value })}
+                className="form-input"
+              />
+            </Field>
+          </form>
+        </Modal>
       )}
 
-      {/* Refund confirmation */}
+      {/* ---- refund ---- */}
       {refundTarget && (
-        <div style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, background: 'var(--overlay)', display: 'flex', justifyContent: 'center', alignItems: 'center', zIndex: 1100, padding: '20px' }}>
-          <div className="glass-panel" style={{ width: '100%', maxWidth: '460px', padding: '26px', display: 'flex', flexDirection: 'column', gap: '16px' }}>
-            <h3 style={{ margin: 0, fontWeight: 800, fontSize: '1.15rem' }}>Refund this payment?</h3>
-
-            <div style={{ fontSize: '0.88rem', color: 'var(--text-secondary)', lineHeight: 1.55 }}>
-              <div><strong style={{ color: 'var(--text-primary)' }}>{refundTarget.user?.name}</strong> — {refundTarget.batch?.course?.title}</div>
-              <div>Captured: <strong style={{ color: 'var(--text-primary)' }}>₹{refundTarget.amount / 100}</strong></div>
-            </div>
-
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
-              <label style={{ fontSize: '0.8rem', color: 'var(--text-secondary)' }}>Amount to refund (₹)</label>
-              <input
-                type="number" step="0.01" min="0.01" max={refundTarget.amount / 100}
-                value={refundAmount}
-                onChange={(e) => setRefundAmount(e.target.value)}
-                placeholder={`Full refund — ₹${refundTarget.amount / 100}`}
-                className="form-input" style={{ padding: '8px 12px' }}
-              />
-              <span style={{ fontSize: '0.75rem', color: 'var(--text-secondary)' }}>
-                Leave blank to refund in full. A full refund also withdraws course access; a partial refund leaves it in place.
-              </span>
-            </div>
-
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
-              <label style={{ fontSize: '0.8rem', color: 'var(--text-secondary)' }}>Reason (recorded in the audit log)</label>
-              <input
-                type="text" value={refundReason}
-                onChange={(e) => setRefundReason(e.target.value)}
-                placeholder="e.g. Duplicate payment"
-                className="form-input" style={{ padding: '8px 12px' }}
-              />
-            </div>
-
-            <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '12px', marginTop: '4px' }}>
+        <Modal
+          danger
+          title={`Refund ₹${refundTarget.amount / 100} to ${refundTarget.user?.name}?`}
+          description="A full refund also withdraws course access; a partial refund leaves it in place."
+          width={480}
+          onClose={() => { setRefundTarget(null); setRefundAmount(''); setRefundReason(''); }}
+          footer={
+            <>
               <button
-                type="button" disabled={refunding}
+                type="button"
+                disabled={refunding}
                 onClick={() => { setRefundTarget(null); setRefundAmount(''); setRefundReason(''); }}
-                className="btn-secondary" style={{ padding: '8px 16px', fontSize: '0.9rem' }}
+                className="btn-secondary"
               >
                 Cancel
               </button>
-              <button
-                type="button" onClick={submitRefund} disabled={refunding}
-                className="btn-primary" style={{ padding: '8px 20px', fontSize: '0.9rem' }}
-              >
-                {refunding ? 'Refunding…' : 'Refund'}
+              <button type="button" onClick={submitRefund} disabled={refunding} className="btn-danger">
+                {refunding ? 'Refunding…' : 'Refund payment'}
               </button>
+            </>
+          }
+        >
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
+            <div style={{ background: 'var(--card2)', border: '1px solid var(--line)', borderRadius: '14px', padding: '14px' }}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', gap: '12px', font: '400 12.5px var(--font-body)', color: 'var(--muted)' }}>
+                <span>Bought</span>
+                <span style={{ color: 'var(--tx)', fontWeight: 600, textAlign: 'right' }}>
+                  {refundTarget.product?.title || refundTarget.batch?.course?.title || '—'}
+                </span>
+              </div>
+              <div style={{ marginTop: '9px', display: 'flex', justifyContent: 'space-between', gap: '12px', font: '400 12.5px var(--font-body)', color: 'var(--muted)' }}>
+                <span>Captured</span>
+                <Num style={{ color: 'var(--tx)', fontSize: '12.5px' }}>₹{refundTarget.amount / 100}</Num>
+              </div>
             </div>
+
+            <Field
+              label="Amount to refund (₹)"
+              hint={`Leave blank to refund in full — ₹${refundTarget.amount / 100}.`}
+              htmlFor="rf-amount"
+            >
+              <input
+                id="rf-amount"
+                type="number"
+                step="0.01"
+                min="0.01"
+                max={refundTarget.amount / 100}
+                value={refundAmount}
+                onChange={(e) => setRefundAmount(e.target.value)}
+                placeholder={`Full refund — ₹${refundTarget.amount / 100}`}
+                className="form-input"
+              />
+            </Field>
+
+            <Field label="Reason" hint="Recorded in the audit log." htmlFor="rf-reason">
+              <input
+                id="rf-reason"
+                type="text"
+                value={refundReason}
+                onChange={(e) => setRefundReason(e.target.value)}
+                placeholder="e.g. Duplicate payment"
+                className="form-input"
+              />
+            </Field>
           </div>
-        </div>
+        </Modal>
       )}
 
+      {/* ---- suspend a batch ---- */}
+      {pendingBatch && (
+        <Modal
+          danger
+          title={`Suspend “${pendingBatch.name}”?`}
+          description="Students already enrolled keep their access; no new registration can join until you reactivate it."
+          width={480}
+          onClose={() => setPendingBatch(null)}
+          footer={
+            <>
+              <button type="button" className="btn-secondary" onClick={() => setPendingBatch(null)}>Cancel</button>
+              <button
+                type="button"
+                className="btn-danger"
+                onClick={() => { const b = pendingBatch; setPendingBatch(null); handleDeactivateBatch(b); }}
+              >
+                Suspend batch
+              </button>
+            </>
+          }
+        />
+      )}
     </div>
   );
 }

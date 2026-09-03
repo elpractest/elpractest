@@ -1,5 +1,9 @@
 import React, { useState, useEffect } from 'react';
 import api from '../api';
+import {
+  PageHead, TableCard, Toolbar, Table, Row, Cell, CellTitle, CellSub, Badge,
+  EmptyState, SkeletonRows, Pagination, Drawer, Notice, Num,
+} from '../components/admin/ui';
 
 export default function SuperAdminAuditLogs() {
   const [logs, setLogs] = useState([]);
@@ -44,154 +48,145 @@ export default function SuperAdminAuditLogs() {
     return JSON.stringify(val, null, 2);
   };
 
-  if (loading && logs.length === 0) {
-    return (
-      <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', height: '200px', color: 'var(--text-secondary)' }}>
-        <span>⏳ Loading audit trail...</span>
-      </div>
-    );
-  }
+  const COLUMNS = [
+    { key: 'when', label: 'Timestamp', width: '170px' },
+    { key: 'action', label: 'Action', width: 'minmax(0,1fr)' },
+    { key: 'user', label: 'User', width: 'minmax(0,1fr)' },
+    { key: 'ip', label: 'IP address', width: '140px', hideBelow: 'tablet' },
+    { key: 'go', label: '', width: '32px' },
+  ];
+
+  const expanded = logs.find((l) => l.id === expandedLogId) || null;
 
   return (
-    <div style={{ maxWidth: '1000px', margin: '0 auto' }}>
-      
-      <div style={{ marginBottom: '32px' }}>
-        <h1 style={{ fontSize: '2rem', fontWeight: 800, margin: '0 0 8px 0', color: 'var(--text-primary)', fontFamily: 'var(--font-display)' }}>
-          Platform Audit Logs
-        </h1>
-        <p style={{ margin: 0, color: 'var(--text-secondary)' }}>
-          Review a secure, chronological trail of all sensitive admin and settings modification actions taken on this deployment.
-        </p>
-      </div>
+    <div style={{ display: 'flex', flexDirection: 'column', gap: '18px', width: '100%' }}>
+      <PageHead
+        title="System audit logs"
+        subtitle="A chronological trail of every sensitive admin and settings change on this deployment."
+      />
 
-      {error && (
-        <div style={{ background: 'var(--danger-bg)', border: '1px solid var(--danger-border)', padding: '12px 16px', borderRadius: '8px', color: 'var(--danger-text)', marginBottom: '24px', fontSize: '0.9rem' }}>
-          ⚠️ {error}
-        </div>
-      )}
+      {error && <Notice tone="danger" icon="alert" onDismiss={() => setError('')}>{error}</Notice>}
 
-      <div className="glass-panel" style={{ overflow: 'hidden' }}>
-        <table style={{ width: '100%', borderCollapse: 'collapse', textAlign: 'left', fontSize: '0.9rem' }}>
-          <thead>
-            <tr style={{ borderBottom: '1px solid var(--border-color)', background: 'var(--surface-1)' }}>
-              <th style={{ padding: '16px 20px', fontWeight: 600, color: 'var(--text-primary)' }}>Timestamp</th>
-              <th style={{ padding: '16px 20px', fontWeight: 600, color: 'var(--text-primary)' }}>Action</th>
-              <th style={{ padding: '16px 20px', fontWeight: 600, color: 'var(--text-primary)' }}>User</th>
-              <th style={{ padding: '16px 20px', fontWeight: 600, color: 'var(--text-primary)' }}>IP Address</th>
-              <th style={{ padding: '16px 20px', fontWeight: 600, color: 'var(--text-primary)', textAlign: 'right' }}>Details</th>
-            </tr>
-          </thead>
-          <tbody>
-            {logs.length === 0 ? (
-              <tr>
-                <td colSpan="5" style={{ padding: '40px', textAlign: 'center', color: 'var(--text-secondary)' }}>
-                  No audit log entries found.
-                </td>
-              </tr>
-            ) : (
-              logs.map((log) => {
-                const isExpanded = expandedLogId === log.id;
-                return (
-                  <React.Fragment key={log.id}>
-                    <tr style={{ borderBottom: '1px solid var(--border-color)', background: isExpanded ? 'var(--accent-soft)' : 'transparent', transition: 'background 0.2s ease' }}>
-                      <td style={{ padding: '16px 20px', color: 'var(--text-secondary)' }}>
-                        {new Date(log.created_at).toLocaleString()}
-                      </td>
-                      <td style={{ padding: '16px 20px' }}>
-                        <span style={{ background: 'var(--accent-soft)', color: 'var(--violet-text)', padding: '4px 8px', borderRadius: '4px', fontSize: '0.8rem', fontWeight: 600 }}>
-                          {log.action}
-                        </span>
-                      </td>
-                      <td style={{ padding: '16px 20px' }}>
-                        {log.user ? (
-                          <div>
-                            <div style={{ fontWeight: 600, color: 'var(--text-primary)' }}>{log.user.name}</div>
-                            <div style={{ fontSize: '0.75rem', color: 'var(--text-secondary)' }}>{log.user.email}</div>
-                          </div>
-                        ) : (
-                          <span style={{ color: 'var(--text-secondary)', fontStyle: 'italic' }}>System / Guest</span>
-                        )}
-                      </td>
-                      <td style={{ padding: '16px 20px', fontFamily: 'var(--font-mono)', color: 'var(--text-secondary)' }}>
-                        {log.ip_address}
-                      </td>
-                      <td style={{ padding: '16px 20px', textAlign: 'right' }}>
-                        <button
-                          onClick={() => toggleExpandLog(log.id)}
-                          style={{
-                            background: 'transparent',
-                            border: 'none',
-                            color: 'var(--accent-color)',
-                            cursor: 'pointer',
-                            fontSize: '0.85rem',
-                            fontWeight: 'bold',
-                            padding: 0
-                          }}
-                        >
-                          {isExpanded ? 'Hide ▲' : 'Show Details ▼'}
-                        </button>
-                      </td>
-                    </tr>
-                    {isExpanded && (
-                      <tr style={{ borderBottom: '1px solid var(--border-color)', background: 'var(--surface-sunken)' }}>
-                        <td colSpan="5" style={{ padding: '20px' }}>
-                          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '20px' }}>
-                            <div>
-                              <div style={{ fontSize: '0.75rem', fontWeight: 'bold', color: 'var(--text-secondary)', marginBottom: '8px', textTransform: 'uppercase' }}>Old Values</div>
-                              <pre style={{ margin: 0, padding: '12px', background: 'var(--surface-sunken)', border: '1px solid var(--border-color)', borderRadius: '6px', overflowX: 'auto', fontSize: '0.75rem', fontFamily: 'var(--font-mono)', color: 'var(--danger-text)', maxHeight: '180px' }}>
-                                {formatJSON(log.old_values)}
-                              </pre>
-                            </div>
-                            <div>
-                              <div style={{ fontSize: '0.75rem', fontWeight: 'bold', color: 'var(--text-secondary)', marginBottom: '8px', textTransform: 'uppercase' }}>New Values</div>
-                              <pre style={{ margin: 0, padding: '12px', background: 'var(--surface-sunken)', border: '1px solid var(--border-color)', borderRadius: '6px', overflowX: 'auto', fontSize: '0.75rem', fontFamily: 'var(--font-mono)', color: 'var(--success-text)', maxHeight: '180px' }}>
-                                {formatJSON(log.new_values)}
-                              </pre>
-                            </div>
-                          </div>
-                          {log.user_agent && (
-                            <div style={{ marginTop: '12px', fontSize: '0.75rem', color: 'var(--text-secondary)' }}>
-                              <strong>User Agent:</strong> {log.user_agent}
-                            </div>
-                          )}
-                        </td>
-                      </tr>
-                    )}
-                  </React.Fragment>
-                );
-              })
-            )}
-          </tbody>
-        </table>
-
-        {/* Pagination */}
-        {pagination.lastPage > 1 && (
-          <div style={{ padding: '16px 20px', display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderTop: '1px solid var(--border-color)', background: 'var(--surface-1)' }}>
-            <span style={{ fontSize: '0.8rem', color: 'var(--text-secondary)' }}>
-              Page {pagination.currentPage} of {pagination.lastPage}
+      <TableCard>
+        <Toolbar
+          trailing={
+            <span style={{ font: '500 12.5px var(--font-body)', color: 'var(--muted)' }}>
+              <Num>{pagination.total}</Num> entries
             </span>
-            <div style={{ display: 'flex', gap: '8px' }}>
-              <button
-                onClick={() => fetchLogs(pagination.currentPage - 1)}
-                disabled={pagination.currentPage === 1 || loading}
-                className="btn-secondary"
-                style={{ padding: '6px 12px', fontSize: '0.8rem' }}
+          }
+        >
+          <span style={{ font: '600 12.5px var(--font-body)', color: 'var(--tx2)' }}>Newest first</span>
+        </Toolbar>
+
+        {loading && logs.length === 0 ? (
+          <SkeletonRows />
+        ) : logs.length === 0 ? (
+          <EmptyState icon="history" message="Nothing has been audited yet. Sensitive changes appear here as they happen." />
+        ) : (
+          <>
+            <Table columns={COLUMNS}>
+              {logs.map((log) => (
+                <Row
+                  key={log.id}
+                  selected={expandedLogId === log.id}
+                  onClick={() => toggleExpandLog(log.id)}
+                >
+                  <Cell label="Timestamp">
+                    <Num style={{ fontSize: '12px', fontWeight: 500, color: 'var(--tx2)' }}>
+                      {new Date(log.created_at).toLocaleString()}
+                    </Num>
+                  </Cell>
+                  <Cell label="Action">
+                    <Badge tone="ai">{log.action}</Badge>
+                  </Cell>
+                  <Cell label="User">
+                    {log.user ? (
+                      <>
+                        <CellTitle>{log.user.name}</CellTitle>
+                        <CellSub>{log.user.email}</CellSub>
+                      </>
+                    ) : (
+                      <CellSub>System / guest</CellSub>
+                    )}
+                  </Cell>
+                  <Cell label="IP address" hideBelow="tablet">
+                    <Num style={{ fontSize: '12px', fontWeight: 500, color: 'var(--muted)' }}>{log.ip_address}</Num>
+                  </Cell>
+                  <Cell align="right">
+                    <span style={{ color: 'var(--muted)', display: 'inline-flex' }}>
+                      <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><path d="m9 18 6-6-6-6" /></svg>
+                    </span>
+                  </Cell>
+                </Row>
+              ))}
+            </Table>
+            <Pagination
+              page={pagination.currentPage}
+              lastPage={pagination.lastPage}
+              onPage={(next) => fetchLogs(next)}
+            />
+          </>
+        )}
+      </TableCard>
+
+      {expanded && (
+        <Drawer
+          title={expanded.action}
+          subtitle={`${expanded.user?.name || 'System'} · ${new Date(expanded.created_at).toLocaleString()}`}
+          onClose={() => setExpandedLogId(null)}
+        >
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '18px' }}>
+            <div>
+              <div className="t-overline" style={{ color: 'var(--muted)', marginBottom: '8px' }}>OLD VALUES</div>
+              <pre
+                style={{
+                  margin: 0,
+                  padding: '12px',
+                  background: 'var(--card2)',
+                  border: '1px solid var(--line)',
+                  borderRadius: '12px',
+                  overflowX: 'auto',
+                  font: '400 11.5px/1.6 var(--font-mono)',
+                  color: 'var(--danger)',
+                  maxHeight: '200px',
+                }}
               >
-                Previous
-              </button>
-              <button
-                onClick={() => fetchLogs(pagination.currentPage + 1)}
-                disabled={pagination.currentPage === pagination.lastPage || loading}
-                className="btn-secondary"
-                style={{ padding: '6px 12px', fontSize: '0.8rem' }}
+                {formatJSON(expanded.old_values)}
+              </pre>
+            </div>
+            <div>
+              <div className="t-overline" style={{ color: 'var(--muted)', marginBottom: '8px' }}>NEW VALUES</div>
+              <pre
+                style={{
+                  margin: 0,
+                  padding: '12px',
+                  background: 'var(--card2)',
+                  border: '1px solid var(--line)',
+                  borderRadius: '12px',
+                  overflowX: 'auto',
+                  font: '400 11.5px/1.6 var(--font-mono)',
+                  color: 'var(--success)',
+                  maxHeight: '200px',
+                }}
               >
-                Next
-              </button>
+                {formatJSON(expanded.new_values)}
+              </pre>
+            </div>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '9px' }}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', gap: '12px', font: '400 12.5px var(--font-body)', color: 'var(--muted)' }}>
+                <span>IP address</span>
+                <Num style={{ color: 'var(--tx)', fontSize: '12px' }}>{expanded.ip_address}</Num>
+              </div>
+              {expanded.user_agent && (
+                <div style={{ font: '400 11.5px/1.5 var(--font-body)', color: 'var(--muted)' }}>
+                  <span className="t-overline" style={{ display: 'block', marginBottom: '4px' }}>USER AGENT</span>
+                  {expanded.user_agent}
+                </div>
+              )}
             </div>
           </div>
-        )}
-      </div>
-
+        </Drawer>
+      )}
     </div>
   );
 }

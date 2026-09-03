@@ -101,7 +101,7 @@ export default function Login({ setUser }) {
             style={{ width: '200px', maxWidth: '100%', height: 'auto', objectFit: 'contain' }}
           />
           <div>
-            <h2 style={{ margin: '0 0 6px 0', fontSize: '1.75rem', fontWeight: 800, fontFamily: 'var(--font-display)', color: 'var(--tx)', letterSpacing: '-0.02em' }}>{t('login.welcome')}</h2>
+            <h2 style={{ margin: '0 0 6px 0', fontSize: '1.75rem', fontWeight: 700, fontFamily: 'var(--font-display)', color: 'var(--tx)', letterSpacing: '-0.02em' }}>{t('login.welcome')}</h2>
             <p style={{ margin: 0, color: 'var(--muted)', fontSize: '0.9rem' }}>{t('login.subtitle')}</p>
           </div>
         </div>
@@ -147,7 +147,7 @@ export default function Login({ setUser }) {
           <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
               <label style={{ fontSize: '0.85rem', fontWeight: 600, color: 'var(--text-secondary)' }}>{t('login.password')}</label>
-              <Link to="/forgot-password" style={{ fontSize: '0.8rem', color: 'var(--accent-color)', textDecoration: 'none' }}>
+              <Link to="/forgot-password" className="link-btn" style={{ textDecoration: 'none' }}>
                 {t('login.forgot')}
               </Link>
             </div>
@@ -174,11 +174,11 @@ export default function Login({ setUser }) {
 
         <div style={{ textAlign: 'center', fontSize: '0.85rem', color: 'var(--text-secondary)' }}>
           {t('login.noAccount')}{' '}
-          <Link to="/register" style={{ color: 'var(--accent-color)', textDecoration: 'none', fontWeight: 600 }}>{t('login.create')}</Link>
+          <Link to="/register" className="link-btn" style={{ textDecoration: 'none' }}>{t('login.create')}</Link>
         </div>
 
         <div style={{ textAlign: 'center' }}>
-          <Link to="/welcome" style={{ fontSize: '0.8rem', color: 'var(--muted)', textDecoration: 'none' }}>New to Practest? See what's inside →</Link>
+          <Link to="/welcome" className="link-btn" style={{ textDecoration: 'none', color: 'var(--muted)' }}>New to Practest? See what’s inside</Link>
         </div>
       </div>
     </div>

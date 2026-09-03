@@ -89,7 +89,7 @@ export default function CourseOutline() {
             <span style={{ fontSize: '0.75rem', fontWeight: 700, padding: '4px 8px', background: 'var(--accent-soft)', color: 'var(--accent-color)', borderRadius: '6px', textTransform: 'uppercase', marginBottom: '8px', display: 'inline-block' }}>
               {course.exam_category}
             </span>
-            <h1 style={{ margin: '4px 0 8px 0', fontSize: '1.8rem', fontWeight: 800 }}>{course.title}</h1>
+            <h1 style={{ margin: '4px 0 8px 0', fontSize: '1.8rem', fontWeight: 700 }}>{course.title}</h1>
             <p style={{ margin: 0, color: 'var(--text-secondary)', fontSize: '0.95rem', maxWidth: '700px' }}>
               {course.description}
             </p>
@@ -173,7 +173,7 @@ export default function CourseOutline() {
                           color: isCompleted ? 'var(--success-text)' : 'var(--text-secondary)',
                           border: isCompleted ? '1px solid var(--success-border)' : '1px solid var(--border-color)',
                         }}>
-                          {isCompleted ? '✓' : lIdx + 1}
+                          {isCompleted ? <Icon name="check" size={14} /> : lIdx + 1}
                         </div>
 
                         <div>

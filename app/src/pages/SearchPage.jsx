@@ -79,17 +79,17 @@ export default function SearchPage() {
         <button onClick={() => navigate(-1)} aria-label={t('common.back')} className="chrome-btn" style={{ background: 'var(--surf)', border: '1px solid var(--line2)', color: 'var(--tx2)' }}>
           <Icon name="arrow-left" size={20} />
         </button>
-        <div style={{ flex: 1, display: 'flex', alignItems: 'center', gap: '10px', padding: '12px 15px', borderRadius: '14px', background: 'var(--surf)', border: '1px solid var(--accent-border)' }}>
-          <Icon name="search" size={18} style={{ color: 'var(--brand)' }} />
+        <div style={{ flex: 1, display: 'flex', alignItems: 'center', gap: '10px', minHeight: '48px', padding: '12px 15px', borderRadius: '14px', background: 'var(--card)', border: '1px solid var(--line2)' }}>
+          <Icon name="search" size={18} style={{ color: 'var(--muted)' }} />
           <input
             autoFocus
             value={query}
             onChange={(e) => setQuery(e.target.value)}
             placeholder={t('search.placeholder')}
-            style={{ flex: 1, background: 'none', border: 'none', outline: 'none', font: '600 14px var(--font-body)', color: 'var(--tx)' }}
+            style={{ flex: 1, background: 'none', border: 'none', outline: 'none', font: '400 14px var(--font-body)', color: 'var(--tx)' }}
           />
           {query && (
-            <button onClick={() => setQuery('')} aria-label="Clear" style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--muted)', display: 'grid', placeItems: 'center' }}>
+            <button onClick={() => setQuery('')} aria-label="Clear" className="adm-rowaction">
               <Icon name="x" size={16} />
             </button>
           )}
@@ -99,16 +99,16 @@ export default function SearchPage() {
       <div style={{ flex: 1, padding: '6px 18px 30px' }}>
         {!q ? (
           <>
-            <div style={{ font: '700 12px var(--font-body)', color: 'var(--muted)', letterSpacing: '.04em', margin: '8px 0 12px' }}>{t('search.popular')}</div>
+            <div className="t-overline" style={{ color: 'var(--muted)', margin: '8px 0 12px' }}>{t('search.popular')}</div>
             <div style={{ display: 'flex', flexWrap: 'wrap', gap: '9px' }}>
               {demoTrending.map((p) => (
                 <button key={p} className="chip-filter" onClick={() => setQuery(p)}>{p}</button>
               ))}
             </div>
-            <div style={{ font: '700 12px var(--font-body)', color: 'var(--muted)', letterSpacing: '.04em', margin: '22px 0 10px' }}>RECENT</div>
+            <div className="t-overline" style={{ color: 'var(--muted)', margin: '22px 0 10px' }}>RECENT</div>
             <div style={{ display: 'flex', flexDirection: 'column' }}>
               {demoRecent.map((r) => (
-                <button key={r} onClick={() => setQuery(r)} style={{ display: 'flex', alignItems: 'center', gap: '12px', padding: '12px 4px', background: 'none', border: 'none', borderBottom: '1px solid var(--line)', cursor: 'pointer', textAlign: 'left' }}>
+                <button key={r} onClick={() => setQuery(r)} style={{ display: 'flex', alignItems: 'center', gap: '12px', minHeight: '48px', padding: '12px 4px', background: 'none', border: 'none', borderBottom: '1px solid var(--line)', cursor: 'pointer', textAlign: 'left' }}>
                   <Icon name="clock" size={17} style={{ color: 'var(--muted)' }} />
                   <span style={{ flex: 1, font: '600 13.5px var(--font-body)', color: 'var(--tx2)' }}>{r}</span>
                   <Icon name="arrow-right" size={15} style={{ color: 'var(--muted)' }} />
@@ -117,17 +117,25 @@ export default function SearchPage() {
             </div>
           </>
         ) : loading ? (
-          <div style={{ display: 'flex', justifyContent: 'center', padding: '40px' }}><div className="spinner" /></div>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '10px', paddingTop: '14px' }}>
+            {[0, 1, 2].map((i) => (
+              <div key={i} className="skeleton" style={{ height: '58px', borderRadius: '16px' }} />
+            ))}
+          </div>
         ) : total === 0 ? (
-          <div style={{ textAlign: 'center', padding: '48px 20px', color: 'var(--muted)' }}>
-            <Icon name="search" size={30} style={{ opacity: 0.5, marginBottom: '10px' }} />
-            <div style={{ font: '600 14px var(--font-body)' }}>No matches for “{query}”.</div>
+          <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '12px', padding: '46px 24px', textAlign: 'center' }}>
+            <span style={{ display: 'grid', placeItems: 'center', width: '48px', height: '48px', borderRadius: '999px', background: 'var(--surf)', color: 'var(--muted)' }}>
+              <Icon name="search" size={24} />
+            </span>
+            <p style={{ margin: 0, maxWidth: '40ch', font: '400 13.5px/1.6 var(--font-body)', color: 'var(--muted)' }}>
+              Nothing matches “{query}”. Try a shorter phrase, or the exam name on its own.
+            </p>
           </div>
         ) : (
           <>
             {seriesHits.length > 0 && (
               <>
-                <div style={{ font: '700 12px var(--font-body)', color: 'var(--muted)', letterSpacing: '.04em', margin: '10px 0 12px' }}>{t('nav.tests').toUpperCase()}</div>
+                <div className="t-overline" style={{ color: 'var(--muted)', margin: '10px 0 12px' }}>{t('nav.tests').toUpperCase()}</div>
                 {seriesHits.map((s) => (
                   <ResultRow key={`s-${s.id}`} hue="gold" icon="target" title={s.title} sub={s.exam_category} onClick={() => navigate(`/student/test-series/${s.id}`)} />
                 ))}
@@ -135,7 +143,7 @@ export default function SearchPage() {
             )}
             {courseHits.length > 0 && (
               <>
-                <div style={{ font: '700 12px var(--font-body)', color: 'var(--muted)', letterSpacing: '.04em', margin: '18px 0 12px' }}>{t('nav.study').toUpperCase()}</div>
+                <div className="t-overline" style={{ color: 'var(--muted)', margin: '18px 0 12px' }}>{t('nav.study').toUpperCase()}</div>
                 {courseHits.map((c) => (
                   <ResultRow key={`c-${c.id}`} hue="blue" icon="book-open" title={c.title} sub={c.exam_category || c.short_description} onClick={() => navigate(`/courses/${c.id}/outline`)} />
                 ))}

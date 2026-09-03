@@ -1,5 +1,11 @@
 import React, { useState, useEffect } from 'react';
 import api from '../api';
+import Icon from '../components/Icon';
+import {
+  PageHead, TableCard, Toolbar, Chip, Table, Row, Cell, CellTitle, CellSub, RowChevron,
+  StatusDot, Badge, EmptyState, SkeletonRows, Pagination, Modal, Drawer, Field, FormGrid,
+  FormSection, Notice, Num,
+} from '../components/admin/ui';
 
 export default function AdminTests() {
   const [tests, setTests] = useState([]);
@@ -17,6 +23,9 @@ export default function AdminTests() {
 
   // Form toggle
   const [showForm, setShowForm] = useState(false);
+  // presentation only: the toolbar chip and the row detail drawer
+  const [publishFilter, setPublishFilter] = useState('all');
+  const [detailTest, setDetailTest] = useState(null);
   const [testForm, setTestForm] = useState({
     id: null,
     title: '',
@@ -282,369 +291,516 @@ export default function AdminTests() {
     }
   };
 
+  const COLUMNS = [
+    { key: 'title', label: 'Test', width: 'minmax(0,1.9fr)' },
+    { key: 'scope', label: 'Course / batch', width: 'minmax(0,1.3fr)', hideBelow: 'tablet' },
+    { key: 'type', label: 'Type', width: '100px' },
+    { key: 'shape', label: 'Duration', width: '120px', hideBelow: 'tablet' },
+    { key: 'status', label: 'Status', width: '110px' },
+    { key: 'go', label: '', width: '32px' },
+  ];
+
+  const visibleTests = tests.filter((t) =>
+    publishFilter === 'all' ? true : publishFilter === 'live' ? t.is_published : !t.is_published,
+  );
+  const liveTests = tests.filter((t) => t.is_published).length;
+
+  const blankTest = () => ({
+    id: null,
+    title: '',
+    course_id: '',
+    batch_id: '',
+    type: 'mock',
+    duration_seconds: 3600,
+    max_attempts: 1,
+    instructions: '',
+    available_from: '',
+    available_until: '',
+    sections: [
+      { title: 'Quantitative Aptitude', duration_seconds: 1800, cutoff_marks: '', is_qualifying: false, question_ids: [], questions: [] },
+    ],
+  });
+
+  const startNewTest = () => {
+    setTestForm(blankTest());
+    setActiveSectionIdx(0);
+    setShowForm(true);
+  };
+
+  const activeSection = testForm.sections[activeSectionIdx];
+
   return (
-    <div style={{ display: 'flex', flexDirection: 'column', gap: '30px', width: '100%' }}>
-      
-      {/* Title Header */}
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-        <div>
-          <h1 style={{ fontSize: '2rem', margin: 0, fontWeight: 800 }}>Tests Manager</h1>
-          <p style={{ color: 'var(--text-secondary)', margin: '4px 0 0 0' }}>Configure online tests, sectional timings, and assign questions.</p>
-        </div>
-        <button 
-          onClick={() => {
-            setTestForm({
-              id: null,
-              title: '',
-              course_id: '',
-              batch_id: '',
-              type: 'mock',
-              duration_seconds: 3600,
-              max_attempts: 1,
-              instructions: '',
-              available_from: '',
-              available_until: '',
-              sections: [
-                { title: 'Quantitative Aptitude', duration_seconds: 1800, cutoff_marks: '', is_qualifying: false, question_ids: [], questions: [] }
-              ]
-            });
-            setActiveSectionIdx(0);
-            setShowForm(true);
-          }} 
-          className="btn-primary"
-        >
-          ➕ Create Test
+    <div style={{ display: 'flex', flexDirection: 'column', gap: '18px', width: '100%' }}>
+      <style>{`
+        .tst-editor { display: grid; grid-template-columns: 1fr; gap: 18px; }
+        .tst-editor > section { min-width: 0; }
+        @media (min-width: 900px) { .tst-editor { grid-template-columns: 1.2fr 1fr; } }
+        @media (min-width: 1300px) { .tst-editor { grid-template-columns: 1.25fr 1fr 1fr; } }
+      `}</style>
+
+      <PageHead
+        title="Tests manager"
+        subtitle="A paper is its sections: each carries its own clock, its own cut-off, and the questions you pick for it."
+      >
+        <button type="button" onClick={startNewTest} className="btn-primary">
+          <Icon name="plus" size={16} strokeWidth={2.4} />
+          New test
         </button>
-      </div>
+      </PageHead>
 
-      {success && (
-        <div style={{ padding: '16px', background: 'var(--success-bg)', border: '1px solid var(--success)', borderRadius: '8px', color: 'var(--success)' }}>
-          {success}
-        </div>
-      )}
+      {success && <Notice tone="success" icon="check-circle" onDismiss={() => setSuccess('')}>{success}</Notice>}
+      {error && <Notice tone="danger" icon="alert" onDismiss={() => setError('')}>{error}</Notice>}
 
-      {error && (
-        <div style={{ padding: '16px', background: 'var(--danger-bg)', border: '1px solid var(--danger)', borderRadius: '8px', color: 'var(--danger)' }}>
-          {error}
-        </div>
-      )}
+      <TableCard>
+        <Toolbar
+          trailing={
+            !loading && (
+              <span style={{ font: '500 12.5px var(--font-body)', color: 'var(--muted)' }}>
+                <Num>{liveTests}</Num> live on this page
+              </span>
+            )
+          }
+        >
+          <Chip active={publishFilter === 'all'} onClick={() => setPublishFilter('all')}>All</Chip>
+          <Chip active={publishFilter === 'live'} onClick={() => setPublishFilter('live')}>Published</Chip>
+          <Chip active={publishFilter === 'draft'} onClick={() => setPublishFilter('draft')}>Draft</Chip>
+        </Toolbar>
 
-      {/* Tests Table */}
-      <div className="glass-panel" style={{ padding: '24px', overflowX: 'auto' }}>
-        <table style={{ width: '100%', borderCollapse: 'collapse', textAlign: 'left' }}>
-          <thead>
-            <tr style={{ borderBottom: '1px solid var(--border-color)', color: 'var(--text-secondary)', fontSize: '0.9rem' }}>
-              <th style={{ padding: '12px 16px' }}>Test Title</th>
-              <th style={{ padding: '12px 16px' }}>Course / Batch Scope</th>
-              <th style={{ padding: '12px 16px' }}>Type</th>
-              <th style={{ padding: '12px 16px' }}>Duration / Marks</th>
-              <th style={{ padding: '12px 16px' }}>Status</th>
-              <th style={{ padding: '12px 16px', textAlign: 'right' }}>Actions</th>
-            </tr>
-          </thead>
-          <tbody>
-            {loading && tests.length === 0 ? (
-              <tr>
-                <td colSpan={6} style={{ textAlign: 'center', padding: '40px', color: 'var(--text-secondary)' }}>Loading tests...</td>
-              </tr>
-            ) : tests.length === 0 ? (
-              <tr>
-                <td colSpan={6} style={{ textAlign: 'center', padding: '40px', color: 'var(--text-secondary)' }}>No tests created yet.</td>
-              </tr>
-            ) : (
-              tests.map((test) => (
-                <tr key={test.id} style={{ borderBottom: '1px solid var(--surface-2)', fontSize: '0.9rem' }}>
-                  <td style={{ padding: '16px' }}>
-                    <div style={{ fontWeight: 600 }}>{test.title}</div>
-                    <div style={{ fontSize: '0.8rem', color: 'var(--text-secondary)', marginTop: '4px' }}>
-                      {test.sections_count || 0} Sections • Max Attempts: {test.max_attempts || 'Unlimited'}
-                    </div>
-                  </td>
-                  <td style={{ padding: '16px' }}>
-                    <div>{test.course?.title || 'Unknown Course'}</div>
-                    <div style={{ fontSize: '0.8rem', color: 'var(--text-secondary)', marginTop: '4px' }}>
-                      Batch: {test.batch?.name || 'All Students'}
-                    </div>
-                  </td>
-                  <td style={{ padding: '16px' }}>
-                    <span 
-                      style={{ 
-                        fontSize: '0.75rem', 
-                        fontWeight: 'bold', 
-                        padding: '2px 8px', 
-                        borderRadius: '4px',
-                        textTransform: 'uppercase',
-                        background: test.type === 'mock' ? 'var(--accent-soft)' : 'var(--success-bg)',
-                        color: test.type === 'mock' ? 'var(--accent-color)' : 'var(--success)'
-                      }}
-                    >
-                      {test.type}
-                    </span>
-                  </td>
-                  <td style={{ padding: '16px' }}>
-                    <div>{Math.round(test.duration_seconds / 60)} mins</div>
-                    <div style={{ fontSize: '0.8rem', color: 'var(--text-secondary)', marginTop: '4px' }}>
-                      Total Marks: {test.total_marks || 0}
-                    </div>
-                  </td>
-                  <td style={{ padding: '16px' }}>
-                    <span 
-                      style={{ 
-                        fontSize: '0.75rem', 
-                        fontWeight: 'bold', 
-                        padding: '2px 8px', 
-                        borderRadius: '4px',
-                        background: test.is_published ? 'var(--success-bg)' : 'var(--surface-2)',
-                        color: test.is_published ? 'var(--success)' : 'var(--text-secondary)'
-                      }}
-                    >
+        {loading && tests.length === 0 ? (
+          <SkeletonRows />
+        ) : visibleTests.length === 0 ? (
+          <EmptyState
+            icon="award"
+            message={
+              tests.length === 0
+                ? 'No test exists yet. Create one, add its sections, then publish it to a batch.'
+                : 'No test in that state on this page.'
+            }
+            action={
+              tests.length === 0 && (
+                <button type="button" onClick={startNewTest} className="btn-primary">
+                  <Icon name="plus" size={16} strokeWidth={2.4} />
+                  New test
+                </button>
+              )
+            }
+          />
+        ) : (
+          <>
+            <Table columns={COLUMNS}>
+              {visibleTests.map((test) => (
+                <Row key={test.id} selected={detailTest?.id === test.id} onClick={() => setDetailTest(test)}>
+                  <Cell label="Test">
+                    <CellTitle>{test.title}</CellTitle>
+                    <CellSub>
+                      {test.sections_count || 0} sections · {test.max_attempts ? `${test.max_attempts} attempts` : 'unlimited attempts'}
+                    </CellSub>
+                  </Cell>
+                  <Cell label="Course / batch" hideBelow="tablet">
+                    <CellTitle>{test.course?.title || 'Unknown course'}</CellTitle>
+                    <CellSub>{test.batch?.name || 'All batches'}</CellSub>
+                  </Cell>
+                  <Cell label="Type">
+                    <Badge tone={test.type === 'mock' ? 'primary' : 'success'}>{test.type}</Badge>
+                  </Cell>
+                  <Cell label="Duration" hideBelow="tablet">
+                    <Num style={{ fontSize: '13px', color: 'var(--tx)' }}>{Math.round(test.duration_seconds / 60)}m</Num>
+                    <CellSub>{test.total_marks || 0} marks</CellSub>
+                  </Cell>
+                  <Cell label="Status">
+                    <StatusDot tone={test.is_published ? 'success' : 'reward'}>
                       {test.is_published ? 'Published' : 'Draft'}
-                    </span>
-                  </td>
-                  <td style={{ padding: '16px', textAlign: 'right' }}>
-                    <div style={{ display: 'flex', gap: '12px', justifyContent: 'flex-end', alignItems: 'center' }}>
-                      <button 
-                        onClick={() => handlePublishToggle(test)}
-                        className="btn-secondary" 
-                        style={{ padding: '4px 10px', fontSize: '0.8rem', whiteSpace: 'nowrap' }}
-                      >
-                        {test.is_published ? 'Unpublish' : 'Publish'}
-                      </button>
-                      <button onClick={() => editTest(test.id)} style={{ background: 'transparent', border: 'none', cursor: 'pointer', fontSize: '1rem' }} title="Edit">✏️</button>
-                    </div>
-                  </td>
-                </tr>
-              ))
-            )}
-          </tbody>
-        </table>
-
-        {/* Pagination */}
-        {!loading && lastPage > 1 && (
-          <div style={{ display: 'flex', justifyContent: 'center', gap: '12px', marginTop: '24px' }}>
-            <button 
-              onClick={() => setPage(p => Math.max(1, p - 1))} 
-              className="btn-secondary" 
-              style={{ padding: '6px 12px', fontSize: '0.85rem' }}
-              disabled={page === 1}
-            >
-              Previous
-            </button>
-            <span style={{ display: 'flex', alignItems: 'center', fontSize: '0.9rem', color: 'var(--text-secondary)' }}>
-              Page {page} of {lastPage}
-            </span>
-            <button 
-              onClick={() => setPage(p => Math.min(lastPage, p + 1))} 
-              className="btn-secondary" 
-              style={{ padding: '6px 12px', fontSize: '0.85rem' }}
-              disabled={page === lastPage}
-            >
-              Next
-            </button>
-          </div>
+                    </StatusDot>
+                  </Cell>
+                  <Cell align="right">
+                    <RowChevron onClick={() => setDetailTest(test)} label="Open test" />
+                  </Cell>
+                </Row>
+              ))}
+            </Table>
+            <Pagination page={page} lastPage={lastPage} onPage={setPage} />
+          </>
         )}
-      </div>
+      </TableCard>
 
-      {/* Editor Modal containing Syllabus Sections and Question Bank Picker */}
+      {/* ---- row detail ---- */}
+      {detailTest && (
+        <Drawer
+          title={detailTest.title}
+          subtitle={`${detailTest.course?.title || 'Unknown course'} · ${detailTest.batch?.name || 'All batches'}`}
+          onClose={() => setDetailTest(null)}
+          footer={
+            <>
+              <button
+                type="button"
+                className="btn-secondary"
+                onClick={() => { handlePublishToggle(detailTest); setDetailTest(null); }}
+              >
+                {detailTest.is_published ? 'Unpublish' : 'Publish'}
+              </button>
+              <button
+                type="button"
+                className="btn-primary"
+                onClick={() => { const id = detailTest.id; setDetailTest(null); editTest(id); }}
+              >
+                <Icon name="edit" size={16} />
+                Edit test
+              </button>
+            </>
+          }
+        >
+          <div style={{ background: 'var(--card2)', border: '1px solid var(--line)', borderRadius: '14px', padding: '14px' }}>
+            {[
+              ['Type', detailTest.type],
+              ['Sections', detailTest.sections_count || 0],
+              ['Duration', `${Math.round(detailTest.duration_seconds / 60)} min`],
+              ['Total marks', detailTest.total_marks || 0],
+              ['Max attempts', detailTest.max_attempts || 'Unlimited'],
+            ].map(([label, value], i) => (
+              <div
+                key={label}
+                style={{
+                  display: 'flex',
+                  justifyContent: 'space-between',
+                  gap: '12px',
+                  marginTop: i === 0 ? 0 : '9px',
+                  font: '400 12.5px var(--font-body)',
+                  color: 'var(--muted)',
+                }}
+              >
+                <span>{label}</span>
+                <Num style={{ color: 'var(--tx)', fontSize: '12.5px' }}>{value}</Num>
+              </div>
+            ))}
+            <div
+              style={{
+                display: 'flex',
+                justifyContent: 'space-between',
+                alignItems: 'center',
+                gap: '12px',
+                marginTop: '9px',
+                font: '400 12.5px var(--font-body)',
+                color: 'var(--muted)',
+              }}
+            >
+              <span>Status</span>
+              <StatusDot tone={detailTest.is_published ? 'success' : 'reward'}>
+                {detailTest.is_published ? 'Published' : 'Draft'}
+              </StatusDot>
+            </div>
+          </div>
+        </Drawer>
+      )}
+
+      {/* ---- editor: setup · selected questions · picker ---- */}
       {showForm && (
-        <div style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, background: 'var(--overlay)', display: 'flex', justifyContent: 'center', alignItems: 'center', zIndex: 1000, padding: '20px' }}>
-          <div className="glass-panel" style={{ width: '95%', maxWidth: '1400px', height: '90vh', padding: '30px', display: 'grid', gridTemplateColumns: '1.2fr 1fr 1fr', gap: '20px', overflow: 'hidden' }}>
-            
-            {/* Column 1: Test Details & Section Setup */}
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '16px', overflowY: 'auto', paddingRight: '10px' }}>
-              <h3 style={{ fontSize: '1.3rem', margin: 0, fontWeight: 700 }}>
-                {testForm.id ? 'Edit Test Setup' : 'Create Test Setup'}
-              </h3>
-              
-              <form onSubmit={handleTestSubmit} id="test-form" style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
-                <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
-                  <label style={{ fontSize: '0.8rem', color: 'var(--text-secondary)' }}>Test Title</label>
-                  <input type="text" value={testForm.title} onChange={(e) => setTestForm({ ...testForm, title: e.target.value })} className="form-input" style={{ padding: '8px 12px' }} required />
-                </div>
+        <Modal
+          title={testForm.id ? 'Edit test' : 'New test'}
+          description="Fill the setup on the left, pick a section, then assign its questions from the bank."
+          width={1360}
+          onClose={() => setShowForm(false)}
+          footer={
+            <>
+              <button type="button" onClick={() => setShowForm(false)} className="btn-secondary">Cancel</button>
+              <button type="submit" form="test-form" className="btn-primary">Save test</button>
+            </>
+          }
+        >
+          <div className="tst-editor">
 
-                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px' }}>
-                  <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
-                    <label style={{ fontSize: '0.8rem', color: 'var(--text-secondary)' }}>Course</label>
-                    <select value={testForm.course_id} onChange={(e) => setTestForm({ ...testForm, course_id: e.target.value, batch_id: '' })} className="form-input" style={{ padding: '8px 12px' }} required>
-                      <option value="">Select Course</option>
-                      {courses.map(c => <option key={c.id} value={c.id}>{c.title}</option>)}
-                    </select>
+            {/* ---- setup ---- */}
+            <section>
+              <form onSubmit={handleTestSubmit} id="test-form">
+                <FormSection title="Basics">
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: '14px' }}>
+                    <Field label="Test title" htmlFor="tst-title">
+                      <input
+                        id="tst-title"
+                        type="text"
+                        value={testForm.title}
+                        onChange={(e) => setTestForm({ ...testForm, title: e.target.value })}
+                        className="form-input"
+                        required
+                      />
+                    </Field>
+                    <FormGrid min="170px">
+                      <Field label="Course" htmlFor="tst-course">
+                        <select
+                          id="tst-course"
+                          value={testForm.course_id}
+                          onChange={(e) => setTestForm({ ...testForm, course_id: e.target.value, batch_id: '' })}
+                          className="form-input"
+                          required
+                        >
+                          <option value="">Select a course</option>
+                          {courses.map((c) => <option key={c.id} value={c.id}>{c.title}</option>)}
+                        </select>
+                      </Field>
+                      <Field label="Batch scope" hint="Leave unset to open it to every batch." htmlFor="tst-batch">
+                        <select
+                          id="tst-batch"
+                          value={testForm.batch_id}
+                          onChange={(e) => setTestForm({ ...testForm, batch_id: e.target.value })}
+                          className="form-input"
+                        >
+                          <option value="">All batches</option>
+                          {batches.map((b) => <option key={b.id} value={b.id}>{b.name}</option>)}
+                        </select>
+                      </Field>
+                    </FormGrid>
+                    <FormGrid min="150px">
+                      <Field label="Type" htmlFor="tst-type">
+                        <select
+                          id="tst-type"
+                          value={testForm.type}
+                          onChange={(e) => setTestForm({ ...testForm, type: e.target.value, max_attempts: e.target.value === 'mock' ? 1 : '' })}
+                          className="form-input"
+                        >
+                          <option value="mock">Mock test</option>
+                          <option value="practice">Practice test</option>
+                        </select>
+                      </Field>
+                      <Field label="Duration (seconds)" htmlFor="tst-dur">
+                        <input
+                          id="tst-dur"
+                          type="number"
+                          value={testForm.duration_seconds}
+                          onChange={(e) => setTestForm({ ...testForm, duration_seconds: parseInt(e.target.value) })}
+                          className="form-input"
+                          required
+                        />
+                      </Field>
+                      <Field label="Max attempts" hint="Blank = unlimited." htmlFor="tst-att">
+                        <input
+                          id="tst-att"
+                          type="number"
+                          value={testForm.max_attempts}
+                          onChange={(e) => setTestForm({ ...testForm, max_attempts: e.target.value ? parseInt(e.target.value) : '' })}
+                          className="form-input"
+                          placeholder="Unlimited"
+                        />
+                      </Field>
+                    </FormGrid>
+                    <FormGrid min="180px">
+                      <Field label="Available from" htmlFor="tst-from">
+                        <input
+                          id="tst-from"
+                          type="datetime-local"
+                          value={testForm.available_from}
+                          onChange={(e) => setTestForm({ ...testForm, available_from: e.target.value })}
+                          className="form-input"
+                        />
+                      </Field>
+                      <Field label="Available until" htmlFor="tst-until">
+                        <input
+                          id="tst-until"
+                          type="datetime-local"
+                          value={testForm.available_until}
+                          onChange={(e) => setTestForm({ ...testForm, available_until: e.target.value })}
+                          className="form-input"
+                        />
+                      </Field>
+                    </FormGrid>
+                    <Field label="Instructions" htmlFor="tst-inst">
+                      <textarea
+                        id="tst-inst"
+                        value={testForm.instructions}
+                        onChange={(e) => setTestForm({ ...testForm, instructions: e.target.value })}
+                        className="form-input"
+                        rows={2}
+                      />
+                    </Field>
                   </div>
-                  <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
-                    <label style={{ fontSize: '0.8rem', color: 'var(--text-secondary)' }}>Batch Scope (Optional)</label>
-                    <select value={testForm.batch_id} onChange={(e) => setTestForm({ ...testForm, batch_id: e.target.value })} className="form-input" style={{ padding: '8px 12px' }}>
-                      <option value="">All Batches</option>
-                      {batches.map(b => <option key={b.id} value={b.id}>{b.name}</option>)}
-                    </select>
-                  </div>
-                </div>
+                </FormSection>
 
-                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: '12px' }}>
-                  <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
-                    <label style={{ fontSize: '0.8rem', color: 'var(--text-secondary)' }}>Type</label>
-                    <select value={testForm.type} onChange={(e) => setTestForm({ ...testForm, type: e.target.value, max_attempts: e.target.value === 'mock' ? 1 : '' })} className="form-input" style={{ padding: '8px 12px' }}>
-                      <option value="mock">Mock Test</option>
-                      <option value="practice">Practice Test</option>
-                    </select>
-                  </div>
-                  <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
-                    <label style={{ fontSize: '0.8rem', color: 'var(--text-secondary)' }}>Duration (Sec)</label>
-                    <input type="number" value={testForm.duration_seconds} onChange={(e) => setTestForm({ ...testForm, duration_seconds: parseInt(e.target.value) })} className="form-input" style={{ padding: '8px 12px' }} required />
-                  </div>
-                  <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
-                    <label style={{ fontSize: '0.8rem', color: 'var(--text-secondary)' }}>Max Attempts</label>
-                    <input type="number" value={testForm.max_attempts} onChange={(e) => setTestForm({ ...testForm, max_attempts: e.target.value ? parseInt(e.target.value) : '' })} className="form-input" style={{ padding: '8px 12px' }} placeholder="Unlimited" />
-                  </div>
-                </div>
+                <FormSection
+                  title="Exam pattern"
+                  description="Leave the cut-off blank for an ungraded mock. Absolute marks win over the percentage when both are set, and the bar applies to the merit score."
+                >
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: '14px' }}>
+                    <FormGrid min="170px">
+                      <Field label="Overall cut-off (marks)" htmlFor="tst-com">
+                        <input
+                          id="tst-com"
+                          type="number"
+                          min="0"
+                          step="0.25"
+                          value={testForm.cutoff_marks}
+                          onChange={(e) => setTestForm({ ...testForm, cutoff_marks: e.target.value })}
+                          className="form-input"
+                          placeholder="none"
+                        />
+                      </Field>
+                      <Field label="Overall cut-off (%)" htmlFor="tst-cop">
+                        <input
+                          id="tst-cop"
+                          type="number"
+                          min="0"
+                          max="100"
+                          step="0.5"
+                          value={testForm.cutoff_percentage}
+                          onChange={(e) => setTestForm({ ...testForm, cutoff_percentage: e.target.value })}
+                          className="form-input"
+                          placeholder="none"
+                        />
+                      </Field>
+                    </FormGrid>
 
-                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px' }}>
-                  <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
-                    <label style={{ fontSize: '0.8rem', color: 'var(--text-secondary)' }}>Available From</label>
-                    <input type="datetime-local" value={testForm.available_from} onChange={(e) => setTestForm({ ...testForm, available_from: e.target.value })} className="form-input" style={{ padding: '8px 12px' }} />
-                  </div>
-                  <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
-                    <label style={{ fontSize: '0.8rem', color: 'var(--text-secondary)' }}>Available Until</label>
-                    <input type="datetime-local" value={testForm.available_until} onChange={(e) => setTestForm({ ...testForm, available_until: e.target.value })} className="form-input" style={{ padding: '8px 12px' }} />
-                  </div>
-                </div>
-
-                <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
-                  <label style={{ fontSize: '0.8rem', color: 'var(--text-secondary)' }}>Instructions</label>
-                  <textarea value={testForm.instructions} onChange={(e) => setTestForm({ ...testForm, instructions: e.target.value })} className="form-input" rows={2} />
-                </div>
-
-                {/* ── Exam pattern ─────────────────────────────────────────── */}
-                <div style={{ marginTop: '4px', padding: '12px', borderRadius: '8px', border: '1px solid var(--border-color)', background: 'var(--surface-1)' }}>
-                  <h4 style={{ margin: '0 0 4px', fontWeight: 700, fontSize: '0.9rem' }}>Exam pattern</h4>
-                  <p style={{ margin: '0 0 10px', fontSize: '0.75rem', color: 'var(--text-secondary)' }}>
-                    Leave the cut-off blank for an ungraded mock. Absolute marks win over the
-                    percentage when both are set, and the bar applies to the merit score.
-                  </p>
-
-                  <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px' }}>
-                    <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
-                      <label style={{ fontSize: '0.8rem', color: 'var(--text-secondary)' }}>Overall cut-off (marks)</label>
-                      <input type="number" min="0" step="0.25" value={testForm.cutoff_marks}
-                        onChange={(e) => setTestForm({ ...testForm, cutoff_marks: e.target.value })}
-                        className="form-input" style={{ padding: '8px 12px' }} placeholder="none" />
+                    <div style={{ display: 'flex', gap: '18px', flexWrap: 'wrap' }}>
+                      <label style={{ display: 'inline-flex', alignItems: 'center', gap: '8px', minHeight: '44px', font: '400 13px var(--font-body)', color: 'var(--tx)', cursor: 'pointer' }}>
+                        <input
+                          type="checkbox"
+                          checked={testForm.shuffle_questions}
+                          onChange={(e) => setTestForm({ ...testForm, shuffle_questions: e.target.checked })}
+                        />
+                        Shuffle questions per candidate
+                      </label>
+                      <label style={{ display: 'inline-flex', alignItems: 'center', gap: '8px', minHeight: '44px', font: '400 13px var(--font-body)', color: 'var(--tx)', cursor: 'pointer' }}>
+                        <input
+                          type="checkbox"
+                          checked={testForm.shuffle_options}
+                          onChange={(e) => setTestForm({ ...testForm, shuffle_options: e.target.checked })}
+                        />
+                        Shuffle options per candidate
+                      </label>
                     </div>
-                    <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
-                      <label style={{ fontSize: '0.8rem', color: 'var(--text-secondary)' }}>Overall cut-off (%)</label>
-                      <input type="number" min="0" max="100" step="0.5" value={testForm.cutoff_percentage}
-                        onChange={(e) => setTestForm({ ...testForm, cutoff_percentage: e.target.value })}
-                        className="form-input" style={{ padding: '8px 12px' }} placeholder="none" />
-                    </div>
-                  </div>
 
-                  <div style={{ display: 'flex', gap: '18px', marginTop: '12px', flexWrap: 'wrap' }}>
-                    <label style={{ display: 'inline-flex', alignItems: 'center', gap: '6px', fontSize: '0.8rem', cursor: 'pointer' }}>
-                      <input type="checkbox" checked={testForm.shuffle_questions}
-                        onChange={(e) => setTestForm({ ...testForm, shuffle_questions: e.target.checked })} />
-                      Shuffle questions per candidate
-                    </label>
-                    <label style={{ display: 'inline-flex', alignItems: 'center', gap: '6px', fontSize: '0.8rem', cursor: 'pointer' }}>
-                      <input type="checkbox" checked={testForm.shuffle_options}
-                        onChange={(e) => setTestForm({ ...testForm, shuffle_options: e.target.checked })} />
-                      Shuffle options per candidate
-                    </label>
-                  </div>
+                    <FormGrid min="150px">
+                      <Field label="Shift group" htmlFor="tst-sg">
+                        <input
+                          id="tst-sg"
+                          type="text"
+                          value={testForm.shift_group}
+                          onChange={(e) => setTestForm({ ...testForm, shift_group: e.target.value })}
+                          className="form-input"
+                          placeholder="e.g. cgl-2026-t1"
+                        />
+                      </Field>
+                      <Field label="Shift label" htmlFor="tst-sl">
+                        <input
+                          id="tst-sl"
+                          type="text"
+                          value={testForm.shift_label}
+                          onChange={(e) => setTestForm({ ...testForm, shift_label: e.target.value })}
+                          className="form-input"
+                          placeholder="e.g. morning"
+                        />
+                      </Field>
+                      <Field label="Normalisation" htmlFor="tst-nm">
+                        <select
+                          id="tst-nm"
+                          value={testForm.normalization_method}
+                          onChange={(e) => setTestForm({ ...testForm, normalization_method: e.target.value })}
+                          className="form-input"
+                        >
+                          <option value="none">None</option>
+                          <option value="equipercentile">Equipercentile</option>
+                          <option value="zscore">Z-score (linear)</option>
+                        </select>
+                      </Field>
+                    </FormGrid>
 
-                  <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: '12px', marginTop: '12px' }}>
-                    <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
-                      <label style={{ fontSize: '0.8rem', color: 'var(--text-secondary)' }}>Shift group</label>
-                      <input type="text" value={testForm.shift_group}
-                        onChange={(e) => setTestForm({ ...testForm, shift_group: e.target.value })}
-                        className="form-input" style={{ padding: '8px 12px' }} placeholder="e.g. cgl-2026-t1" />
-                    </div>
-                    <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
-                      <label style={{ fontSize: '0.8rem', color: 'var(--text-secondary)' }}>Shift label</label>
-                      <input type="text" value={testForm.shift_label}
-                        onChange={(e) => setTestForm({ ...testForm, shift_label: e.target.value })}
-                        className="form-input" style={{ padding: '8px 12px' }} placeholder="e.g. morning" />
-                    </div>
-                    <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
-                      <label style={{ fontSize: '0.8rem', color: 'var(--text-secondary)' }}>Normalisation</label>
-                      <select value={testForm.normalization_method}
-                        onChange={(e) => setTestForm({ ...testForm, normalization_method: e.target.value })}
-                        className="form-input" style={{ padding: '8px 12px' }}>
-                        <option value="none">None</option>
-                        <option value="equipercentile">Equipercentile</option>
-                        <option value="zscore">Z-score (linear)</option>
-                      </select>
-                    </div>
+                    <p style={{ margin: 0, font: '400 11.5px/1.55 var(--font-body)', color: 'var(--muted)' }}>
+                      Tests sharing a shift group are one exam run in several sittings. Normalised marks are computed by{' '}
+                      <code style={{ font: '500 11px var(--font-mono)', background: 'var(--surf)', padding: '2px 5px', borderRadius: '5px' }}>
+                        php artisan practest:normalize
+                      </code>{' '}
+                      once every shift has finished — running it early would score a half cohort.
+                    </p>
                   </div>
-                  <p style={{ margin: '8px 0 0', fontSize: '0.72rem', color: 'var(--text-secondary)' }}>
-                    Tests sharing a shift group are one exam run in several sittings. Normalised
-                    marks are computed by <code>php artisan practest:normalize</code> once every
-                    shift has finished — running it early would score a half cohort.
-                  </p>
-                </div>
+                </FormSection>
               </form>
 
-              {/* Sections Listing inside Creator */}
-              <div style={{ marginTop: '10px' }}>
-                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '10px' }}>
-                  <h4 style={{ margin: 0, fontWeight: 700 }}>Test Sections</h4>
-                  <button onClick={addSectionToForm} className="btn-secondary" style={{ padding: '4px 8px', fontSize: '0.75rem' }}>➕ Add Section</button>
+              <FormSection title="Sections" description="Pick one to edit which questions it holds. A qualifying section must be cleared, but its marks stay out of the merit score.">
+                <div style={{ display: 'flex', justifyContent: 'flex-end', marginBottom: '12px' }}>
+                  <button type="button" onClick={addSectionToForm} className="btn-secondary" style={{ padding: '8px 13px', minHeight: '40px', fontSize: '12px' }}>
+                    <Icon name="plus" size={14} strokeWidth={2.4} />
+                    Add section
+                  </button>
                 </div>
-                
-                <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
                   {testForm.sections.map((sec, idx) => {
                     const isActive = activeSectionIdx === idx;
                     return (
-                      <div 
+                      <div
                         key={idx}
                         onClick={() => setActiveSectionIdx(idx)}
                         style={{
-                          padding: '12px',
-                          borderRadius: '8px',
-                          border: isActive ? '1px solid var(--accent-color)' : '1px solid var(--border-color)',
-                          background: isActive ? 'var(--accent-soft)' : 'var(--surface-1)',
+                          padding: '13px',
+                          borderRadius: '14px',
+                          border: `1px solid ${isActive ? 'var(--primary-border)' : 'var(--line)'}`,
+                          background: isActive ? 'var(--primary-soft)' : 'var(--card2)',
                           cursor: 'pointer',
                           display: 'flex',
-                          justifyContent: 'space-between',
-                          alignItems: 'center'
+                          gap: '10px',
+                          alignItems: 'flex-start',
                         }}
                       >
-                        <div style={{ flex: 1 }}>
-                          <input 
-                            type="text" 
-                            value={sec.title} 
+                        <div style={{ flex: 1, minWidth: 0 }}>
+                          <input
+                            type="text"
+                            aria-label={`Section ${idx + 1} title`}
+                            value={sec.title}
                             onChange={(e) => {
                               const updated = [...testForm.sections];
                               updated[idx].title = e.target.value;
                               setTestForm({ ...testForm, sections: updated });
                             }}
                             onClick={(e) => e.stopPropagation()}
-                            style={{ background: 'transparent', border: 'none', color: '#ffffff', fontWeight: 'bold', fontSize: '0.9rem', width: '100%', outline: 'none' }}
+                            style={{
+                              background: 'transparent',
+                              border: 'none',
+                              color: 'var(--tx)',
+                              font: '600 13.5px var(--font-body)',
+                              width: '100%',
+                              outline: 'none',
+                              padding: 0,
+                            }}
                           />
-                          <div style={{ fontSize: '0.75rem', color: 'var(--text-secondary)', marginTop: '4px', display: 'flex', gap: '8px' }}>
-                            <span>Duration:</span>
-                            <input 
-                              type="number" 
-                              value={sec.duration_seconds} 
-                              onChange={(e) => {
-                                const updated = [...testForm.sections];
-                                updated[idx].duration_seconds = parseInt(e.target.value) || 0;
-                                setTestForm({ ...testForm, sections: updated });
-                              }}
-                              onClick={(e) => e.stopPropagation()}
-                              style={{ background: 'transparent', border: 'none', borderBottom: '1px solid var(--border-color)', color: 'var(--text-primary)', width: '50px', outline: 'none', textAlign: 'center', fontSize: '0.75rem' }}
-                            />
-                            <span>s • Questions: {sec.question_ids.length}</span>
+
+                          <div style={{ marginTop: '7px', display: 'flex', gap: '14px', flexWrap: 'wrap', alignItems: 'center', font: '400 11.5px var(--font-body)', color: 'var(--muted)' }}>
+                            <span style={{ display: 'inline-flex', alignItems: 'center', gap: '5px' }}>
+                              Duration
+                              <input
+                                type="number"
+                                aria-label={`Duration for ${sec.title}`}
+                                value={sec.duration_seconds}
+                                onChange={(e) => {
+                                  const updated = [...testForm.sections];
+                                  updated[idx].duration_seconds = parseInt(e.target.value) || 0;
+                                  setTestForm({ ...testForm, sections: updated });
+                                }}
+                                onClick={(e) => e.stopPropagation()}
+                                style={{
+                                  background: 'transparent',
+                                  border: 'none',
+                                  borderBottom: '1px solid var(--line2)',
+                                  color: 'var(--tx)',
+                                  width: '58px',
+                                  outline: 'none',
+                                  textAlign: 'center',
+                                  font: '600 11.5px var(--font-mono)',
+                                }}
+                              />
+                              s
+                            </span>
+                            <span>
+                              <Num style={{ fontSize: '11.5px', color: 'var(--tx2)' }}>{sec.question_ids.length}</Num> questions
+                            </span>
                           </div>
 
-                          {/* Sectional bar + qualifying flag. A qualifying
-                              section must be cleared but its marks stay OUT of
-                              the merit score (the UPSC CSAT model). */}
                           <div
                             onClick={(e) => e.stopPropagation()}
-                            style={{ fontSize: '0.75rem', color: 'var(--text-secondary)', marginTop: '6px', display: 'flex', gap: '12px', alignItems: 'center', flexWrap: 'wrap' }}
+                            style={{ marginTop: '7px', display: 'flex', gap: '14px', flexWrap: 'wrap', alignItems: 'center', font: '400 11.5px var(--font-body)', color: 'var(--muted)' }}
                           >
-                            <span style={{ display: 'inline-flex', alignItems: 'center', gap: '4px' }}>
-                              Cut-off:
+                            <span style={{ display: 'inline-flex', alignItems: 'center', gap: '5px' }}>
+                              Cut-off
                               <input
-                                type="number" min="0" step="0.25"
+                                type="number"
+                                min="0"
+                                step="0.25"
+                                aria-label={`Cut-off for ${sec.title}`}
                                 value={sec.cutoff_marks ?? ''}
                                 placeholder="none"
                                 onChange={(e) => {
@@ -652,10 +808,19 @@ export default function AdminTests() {
                                   updated[idx].cutoff_marks = e.target.value;
                                   setTestForm({ ...testForm, sections: updated });
                                 }}
-                                style={{ background: 'transparent', border: 'none', borderBottom: '1px solid var(--border-color)', color: 'var(--text-primary)', width: '56px', outline: 'none', textAlign: 'center', fontSize: '0.75rem' }}
+                                style={{
+                                  background: 'transparent',
+                                  border: 'none',
+                                  borderBottom: '1px solid var(--line2)',
+                                  color: 'var(--tx)',
+                                  width: '62px',
+                                  outline: 'none',
+                                  textAlign: 'center',
+                                  font: '600 11.5px var(--font-mono)',
+                                }}
                               />
                             </span>
-                            <label style={{ display: 'inline-flex', alignItems: 'center', gap: '5px', cursor: 'pointer' }}>
+                            <label style={{ display: 'inline-flex', alignItems: 'center', gap: '6px', cursor: 'pointer' }}>
                               <input
                                 type="checkbox"
                                 checked={!!sec.is_qualifying}
@@ -669,143 +834,187 @@ export default function AdminTests() {
                             </label>
                           </div>
                         </div>
+
                         {testForm.sections.length > 1 && (
-                          <button 
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              removeSectionFromForm(idx);
-                            }}
-                            style={{ background: 'transparent', border: 'none', cursor: 'pointer', fontSize: '1rem', padding: '0 4px' }}
+                          <button
+                            type="button"
+                            className="adm-rowaction"
+                            onClick={(e) => { e.stopPropagation(); removeSectionFromForm(idx); }}
+                            aria-label={`Remove ${sec.title}`}
+                            title="Remove section"
                           >
-                            🗑️
+                            <Icon name="trash" size={16} />
                           </button>
                         )}
                       </div>
                     );
                   })}
                 </div>
-              </div>
+              </FormSection>
+            </section>
 
-              {/* Bottom Save bar */}
-              <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '12px', marginTop: 'auto', paddingTop: '20px', borderTop: '1px solid var(--border-color)' }}>
-                <button type="button" onClick={() => setShowForm(false)} className="btn-secondary" style={{ padding: '8px 16px' }}>Cancel</button>
-                <button type="submit" form="test-form" className="btn-primary" style={{ padding: '8px 24px' }}>Save Test Configuration</button>
-              </div>
-
-            </div>
-
-            {/* Column 2: Selected Questions Preview for Active Section */}
-            <div style={{ borderLeft: '1px solid var(--border-color)', borderRight: '1px solid var(--border-color)', padding: '0 16px', display: 'flex', flexDirection: 'column', gap: '16px', overflowY: 'auto' }}>
-              <div>
-                <h4 style={{ margin: 0, fontWeight: 700, color: 'var(--accent-color)' }}>
-                  Selected questions in: "{testForm.sections[activeSectionIdx]?.title}"
-                </h4>
-                <p style={{ color: 'var(--text-secondary)', fontSize: '0.75rem', margin: '4px 0 0 0' }}>Reorder or remove questions assigned to this section.</p>
-              </div>
-
-              {testForm.sections[activeSectionIdx]?.questions.length === 0 ? (
-                <div style={{ color: 'var(--text-secondary)', fontSize: '0.85rem', padding: '40px 20px', textAlign: 'center', border: '1px dashed var(--border-color)', borderRadius: '8px', margin: 'auto 0' }}>
-                  No questions selected yet. Use the picker on the right to assign questions.
-                </div>
-              ) : (
-                <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
-                  {testForm.sections[activeSectionIdx]?.questions.map((q, qidx) => (
-                    <div 
-                      key={q.id}
-                      style={{
-                        padding: '12px',
-                        background: 'var(--surface-1)',
-                        borderRadius: '6px',
-                        border: '1px solid var(--border-color)',
-                        display: 'flex',
-                        justifyContent: 'space-between',
-                        alignItems: 'center',
-                        fontSize: '0.85rem'
-                      }}
-                    >
-                      <div style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', flex: 1, paddingRight: '10px' }}>
-                        <span style={{ fontWeight: 'bold', color: 'var(--accent-color)', marginRight: '6px' }}>#{qidx + 1}</span>
-                        {q.question_text.replace(/\$/g, '')}
-                      </div>
-                      <button 
-                        onClick={() => toggleQuestionSelection(q)}
-                        style={{ background: 'transparent', border: 'none', cursor: 'pointer', color: 'var(--danger)', fontWeight: 'bold' }}
+            {/* ---- questions already in the active section ---- */}
+            <section>
+              <FormSection title={`In “${activeSection?.title || 'this section'}”`} description="Remove anything that does not belong; the order here is the order candidates see.">
+                {activeSection?.questions.length === 0 ? (
+                  <EmptyState icon="file-text" message="Nothing assigned yet. Use the picker to add questions to this section." />
+                ) : (
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: '9px', maxHeight: '46vh', overflowY: 'auto' }}>
+                    {activeSection?.questions.map((q, qidx) => (
+                      <div
+                        key={q.id}
+                        style={{
+                          padding: '11px 12px',
+                          background: 'var(--card2)',
+                          border: '1px solid var(--line)',
+                          borderRadius: '12px',
+                          display: 'flex',
+                          justifyContent: 'space-between',
+                          alignItems: 'center',
+                          gap: '10px',
+                        }}
                       >
-                        ✕
-                      </button>
-                    </div>
-                  ))}
-                </div>
-              )}
-            </div>
+                        <span style={{ minWidth: 0, display: 'flex', alignItems: 'baseline', gap: '8px' }}>
+                          <Num style={{ fontSize: '11.5px', color: 'var(--primary)', flex: 'none' }}>{qidx + 1}</Num>
+                          <span style={{ font: '400 12.5px var(--font-body)', color: 'var(--tx)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                            {q.question_text.replace(/\$/g, '')}
+                          </span>
+                        </span>
+                        <button
+                          type="button"
+                          className="adm-rowaction"
+                          onClick={() => toggleQuestionSelection(q)}
+                          aria-label="Remove from section"
+                          title="Remove from section"
+                        >
+                          <Icon name="x" size={16} />
+                        </button>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </FormSection>
+            </section>
 
-            {/* Column 3: Question Bank Picker */}
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '16px', overflowY: 'auto' }}>
-              <div>
-                <h4 style={{ margin: 0, fontWeight: 700 }}>Question Picker</h4>
-                <p style={{ color: 'var(--text-secondary)', fontSize: '0.75rem', margin: '4px 0 0 0' }}>Search and add questions to the active section.</p>
-              </div>
+            {/* ---- question bank picker ---- */}
+            <section>
+              <FormSection title="Question picker" description="Search the bank and tap a card to add it to the active section.">
+                <form onSubmit={handleQSearchSubmit} style={{ display: 'flex', flexDirection: 'column', gap: '9px', marginBottom: '14px' }}>
+                  <FormGrid min="120px">
+                    <input
+                      type="text"
+                      aria-label="Subject"
+                      placeholder="Subject"
+                      value={qSearchSubject}
+                      onChange={(e) => setQSearchSubject(e.target.value)}
+                      className="form-input"
+                    />
+                    <input
+                      type="text"
+                      aria-label="Topic"
+                      placeholder="Topic"
+                      value={qSearchTopic}
+                      onChange={(e) => setQSearchTopic(e.target.value)}
+                      className="form-input"
+                    />
+                  </FormGrid>
+                  <div style={{ display: 'flex', gap: '8px' }}>
+                    <input
+                      type="text"
+                      aria-label="Search question text"
+                      placeholder="Search question text…"
+                      value={qSearchQuery}
+                      onChange={(e) => setQSearchQuery(e.target.value)}
+                      className="form-input"
+                      style={{ flex: 1 }}
+                    />
+                    <button type="submit" className="btn-secondary" style={{ flex: 'none', padding: '0 16px' }}>
+                      <Icon name="search" size={15} />
+                    </button>
+                  </div>
+                </form>
 
-              {/* Mini-filters */}
-              <form onSubmit={handleQSearchSubmit} style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
-                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '8px' }}>
-                  <input type="text" placeholder="Subj" value={qSearchSubject} onChange={(e) => setQSearchSubject(e.target.value)} className="form-input" style={{ padding: '6px 10px', fontSize: '0.8rem' }} />
-                  <input type="text" placeholder="Topic" value={qSearchTopic} onChange={(e) => setQSearchTopic(e.target.value)} className="form-input" style={{ padding: '6px 10px', fontSize: '0.8rem' }} />
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '9px', maxHeight: '42vh', overflowY: 'auto' }}>
+                  {questionBank.length === 0 ? (
+                    <EmptyState icon="search" message="No question matches that search." />
+                  ) : (
+                    questionBank.map((q) => {
+                      const isSelected = activeSection?.question_ids.includes(q.id);
+                      return (
+                        <button
+                          key={q.id}
+                          type="button"
+                          onClick={() => toggleQuestionSelection(q)}
+                          aria-pressed={isSelected}
+                          style={{
+                            padding: '11px 12px',
+                            background: isSelected ? 'var(--success-bg)' : 'var(--card2)',
+                            border: `1px solid ${isSelected ? 'var(--success-border)' : 'var(--line)'}`,
+                            borderRadius: '12px',
+                            cursor: 'pointer',
+                            display: 'flex',
+                            flexDirection: 'column',
+                            gap: '5px',
+                            textAlign: 'left',
+                            minHeight: '44px',
+                          }}
+                        >
+                          <span style={{ display: 'flex', justifyContent: 'space-between', gap: '10px', alignItems: 'center' }}>
+                            <span className="t-overline" style={{ color: 'var(--muted)', fontSize: '9px' }}>
+                              {q.subject} · {q.topic}
+                            </span>
+                            <span style={{ font: '600 11px var(--font-body)', color: isSelected ? 'var(--success)' : 'var(--primary)', flex: 'none' }}>
+                              {isSelected ? 'Added' : 'Add'}
+                            </span>
+                          </span>
+                          <span
+                            style={{
+                              font: '400 12.5px/1.45 var(--font-body)',
+                              color: 'var(--tx2)',
+                              display: '-webkit-box',
+                              WebkitLineClamp: 2,
+                              WebkitBoxOrient: 'vertical',
+                              overflow: 'hidden',
+                            }}
+                          >
+                            {q.question_text.replace(/\$/g, '')}
+                          </span>
+                        </button>
+                      );
+                    })
+                  )}
                 </div>
-                <div style={{ display: 'flex', gap: '6px' }}>
-                  <input type="text" placeholder="Search text..." value={qSearchQuery} onChange={(e) => setQSearchQuery(e.target.value)} className="form-input" style={{ padding: '6px 10px', fontSize: '0.8rem', flex: 1 }} />
-                  <button type="submit" className="btn-primary" style={{ padding: '6px 12px', fontSize: '0.8rem' }}>Go</button>
-                </div>
-              </form>
 
-              {/* Picker List */}
-              <div style={{ display: 'flex', flexDirection: 'column', gap: '8px', flex: 1, overflowY: 'auto' }}>
-                {questionBank.map((q) => {
-                  const isSelected = testForm.sections[activeSectionIdx]?.question_ids.includes(q.id);
-                  return (
-                    <div 
-                      key={q.id}
-                      onClick={() => toggleQuestionSelection(q)}
-                      style={{
-                        padding: '12px',
-                        background: isSelected ? 'var(--success-bg)' : 'var(--surface-1)',
-                        border: isSelected ? '1px solid var(--success)' : '1px solid var(--border-color)',
-                        borderRadius: '6px',
-                        cursor: 'pointer',
-                        display: 'flex',
-                        flexDirection: 'column',
-                        gap: '4px',
-                        fontSize: '0.8rem',
-                        transition: 'all 0.15s ease'
-                      }}
+                {qBankLastPage > 1 && (
+                  <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', gap: '12px', marginTop: '12px' }}>
+                    <button
+                      type="button"
+                      onClick={() => setQBankPage((prev) => Math.max(1, prev - 1))}
+                      className="btn-secondary"
+                      style={{ padding: '8px 12px', minHeight: '40px', fontSize: '12px' }}
+                      disabled={qBankPage === 1}
                     >
-                      <div style={{ fontWeight: 'bold', display: 'flex', justifyContent: 'space-between' }}>
-                        <span>{q.subject} &gt; {q.topic}</span>
-                        <span style={{ color: isSelected ? 'var(--success)' : 'var(--text-secondary)' }}>{isSelected ? '✓ Added' : '➕ Add'}</span>
-                      </div>
-                      <div style={{ color: 'var(--text-secondary)', overflow: 'hidden', textOverflow: 'ellipsis', display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical', lineHeight: '1.4' }}>
-                        {q.question_text.replace(/\$/g, '')}
-                      </div>
-                    </div>
-                  );
-                })}
-              </div>
-
-              {/* Mini Pagination */}
-              {qBankLastPage > 1 && (
-                <div style={{ display: 'flex', justifyContent: 'center', gap: '8px', alignItems: 'center' }}>
-                  <button type="button" onClick={() => setQBankPage(p => Math.max(1, p - 1))} className="btn-secondary" style={{ padding: '4px 8px', fontSize: '0.75rem' }} disabled={qBankPage === 1}>Prev</button>
-                  <span style={{ fontSize: '0.75rem', color: 'var(--text-secondary)' }}>{qBankPage} / {qBankLastPage}</span>
-                  <button type="button" onClick={() => setQBankPage(p => Math.min(qBankLastPage, p + 1))} className="btn-secondary" style={{ padding: '4px 8px', fontSize: '0.75rem' }} disabled={qBankPage === qBankLastPage}>Next</button>
-                </div>
-              )}
-
-            </div>
-
+                      <Icon name="chevron-left" size={15} />
+                    </button>
+                    <span style={{ font: '500 12px var(--font-body)', color: 'var(--muted)' }}>
+                      <Num>{qBankPage}</Num> / <Num>{qBankLastPage}</Num>
+                    </span>
+                    <button
+                      type="button"
+                      onClick={() => setQBankPage((prev) => Math.min(qBankLastPage, prev + 1))}
+                      className="btn-secondary"
+                      style={{ padding: '8px 12px', minHeight: '40px', fontSize: '12px' }}
+                      disabled={qBankPage === qBankLastPage}
+                    >
+                      <Icon name="chevron-right" size={15} />
+                    </button>
+                  </div>
+                )}
+              </FormSection>
+            </section>
           </div>
-        </div>
+        </Modal>
       )}
-
     </div>
   );
 }

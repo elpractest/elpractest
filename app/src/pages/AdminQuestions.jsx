@@ -1,5 +1,11 @@
 import React, { useState, useEffect } from 'react';
 import api from '../api';
+import Icon from '../components/Icon';
+import {
+  PageHead, TableCard, Toolbar, Chip, Table, Row, Cell, CellTitle, CellSub, RowChevron,
+  StatusDot, Badge, DifficultyBadge, EmptyState, SkeletonRows, Pagination, Modal, Drawer,
+  Field, FormGrid, FormSection, Notice, Num,
+} from '../components/admin/ui';
 import katex from 'katex';
 import 'katex/dist/katex.min.css';
 
@@ -99,6 +105,14 @@ export default function AdminQuestions({ csvState, triggerCsvImport, csvJobId })
   const [showPassageManager, setShowPassageManager] = useState(false);
   const [passageForm, setPassageForm] = useState({ id: null, title: '', body: '' });
 
+  /* Presentation only: row selection for bulk review, the detail drawer,
+     and the two destructive confirmations. No fetch or mutation changes. */
+  const [selectedIds, setSelectedIds] = useState([]);
+  const [detailQuestion, setDetailQuestion] = useState(null);
+  const [pendingDelete, setPendingDelete] = useState(null);
+  const [pendingPassageDelete, setPendingPassageDelete] = useState(null);
+  const [bulkBusy, setBulkBusy] = useState(false);
+
   const fetchPassages = async () => {
     try {
       const res = await api.get('/api/admin/passages', { params: { per_page: 100 } });
@@ -127,7 +141,6 @@ export default function AdminQuestions({ csvState, triggerCsvImport, csvJobId })
   };
 
   const deletePassage = async (id) => {
-    if (!window.confirm('Delete this passage? Only possible while no questions are linked to it.')) return;
     setError('');
     try {
       await api.delete(`/api/admin/passages/${id}`);
@@ -307,7 +320,6 @@ export default function AdminQuestions({ csvState, triggerCsvImport, csvJobId })
   };
 
   const handleDeleteClick = async (id) => {
-    if (!window.confirm('Deactivate this question? It will no longer appear in test selections.')) return;
     setError('');
     setSuccess('');
     try {
@@ -372,687 +384,992 @@ export default function AdminQuestions({ csvState, triggerCsvImport, csvJobId })
     }
   };
 
+  const COLUMNS = [
+    { key: 'pick', label: '', width: '28px' },
+    { key: 'q', label: 'Question', width: 'minmax(0,2fr)' },
+    { key: 'subject', label: 'Subject', width: '130px', hideBelow: 'tablet' },
+    { key: 'difficulty', label: 'Difficulty', width: '110px' },
+    { key: 'marks', label: 'Marks', width: '110px', hideBelow: 'tablet' },
+    { key: 'status', label: 'Review', width: '120px' },
+    { key: 'go', label: '', width: '32px' },
+  ];
+
+  const allOnPageSelected = questions.length > 0 && questions.every((q) => selectedIds.includes(q.id));
+  const toggleRow = (id) =>
+    setSelectedIds((prev) => (prev.includes(id) ? prev.filter((x) => x !== id) : [...prev, id]));
+  const toggleAll = () =>
+    setSelectedIds(allOnPageSelected ? [] : questions.map((q) => q.id));
+
+  /* Bulk review reuses reviewQuestion one row at a time — the same request the
+     single-row buttons already make, just issued for each selected id. */
+  const bulkReview = async (decision) => {
+    setBulkBusy(true);
+    for (const id of selectedIds) {
+      await reviewQuestion(id, decision);
+    }
+    setSelectedIds([]);
+    setBulkBusy(false);
+  };
+
+  const statusTone = (st) =>
+    st === 'approved' ? 'success' : st === 'rejected' ? 'danger' : 'reward';
+
+  const healthOf = (q) => {
+    if (!q.stats_sample_size) return { tone: 'neutral', label: 'No attempts' };
+    if (q.stats_sample_size < 30) return { tone: 'neutral', label: `n = ${q.stats_sample_size}` };
+    if (q.discrimination_index < 0) return { tone: 'danger', label: 'Check key' };
+    if (q.discrimination_index < 0.15) return { tone: 'reward', label: 'Weak item' };
+    return { tone: 'success', label: `r = ${Number(q.discrimination_index).toFixed(2)}` };
+  };
+
+  const csvFailed = csvState.status === 'complete' && csvState.errors && csvState.errors.length > 0;
+
   return (
-    <div style={{ display: 'flex', flexDirection: 'column', gap: '30px', width: '100%' }}>
-      
-      {/* Title Header */}
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-        <div>
-          <h1 style={{ fontSize: '2rem', margin: 0, fontWeight: 800 }}>Question Bank</h1>
-          <p style={{ color: 'var(--text-secondary)', margin: '4px 0 0 0' }}>Search, create, and upload questions in bulk with LaTeX support.</p>
-        </div>
-        <div style={{ display: 'flex', gap: '10px' }}>
-          <button onClick={() => setShowPassageManager(true)} className="btn-secondary">
-            📖 Passages
-          </button>
-          <button
-            onClick={() => { setForm(blankForm()); setShowForm(true); }}
-            className="btn-primary"
-          >
-            ➕ Add Question
-          </button>
-        </div>
-      </div>
+    <div style={{ display: 'flex', flexDirection: 'column', gap: '18px', width: '100%' }}>
+      <style>{`
+        .qb-intake { display: grid; grid-template-columns: 1fr; gap: 18px; align-items: start; }
+        @media (min-width: 1024px) { .qb-intake { grid-template-columns: minmax(0,1fr) minmax(0,1.5fr); } }
+        .qb-editor { display: grid; grid-template-columns: 1fr; gap: 24px; }
+        @media (min-width: 980px) { .qb-editor { grid-template-columns: 1fr 1fr; } }
+      `}</style>
 
-      {success && (
-        <div style={{ padding: '16px', background: 'var(--success-bg)', border: '1px solid var(--success)', borderRadius: '8px', color: 'var(--success)' }}>
-          {success}
-        </div>
-      )}
+      <PageHead
+        title="Question bank"
+        subtitle="Author one at a time or import a CSV. LaTeX is supported in the stem, the options and the explanation."
+      >
+        <button type="button" onClick={() => setShowPassageManager(true)} className="btn-secondary">
+          <Icon name="file-text" size={16} />
+          Passages
+        </button>
+        <button type="button" onClick={() => { setForm(blankForm()); setShowForm(true); }} className="btn-primary">
+          <Icon name="plus" size={16} strokeWidth={2.4} />
+          New question
+        </button>
+      </PageHead>
 
-      {error && (
-        <div style={{ padding: '16px', background: 'var(--danger-bg)', border: '1px solid var(--danger)', borderRadius: '8px', color: 'var(--danger)' }}>
-          {error}
-        </div>
-      )}
+      {success && <Notice tone="success" icon="check-circle" onDismiss={() => setSuccess('')}>{success}</Notice>}
+      {error && <Notice tone="danger" icon="alert" onDismiss={() => setError('')}>{error}</Notice>}
 
-      {/* CSV Import Progress Banner (If errors exist, render them) */}
-      {csvState.status === 'complete' && csvState.errors && csvState.errors.length > 0 && (
-        <div className="glass-panel" style={{ padding: '24px', border: '1px solid var(--danger-border)', background: 'var(--danger-bg)' }}>
-          <h3 style={{ color: 'var(--danger)', margin: '0 0 12px 0', fontSize: '1.1rem', fontWeight: 700 }}>⚠️ Failed CSV Rows Report</h3>
-          <p style={{ color: 'var(--text-secondary)', fontSize: '0.9rem', margin: '0 0 16px 0' }}>The import successfully registered some rows, but skipped the following lines due to validation errors:</p>
+      {csvFailed && (
+        <TableCard>
+          <div style={{ padding: '16px 20px', borderBottom: '1px solid var(--line)' }}>
+            <h3 className="t-heading" style={{ margin: 0, color: 'var(--danger)' }}>
+              <Num style={{ color: 'inherit', fontSize: '17px' }}>{csvState.errors.length}</Num> rows failed
+            </h3>
+            <p style={{ margin: '5px 0 0', font: '400 12.5px/1.55 var(--font-body)', color: 'var(--muted)' }}>
+              The rest imported. These lines were skipped because they did not validate.
+            </p>
+          </div>
           <div style={{ overflowX: 'auto' }}>
-            <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '0.85rem' }}>
+            <table className="adm-ltable">
               <thead>
-                <tr style={{ borderBottom: '1px solid var(--border-color)', textAlign: 'left' }}>
-                  <th style={{ padding: '8px 12px', color: 'var(--text-secondary)' }}>Row #</th>
-                  <th style={{ padding: '8px 12px', color: 'var(--text-secondary)' }}>Field</th>
-                  <th style={{ padding: '8px 12px', color: 'var(--text-secondary)' }}>Error Details</th>
+                <tr>
+                  <th style={{ width: '80px' }}>Row</th>
+                  <th style={{ width: '160px' }}>Field</th>
+                  <th>Error</th>
                 </tr>
               </thead>
               <tbody>
                 {csvState.errors.map((err, idx) => (
-                  <tr key={idx} style={{ borderBottom: '1px solid var(--surface-2)' }}>
-                    <td style={{ padding: '8px 12px', fontWeight: 'bold' }}>{err.row}</td>
-                    <td style={{ padding: '8px 12px', color: 'var(--accent-color)' }}>{err.field || 'General'}</td>
-                    <td style={{ padding: '8px 12px', color: 'var(--danger-text)' }}>{err.message}</td>
+                  <tr key={idx}>
+                    <td><Num style={{ fontSize: '12.5px' }}>{err.row}</Num></td>
+                    <td style={{ color: 'var(--primary)', fontWeight: 600 }}>{err.field || 'General'}</td>
+                    <td style={{ color: 'var(--danger)' }}>{err.message}</td>
                   </tr>
                 ))}
               </tbody>
             </table>
           </div>
-        </div>
+        </TableCard>
       )}
 
-      {/* Two columns: CSV drag uploader & Filters */}
-      <div style={{ display: 'grid', gridTemplateColumns: '1fr 2fr', gap: '30px', alignItems: 'start' }}>
-        
-        {/* CSV Drag and Drop */}
-        <div 
+      {/* ---- intake: CSV drop + filters ---- */}
+      <div className="qb-intake">
+        <div
           onDragOver={handleDragOver}
           onDragLeave={handleDragLeave}
           onDrop={handleDrop}
-          className="glass-panel"
           style={{
-            padding: '40px 24px',
+            padding: '26px 20px',
             textAlign: 'center',
-            border: dragOver ? '2px dashed var(--accent-color)' : '2px dashed var(--border-color)',
-            background: dragOver ? 'var(--accent-soft)' : 'var(--panel-bg)',
-            borderRadius: '12px',
-            cursor: 'pointer',
-            transition: 'all 0.2s ease',
+            border: `2px dashed ${dragOver ? 'var(--primary)' : 'var(--line2)'}`,
+            background: dragOver ? 'var(--primary-soft)' : 'var(--card)',
+            borderRadius: '16px',
             display: 'flex',
             flexDirection: 'column',
             alignItems: 'center',
-            gap: '16px'
+            gap: '12px',
+            transition: 'background var(--t-base) ease, border-color var(--t-base) ease',
           }}
         >
-          <div style={{ fontSize: '3rem' }}>📂</div>
+          <span className="adm-empty-tile"><Icon name="upload" size={24} /></span>
           <div>
-            <h3 style={{ margin: '0 0 6px 0', fontSize: '1.1rem', fontWeight: 700 }}>Drag & Drop Question CSV</h3>
-            <p style={{ color: 'var(--text-secondary)', fontSize: '0.85rem', margin: 0 }}>Required: subject, topic, difficulty, question_text, option_a...option_f, correct_option, marks, negative_marks, explanation. Optional: question_type (single_choice/multi_select/numeric — defaults to single_choice), numeric_answer, numeric_tolerance. For multi_select, pipe-separate correct_option (e.g. "a|c").</p>
+            <h3 className="t-heading" style={{ margin: 0, fontSize: '15px', color: 'var(--tx)' }}>Drop a question CSV</h3>
+            <p style={{ margin: '6px auto 0', maxWidth: '48ch', font: '400 12px/1.6 var(--font-body)', color: 'var(--muted)' }}>
+              Required: subject, topic, difficulty, question_text, option_a…option_f, correct_option, marks,
+              negative_marks, explanation. Optional: question_type, numeric_answer, numeric_tolerance. For
+              multi-select, pipe-separate correct_option (e.g. <code style={{ font: '500 11px var(--font-mono)' }}>a|c</code>).
+            </p>
           </div>
-          <div style={{ color: 'var(--text-secondary)', fontSize: '0.9rem' }}>— OR —</div>
-          <label className="btn-secondary" style={{ padding: '8px 16px', fontSize: '0.85rem', cursor: 'pointer' }}>
-            Browse CSV File
-            <input 
-              type="file" 
-              accept=".csv" 
-              onChange={handleFileChange} 
-              style={{ display: 'none' }} 
-            />
+          <label className="btn-secondary" style={{ cursor: 'pointer' }}>
+            Browse for a file
+            <input type="file" accept=".csv" onChange={handleFileChange} style={{ display: 'none' }} />
           </label>
-          {uploadingCsv && <div style={{ fontSize: '0.85rem', color: 'var(--accent-color)' }}>Uploading and parsing CSV...</div>}
-          {csvJobId && <div style={{ fontSize: '0.85rem', color: 'var(--success)' }}>Queued in background...</div>}
+          {uploadingCsv && (
+            <span style={{ font: '500 12.5px var(--font-body)', color: 'var(--primary)' }}>Uploading and parsing…</span>
+          )}
+          {csvJobId && (
+            <span style={{ font: '500 12.5px var(--font-body)', color: 'var(--success)' }}>Queued in the background…</span>
+          )}
         </div>
 
-        {/* Filters */}
-        <div className="glass-panel" style={{ padding: '24px' }}>
-          <h2 style={{ fontSize: '1.1rem', margin: '0 0 16px 0', fontWeight: 700 }}>Filter Questions</h2>
-          <form onSubmit={handleSearchSubmit} style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: '16px' }}>
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
-              <label style={{ fontSize: '0.8rem', color: 'var(--text-secondary)' }}>Subject</label>
-              <input type="text" value={subject} onChange={(e) => setSubject(e.target.value)} className="form-input" placeholder="e.g. Quantitative" style={{ padding: '8px 12px', fontSize: '0.9rem' }} />
-            </div>
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
-              <label style={{ fontSize: '0.8rem', color: 'var(--text-secondary)' }}>Topic</label>
-              <input type="text" value={topic} onChange={(e) => setTopic(e.target.value)} className="form-input" placeholder="e.g. Algebra" style={{ padding: '8px 12px', fontSize: '0.9rem' }} />
-            </div>
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
-              <label style={{ fontSize: '0.8rem', color: 'var(--text-secondary)' }}>Difficulty</label>
-              <select value={difficulty} onChange={(e) => setDifficulty(e.target.value)} className="form-input" style={{ padding: '8px 12px', fontSize: '0.9rem' }}>
-                <option value="">All</option>
-                <option value="easy">Easy</option>
-                <option value="medium">Medium</option>
-                <option value="hard">Hard</option>
-              </select>
-            </div>
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
-              <label style={{ fontSize: '0.8rem', color: 'var(--text-secondary)' }}>Review status</label>
-              <select value={status} onChange={(e) => { setPage(1); setStatus(e.target.value); }} className="form-input" style={{ padding: '8px 12px', fontSize: '0.9rem' }}>
-                <option value="">All</option>
-                <option value="pending_review">Pending review</option>
-                <option value="approved">Approved</option>
-                <option value="rejected">Rejected</option>
-                <option value="draft">Draft</option>
-                <option value="retired">Retired</option>
-              </select>
-            </div>
-            <div style={{ display: 'flex', alignItems: 'flex-end', paddingBottom: '8px' }}>
-              <label style={{ display: 'inline-flex', alignItems: 'center', gap: '6px', fontSize: '0.85rem', cursor: 'pointer' }} title="Items whose measured statistics suggest a problem">
-                <input type="checkbox" checked={flaggedOnly} onChange={(e) => { setPage(1); setFlaggedOnly(e.target.checked); }} />
-                Needs attention
-              </label>
-            </div>
-            <div style={{ gridColumn: 'span 3', display: 'flex', gap: '12px' }}>
-              <input 
-                type="text" 
-                value={search} 
-                onChange={(e) => setSearch(e.target.value)} 
-                className="form-input" 
-                placeholder="Search question text..." 
-                style={{ padding: '8px 12px', fontSize: '0.9rem', flex: 1 }} 
+        <div style={{ background: 'var(--card)', border: '1px solid var(--line)', borderRadius: '16px', padding: '18px 20px' }}>
+          <form onSubmit={handleSearchSubmit} style={{ display: 'flex', flexDirection: 'column', gap: '14px' }}>
+            <FormGrid min="160px">
+              <Field label="Subject" htmlFor="qb-subject">
+                <input
+                  id="qb-subject"
+                  type="text"
+                  value={subject}
+                  onChange={(e) => setSubject(e.target.value)}
+                  className="form-input"
+                  placeholder="e.g. Quantitative"
+                />
+              </Field>
+              <Field label="Topic" htmlFor="qb-topic">
+                <input
+                  id="qb-topic"
+                  type="text"
+                  value={topic}
+                  onChange={(e) => setTopic(e.target.value)}
+                  className="form-input"
+                  placeholder="e.g. Algebra"
+                />
+              </Field>
+              <Field label="Difficulty" htmlFor="qb-diff">
+                <select
+                  id="qb-diff"
+                  value={difficulty}
+                  onChange={(e) => setDifficulty(e.target.value)}
+                  className="form-input"
+                >
+                  <option value="">All</option>
+                  <option value="easy">Easy</option>
+                  <option value="medium">Medium</option>
+                  <option value="hard">Hard</option>
+                </select>
+              </Field>
+            </FormGrid>
+
+            <div style={{ display: 'flex', gap: '10px' }}>
+              <input
+                type="text"
+                aria-label="Search question text"
+                value={search}
+                onChange={(e) => setSearch(e.target.value)}
+                className="form-input"
+                placeholder="Search question text…"
+                style={{ flex: 1 }}
               />
-              <button type="submit" className="btn-primary" style={{ padding: '8px 24px', fontSize: '0.9rem' }}>Search</button>
+              <button type="submit" className="btn-secondary" style={{ flex: 'none', padding: '0 18px' }}>
+                <Icon name="search" size={16} />
+                Search
+              </button>
             </div>
           </form>
         </div>
-
       </div>
 
-      {/* Questions list Table */}
-      <div className="glass-panel" style={{ padding: '24px', overflowX: 'auto' }}>
-        <table style={{ width: '100%', borderCollapse: 'collapse', textAlign: 'left' }}>
-          <thead>
-            <tr style={{ borderBottom: '1px solid var(--border-color)', color: 'var(--text-secondary)', fontSize: '0.9rem' }}>
-              <th style={{ padding: '12px 16px' }}>Subject / Topic</th>
-              <th style={{ padding: '12px 16px' }}>Difficulty</th>
-              <th style={{ padding: '12px 16px' }}>Question Text (Preview)</th>
-              <th style={{ padding: '12px 16px' }}>Marks (Negative)</th>
-              <th style={{ padding: '12px 16px' }}>Review</th>
-              <th style={{ padding: '12px 16px' }}>Item health</th>
-              <th style={{ padding: '12px 16px', textAlign: 'right' }}>Actions</th>
-            </tr>
-          </thead>
-          <tbody>
-            {loading ? (
-              <tr>
-                <td colSpan={7} style={{ textAlign: 'center', padding: '40px', color: 'var(--text-secondary)' }}>Loading question bank...</td>
-              </tr>
-            ) : questions.length === 0 ? (
-              <tr>
-                <td colSpan={7} style={{ textAlign: 'center', padding: '40px', color: 'var(--text-secondary)' }}>No questions match filters.</td>
-              </tr>
-            ) : (
-              questions.map((q) => (
-                <tr key={q.id} style={{ borderBottom: '1px solid var(--surface-2)', fontSize: '0.9rem' }}>
-                  <td style={{ padding: '16px' }}>
-                    <div style={{ fontWeight: 600 }}>{q.subject}</div>
-                    <div style={{ fontSize: '0.8rem', color: 'var(--text-secondary)', marginTop: '4px' }}>{q.topic}</div>
-                  </td>
-                  <td style={{ padding: '16px' }}>
-                    <span 
-                      style={{ 
-                        fontSize: '0.75rem', 
-                        fontWeight: 'bold', 
-                        padding: '2px 8px', 
-                        borderRadius: '4px',
-                        textTransform: 'uppercase',
-                        background: q.difficulty === 'easy' ? 'var(--success-bg)' : q.difficulty === 'medium' ? 'var(--warning-bg)' : 'var(--danger-bg)',
-                        color: q.difficulty === 'easy' ? 'var(--success)' : q.difficulty === 'medium' ? 'var(--warning)' : 'var(--danger)'
-                      }}
-                    >
-                      {q.difficulty}
-                    </span>
-                    {q.question_type && q.question_type !== 'single_choice' && (
-                      <div style={{ fontSize: '0.7rem', color: 'var(--text-secondary)', marginTop: '4px', textTransform: 'capitalize' }}>
-                        {q.question_type.replace('_', ' ')}
-                      </div>
-                    )}
-                  </td>
-                  <td style={{ padding: '16px', maxWidth: '300px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-                    {/* Render KaTeX inline for preview safely */}
-                    <span dangerouslySetInnerHTML={renderMath(q.question_text.substring(0, 100))} />
-                  </td>
-                  <td style={{ padding: '16px' }}>
-                    <span style={{ fontWeight: 'bold', color: 'var(--success)' }}>+{q.marks}</span>
-                    <span style={{ fontSize: '0.8rem', color: 'var(--danger)', marginLeft: '6px' }}>-{q.negative_marks}</span>
-                  </td>
-                  <td style={{ padding: '16px' }}>
-                    <span style={{
-                      fontSize: '0.72rem', fontWeight: 'bold', padding: '2px 8px', borderRadius: '4px',
-                      textTransform: 'uppercase', whiteSpace: 'nowrap',
-                      background: q.status === 'approved' ? 'var(--success-bg)' : q.status === 'rejected' ? 'var(--danger-bg)' : 'var(--warning-bg)',
-                      color: q.status === 'approved' ? 'var(--success)' : q.status === 'rejected' ? 'var(--danger)' : 'var(--warning)',
-                    }}>
-                      {(q.status || 'approved').replace('_', ' ')}
-                    </span>
-                    {q.status !== 'approved' && (
-                      <button onClick={() => reviewQuestion(q.id, 'approved')} className="btn-secondary" style={{ padding: '2px 8px', fontSize: '0.7rem', marginTop: '6px', display: 'block' }}>Approve</button>
-                    )}
-                    {q.status !== 'rejected' && (
-                      <button onClick={() => reviewQuestion(q.id, 'rejected')} className="btn-secondary" style={{ padding: '2px 8px', fontSize: '0.7rem', marginTop: '4px', display: 'block' }}>Reject</button>
-                    )}
-                  </td>
-                  <td style={{ padding: '16px', fontSize: '0.78rem' }}>
-                    {q.stats_sample_size >= 30 ? (
-                      <>
-                        <div>p = {Number(q.difficulty_index).toFixed(2)}</div>
-                        {/* A NEGATIVE discrimination index means the strong
-                            candidates got it wrong — nearly always a wrong key. */}
-                        <div style={{ color: q.discrimination_index < 0 ? 'var(--danger)' : q.discrimination_index < 0.15 ? 'var(--warning)' : 'var(--success)', fontWeight: 700 }}>
-                          {q.discrimination_index < 0 ? 'check key' : `r = ${Number(q.discrimination_index).toFixed(2)}`}
-                        </div>
-                        <div style={{ color: 'var(--text-secondary)' }}>n = {q.stats_sample_size}</div>
-                      </>
-                    ) : (
-                      <span style={{ color: 'var(--text-secondary)' }}>
-                        {q.stats_sample_size ? `n = ${q.stats_sample_size}` : 'no attempts'}
-                      </span>
-                    )}
-                  </td>
-                  <td style={{ padding: '16px', textAlign: 'right' }}>
-                    <div style={{ display: 'flex', gap: '12px', justifyContent: 'flex-end' }}>
-                      <button onClick={() => openAnalysis(q)} style={{ background: 'transparent', border: 'none', cursor: 'pointer', fontSize: '1rem' }} title="Item analysis">📊</button>
-                      <button onClick={() => handleEditClick(q)} style={{ background: 'transparent', border: 'none', cursor: 'pointer', fontSize: '1rem' }} title="Edit">✏️</button>
-                      <button onClick={() => handleDeleteClick(q.id)} style={{ background: 'transparent', border: 'none', cursor: 'pointer', fontSize: '1rem' }} title="Deactivate">🗑️</button>
-                    </div>
-                  </td>
-                </tr>
-              ))
-            )}
-          </tbody>
-        </table>
-
-        {/* Pagination buttons */}
-        {!loading && lastPage > 1 && (
-          <div style={{ display: 'flex', justifyContent: 'center', gap: '12px', marginTop: '24px' }}>
-            <button 
-              onClick={() => setPage(p => Math.max(1, p - 1))} 
-              className="btn-secondary" 
-              style={{ padding: '6px 12px', fontSize: '0.85rem' }}
-              disabled={page === 1}
-            >
-              Previous
-            </button>
-            <span style={{ display: 'flex', alignItems: 'center', fontSize: '0.9rem', color: 'var(--text-secondary)' }}>
-              Page {page} of {lastPage}
-            </span>
-            <button 
-              onClick={() => setPage(p => Math.min(lastPage, p + 1))} 
-              className="btn-secondary" 
-              style={{ padding: '6px 12px', fontSize: '0.85rem' }}
-              disabled={page === lastPage}
-            >
-              Next
-            </button>
-          </div>
-        )}
-      </div>
-
-      {/* Item analysis modal — measured, not asserted */}
-      {analysisFor && (
-        <div
-          onClick={() => setAnalysisFor(null)}
-          style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, background: 'var(--overlay)', display: 'flex', justifyContent: 'center', alignItems: 'center', zIndex: 1100, padding: '20px' }}
-        >
-          <div className="glass-panel" onClick={(e) => e.stopPropagation()} style={{ width: '100%', maxWidth: '620px', maxHeight: '85vh', overflowY: 'auto', padding: '26px' }}>
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: '16px', marginBottom: '12px' }}>
-              <h3 style={{ margin: 0, fontWeight: 800 }}>Item analysis</h3>
-              <button onClick={() => setAnalysisFor(null)} style={{ background: 'transparent', border: 'none', cursor: 'pointer', fontSize: '1.1rem' }}>✕</button>
-            </div>
-            <p style={{ margin: '0 0 16px', fontSize: '0.82rem', color: 'var(--text-secondary)' }}>
-              <span dangerouslySetInnerHTML={renderMath(analysisFor.question_text.substring(0, 160))} />
-            </p>
-
-            {analysisLoading ? (
-              <p style={{ color: 'var(--text-secondary)' }}>Computing from raw attempts…</p>
-            ) : !analysis ? (
-              <p style={{ color: 'var(--text-secondary)' }}>This question has no recorded attempts yet.</p>
-            ) : (
+      {/* ---- the bank ---- */}
+      <TableCard>
+        <Toolbar
+          trailing={
+            selectedIds.length > 0 ? (
               <>
-                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: '12px', marginBottom: '18px' }}>
-                  <Metric label="Difficulty (p)" value={analysis.difficulty_index == null ? '—' : Number(analysis.difficulty_index).toFixed(2)} hint="Share answering correctly" />
-                  <Metric
-                    label="Discrimination (r)"
-                    value={analysis.discrimination_index == null ? '—' : Number(analysis.discrimination_index).toFixed(2)}
-                    hint="Strong vs weak separation"
-                    danger={analysis.discrimination_index != null && analysis.discrimination_index < 0}
-                  />
-                  <Metric label="Sample" value={analysis.sample_size} hint={`${analysis.skipped_count} left blank`} />
+                <span style={{ font: '500 12.5px var(--font-body)', color: 'var(--tx2)' }}>
+                  <Num>{selectedIds.length}</Num> selected
+                </span>
+                <button
+                  type="button"
+                  className="btn-secondary"
+                  style={{ padding: '7px 13px', minHeight: '36px', fontSize: '11.5px' }}
+                  disabled={bulkBusy}
+                  onClick={() => bulkReview('approved')}
+                >
+                  Approve
+                </button>
+                <button
+                  type="button"
+                  className="btn-secondary"
+                  style={{ padding: '7px 13px', minHeight: '36px', fontSize: '11.5px', color: 'var(--danger)', borderColor: 'var(--danger-border)' }}
+                  disabled={bulkBusy}
+                  onClick={() => bulkReview('rejected')}
+                >
+                  Reject
+                </button>
+              </>
+            ) : (
+              !loading && (
+                <span style={{ font: '500 12.5px var(--font-body)', color: 'var(--muted)' }}>
+                  Page <Num>{page}</Num> of <Num>{lastPage}</Num>
+                </span>
+              )
+            )
+          }
+        >
+          <Chip
+            active={!status && !flaggedOnly}
+            onClick={() => { setPage(1); setStatus(''); setFlaggedOnly(false); }}
+          >
+            All
+          </Chip>
+          <Chip
+            queue
+            active={status === 'pending_review'}
+            onClick={() => { setPage(1); setFlaggedOnly(false); setStatus('pending_review'); }}
+          >
+            Pending review
+          </Chip>
+          <Chip active={status === 'approved'} onClick={() => { setPage(1); setFlaggedOnly(false); setStatus('approved'); }}>
+            Approved
+          </Chip>
+          <Chip active={status === 'rejected'} onClick={() => { setPage(1); setFlaggedOnly(false); setStatus('rejected'); }}>
+            Rejected
+          </Chip>
+          <Chip
+            queue
+            active={flaggedOnly}
+            onClick={() => { setPage(1); setStatus(''); setFlaggedOnly(!flaggedOnly); }}
+            title="Items whose measured statistics suggest a problem"
+          >
+            Needs attention
+          </Chip>
+        </Toolbar>
+
+        {loading ? (
+          <SkeletonRows />
+        ) : questions.length === 0 ? (
+          <EmptyState
+            icon="file-text"
+            message="No question matches these filters. Clear one to widen the search, or import a CSV."
+            action={
+              <button type="button" onClick={() => { setForm(blankForm()); setShowForm(true); }} className="btn-primary">
+                <Icon name="plus" size={16} strokeWidth={2.4} />
+                New question
+              </button>
+            }
+          />
+        ) : (
+          <>
+            <Table columns={COLUMNS}>
+              <Row style={{ minHeight: 0, padding: '8px 16px', background: 'var(--card2)' }}>
+                <Cell>
+                  <button
+                    type="button"
+                    className={`adm-check${allOnPageSelected ? ' on' : ''}`}
+                    onClick={toggleAll}
+                    aria-label={allOnPageSelected ? 'Clear selection' : 'Select every row on this page'}
+                  >
+                    <Icon name="check" size={11} strokeWidth={3.5} />
+                  </button>
+                </Cell>
+                <Cell>
+                  <span style={{ font: '500 11.5px var(--font-body)', color: 'var(--muted)' }}>
+                    {allOnPageSelected ? 'Every row on this page is selected' : 'Select rows to review them together'}
+                  </span>
+                </Cell>
+              </Row>
+
+              {questions.map((q) => {
+                const health = healthOf(q);
+                const picked = selectedIds.includes(q.id);
+                return (
+                  <Row key={q.id} selected={picked || detailQuestion?.id === q.id}>
+                    <Cell>
+                      <button
+                        type="button"
+                        className={`adm-check${picked ? ' on' : ''}`}
+                        onClick={() => toggleRow(q.id)}
+                        aria-label={picked ? 'Deselect this question' : 'Select this question'}
+                      >
+                        <Icon name="check" size={11} strokeWidth={3.5} />
+                      </button>
+                    </Cell>
+                    <Cell label="Question">
+                      <CellTitle>
+                        <span dangerouslySetInnerHTML={renderMath(q.question_text.substring(0, 120))} />
+                      </CellTitle>
+                      <CellSub>
+                        {q.question_type && q.question_type !== 'single_choice'
+                          ? q.question_type.replace('_', ' ')
+                          : health.label}
+                      </CellSub>
+                    </Cell>
+                    <Cell label="Subject" hideBelow="tablet">
+                      <CellTitle>{q.subject}</CellTitle>
+                      <CellSub>{q.topic}</CellSub>
+                    </Cell>
+                    <Cell label="Difficulty">
+                      <DifficultyBadge value={q.difficulty} />
+                    </Cell>
+                    <Cell label="Marks" hideBelow="tablet">
+                      <Num style={{ fontSize: '12.5px', color: 'var(--success)' }}>+{q.marks}</Num>
+                      <span style={{ font: '500 12px var(--font-mono)', color: 'var(--danger)', marginLeft: '6px' }}>−{q.negative_marks}</span>
+                    </Cell>
+                    <Cell label="Review">
+                      <StatusDot tone={statusTone(q.status || 'approved')}>
+                        {(q.status || 'approved').replace('_', ' ')}
+                      </StatusDot>
+                    </Cell>
+                    <Cell align="right">
+                      <RowChevron onClick={() => setDetailQuestion(q)} label="Open question" />
+                    </Cell>
+                  </Row>
+                );
+              })}
+            </Table>
+            <Pagination page={page} lastPage={lastPage} onPage={setPage} />
+          </>
+        )}
+      </TableCard>
+
+      {/* ---- row detail: review, item health and the row's actions ---- */}
+      {detailQuestion && (
+        <Drawer
+          title={`${detailQuestion.subject} · ${detailQuestion.topic}`}
+          subtitle={`${detailQuestion.difficulty} · +${detailQuestion.marks} / −${detailQuestion.negative_marks}`}
+          onClose={() => setDetailQuestion(null)}
+          footer={
+            <>
+              <button
+                type="button"
+                className="btn-secondary"
+                style={{ color: 'var(--danger)', borderColor: 'var(--danger-border)' }}
+                onClick={() => setPendingDelete(detailQuestion)}
+              >
+                <Icon name="trash" size={15} />
+                Deactivate
+              </button>
+              <button
+                type="button"
+                className="btn-primary"
+                onClick={() => { const q = detailQuestion; setDetailQuestion(null); handleEditClick(q); }}
+              >
+                <Icon name="edit" size={16} />
+                Edit
+              </button>
+            </>
+          }
+        >
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '18px' }}>
+            <div style={{ font: '400 14px/1.62 var(--font-body)', color: 'var(--tx)' }}>
+              <span dangerouslySetInnerHTML={renderMath(detailQuestion.question_text)} />
+            </div>
+
+            <div style={{ background: 'var(--card2)', border: '1px solid var(--line)', borderRadius: '14px', padding: '14px' }}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: '12px', font: '400 12.5px var(--font-body)', color: 'var(--muted)' }}>
+                <span>Review status</span>
+                <StatusDot tone={statusTone(detailQuestion.status || 'approved')}>
+                  {(detailQuestion.status || 'approved').replace('_', ' ')}
+                </StatusDot>
+              </div>
+              <div style={{ marginTop: '9px', display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: '12px', font: '400 12.5px var(--font-body)', color: 'var(--muted)' }}>
+                <span>Item health</span>
+                <Badge tone={healthOf(detailQuestion).tone}>{healthOf(detailQuestion).label}</Badge>
+              </div>
+              {detailQuestion.stats_sample_size >= 30 && (
+                <div style={{ marginTop: '9px', display: 'flex', justifyContent: 'space-between', gap: '12px', font: '400 12.5px var(--font-body)', color: 'var(--muted)' }}>
+                  <span>Difficulty index (p)</span>
+                  <Num style={{ color: 'var(--tx)', fontSize: '12.5px' }}>{Number(detailQuestion.difficulty_index).toFixed(2)}</Num>
                 </div>
+              )}
+            </div>
 
-                {analysis.flags && analysis.flags.length > 0 && (
-                  <div style={{ marginBottom: '18px', display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
-                    {analysis.flags.map((f) => (
-                      <span key={f} style={{
-                        fontSize: '0.72rem', fontWeight: 700, padding: '3px 9px', borderRadius: '4px',
-                        background: f === 'negative_discrimination' ? 'var(--danger-bg)' : 'var(--warning-bg)',
-                        color: f === 'negative_discrimination' ? 'var(--danger)' : 'var(--warning)',
-                      }}>
-                        {f.replace(/_/g, ' ')}
-                      </span>
-                    ))}
-                  </div>
-                )}
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '9px' }}>
+              {detailQuestion.status !== 'approved' && (
+                <button
+                  type="button"
+                  className="btn-secondary"
+                  onClick={() => { reviewQuestion(detailQuestion.id, 'approved'); setDetailQuestion(null); }}
+                >
+                  <Icon name="check-circle" size={15} />
+                  Approve
+                </button>
+              )}
+              {detailQuestion.status !== 'rejected' && (
+                <button
+                  type="button"
+                  className="btn-secondary"
+                  onClick={() => { reviewQuestion(detailQuestion.id, 'rejected'); setDetailQuestion(null); }}
+                >
+                  <Icon name="x" size={15} />
+                  Reject
+                </button>
+              )}
+              <button
+                type="button"
+                className="btn-secondary"
+                onClick={() => { const q = detailQuestion; setDetailQuestion(null); openAnalysis(q); }}
+              >
+                <Icon name="chart" size={15} />
+                Item analysis
+              </button>
+            </div>
+          </div>
+        </Drawer>
+      )}
 
-                {analysis.flags?.includes('negative_discrimination') && (
-                  <p style={{ margin: '0 0 16px', padding: '10px 12px', borderRadius: '6px', background: 'var(--danger-bg)', color: 'var(--danger)', fontSize: '0.8rem', fontWeight: 600 }}>
-                    The candidates who scored well overall were MORE likely to get this one wrong.
-                    In practice that means the answer key is wrong or the stem is ambiguous.
-                  </p>
-                )}
+      {/* ---- item analysis — measured, not asserted ---- */}
+      {analysisFor && (
+        <Modal
+          title="Item analysis"
+          description="Computed from the raw attempts, so a re-scored session changes it the next time you open this."
+          width={620}
+          onClose={() => setAnalysisFor(null)}
+        >
+          <p style={{ margin: '0 0 18px', font: '400 13px/1.6 var(--font-body)', color: 'var(--tx2)' }}>
+            <span dangerouslySetInnerHTML={renderMath(analysisFor.question_text.substring(0, 200))} />
+          </p>
 
-                <h4 style={{ margin: '0 0 8px', fontWeight: 700, fontSize: '0.9rem' }}>Option breakdown</h4>
-                <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '0.82rem' }}>
+          {analysisLoading ? (
+            <div className="skeleton" style={{ height: '90px', borderRadius: '14px' }} />
+          ) : !analysis ? (
+            <EmptyState icon="chart" message="This question has no recorded attempts yet." />
+          ) : (
+            <>
+              <FormGrid min="150px">
+                <Metric
+                  label="Difficulty (p)"
+                  value={analysis.difficulty_index == null ? '—' : Number(analysis.difficulty_index).toFixed(2)}
+                  hint="Share answering correctly"
+                />
+                <Metric
+                  label="Discrimination (r)"
+                  value={analysis.discrimination_index == null ? '—' : Number(analysis.discrimination_index).toFixed(2)}
+                  hint="Strong vs weak separation"
+                  danger={analysis.discrimination_index != null && analysis.discrimination_index < 0}
+                />
+                <Metric label="Sample" value={analysis.sample_size} hint={`${analysis.skipped_count} left blank`} />
+              </FormGrid>
+
+              {analysis.flags && analysis.flags.length > 0 && (
+                <div style={{ margin: '18px 0 0', display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
+                  {analysis.flags.map((f) => (
+                    <Badge key={f} tone={f === 'negative_discrimination' ? 'danger' : 'reward'}>
+                      {f.replace(/_/g, ' ')}
+                    </Badge>
+                  ))}
+                </div>
+              )}
+
+              {analysis.flags?.includes('negative_discrimination') && (
+                <div style={{ marginTop: '16px' }}>
+                  <Notice tone="danger" icon="alert">
+                    The candidates who scored well overall were MORE likely to get this one wrong. In practice that
+                    means the answer key is wrong or the stem is ambiguous.
+                  </Notice>
+                </div>
+              )}
+
+              <h4 className="t-heading" style={{ margin: '22px 0 10px', fontSize: '15px', color: 'var(--tx)' }}>Option breakdown</h4>
+              <div className="adm-tablecard" style={{ overflowX: 'auto' }}>
+                <table className="adm-ltable">
                   <thead>
-                    <tr style={{ borderBottom: '1px solid var(--border-color)', color: 'var(--text-secondary)' }}>
-                      <th style={{ padding: '6px 8px', textAlign: 'left' }}>Option</th>
-                      <th style={{ padding: '6px 8px', textAlign: 'right' }}>Chosen</th>
-                      <th style={{ padding: '6px 8px', textAlign: 'right' }}>Share</th>
-                      <th style={{ padding: '6px 8px', textAlign: 'right' }}>Mean ability</th>
+                    <tr>
+                      <th>Option</th>
+                      <th className="ta-r">Chosen</th>
+                      <th className="ta-r">Share</th>
+                      <th className="ta-r">Mean ability</th>
                     </tr>
                   </thead>
                   <tbody>
                     {analysis.distractors.map((d) => (
-                      <tr key={d.option_id} style={{ borderBottom: '1px solid var(--surface-2)' }}>
-                        <td style={{ padding: '7px 8px', fontWeight: d.is_correct ? 700 : 400, color: d.is_correct ? 'var(--success)' : 'inherit' }}>
-                          {d.label.toUpperCase()}{d.is_correct ? ' ✓' : ''}
+                      <tr key={d.option_id}>
+                        <td style={{ fontWeight: d.is_correct ? 700 : 400, color: d.is_correct ? 'var(--success)' : 'inherit' }}>
+                          {d.label.toUpperCase()}
+                          {d.is_correct && <Icon name="check" size={12} style={{ marginLeft: 4, verticalAlign: '-1px' }} />}
                         </td>
-                        <td style={{ padding: '7px 8px', textAlign: 'right' }}>{d.chosen_count}</td>
-                        <td style={{ padding: '7px 8px', textAlign: 'right' }}>{Math.round(d.chosen_share * 100)}%</td>
-                        <td style={{ padding: '7px 8px', textAlign: 'right' }}>{d.mean_ability == null ? '—' : `${d.mean_ability}%`}</td>
+                        <td className="ta-r"><Num style={{ fontSize: '12.5px' }}>{d.chosen_count}</Num></td>
+                        <td className="ta-r"><Num style={{ fontSize: '12.5px' }}>{Math.round(d.chosen_share * 100)}%</Num></td>
+                        <td className="ta-r">
+                          {d.mean_ability == null ? '—' : <Num style={{ fontSize: '12.5px' }}>{d.mean_ability}%</Num>}
+                        </td>
                       </tr>
                     ))}
                   </tbody>
                 </table>
-                <p style={{ margin: '10px 0 0', fontSize: '0.75rem', color: 'var(--text-secondary)' }}>
-                  A distractor chosen by the highest-ability candidates is defective. One chosen by
-                  nobody is a wasted slot.
-                </p>
-              </>
-            )}
-          </div>
-        </div>
+              </div>
+              <p style={{ margin: '12px 0 0', font: '400 11.5px/1.55 var(--font-body)', color: 'var(--muted)' }}>
+                A distractor chosen by the highest-ability candidates is defective. One chosen by nobody is a wasted slot.
+              </p>
+            </>
+          )}
+        </Modal>
       )}
 
-      {/* Passage manager — shared comprehension text that questions link to */}
+      {/* ---- passage manager ---- */}
       {showPassageManager && (
-        <div
-          onClick={() => { setShowPassageManager(false); setPassageForm({ id: null, title: '', body: '' }); }}
-          style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, background: 'var(--overlay)', display: 'flex', justifyContent: 'center', alignItems: 'center', zIndex: 1100, padding: '20px' }}
+        <Modal
+          title="Comprehension passages"
+          description="Author a passage once, then link several questions to it from the question form."
+          width={720}
+          onClose={() => { setShowPassageManager(false); setPassageForm({ id: null, title: '', body: '' }); }}
         >
-          <div className="glass-panel" onClick={(e) => e.stopPropagation()} style={{ width: '100%', maxWidth: '720px', maxHeight: '85vh', overflowY: 'auto', padding: '26px' }}>
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: '16px', marginBottom: '16px' }}>
-              <div>
-                <h3 style={{ margin: 0, fontWeight: 800 }}>Comprehension passages</h3>
-                <p style={{ margin: '4px 0 0', fontSize: '0.82rem', color: 'var(--text-secondary)' }}>
-                  Author a passage once, then link several questions to it from the question form.
-                </p>
-              </div>
-              <button onClick={() => { setShowPassageManager(false); setPassageForm({ id: null, title: '', body: '' }); }} style={{ background: 'transparent', border: 'none', cursor: 'pointer', fontSize: '1.1rem' }}>✕</button>
-            </div>
-
-            <form onSubmit={savePassage} style={{ display: 'flex', flexDirection: 'column', gap: '10px', marginBottom: '22px', padding: '16px', borderRadius: '10px', background: 'var(--surface-sunken, var(--surface-1))' }}>
-              <input
-                type="text" placeholder="Title (optional, e.g. 'RC Passage 1 — Climate Change')"
-                value={passageForm.title} onChange={(e) => setPassageForm({ ...passageForm, title: e.target.value })}
-                className="form-input" style={{ padding: '8px 12px' }}
-              />
-              <textarea
-                placeholder="Passage text" rows={5} required
-                value={passageForm.body} onChange={(e) => setPassageForm({ ...passageForm, body: e.target.value })}
-                className="form-input" style={{ padding: '8px 12px' }}
-              />
+          <FormSection title={passageForm.id ? 'Edit passage' : 'New passage'}>
+            <form onSubmit={savePassage} style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
+              <Field label="Title" hint="Optional — a label for the picker." htmlFor="pg-title">
+                <input
+                  id="pg-title"
+                  type="text"
+                  placeholder="e.g. RC Passage 1 — Climate Change"
+                  value={passageForm.title}
+                  onChange={(e) => setPassageForm({ ...passageForm, title: e.target.value })}
+                  className="form-input"
+                />
+              </Field>
+              <Field label="Passage text" htmlFor="pg-body">
+                <textarea
+                  id="pg-body"
+                  placeholder="Paste the passage here…"
+                  rows={5}
+                  required
+                  value={passageForm.body}
+                  onChange={(e) => setPassageForm({ ...passageForm, body: e.target.value })}
+                  className="form-input"
+                />
+              </Field>
               <div style={{ display: 'flex', gap: '10px', justifyContent: 'flex-end' }}>
                 {passageForm.id && (
-                  <button type="button" onClick={() => setPassageForm({ id: null, title: '', body: '' })} className="btn-secondary" style={{ padding: '6px 14px', fontSize: '0.85rem' }}>Cancel edit</button>
+                  <button
+                    type="button"
+                    onClick={() => setPassageForm({ id: null, title: '', body: '' })}
+                    className="btn-secondary"
+                  >
+                    Cancel edit
+                  </button>
                 )}
-                <button type="submit" className="btn-primary" style={{ padding: '6px 16px', fontSize: '0.85rem' }}>{passageForm.id ? 'Update passage' : 'Add passage'}</button>
+                <button type="submit" className="btn-primary">
+                  {passageForm.id ? 'Update passage' : 'Add passage'}
+                </button>
               </div>
             </form>
+          </FormSection>
 
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
-              {passages.length === 0 && (
-                <p style={{ color: 'var(--text-secondary)', fontSize: '0.85rem' }}>No passages yet.</p>
-              )}
-              {passages.map(p => (
-                <div key={p.id} style={{ padding: '12px 14px', borderRadius: '10px', border: '1px solid var(--border-color)', display: 'flex', justifyContent: 'space-between', gap: '12px', alignItems: 'flex-start' }}>
-                  <div style={{ minWidth: 0 }}>
-                    <div style={{ fontWeight: 700, fontSize: '0.9rem' }}>{p.title || `Passage #${p.id}`}</div>
-                    <div style={{ fontSize: '0.8rem', color: 'var(--text-secondary)', marginTop: '4px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{p.body}</div>
-                    <div style={{ fontSize: '0.72rem', color: 'var(--text-secondary)', marginTop: '4px' }}>{p.questions_count ?? 0} question(s) linked</div>
-                  </div>
-                  <div style={{ display: 'flex', gap: '10px', flexShrink: 0 }}>
-                    <button onClick={() => setPassageForm({ id: p.id, title: p.title || '', body: p.body })} style={{ background: 'transparent', border: 'none', cursor: 'pointer' }} title="Edit">✏️</button>
-                    <button onClick={() => deletePassage(p.id)} style={{ background: 'transparent', border: 'none', cursor: 'pointer' }} title="Delete">🗑️</button>
-                  </div>
-                </div>
-              ))}
-            </div>
-          </div>
-        </div>
-      )}
-
-      {/* Single Question Creator/Editor Form modal */}
-      {showForm && (
-        <div style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, background: 'var(--overlay)', display: 'flex', justifyContent: 'center', alignItems: 'center', zIndex: 1000, padding: '20px' }}>
-          <div className="glass-panel" style={{ width: '100%', maxWidth: '1000px', height: '90vh', padding: '30px', display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '30px', overflowY: 'auto' }}>
-            
-            {/* Left side: Inputs */}
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
-              <h3 style={{ fontSize: '1.3rem', margin: 0, fontWeight: 700 }}>
-                {form.id ? 'Edit Question' : 'Create Question'}
-              </h3>
-
-              <form onSubmit={handleQuestionSubmit} style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
-                
-                {/* Meta details */}
-                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px' }}>
-                  <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
-                    <label style={{ fontSize: '0.8rem', color: 'var(--text-secondary)' }}>Subject</label>
-                    <input type="text" value={form.subject} onChange={(e) => setForm({ ...form, subject: e.target.value })} className="form-input" style={{ padding: '8px 12px' }} required />
-                  </div>
-                  <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
-                    <label style={{ fontSize: '0.8rem', color: 'var(--text-secondary)' }}>Topic</label>
-                    <input type="text" value={form.topic} onChange={(e) => setForm({ ...form, topic: e.target.value })} className="form-input" style={{ padding: '8px 12px' }} required />
-                  </div>
-                </div>
-
-                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: '16px' }}>
-                  <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
-                    <label style={{ fontSize: '0.8rem', color: 'var(--text-secondary)' }}>Difficulty</label>
-                    <select value={form.difficulty} onChange={(e) => setForm({ ...form, difficulty: e.target.value })} className="form-input" style={{ padding: '8px 12px' }}>
-                      <option value="easy">Easy</option>
-                      <option value="medium">Medium</option>
-                      <option value="hard">Hard</option>
-                    </select>
-                  </div>
-                  <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
-                    <label style={{ fontSize: '0.8rem', color: 'var(--text-secondary)' }}>Marks</label>
-                    <input type="number" step="0.01" value={form.marks} onChange={(e) => setForm({ ...form, marks: parseFloat(e.target.value) })} className="form-input" style={{ padding: '8px 12px' }} required />
-                  </div>
-                  <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
-                    <label style={{ fontSize: '0.8rem', color: 'var(--text-secondary)' }}>Negative Marks</label>
-                    <input type="number" step="0.01" value={form.negative_marks} onChange={(e) => setForm({ ...form, negative_marks: parseFloat(e.target.value) })} className="form-input" style={{ padding: '8px 12px' }} required />
-                  </div>
-                </div>
-
-                {/* Question type + passage link */}
-                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px' }}>
-                  <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
-                    <label style={{ fontSize: '0.8rem', color: 'var(--text-secondary)' }}>Question type</label>
-                    <select
-                      value={form.question_type}
-                      onChange={(e) => setForm({ ...form, question_type: e.target.value })}
-                      className="form-input"
-                      style={{ padding: '8px 12px' }}
-                    >
-                      <option value="single_choice">Single choice (one correct)</option>
-                      <option value="multi_select">Multi-select (several correct)</option>
-                      <option value="numeric">Numeric answer</option>
-                    </select>
-                  </div>
-                  <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
-                    <label style={{ fontSize: '0.8rem', color: 'var(--text-secondary)' }}>Passage (comprehension set)</label>
-                    <select
-                      value={form.passage_id || ''}
-                      onChange={(e) => setForm({ ...form, passage_id: e.target.value })}
-                      className="form-input"
-                      style={{ padding: '8px 12px' }}
-                    >
-                      <option value="">None — standalone question</option>
-                      {passages.map(p => (
-                        <option key={p.id} value={p.id}>{p.title || `Passage #${p.id}`}</option>
-                      ))}
-                    </select>
-                  </div>
-                </div>
-
-                {/* Question Text */}
-                <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
-                  <label style={{ fontSize: '0.8rem', color: 'var(--text-secondary)' }}>Question Text (LaTeX supported, e.g. $x^2$ or $$\sum x$$)</label>
-                  <textarea 
-                    value={form.question_text} 
-                    onChange={(e) => setForm({ ...form, question_text: e.target.value })} 
-                    className="form-input" 
-                    rows={4} 
-                    required 
-                  />
-                </div>
-
-                {/* Options (single_choice / multi_select) or numeric answer key */}
-                {form.question_type === 'numeric' ? (
-                  <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
-                    <label style={{ fontSize: '0.85rem', fontWeight: 'bold' }}>Numeric answer key</label>
-                    <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px' }}>
-                      <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
-                        <label style={{ fontSize: '0.78rem', color: 'var(--text-secondary)' }}>Correct value</label>
-                        <input
-                          type="number" step="any"
-                          value={form.numeric_answer}
-                          onChange={(e) => setForm({ ...form, numeric_answer: e.target.value })}
-                          className="form-input" style={{ padding: '8px 12px' }} required
-                        />
+          <FormSection title="Existing passages">
+            {passages.length === 0 ? (
+              <EmptyState icon="file-text" message="No passage yet. Add one above and questions can link to it." />
+            ) : (
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
+                {passages.map((pg) => (
+                  <div
+                    key={pg.id}
+                    style={{
+                      padding: '13px 14px',
+                      borderRadius: '14px',
+                      background: 'var(--card2)',
+                      border: '1px solid var(--line)',
+                      display: 'flex',
+                      justifyContent: 'space-between',
+                      gap: '12px',
+                      alignItems: 'flex-start',
+                    }}
+                  >
+                    <div style={{ minWidth: 0 }}>
+                      <div style={{ font: '600 13px var(--font-body)', color: 'var(--tx)' }}>
+                        {pg.title || `Passage #${pg.id}`}
                       </div>
-                      <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
-                        <label style={{ fontSize: '0.78rem', color: 'var(--text-secondary)' }}>Tolerance (± accepted range)</label>
-                        <input
-                          type="number" step="any" min="0"
-                          value={form.numeric_tolerance}
-                          onChange={(e) => setForm({ ...form, numeric_tolerance: e.target.value })}
-                          className="form-input" style={{ padding: '8px 12px' }}
-                        />
+                      <div
+                        style={{
+                          marginTop: '4px',
+                          font: '400 12px var(--font-body)',
+                          color: 'var(--muted)',
+                          overflow: 'hidden',
+                          textOverflow: 'ellipsis',
+                          whiteSpace: 'nowrap',
+                        }}
+                      >
+                        {pg.body}
+                      </div>
+                      <div style={{ marginTop: '5px', font: '400 11.5px var(--font-body)', color: 'var(--muted)' }}>
+                        <Num style={{ fontSize: '11.5px' }}>{pg.questions_count ?? 0}</Num> linked
                       </div>
                     </div>
-                    <p style={{ margin: '2px 0 0', fontSize: '0.78rem', color: 'var(--text-secondary)' }}>
-                      A response is correct when it falls within ±tolerance of the value above. Use 0 for an exact match.
-                    </p>
+                    <div style={{ display: 'flex', gap: '4px', flexShrink: 0 }}>
+                      <button
+                        type="button"
+                        className="adm-rowaction"
+                        onClick={() => setPassageForm({ id: pg.id, title: pg.title || '', body: pg.body })}
+                        aria-label="Edit passage"
+                        title="Edit"
+                      >
+                        <Icon name="edit" size={16} />
+                      </button>
+                      <button
+                        type="button"
+                        className="adm-rowaction"
+                        onClick={() => setPendingPassageDelete(pg)}
+                        aria-label="Delete passage"
+                        title="Delete"
+                      >
+                        <Icon name="trash" size={16} />
+                      </button>
+                    </div>
                   </div>
+                ))}
+              </div>
+            )}
+          </FormSection>
+        </Modal>
+      )}
+
+      {/* ---- question editor + live preview ---- */}
+      {showForm && (
+        <Modal
+          title={form.id ? 'Edit question' : 'New question'}
+          description="The preview is exactly what a candidate sees, LaTeX and all."
+          width={1000}
+          onClose={() => setShowForm(false)}
+          footer={
+            <>
+              <button type="button" onClick={() => setShowForm(false)} className="btn-secondary">Cancel</button>
+              <button type="submit" form="question-form" className="btn-primary">Save question</button>
+            </>
+          }
+        >
+          <div className="qb-editor">
+            <form id="question-form" onSubmit={handleQuestionSubmit}>
+              <FormSection title="Classification">
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '14px' }}>
+                  <FormGrid min="160px">
+                    <Field label="Subject" htmlFor="qf-subject">
+                      <input
+                        id="qf-subject"
+                        type="text"
+                        value={form.subject}
+                        onChange={(e) => setForm({ ...form, subject: e.target.value })}
+                        className="form-input"
+                        required
+                      />
+                    </Field>
+                    <Field label="Topic" htmlFor="qf-topic">
+                      <input
+                        id="qf-topic"
+                        type="text"
+                        value={form.topic}
+                        onChange={(e) => setForm({ ...form, topic: e.target.value })}
+                        className="form-input"
+                        required
+                      />
+                    </Field>
+                  </FormGrid>
+                  <FormGrid min="140px">
+                    <Field label="Difficulty" htmlFor="qf-diff">
+                      <select
+                        id="qf-diff"
+                        value={form.difficulty}
+                        onChange={(e) => setForm({ ...form, difficulty: e.target.value })}
+                        className="form-input"
+                      >
+                        <option value="easy">Easy</option>
+                        <option value="medium">Medium</option>
+                        <option value="hard">Hard</option>
+                      </select>
+                    </Field>
+                    <Field label="Marks" htmlFor="qf-marks">
+                      <input
+                        id="qf-marks"
+                        type="number"
+                        step="0.01"
+                        value={form.marks}
+                        onChange={(e) => setForm({ ...form, marks: parseFloat(e.target.value) })}
+                        className="form-input"
+                        required
+                      />
+                    </Field>
+                    <Field label="Negative marks" htmlFor="qf-neg">
+                      <input
+                        id="qf-neg"
+                        type="number"
+                        step="0.01"
+                        value={form.negative_marks}
+                        onChange={(e) => setForm({ ...form, negative_marks: parseFloat(e.target.value) })}
+                        className="form-input"
+                        required
+                      />
+                    </Field>
+                  </FormGrid>
+                  <FormGrid min="180px">
+                    <Field label="Question type" htmlFor="qf-type">
+                      <select
+                        id="qf-type"
+                        value={form.question_type}
+                        onChange={(e) => setForm({ ...form, question_type: e.target.value })}
+                        className="form-input"
+                      >
+                        <option value="single_choice">Single choice (one correct)</option>
+                        <option value="multi_select">Multi-select (several correct)</option>
+                        <option value="numeric">Numeric answer</option>
+                      </select>
+                    </Field>
+                    <Field label="Passage" hint="Link a comprehension set, or leave standalone." htmlFor="qf-passage">
+                      <select
+                        id="qf-passage"
+                        value={form.passage_id || ''}
+                        onChange={(e) => setForm({ ...form, passage_id: e.target.value })}
+                        className="form-input"
+                      >
+                        <option value="">Standalone question</option>
+                        {passages.map((pg) => (
+                          <option key={pg.id} value={pg.id}>{pg.title || `Passage #${pg.id}`}</option>
+                        ))}
+                      </select>
+                    </Field>
+                  </FormGrid>
+                </div>
+              </FormSection>
+
+              <FormSection title="Stem">
+                <Field label="Question text" hint="LaTeX supported — $x^2$ inline, $$\sum x$$ on its own line." htmlFor="qf-text">
+                  <textarea
+                    id="qf-text"
+                    value={form.question_text}
+                    onChange={(e) => setForm({ ...form, question_text: e.target.value })}
+                    className="form-input"
+                    rows={4}
+                    required
+                  />
+                </Field>
+              </FormSection>
+
+              <FormSection
+                title={form.question_type === 'numeric' ? 'Answer key' : 'Options & key'}
+                description={
+                  form.question_type === 'numeric'
+                    ? 'A response is correct when it falls within ±tolerance of the value. Use 0 for an exact match.'
+                    : form.question_type === 'multi_select'
+                      ? 'Tick every correct statement.'
+                      : 'Tick the one correct option.'
+                }
+              >
+                {form.question_type === 'numeric' ? (
+                  <FormGrid min="170px">
+                    <Field label="Correct value" htmlFor="qf-num">
+                      <input
+                        id="qf-num"
+                        type="number"
+                        step="any"
+                        value={form.numeric_answer}
+                        onChange={(e) => setForm({ ...form, numeric_answer: e.target.value })}
+                        className="form-input"
+                        required
+                      />
+                    </Field>
+                    <Field label="Tolerance (±)" htmlFor="qf-tol">
+                      <input
+                        id="qf-tol"
+                        type="number"
+                        step="any"
+                        min="0"
+                        value={form.numeric_tolerance}
+                        onChange={(e) => setForm({ ...form, numeric_tolerance: e.target.value })}
+                        className="form-input"
+                      />
+                    </Field>
+                  </FormGrid>
                 ) : (
-                  <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
-                    <label style={{ fontSize: '0.85rem', fontWeight: 'bold' }}>
-                      Answer Options & Correct Key
-                      <span style={{ fontWeight: 500, color: 'var(--text-secondary)', marginLeft: '8px' }}>
-                        {form.question_type === 'multi_select' ? '— tick every correct statement' : '— tick the one correct option'}
-                      </span>
-                    </label>
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
                     {form.options.map((opt, idx) => (
                       <div key={idx} style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
                         <input
                           type="checkbox"
                           checked={opt.is_correct}
                           onChange={() => handleCorrectOptionSelect(idx)}
-                          style={{ width: '20px', height: '20px', cursor: 'pointer' }}
+                          style={{ width: '20px', height: '20px', flex: 'none', cursor: 'pointer' }}
+                          aria-label={`Mark option ${opt.label.toUpperCase()} correct`}
                           title="Set as correct answer"
                         />
-                        <span style={{ fontWeight: 'bold', textTransform: 'uppercase' }}>{opt.label}.</span>
+                        <span style={{ font: '600 13px var(--font-body)', color: 'var(--tx2)', width: '18px', flex: 'none', textTransform: 'uppercase' }}>
+                          {opt.label}
+                        </span>
                         <input
                           type="text"
                           value={opt.option_text}
                           onChange={(e) => handleOptionTextChange(idx, e.target.value)}
                           className="form-input"
                           placeholder={`Option ${opt.label.toUpperCase()}`}
-                          style={{ padding: '8px 12px', flex: 1 }}
+                          style={{ flex: 1 }}
                           required
                         />
                         <button
-                          type="button" onClick={() => removeOption(idx)} disabled={form.options.length <= 2}
-                          style={{ background: 'transparent', border: 'none', cursor: form.options.length <= 2 ? 'not-allowed' : 'pointer', opacity: form.options.length <= 2 ? 0.3 : 1, fontSize: '0.95rem' }}
+                          type="button"
+                          className="adm-rowaction"
+                          onClick={() => removeOption(idx)}
+                          disabled={form.options.length <= 2}
+                          style={{ opacity: form.options.length <= 2 ? 0.35 : 1 }}
+                          aria-label={`Remove option ${opt.label.toUpperCase()}`}
                           title="Remove option"
-                        >✕</button>
+                        >
+                          <Icon name="x" size={16} />
+                        </button>
                       </div>
                     ))}
                     {form.options.length < 6 && (
-                      <button type="button" onClick={addOption} className="btn-secondary" style={{ alignSelf: 'flex-start', padding: '6px 14px', fontSize: '0.82rem' }}>
-                        + Add option {nextOptionLabel()?.toUpperCase()}
+                      <button
+                        type="button"
+                        onClick={addOption}
+                        className="btn-secondary"
+                        style={{ alignSelf: 'flex-start', padding: '8px 14px', minHeight: '40px', fontSize: '12px' }}
+                      >
+                        <Icon name="plus" size={14} strokeWidth={2.4} />
+                        Add option {nextOptionLabel()?.toUpperCase()}
                       </button>
                     )}
                   </div>
                 )}
+              </FormSection>
 
-                {/* Explanation */}
-                <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
-                  <label style={{ fontSize: '0.8rem', color: 'var(--text-secondary)' }}>Explanations / Solution</label>
-                  <textarea 
-                    value={form.explanation} 
-                    onChange={(e) => setForm({ ...form, explanation: e.target.value })} 
-                    className="form-input" 
-                    rows={3} 
+              <FormSection title="Explanation">
+                <Field label="Solution shown after submission" htmlFor="qf-exp">
+                  <textarea
+                    id="qf-exp"
+                    value={form.explanation}
+                    onChange={(e) => setForm({ ...form, explanation: e.target.value })}
+                    className="form-input"
+                    rows={3}
                   />
-                </div>
+                </Field>
+              </FormSection>
+            </form>
 
-                {/* Submit buttons */}
-                <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '12px', marginTop: '10px' }}>
-                  <button type="button" onClick={() => setShowForm(false)} className="btn-secondary" style={{ padding: '8px 16px', fontSize: '0.9rem' }}>Cancel</button>
-                  <button type="submit" className="btn-primary" style={{ padding: '8px 20px', fontSize: '0.9rem' }}>Save Question</button>
-                </div>
-              </form>
-            </div>
-
-            {/* Right side: Live Preview */}
-            <div style={{ borderLeft: '1px solid var(--border-color)', paddingLeft: '30px', display: 'flex', flexDirection: 'column', gap: '20px' }}>
-              <h3 style={{ fontSize: '1.2rem', margin: 0, fontWeight: 700, color: 'var(--accent-color)' }}>👁️ Live Render Preview</h3>
-              
-              <div className="glass-panel" style={{ padding: '24px', flex: 1, display: 'flex', flexDirection: 'column', gap: '20px', overflowY: 'auto', background: 'var(--surface-sunken)' }}>
-                {/* Subject & topic breadcrumb */}
-                <div style={{ fontSize: '0.8rem', color: 'var(--text-secondary)' }}>
-                  {form.subject || 'Subject'} &gt; {form.topic || 'Topic'} • {form.difficulty} • +{form.marks}/-{form.negative_marks} Marks
-                  {form.question_type !== 'single_choice' && (
-                    <span style={{ marginLeft: '8px', textTransform: 'capitalize' }}>• {form.question_type.replace('_', ' ')}</span>
-                  )}
-                </div>
-
-                {/* Passage preview, pinned above the question exactly like the student sees it */}
-                {form.passage_id && passages.find(p => String(p.id) === String(form.passage_id)) && (
-                  <div style={{ padding: '14px', borderRadius: '10px', background: 'var(--surf, var(--surface-1))', border: '1px dashed var(--border-color)', fontSize: '0.88rem', lineHeight: 1.6 }}>
-                    {passages.find(p => String(p.id) === String(form.passage_id)).body}
+            {/* ---- live preview ---- */}
+            <div>
+              <FormSection title="Live preview">
+                <div
+                  style={{
+                    padding: '20px',
+                    borderRadius: '16px',
+                    background: 'var(--card2)',
+                    border: '1px solid var(--line)',
+                    display: 'flex',
+                    flexDirection: 'column',
+                    gap: '16px',
+                  }}
+                >
+                  <div className="t-overline" style={{ color: 'var(--muted)' }}>
+                    {form.subject || 'SUBJECT'} · {form.topic || 'TOPIC'} · {form.difficulty} · +{form.marks}/−{form.negative_marks}
+                    {form.question_type !== 'single_choice' && ` · ${form.question_type.replace('_', ' ')}`}
                   </div>
-                )}
 
-                {/* Question Text preview */}
-                <div style={{ fontSize: '1.05rem', lineHeight: '1.6', borderBottom: '1px solid var(--surface-2)', paddingBottom: '16px' }}>
-                  {form.question_text ? (
-                    <div dangerouslySetInnerHTML={renderMath(form.question_text)} />
-                  ) : (
-                    <span style={{ color: 'var(--text-secondary)', fontStyle: 'italic' }}>Type question text to preview...</span>
-                  )}
-                </div>
-
-                {/* Answer preview: options for choice-based types, key for numeric */}
-                {form.question_type === 'numeric' ? (
-                  <div style={{ padding: '12px 16px', borderRadius: '10px', background: 'var(--accent-soft)', border: '1px solid var(--accent-color)' }}>
-                    <div style={{ fontSize: '0.8rem', color: 'var(--text-secondary)' }}>Accepted answer</div>
-                    <div style={{ fontSize: '1.2rem', fontWeight: 800 }}>
-                      {form.numeric_answer !== '' ? form.numeric_answer : '—'}
-                      {Number(form.numeric_tolerance) > 0 && (
-                        <span style={{ fontSize: '0.85rem', fontWeight: 500, color: 'var(--text-secondary)' }}> ± {form.numeric_tolerance}</span>
-                      )}
+                  {form.passage_id && passages.find((pg) => String(pg.id) === String(form.passage_id)) && (
+                    <div style={{ padding: '14px', borderRadius: '14px', background: 'var(--card)', border: '1px dashed var(--line2)', font: '400 13px/1.62 var(--font-body)', color: 'var(--tx2)' }}>
+                      {passages.find((pg) => String(pg.id) === String(form.passage_id)).body}
                     </div>
+                  )}
+
+                  <div style={{ font: '400 15px/1.62 var(--font-body)', color: 'var(--tx)', borderBottom: '1px solid var(--line)', paddingBottom: '16px' }}>
+                    {form.question_text ? (
+                      <div dangerouslySetInnerHTML={renderMath(form.question_text)} />
+                    ) : (
+                      <span style={{ color: 'var(--muted)', fontStyle: 'italic' }}>Type the stem to preview it…</span>
+                    )}
                   </div>
-                ) : (
-                  <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
-                    {form.options.map((opt, idx) => (
-                      <div
-                        key={idx}
-                        className={`mcq-option ${opt.is_correct ? 'selected' : ''}`}
-                        style={{ margin: 0, padding: '10px 16px', cursor: 'default' }}
-                      >
-                        <span className="option-badge">{opt.label}</span>
-                        {/* renderMath escapes markup, so an HTML placeholder would
-                            print as literal tags — render the empty state as JSX. */}
-                        {opt.option_text
-                          ? <div dangerouslySetInnerHTML={renderMath(opt.option_text)} />
-                          : <div style={{ color: 'var(--text-secondary)', fontStyle: 'italic' }}>Option {opt.label.toUpperCase()} empty</div>}
+
+                  {form.question_type === 'numeric' ? (
+                    <div style={{ padding: '14px 16px', borderRadius: '14px', background: 'var(--primary-soft)', border: '1px solid var(--primary-border)' }}>
+                      <div className="t-overline" style={{ color: 'var(--primary)' }}>ACCEPTED ANSWER</div>
+                      <div className="t-num" style={{ marginTop: '6px', fontSize: '20px', color: 'var(--tx)' }}>
+                        {form.numeric_answer !== '' ? form.numeric_answer : '—'}
+                        {Number(form.numeric_tolerance) > 0 && (
+                          <span style={{ font: '500 13px var(--font-mono)', color: 'var(--muted)' }}> ± {form.numeric_tolerance}</span>
+                        )}
                       </div>
-                    ))}
-                  </div>
-                )}
+                    </div>
+                  ) : (
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
+                      {form.options.map((opt, idx) => (
+                        <div
+                          key={idx}
+                          className={`mcq-option ${opt.is_correct ? 'selected' : ''}`}
+                          style={{ margin: 0, padding: '12px 15px', cursor: 'default' }}
+                        >
+                          <span className="option-badge">{opt.label}</span>
+                          {/* renderMath escapes markup, so an HTML placeholder would
+                              print as literal tags — render the empty state as JSX. */}
+                          {opt.option_text ? (
+                            <div dangerouslySetInnerHTML={renderMath(opt.option_text)} />
+                          ) : (
+                            <div style={{ color: 'var(--muted)', fontStyle: 'italic' }}>Option {opt.label.toUpperCase()} empty</div>
+                          )}
+                        </div>
+                      ))}
+                    </div>
+                  )}
 
-                {/* Explanation preview */}
-                {form.explanation && (
-                  <div style={{ marginTop: '16px', padding: '16px', background: 'var(--accent-soft)', borderLeft: '3px solid var(--accent-color)', borderRadius: '4px' }}>
-                    <div style={{ fontWeight: 'bold', fontSize: '0.9rem', marginBottom: '6px' }}>Explanation:</div>
-                    <div style={{ fontSize: '0.9rem', lineHeight: '1.5' }} dangerouslySetInnerHTML={renderMath(form.explanation)} />
-                  </div>
-                )}
-              </div>
+                  {form.explanation && (
+                    <div style={{ padding: '14px 16px', background: 'var(--primary-soft)', borderLeft: '3px solid var(--primary)', borderRadius: '0 12px 12px 0' }}>
+                      <div className="t-overline" style={{ color: 'var(--primary)', marginBottom: '7px' }}>EXPLANATION</div>
+                      <div style={{ font: '400 13px/1.6 var(--font-body)', color: 'var(--tx2)' }} dangerouslySetInnerHTML={renderMath(form.explanation)} />
+                    </div>
+                  )}
+                </div>
+              </FormSection>
             </div>
-
           </div>
-        </div>
+        </Modal>
       )}
 
+      {/* ---- destructive confirmations ---- */}
+      {pendingDelete && (
+        <Modal
+          danger
+          title="Deactivate this question?"
+          description="It stops appearing in test selection. Papers that already contain it keep it, and nothing already scored changes."
+          width={480}
+          onClose={() => setPendingDelete(null)}
+          footer={
+            <>
+              <button type="button" className="btn-secondary" onClick={() => setPendingDelete(null)}>Cancel</button>
+              <button
+                type="button"
+                className="btn-danger"
+                onClick={() => { const q = pendingDelete; setPendingDelete(null); setDetailQuestion(null); handleDeleteClick(q.id); }}
+              >
+                Deactivate question
+              </button>
+            </>
+          }
+        >
+          <div style={{ font: '400 13.5px/1.6 var(--font-body)', color: 'var(--tx2)' }}>
+            <span dangerouslySetInnerHTML={renderMath(pendingDelete.question_text.substring(0, 200))} />
+          </div>
+        </Modal>
+      )}
+
+      {pendingPassageDelete && (
+        <Modal
+          danger
+          title={`Delete “${pendingPassageDelete.title || `Passage #${pendingPassageDelete.id}`}”?`}
+          description={
+            (pendingPassageDelete.questions_count ?? 0) > 0
+              ? `${pendingPassageDelete.questions_count} question(s) still link to it — the API will refuse until they are unlinked.`
+              : 'Nothing links to it, so the delete will go through.'
+          }
+          width={480}
+          onClose={() => setPendingPassageDelete(null)}
+          footer={
+            <>
+              <button type="button" className="btn-secondary" onClick={() => setPendingPassageDelete(null)}>Cancel</button>
+              <button
+                type="button"
+                className="btn-danger"
+                onClick={() => { const pg = pendingPassageDelete; setPendingPassageDelete(null); deletePassage(pg.id); }}
+              >
+                Delete passage
+              </button>
+            </>
+          }
+        />
+      )}
     </div>
   );
 }
@@ -1060,10 +1377,10 @@ export default function AdminQuestions({ csvState, triggerCsvImport, csvJobId })
 /** One measured statistic with its plain-language meaning underneath. */
 function Metric({ label, value, hint, danger }) {
   return (
-    <div style={{ padding: '10px 12px', borderRadius: '8px', background: 'var(--surface-1)', border: '1px solid var(--border-color)' }}>
-      <div style={{ fontSize: '0.72rem', color: 'var(--text-secondary)' }}>{label}</div>
-      <div style={{ fontSize: '1.15rem', fontWeight: 800, color: danger ? 'var(--danger)' : 'var(--text-primary)' }}>{value}</div>
-      <div style={{ fontSize: '0.68rem', color: 'var(--text-secondary)' }}>{hint}</div>
+    <div style={{ padding: '12px 14px', borderRadius: '14px', background: 'var(--card2)', border: '1px solid var(--line)' }}>
+      <div className="t-overline" style={{ color: 'var(--muted)', fontSize: '9px' }}>{label}</div>
+      <div className="t-num" style={{ marginTop: '6px', fontSize: '20px', color: danger ? 'var(--danger)' : 'var(--tx)' }}>{value}</div>
+      <div style={{ marginTop: '4px', font: '400 11px var(--font-body)', color: 'var(--muted)' }}>{hint}</div>
     </div>
   );
 }

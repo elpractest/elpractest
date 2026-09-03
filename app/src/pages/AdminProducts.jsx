@@ -2,6 +2,10 @@ import React, { useState, useEffect, useCallback } from 'react';
 import api from '../api';
 import Icon from '../components/Icon';
 import { useExamCategories } from '../lib/examCategories';
+import {
+  PageHead, TableCard, Toolbar, Chip, Table, Row, Cell, CellTitle, CellSub, StatusDot,
+  EmptyState, SkeletonRows, Field, FormGrid, FormSection, Notice, Num, Modal,
+} from '../components/admin/ui';
 
 /**
  * ADMIN — STORE PRODUCTS.
@@ -49,6 +53,9 @@ export default function AdminProducts() {
   const [error, setError] = useState('');
   const [success, setSuccess] = useState('');
   const [form, setForm] = useState(null); // null = list view
+  const [typeFilter, setTypeFilter] = useState('all');
+  const [newMenu, setNewMenu] = useState(false);
+  const [pendingRemove, setPendingRemove] = useState(null);
 
   const load = useCallback(() => {
     setLoading(true);
@@ -67,6 +74,8 @@ export default function AdminProducts() {
   }, []);
 
   useEffect(load, [load]);
+
+  const visibleProducts = typeFilter === 'all' ? products : products.filter((p) => p.type === typeFilter);
 
   const openNew = (type) => {
     setError('');
@@ -168,7 +177,6 @@ export default function AdminProducts() {
   };
 
   const remove = async (product) => {
-    if (!window.confirm(`Remove "${product.title}" from the store? Students who already bought it keep their access.`)) return;
     try {
       await api.delete(`/api/admin/products/${product.id}`);
       setSuccess('Product removed from the store.');
@@ -178,9 +186,14 @@ export default function AdminProducts() {
     }
   };
 
-  if (loading) {
-    return <div style={{ display: 'flex', justifyContent: 'center', padding: '48px', color: 'var(--text-secondary)' }}><span>Loading store catalogue…</span></div>;
-  }
+  const COLUMNS = [
+    { key: 'title', label: 'Product', width: 'minmax(0,1.6fr)' },
+    { key: 'price', label: 'Price', width: '110px' },
+    { key: 'items', label: 'Grants', width: '100px', hideBelow: 'tablet' },
+    { key: 'sold', label: 'Sold', width: '90px', hideBelow: 'tablet' },
+    { key: 'status', label: 'Status', width: '110px' },
+    { key: 'actions', label: '', width: '210px' },
+  ];
 
   /* ── Editor ─────────────────────────────────────────────────────────── */
   if (form) {
@@ -194,71 +207,97 @@ export default function AdminProducts() {
     const canSave = form.title.trim() && form.items.length > 0 && Number(form.price_rupees) >= 0;
 
     return (
-      <div>
-        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '18px', gap: '12px', flexWrap: 'wrap' }}>
-          <div>
-            <h2 style={{ margin: 0, fontSize: '1.3rem', fontWeight: 700 }}>
-              {form.id ? 'Edit product' : `New ${TYPES.find((t) => t.key === form.type)?.label.toLowerCase()}`}
-            </h2>
-            <p style={{ margin: '4px 0 0', fontSize: '0.85rem', color: 'var(--text-secondary)' }}>
-              What the student sees in the store, and what buying it grants them.
-            </p>
-          </div>
-          <button onClick={() => setForm(null)} className="btn-secondary" style={{ padding: '8px 14px', fontSize: '0.85rem' }}>Cancel</button>
-        </div>
+      <div style={{ display: 'flex', flexDirection: 'column', gap: '18px' }}>
+        <PageHead
+          title={form.id ? 'Edit product' : `New ${TYPES.find((t) => t.key === form.type)?.label.toLowerCase()}`}
+          subtitle="What the student sees in the store, and what buying it grants them."
+        >
+          <button type="button" onClick={() => setForm(null)} className="btn-secondary">Cancel</button>
+        </PageHead>
 
-        {error && <div className="alert-error" style={{ marginBottom: '14px' }}>{error}</div>}
+        {error && <Notice tone="danger" icon="alert" onDismiss={() => setError('')}>{error}</Notice>}
 
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(320px, 1fr))', gap: '18px', alignItems: 'start' }}>
-          <div className="glass-panel" style={{ padding: '18px', display: 'flex', flexDirection: 'column', gap: '14px' }}>
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
-              <label style={{ fontSize: '0.8rem', color: 'var(--text-secondary)' }}>Title *</label>
-              <input value={form.title} onChange={(e) => setForm({ ...form, title: e.target.value })} className="form-input" placeholder="e.g. SSC CGL 2026 Complete Bundle" />
+        <div style={{ background: 'var(--card)', border: '1px solid var(--line)', borderRadius: '20px', padding: '20px 22px' }}>
+          <FormSection title="Listing" description="How the product reads on the store card.">
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '14px' }}>
+              <Field label="Title" htmlFor="pr-title">
+                <input
+                  id="pr-title"
+                  value={form.title}
+                  onChange={(e) => setForm({ ...form, title: e.target.value })}
+                  className="form-input"
+                  placeholder="e.g. SSC CGL 2026 Complete Bundle"
+                />
+              </Field>
+              <Field label="Store blurb" htmlFor="pr-blurb">
+                <input
+                  id="pr-blurb"
+                  value={form.short_description}
+                  onChange={(e) => setForm({ ...form, short_description: e.target.value })}
+                  className="form-input"
+                  placeholder="One line shown on the store card"
+                />
+              </Field>
+              <FormGrid min="180px">
+                <Field label="Exam" htmlFor="pr-exam">
+                  <select
+                    id="pr-exam"
+                    value={form.exam_category}
+                    onChange={(e) => setForm({ ...form, exam_category: e.target.value })}
+                    className="form-input"
+                  >
+                    {examCategories.map((c) => <option key={c} value={c}>{c}</option>)}
+                  </select>
+                </Field>
+                <Field label="Access (days)" hint="Blank means lifetime." htmlFor="pr-days">
+                  <input
+                    id="pr-days"
+                    type="number"
+                    min="1"
+                    value={form.access_days}
+                    onChange={(e) => setForm({ ...form, access_days: e.target.value })}
+                    className="form-input"
+                    placeholder="Blank = lifetime"
+                  />
+                </Field>
+              </FormGrid>
             </div>
+          </FormSection>
 
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
-              <label style={{ fontSize: '0.8rem', color: 'var(--text-secondary)' }}>Store blurb</label>
-              <input value={form.short_description} onChange={(e) => setForm({ ...form, short_description: e.target.value })} className="form-input" placeholder="One line shown on the store card" />
-            </div>
+          <FormSection title="Price" description="The struck-through price is optional and shown only when it is higher.">
+            <FormGrid min="180px">
+              <Field label="Price (₹)" htmlFor="pr-price">
+                <input
+                  id="pr-price"
+                  type="number"
+                  min="0"
+                  value={form.price_rupees}
+                  onChange={(e) => setForm({ ...form, price_rupees: e.target.value })}
+                  className="form-input"
+                  placeholder="999"
+                />
+              </Field>
+              <Field label="Struck-through price (₹)" htmlFor="pr-list">
+                <input
+                  id="pr-list"
+                  type="number"
+                  min="0"
+                  value={form.list_price_rupees}
+                  onChange={(e) => setForm({ ...form, list_price_rupees: e.target.value })}
+                  className="form-input"
+                  placeholder="Optional"
+                />
+              </Field>
+            </FormGrid>
+          </FormSection>
 
-            <div style={{ display: 'flex', gap: '12px', flexWrap: 'wrap' }}>
-              <div style={{ display: 'flex', flexDirection: 'column', gap: '6px', flex: 1, minWidth: '140px' }}>
-                <label style={{ fontSize: '0.8rem', color: 'var(--text-secondary)' }}>Exam</label>
-                <select value={form.exam_category} onChange={(e) => setForm({ ...form, exam_category: e.target.value })} className="form-input">
-                  {examCategories.map((c) => <option key={c} value={c}>{c}</option>)}
-                </select>
-              </div>
-              <div style={{ display: 'flex', flexDirection: 'column', gap: '6px', flex: 1, minWidth: '140px' }}>
-                <label style={{ fontSize: '0.8rem', color: 'var(--text-secondary)' }}>Access (days)</label>
-                <input type="number" min="1" value={form.access_days} onChange={(e) => setForm({ ...form, access_days: e.target.value })} className="form-input" placeholder="Blank = lifetime" />
-              </div>
-            </div>
-
-            <div style={{ display: 'flex', gap: '12px', flexWrap: 'wrap' }}>
-              <div style={{ display: 'flex', flexDirection: 'column', gap: '6px', flex: 1, minWidth: '140px' }}>
-                <label style={{ fontSize: '0.8rem', color: 'var(--text-secondary)' }}>Price (₹) *</label>
-                <input type="number" min="0" value={form.price_rupees} onChange={(e) => setForm({ ...form, price_rupees: e.target.value })} className="form-input" placeholder="999" />
-              </div>
-              <div style={{ display: 'flex', flexDirection: 'column', gap: '6px', flex: 1, minWidth: '140px' }}>
-                <label style={{ fontSize: '0.8rem', color: 'var(--text-secondary)' }}>Struck-through price (₹)</label>
-                <input type="number" min="0" value={form.list_price_rupees} onChange={(e) => setForm({ ...form, list_price_rupees: e.target.value })} className="form-input" placeholder="Optional" />
-              </div>
-            </div>
-          </div>
-
-          <div className="glass-panel" style={{ padding: '18px', display: 'flex', flexDirection: 'column', gap: '12px' }}>
-            <div>
-              <label style={{ fontSize: '0.9rem', fontWeight: 600 }}>
-                What buying this grants {form.type === 'bundle' ? '' : '(pick one)'}
-              </label>
-              <p style={{ margin: '4px 0 0', fontSize: '0.78rem', color: 'var(--text-secondary)' }}>
-                A product with nothing in it cannot be published — it would take money and grant nothing.
-              </p>
-            </div>
-
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '6px', maxHeight: '320px', overflowY: 'auto' }}>
+          <FormSection
+            title={`What buying this grants${form.type === 'bundle' ? '' : ' (pick one)'}`}
+            description="A product with nothing in it cannot be published — it would take money and grant nothing."
+          >
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '7px', maxHeight: '320px', overflowY: 'auto' }}>
               {pickable.length === 0 && (
-                <div style={{ fontSize: '0.85rem', color: 'var(--text-secondary)', padding: '10px 0' }}>
+                <div style={{ font: '400 13px var(--font-body)', color: 'var(--muted)', padding: '10px 0' }}>
                   No {form.type === 'test_series' ? 'test series' : 'courses'} exist yet. Create one first.
                 </div>
               )}
@@ -267,29 +306,54 @@ export default function AdminProducts() {
                 return (
                   <button
                     key={`${opt.kind}-${opt.id}`}
+                    type="button"
                     onClick={() => toggleItem(opt.kind, opt.id)}
-                    className={on ? 'btn-primary' : 'btn-secondary'}
-                    style={{ padding: '9px 12px', fontSize: '0.82rem', textAlign: 'left', display: 'flex', alignItems: 'center', gap: '9px' }}
+                    aria-pressed={on}
+                    style={{
+                      display: 'flex',
+                      alignItems: 'center',
+                      gap: '10px',
+                      width: '100%',
+                      minHeight: '44px',
+                      padding: '10px 12px',
+                      borderRadius: '12px',
+                      textAlign: 'left',
+                      cursor: 'pointer',
+                      background: on ? 'var(--primary-soft)' : 'var(--card)',
+                      border: `1px solid ${on ? 'var(--primary-border)' : 'var(--line2)'}`,
+                      color: on ? 'var(--primary)' : 'var(--tx2)',
+                      font: `${on ? 600 : 500} 12.5px var(--font-body)`,
+                    }}
                   >
-                    <Icon name={on ? 'check' : opt.kind === 'course' ? 'book-open' : 'target'} size={14} />
+                    <Icon name={on ? 'check' : opt.kind === 'course' ? 'book-open' : 'target'} size={15} />
                     <span style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{opt.title}</span>
-                    <span style={{ marginLeft: 'auto', opacity: 0.7, fontSize: '0.7rem', textTransform: 'uppercase', letterSpacing: '.05em', flex: 'none' }}>
-                      {opt.kind === 'course' ? 'Course' : 'Series'}
+                    <span className="t-overline" style={{ marginLeft: 'auto', fontSize: '9px', flex: 'none', color: 'var(--muted)' }}>
+                      {opt.kind === 'course' ? 'COURSE' : 'SERIES'}
                     </span>
                   </button>
                 );
               })}
             </div>
-          </div>
-        </div>
+          </FormSection>
 
-        <div style={{ display: 'flex', gap: '10px', marginTop: '18px', flexWrap: 'wrap' }}>
-          <button onClick={() => save(false)} disabled={!canSave || saving} className="btn-secondary" style={{ padding: '10px 18px', fontSize: '0.85rem', opacity: canSave ? 1 : 0.55 }}>
-            {saving ? 'Saving…' : 'Save draft'}
-          </button>
-          <button onClick={() => save(true)} disabled={!canSave || saving} className="btn-primary" style={{ padding: '10px 18px', fontSize: '0.85rem', opacity: canSave ? 1 : 0.55 }}>
-            {saving ? 'Saving…' : 'Save & publish to store'}
-          </button>
+          <div className="adm-formfoot">
+            <button
+              type="button"
+              onClick={() => save(false)}
+              disabled={!canSave || saving}
+              className="btn-secondary"
+            >
+              {saving ? 'Saving…' : 'Save draft'}
+            </button>
+            <button
+              type="button"
+              onClick={() => save(true)}
+              disabled={!canSave || saving}
+              className="btn-primary"
+            >
+              {saving ? 'Saving…' : 'Save & publish'}
+            </button>
+          </div>
         </div>
       </div>
     );
@@ -297,75 +361,175 @@ export default function AdminProducts() {
 
   /* ── List ───────────────────────────────────────────────────────────── */
   return (
-    <div>
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '18px', gap: '12px', flexWrap: 'wrap' }}>
-        <div>
-          <h2 style={{ margin: 0, fontSize: '1.3rem', fontWeight: 700 }}>Store Products</h2>
-          <p style={{ margin: '4px 0 0', fontSize: '0.85rem', color: 'var(--text-secondary)' }}>
-            What students can buy — a course, a test series, or a bundle of both.
-          </p>
-        </div>
-        <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
+    <div style={{ display: 'flex', flexDirection: 'column', gap: '18px' }}>
+      <PageHead
+        title="Store products"
+        subtitle="What students can buy — a course, a test series, or a bundle of both."
+      >
+        <button type="button" onClick={() => setNewMenu(true)} className="btn-primary">
+          <Icon name="plus" size={16} strokeWidth={2.4} />
+          New product
+        </button>
+      </PageHead>
+
+      {error && <Notice tone="danger" icon="alert" onDismiss={() => setError('')}>{error}</Notice>}
+      {success && <Notice tone="success" icon="check-circle" onDismiss={() => setSuccess('')}>{success}</Notice>}
+
+      <TableCard>
+        <Toolbar
+          trailing={
+            !loading && (
+              <span style={{ font: '500 12.5px var(--font-body)', color: 'var(--muted)' }}>
+                <Num>{products.filter((p) => p.is_published).length}</Num> live of <Num>{products.length}</Num>
+              </span>
+            )
+          }
+        >
+          <Chip active={typeFilter === 'all'} onClick={() => setTypeFilter('all')}>All</Chip>
           {TYPES.map((t) => (
-            <button key={t.key} onClick={() => openNew(t.key)} className="btn-secondary" style={{ padding: '8px 13px', fontSize: '0.8rem' }} title={t.hint}>
-              + {t.label}
-            </button>
+            <Chip key={t.key} active={typeFilter === t.key} onClick={() => setTypeFilter(t.key)}>
+              {t.label}
+            </Chip>
           ))}
-        </div>
-      </div>
+        </Toolbar>
 
-      {error && <div className="alert-error" style={{ marginBottom: '14px' }}>{error}</div>}
-      {success && <div className="alert-success" style={{ marginBottom: '14px' }}>{success}</div>}
-
-      {products.length === 0 ? (
-        <div className="glass-panel" style={{ padding: '32px 24px', textAlign: 'center' }}>
-          <div style={{ fontSize: '1rem', fontWeight: 700, marginBottom: '6px' }}>Nothing is on sale yet</div>
-          <p style={{ margin: 0, fontSize: '0.85rem', color: 'var(--text-secondary)' }}>
-            Create a product above. Until one is published, the student store shows its empty state and points at activation codes.
-          </p>
-        </div>
-      ) : (
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(320px, 1fr))', gap: '14px' }}>
-          {products.map((p) => (
-            <div key={p.id} className="glass-panel" style={{ padding: '16px', display: 'flex', flexDirection: 'column', gap: '12px' }}>
-              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: '10px' }}>
-                <div style={{ minWidth: 0 }}>
-                  <div style={{ fontSize: '0.7rem', textTransform: 'uppercase', letterSpacing: '.06em', color: 'var(--text-secondary)', fontWeight: 700 }}>
+        {loading ? (
+          <SkeletonRows />
+        ) : visibleProducts.length === 0 ? (
+          <EmptyState
+            icon="shopping-bag"
+            message={
+              products.length === 0
+                ? 'Nothing is on sale yet. Until a product is published, the student store shows its empty state and points at activation codes.'
+                : 'No product of that type yet.'
+            }
+            action={
+              <button type="button" onClick={() => setNewMenu(true)} className="btn-primary">
+                <Icon name="plus" size={16} strokeWidth={2.4} />
+                New product
+              </button>
+            }
+          />
+        ) : (
+          <Table columns={COLUMNS}>
+            {visibleProducts.map((p) => (
+              <Row key={p.id}>
+                <Cell label="Product">
+                  <span className="t-overline" style={{ display: 'block', color: 'var(--muted)', fontSize: '9px', marginBottom: '3px' }}>
                     {TYPES.find((t) => t.key === p.type)?.label || p.type}
-                  </div>
-                  <h3 style={{ margin: '3px 0 0', fontSize: '0.98rem', fontWeight: 700 }}>{p.title}</h3>
-                </div>
+                  </span>
+                  <CellTitle>{p.title}</CellTitle>
+                  <CellSub>{p.access_days ? `${p.access_days} days access` : 'Lifetime access'} · {p.exam_category}</CellSub>
+                </Cell>
+                <Cell label="Price">
+                  <Num style={{ fontSize: '13.5px', fontWeight: 700, color: 'var(--tx)' }}>{rupees(p.price_paise)}</Num>
+                </Cell>
+                <Cell label="Grants" hideBelow="tablet">
+                  <Num style={{ fontSize: '13px' }}>{p.items_count}</Num>
+                </Cell>
+                <Cell label="Sold" hideBelow="tablet">
+                  <Num style={{ fontSize: '13px' }}>{p.entitlements_count}</Num>
+                </Cell>
+                <Cell label="Status">
+                  <StatusDot tone={p.is_published ? 'success' : 'reward'}>{p.is_published ? 'Live' : 'Draft'}</StatusDot>
+                </Cell>
+                <Cell label="Actions" align="right">
+                  <span style={{ display: 'inline-flex', gap: '7px', flexWrap: 'wrap', justifyContent: 'flex-end' }}>
+                    <button type="button" onClick={() => openEdit(p)} className="btn-secondary" style={{ padding: '7px 12px', minHeight: '36px', fontSize: '11.5px' }}>
+                      Edit
+                    </button>
+                    <button type="button" onClick={() => togglePublish(p)} className="btn-secondary" style={{ padding: '7px 12px', minHeight: '36px', fontSize: '11.5px' }}>
+                      {p.is_published ? 'Unpublish' : 'Publish'}
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setPendingRemove(p)}
+                      className="btn-secondary"
+                      style={{ padding: '7px 12px', minHeight: '36px', fontSize: '11.5px', color: 'var(--danger)', borderColor: 'var(--danger-border)' }}
+                    >
+                      Remove
+                    </button>
+                  </span>
+                </Cell>
+              </Row>
+            ))}
+          </Table>
+        )}
+      </TableCard>
+
+      {/* pick a product type */}
+      {newMenu && (
+        <Modal
+          title="New product"
+          description="Pick what the product wraps. A bundle can hold any mix of the two."
+          onClose={() => setNewMenu(false)}
+          width={480}
+        >
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
+            {TYPES.map((t) => (
+              <button
+                key={t.key}
+                type="button"
+                onClick={() => { setNewMenu(false); openNew(t.key); }}
+                style={{
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '12px',
+                  width: '100%',
+                  minHeight: '56px',
+                  padding: '12px 14px',
+                  borderRadius: '14px',
+                  background: 'var(--card2)',
+                  border: '1px solid var(--line)',
+                  cursor: 'pointer',
+                  textAlign: 'left',
+                }}
+              >
                 <span
                   style={{
-                    padding: '3px 9px', borderRadius: '999px', fontSize: '0.68rem', fontWeight: 700, flex: 'none',
-                    background: p.is_published ? 'var(--success-bg)' : 'var(--warning-bg)',
-                    color: p.is_published ? 'var(--success)' : 'var(--warning)',
+                    display: 'grid',
+                    placeItems: 'center',
+                    width: '34px',
+                    height: '34px',
+                    flex: 'none',
+                    borderRadius: '11px',
+                    background: 'var(--primary-soft)',
+                    color: 'var(--primary)',
                   }}
                 >
-                  {p.is_published ? 'Live' : 'Draft'}
+                  <Icon name={t.key === 'course' ? 'book-open' : t.key === 'test_series' ? 'target' : 'shopping-bag'} size={17} />
                 </span>
-              </div>
+                <span style={{ minWidth: 0 }}>
+                  <span style={{ display: 'block', font: '600 13px var(--font-body)', color: 'var(--tx)' }}>{t.label}</span>
+                  <span style={{ display: 'block', marginTop: '2px', font: '400 12px var(--font-body)', color: 'var(--muted)' }}>{t.hint}</span>
+                </span>
+              </button>
+            ))}
+          </div>
+        </Modal>
+      )}
 
-              <div style={{ display: 'flex', gap: '16px', fontSize: '0.8rem', color: 'var(--text-secondary)' }}>
-                <span><strong style={{ color: 'var(--text)' }}>{rupees(p.price_paise)}</strong></span>
-                <span>{p.items_count} item{p.items_count === 1 ? '' : 's'}</span>
-                <span>{p.entitlements_count} sold</span>
-              </div>
-
-              <div style={{ fontSize: '0.75rem', color: 'var(--text-secondary)' }}>
-                {p.access_days ? `${p.access_days} days access` : 'Lifetime access'} · {p.exam_category}
-              </div>
-
-              <div style={{ display: 'flex', gap: '8px', borderTop: '1px solid var(--line)', paddingTop: '12px', flexWrap: 'wrap' }}>
-                <button onClick={() => openEdit(p)} className="btn-secondary" style={{ padding: '6px 12px', fontSize: '0.76rem' }}>Edit</button>
-                <button onClick={() => togglePublish(p)} className="btn-secondary" style={{ padding: '6px 12px', fontSize: '0.76rem' }}>
-                  {p.is_published ? 'Unpublish' : 'Publish'}
-                </button>
-                <button onClick={() => remove(p)} className="btn-secondary" style={{ padding: '6px 12px', fontSize: '0.76rem', color: 'var(--danger)' }}>Remove</button>
-              </div>
-            </div>
-          ))}
-        </div>
+      {/* destructive confirmation names the object */}
+      {pendingRemove && (
+        <Modal
+          danger
+          title={`Remove “${pendingRemove.title}”?`}
+          description="Students who already bought it keep their access. The product simply leaves the store."
+          onClose={() => setPendingRemove(null)}
+          width={480}
+          footer={
+            <>
+              <button type="button" className="btn-secondary" onClick={() => setPendingRemove(null)}>Cancel</button>
+              <button
+                type="button"
+                className="btn-danger"
+                onClick={() => { const target = pendingRemove; setPendingRemove(null); remove(target); }}
+              >
+                Remove product
+              </button>
+            </>
+          }
+        />
       )}
     </div>
   );

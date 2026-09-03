@@ -72,7 +72,7 @@ export default function Library() {
 
   return (
     <div style={{ padding: '16px 18px 24px', animation: 'fade-in .35s ease both' }}>
-      <h1 style={{ margin: '0 0 4px', font: '800 24px var(--font-display)', color: 'var(--tx)', letterSpacing: '-.02em' }}>My library</h1>
+      <h1 className="t-title" style={{ margin: '0 0 4px', color: 'var(--tx)' }}>My library</h1>
       <p style={{ margin: '0 0 18px', font: '500 13px var(--font-body)', color: 'var(--muted)' }}>
         Everything you have access to — bought, bundled or activated.
       </p>
