@@ -4,17 +4,14 @@ import { useTranslation } from 'react-i18next';
 import api from '../api';
 import Icon from '../components/Icon';
 import { useTheme } from '../lib/theme';
-import { demoTrending, demoRecent } from '../lib/demoData';
 
 /**
  * SEARCH — functional. Pulls the student's assigned test-series and enrolled
  * courses from the existing endpoints and filters them client-side across
- * title / exam category / description. Results link to the real routes. When
- * the query is empty it shows popular-exam chips that seed the query.
+ * title / exam category / description. Results link to the real routes.
  *
  * No new backend: it reuses /api/student/test-series and /api/student/courses
  * (the same shapes StudentTestSeries.jsx and Dashboard.jsx already consume).
- * When the query is empty it shows trending chips + recent-search demo rows.
  */
 export default function SearchPage() {
   const navigate = useNavigate();
@@ -98,24 +95,14 @@ export default function SearchPage() {
 
       <div style={{ flex: 1, padding: '6px 18px 30px' }}>
         {!q ? (
-          <>
-            <div className="t-overline" style={{ color: 'var(--muted)', margin: '8px 0 12px' }}>{t('search.popular')}</div>
-            <div style={{ display: 'flex', flexWrap: 'wrap', gap: '9px' }}>
-              {demoTrending.map((p) => (
-                <button key={p} className="chip-filter" onClick={() => setQuery(p)}>{p}</button>
-              ))}
-            </div>
-            <div className="t-overline" style={{ color: 'var(--muted)', margin: '22px 0 10px' }}>RECENT</div>
-            <div style={{ display: 'flex', flexDirection: 'column' }}>
-              {demoRecent.map((r) => (
-                <button key={r} onClick={() => setQuery(r)} style={{ display: 'flex', alignItems: 'center', gap: '12px', minHeight: '48px', padding: '12px 4px', background: 'none', border: 'none', borderBottom: '1px solid var(--line)', cursor: 'pointer', textAlign: 'left' }}>
-                  <Icon name="clock" size={17} style={{ color: 'var(--muted)' }} />
-                  <span style={{ flex: 1, font: '600 13.5px var(--font-body)', color: 'var(--tx2)' }}>{r}</span>
-                  <Icon name="arrow-right" size={15} style={{ color: 'var(--muted)' }} />
-                </button>
-              ))}
-            </div>
-          </>
+          <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '12px', padding: '46px 24px', textAlign: 'center' }}>
+            <span style={{ display: 'grid', placeItems: 'center', width: '48px', height: '48px', borderRadius: '999px', background: 'var(--surf)', color: 'var(--muted)' }}>
+              <Icon name="search" size={24} />
+            </span>
+            <p style={{ margin: 0, maxWidth: '40ch', font: '400 13.5px/1.6 var(--font-body)', color: 'var(--muted)' }}>
+              {t('search.placeholder')}
+            </p>
+          </div>
         ) : loading ? (
           <div style={{ display: 'flex', flexDirection: 'column', gap: '10px', paddingTop: '14px' }}>
             {[0, 1, 2].map((i) => (

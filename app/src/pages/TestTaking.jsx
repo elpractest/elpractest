@@ -4,7 +4,6 @@ import { useTranslation } from 'react-i18next';
 import katex from 'katex';
 import api from '../api';
 import Icon from '../components/Icon';
-import { buildDemoQuestions } from '../lib/demoData';
 
 // Math Renderer helper to parse inline ($...$) and block ($$...$$) LaTeX equations
 const MathRenderer = ({ text }) => {
@@ -133,11 +132,6 @@ export default function TestTaking() {
   const navigate = useNavigate();
   const { t, i18n } = useTranslation();
 
-  // Demo mode: reachable via "Free test" / "Attempt free". Renders the CBT
-  // reference against local demo questions with NO backend calls. The real
-  // server-authoritative engine below is untouched for any real session id.
-  const isDemo = sessionId === 'demo';
-
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
 
@@ -176,32 +170,8 @@ export default function TestTaking() {
   // Prevent duplicate double-clicks within 300ms
   const lastSaveTime = useRef(0);
 
-  // Build a synthetic session from demo questions (no backend).
-  const buildDemoSession = () => {
-    const dq = buildDemoQuestions(20);
-    const demoSection = {
-      id: 'demo-sec', title: 'Full Mock', duration_seconds: 0,
-      questions: dq.map((q, i) => ({
-        id: `dq-${i}`, marks: 2, negative_marks: 0.5, question_text: q.text,
-        section: q.sec,
-        options: q.opts.map((t, j) => ({ id: `dq-${i}-o${j}`, label: 'ABCD'[j], option_text: t })),
-      })),
-    };
-    setSession({ test_title: 'Free Practest Scholarship Test', current_section_index: 0, time_remaining_seconds: 1800, section_time_remaining_seconds: null });
-    setSections([demoSection]);
-    setCurrentSectionIndex(0);
-    setTimeRemaining(1800);
-    setSectionTimeRemaining(null);
-    setAnswers({});
-    setMarkedForReview({});
-    setCurrentQuestionIndex(0);
-    setPalette({ 'dq-0': 'not_answered' });
-    setLoading(false);
-  };
-
   // Fetch session details and resume state
   const fetchSessionState = async (showProgressLoader = false) => {
-    if (isDemo) { buildDemoSession(); return; }
     if (showProgressLoader) setAutoAdvancing(true);
     try {
       const res = await api.get(`/api/student/tests/sessions/${sessionId}`);
@@ -252,7 +222,6 @@ export default function TestTaking() {
 
   // Fetch latest question palette status
   const refreshPalette = async () => {
-    if (isDemo) return;
     try {
       const res = await api.get(`/api/student/tests/sessions/${sessionId}/palette`);
       const palList = res.data.palette || [];
@@ -318,7 +287,6 @@ export default function TestTaking() {
   };
 
   const handleAutoSubmit = async () => {
-    if (isDemo) { navigate('/tests/demo/result'); return; }
     flushIfNumeric();
     setIsSubmitting(true);
     try {
@@ -330,7 +298,6 @@ export default function TestTaking() {
   };
 
   const handleManualSubmit = async () => {
-    if (isDemo) { navigate('/tests/demo/result'); return; }
     flushIfNumeric();
     setIsSubmitting(true);
     try {
@@ -351,7 +318,6 @@ export default function TestTaking() {
     if (!palette[questionId] || palette[questionId] === 'not_visited') {
       // Update locally immediately to keep UX snappy
       setPalette((prev) => ({ ...prev, [questionId]: 'not_answered' }));
-      if (isDemo) return;
       try {
         await api.put(`/api/student/tests/sessions/${sessionId}/answers/${questionId}/visit`);
       } catch (e) {
@@ -418,7 +384,6 @@ export default function TestTaking() {
     setAnswers((prev) => ({ ...prev, [questionId]: optionId }));
     markPaletteLocally(questionId, true);
 
-    if (isDemo) return;
     try {
       await api.put(`/api/student/tests/sessions/${sessionId}/answers/${questionId}`, {
         selected_option_id: optionId,
@@ -444,7 +409,6 @@ export default function TestTaking() {
     setAnswers((prev) => ({ ...prev, [questionId]: next }));
     markPaletteLocally(questionId, next.length > 0);
 
-    if (isDemo) return;
     try {
       await api.put(`/api/student/tests/sessions/${sessionId}/answers/${questionId}`, {
         selected_option_ids: next,
@@ -467,7 +431,6 @@ export default function TestTaking() {
     const hasValue = value !== '' && value !== null && value !== undefined;
     markPaletteLocally(questionId, hasValue);
 
-    if (isDemo) return;
     try {
       await api.put(`/api/student/tests/sessions/${sessionId}/answers/${questionId}`, {
         numeric_response: hasValue ? value : null,
@@ -487,7 +450,6 @@ export default function TestTaking() {
     setAnswers((prev) => ({ ...prev, [questionId]: field === 'selected_option_ids' ? [] : null }));
     markPaletteLocally(questionId, false);
 
-    if (isDemo) return;
     try {
       await api.put(`/api/student/tests/sessions/${sessionId}/answers/${questionId}`, {
         [field]: emptyValue,
@@ -513,7 +475,6 @@ export default function TestTaking() {
       }
     });
 
-    if (isDemo) return;
     try {
       await api.put(`/api/student/tests/sessions/${sessionId}/answers/${questionId}/review`);
     } catch (err) {

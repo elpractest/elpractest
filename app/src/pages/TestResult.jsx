@@ -3,7 +3,6 @@ import { useParams, useNavigate, Link } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import katex from 'katex';
 import api from '../api';
-import { demoResultSummary, demoResultBars } from '../lib/demoData';
 
 // Math Renderer helper
 const MathRenderer = ({ text }) => {
@@ -93,9 +92,8 @@ export default function TestResult() {
   const { session: sessionId } = useParams();
   const navigate = useNavigate();
   const { t } = useTranslation();
-  const isDemo = sessionId === 'demo';
 
-  const [loading, setLoading] = useState(!isDemo);
+  const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
   const [analytic, setAnalytic] = useState(null);
   const [rank, setRank] = useState(1);
@@ -107,7 +105,6 @@ export default function TestResult() {
   const [zoomedImage, setZoomedImage] = useState(null);
 
   useEffect(() => {
-    if (isDemo) return;
     api.get(`/api/student/tests/sessions/${sessionId}/result`)
       .then((res) => {
         setAnalytic(res.data.analytic || {});
@@ -132,21 +129,16 @@ export default function TestResult() {
     );
   }
 
-  // ---- normalize real vs demo into one view model ----
-  const score = isDemo ? demoResultSummary.score : parseFloat(analytic.total_score || 0);
-  const maxScore = isDemo ? demoResultSummary.total : parseFloat(analytic.max_score || 0);
+  // ---- view model, derived from the real analytics ----
+  const score = parseFloat(analytic.total_score || 0);
+  const maxScore = parseFloat(analytic.max_score || 0);
   const pct = maxScore > 0 ? Math.round((score / maxScore) * 100) : 0;
-  const vm = isDemo
-    ? { rank: demoResultSummary.rank, percentile: demoResultSummary.percentile, accuracy: demoResultSummary.accuracy, correct: demoResultSummary.correct, wrong: demoResultSummary.wrong, skipped: demoResultSummary.skipped, time: demoResultSummary.timeSpent, title: demoResultSummary.title }
-    : {
-        rank: `${rank}`, percentile: parseFloat(percentile).toFixed(1), accuracy: `${parseFloat(analytic.accuracy_percentage || 0).toFixed(0)}%`,
-        correct: analytic.correct_count || 0, wrong: analytic.incorrect_count || 0, skipped: analytic.unanswered_count || 0,
-        time: analytic.time_spent_formatted || '—', title: analytic.test_title || t('result.scorecard'),
-      };
-  // Subject bars from the REAL analytics. This used to render demoResultBars on
-  // every scorecard, including real sessions, so a student saw a breakdown of a
-  // paper they never sat. Demo mode still gets the sample.
-  const realBars = (() => {
+  const vm = {
+    rank: `${rank}`, percentile: parseFloat(percentile).toFixed(1), accuracy: `${parseFloat(analytic.accuracy_percentage || 0).toFixed(0)}%`,
+    correct: analytic.correct_count || 0, wrong: analytic.incorrect_count || 0, skipped: analytic.unanswered_count || 0,
+    time: analytic.time_spent_formatted || '—', title: analytic.test_title || t('result.scorecard'),
+  };
+  const bars = (() => {
     const breakdown = analytic?.subject_breakdown;
     if (!breakdown || typeof breakdown !== 'object') return [];
     const hues = ['blue', 'green', 'gold', 'red', 'violet'];
@@ -160,14 +152,13 @@ export default function TestResult() {
       };
     });
   })();
-  const bars = isDemo ? demoResultBars : realBars;
 
   // Exam-pattern results. Null qualified means the paper set no bar at all,
   // which must not render as a failure.
-  const sectionBreakdown = isDemo ? [] : (analytic?.section_breakdown || []);
-  const isQualified = isDemo ? null : (analytic?.is_qualified ?? null);
-  const meritScore = isDemo ? null : (analytic?.merit_score != null ? parseFloat(analytic.merit_score) : null);
-  const normalizedScore = isDemo ? null : (analytic?.normalized_score != null ? parseFloat(analytic.normalized_score) : null);
+  const sectionBreakdown = analytic?.section_breakdown || [];
+  const isQualified = analytic?.is_qualified ?? null;
+  const meritScore = analytic?.merit_score != null ? parseFloat(analytic.merit_score) : null;
+  const normalizedScore = analytic?.normalized_score != null ? parseFloat(analytic.normalized_score) : null;
   const hasQualifyingSection = sectionBreakdown.some((sec) => sec.is_qualifying);
   const fmt = (n) => (Math.round(Number(n) * 100) / 100);
   // Numeric answers come back from a decimal:4 cast ("1920.0000"); show them the

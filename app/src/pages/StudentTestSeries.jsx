@@ -2,7 +2,6 @@ import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import api from '../api';
 import Icon from '../components/Icon';
-import { withDemo, demoCourses, demoFilterChips } from '../lib/demoData';
 
 /* Map a real assigned test-series into the reference card shape. */
 function toCard(s) {
@@ -25,7 +24,6 @@ export default function StudentTestSeries() {
   const navigate = useNavigate();
   const [seriesList, setSeriesList] = useState([]);
   const [loading, setLoading] = useState(true);
-  const [activeChip, setActiveChip] = useState('All exams');
 
   useEffect(() => {
     let alive = true;
@@ -36,12 +34,9 @@ export default function StudentTestSeries() {
     return () => { alive = false; };
   }, []);
 
-  const cards = withDemo(seriesList.map(toCard), demoCourses);
-  const filtered = activeChip === 'All exams'
-    ? cards
-    : cards.filter((c) => (c.exam || '').toLowerCase().includes(activeChip.toLowerCase()));
+  const filtered = seriesList.map(toCard);
 
-  const open = (c) => (c.real && c.id ? navigate(`/student/test-series/${c.id}`) : navigate(`/student/test-series/${c.id || 'demo'}`));
+  const open = (c) => navigate(`/student/test-series/${c.id}`);
 
   return (
     <div style={{ padding: '16px 18px 24px', animation: 'fade-in .35s ease both' }}>
@@ -57,16 +52,18 @@ export default function StudentTestSeries() {
       <h1 className="t-title" style={{ margin: '0 0 4px', color: 'var(--tx)' }}>Test series</h1>
       <p style={{ margin: '0 0 16px', font: '400 13.5px var(--font-body)', color: 'var(--muted)' }}>Pick your exam, then a pack</p>
 
-      {/* Filter chips */}
-      <div style={{ display: 'flex', gap: '9px', overflowX: 'auto', paddingBottom: '14px' }}>
-        {demoFilterChips.map((k) => (
-          <button key={k} className={`chip-filter${activeChip === k ? ' active' : ''}`} onClick={() => setActiveChip(k)}>{k}</button>
-        ))}
-      </div>
-
       {/* Course list */}
       {loading ? (
         <div className="skeleton" style={{ height: '110px', borderRadius: '20px' }} />
+      ) : filtered.length === 0 ? (
+        <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '12px', padding: '46px 24px', textAlign: 'center' }}>
+          <span style={{ display: 'grid', placeItems: 'center', width: '48px', height: '48px', borderRadius: '999px', background: 'var(--surf)', color: 'var(--muted)' }}>
+            <Icon name="target" size={24} />
+          </span>
+          <p style={{ margin: 0, maxWidth: '40ch', font: '400 13.5px/1.6 var(--font-body)', color: 'var(--muted)' }}>
+            No test series assigned yet.
+          </p>
+        </div>
       ) : (
         <div className="sts-list">
           {filtered.map((c, i) => (
@@ -92,23 +89,15 @@ export default function StudentTestSeries() {
                   </div>
                   <div style={{ font: '600 14px/1.25 var(--font-body)', color: 'var(--tx)', margin: '5px 0 0' }}>{c.title}</div>
                   <div style={{ font: '400 11.5px var(--font-body)', color: 'var(--muted)', marginTop: '5px' }}>{c.meta}</div>
-                  {c.progress ? (
-                    <div style={{ marginTop: '9px' }}>
-                      <div style={{ display: 'flex', justifyContent: 'space-between', font: '600 10.5px var(--font-body)', color: 'var(--muted)', marginBottom: '5px' }}>
-                        <span><span className="t-num" style={{ fontSize: '10.5px' }}>{c.progress.done} / {c.progress.total}</span> tests</span>
-                        <span className="t-num" style={{ fontSize: '10.5px' }}>{c.progress.pct}%</span>
-                      </div>
-                      <div style={{ height: '6px', background: 'var(--surf)', borderRadius: '3px', overflow: 'hidden' }}>
-                        <div style={{ height: '100%', width: `${c.progress.pct}%`, background: 'var(--primary)' }} />
-                      </div>
+                  <div style={{ marginTop: '9px' }}>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', font: '600 10.5px var(--font-body)', color: 'var(--muted)', marginBottom: '5px' }}>
+                      <span><span className="t-num" style={{ fontSize: '10.5px' }}>{c.progress.done} / {c.progress.total}</span> tests</span>
+                      <span className="t-num" style={{ fontSize: '10.5px' }}>{c.progress.pct}%</span>
                     </div>
-                  ) : (
-                    <div style={{ display: 'flex', alignItems: 'center', gap: '7px', marginTop: '9px' }}>
-                      <span className="t-num" style={{ fontSize: '15px', color: 'var(--tx)' }}>{c.price}</span>
-                      <span className="t-num" style={{ fontSize: '11.5px', fontWeight: 500, color: 'var(--muted)', textDecoration: 'line-through' }}>{c.mrp}</span>
-                      <span style={{ font: '600 11px var(--font-body)', color: 'var(--success)', marginLeft: 'auto' }}>{c.off}</span>
+                    <div style={{ height: '6px', background: 'var(--surf)', borderRadius: '3px', overflow: 'hidden' }}>
+                      <div style={{ height: '100%', width: `${c.progress.pct}%`, background: 'var(--primary)' }} />
                     </div>
-                  )}
+                  </div>
                 </div>
               </div>
             </div>

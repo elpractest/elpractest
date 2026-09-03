@@ -4,28 +4,6 @@ import CourseCarousel from '../components/CourseCarousel.astro';
 
 const spaUrl = import.meta.env.PUBLIC_SPA_URL || 'http://localhost:3000';
 
-const popularExams = [
-  { name: 'SSC CGL', type: 'SSC', count: '45 Mocks', logo: '/images/logos/ssc.png', badge: 'Popular', color: '#e63946' },
-  { name: 'SBI PO', type: 'Banking', count: '38 Mocks', logo: '/images/logos/sbi.png', badge: 'Trending', color: '#0072bc' },
-  { name: 'IBPS PO', type: 'Banking', count: '40 Mocks', logo: '/images/logos/ibps.png', badge: 'Active', color: '#1565c0' },
-  { name: 'RRB NTPC', type: 'Railways', count: '52 Mocks', logo: '/images/logos/rrb.png', badge: 'Popular', color: '#d32f2f' },
-  { name: 'UPSC Prelims', type: 'Civil Services', count: '28 Mocks', icon: 'upsc', badge: 'Flagship', color: '#b71c1c' },
-  { name: 'LIC AAO', type: 'Insurance', count: '24 Mocks', icon: 'lic', badge: 'New', color: '#fbc02d' },
-  { name: 'RBI Assistant', type: 'Banking', count: '30 Mocks', icon: 'rbi', badge: 'Active', color: '#1b5e20' },
-  { name: 'SSC CHSL', type: 'SSC', count: '35 Mocks', logo: '/images/logos/ssc.png', badge: 'Popular', color: '#e63946' },
-  { name: 'IBPS RRB Clerk', type: 'Banking', count: '36 Mocks', logo: '/images/logos/ibps.png', badge: 'Active', color: '#1565c0' },
-  { name: 'State PCS', type: 'State Govt', count: '65 Mocks', icon: 'state', badge: 'State Special', color: '#8d6e63' },
-];
-
-const examCategoriesList = [
-  { id: 'ssc', title: 'SSC Exams', desc: 'SSC CGL, CHSL, CPO, MTS, Selection Post', count: '120+ Mocks', logo: '/images/logos/ssc.png', icon: 'ssc', tag: '31 Exams' },
-  { id: 'banking', title: 'Banking & Insurance Exams', desc: 'SBI PO, IBPS PO/Clerk, LIC AAO, RBI Assistant', count: '185+ Mocks', logo: '/images/logos/sbi.png', icon: 'sbi', tag: '80 Exams' },
-  { id: 'railways', title: 'Railways Exams', desc: 'RRB NTPC, Group D, ALP, Technician, JE', count: '95+ Mocks', logo: '/images/logos/rrb.png', icon: 'rrb', tag: '34 Exams' },
-  { id: 'civil', title: 'Civil Services & UPSC Exams', desc: 'UPSC IAS Prelims, CSAT, State PCS (UP, BPSC, MP)', count: '75+ Mocks', icon: 'upsc', tag: '28 Exams' },
-  { id: 'defense', title: 'Defence & Police Exams', desc: 'CDS, NDA, AFCAT, State Police SI & Constable', count: '60+ Mocks', icon: 'defense', tag: '75 Exams' },
-  { id: 'teaching', title: 'Teaching Exams', desc: 'CTET, STET, UPTET, KVS, NVS, NET GS', count: '50+ Mocks', icon: 'teaching', tag: '170 Exams' },
-];
-
 const faqs = [
   {
     q: 'Is e-Learning Practest free to start?',
@@ -93,117 +71,11 @@ const faqSchema = JSON.stringify({
           <div class="vector-outline-box"></div>
           <div class="red-circle-accent"></div>
           <img src="/images/hero-student.png" alt="Indian Student preparing for CBT exam" class="hero-student-img" />
-          
-          <!-- Floating compact CBT simulator badge -->
-          <div class="glass-panel hero-sim-overlay">
-            <div class="mini-badge-head">
-              <span class="mini-timer"><svg class="lucide" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg> 00:47:12</span>
-            </div>
-            <p class="mini-test-title">SSC CGL Tier I Mock</p>
-            <div class="mini-status-chip">CBT Live Pattern</div>
-          </div>
-
-          <!-- Floating compact Percentile badge -->
-          <div class="glass-panel hero-rank-overlay">
-            <span class="rank-label">TOP PERCENTILE</span>
-            <span class="rank-value">99.4%</span>
-            <span class="rank-sub">Rank 12 in Batch</span>
-          </div>
         </div>
       </div>
     </div>
   </section>
 
-
-  <!-- ============ EXAM TRACKS & CATEGORIES (MOBILE-FIRST DESIGNS) ============ -->
-  <section class="tracks reveal">
-    <div class="wrap">
-      <span class="section-label"><span class="idx">01</span> Exam Target Boards</span>
-      <h2 class="sec-title">Upcoming &amp; popular exam series</h2>
-      
-      <!-- Popular Exams Touch Slider Grid -->
-      <div class="popular-exams-scroll">
-        {popularExams.map((e) => (
-          <a href="/courses" class="exam-micro-card glass-panel glass-panel-hover">
-            <div class="exam-icon-badge" style={`background: ${e.color}15; border-color: ${e.color}40;`}>
-              {e.logo ? (
-                <img src={e.logo} alt={e.name} class="exam-real-logo" />
-              ) : (
-                <div class="logo-fallback-badge">
-                  {e.icon === 'upsc' && (
-                    <svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke={e.color} stroke-width="2"><path d="M12 2l3 6 7 1-5 5 1 7-6-3-6 3 1-7-5-5 7-1z"/></svg>
-                  )}
-                  {e.icon === 'lic' && (
-                    <svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke={e.color} stroke-width="2"><path d="M12 21a9 9 0 1 0 0-18 9 9 0 0 0 0 18zM12 8v4l3 3"/></svg>
-                  )}
-                  {e.icon === 'rbi' && (
-                    <svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke={e.color} stroke-width="2"><circle cx="12" cy="12" r="9"/><path d="M12 7v10M9 10h6"/></svg>
-                  )}
-                  {e.icon === 'state' && (
-                    <svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke={e.color} stroke-width="2"><path d="M3 21h18M5 21V7l7-4 7 4v14M9 10h2M13 10h2M9 14h2M13 14h2"/></svg>
-                  )}
-                </div>
-              )}
-            </div>
-            <div class="exam-micro-info">
-              <span class="exam-micro-name">{e.name}</span>
-              <span class="exam-micro-count">{e.count}</span>
-            </div>
-            <span class="exam-tag-pill" style={`color: ${e.color}; background: ${e.color}15;`}>{e.badge}</span>
-          </a>
-        ))}
-      </div>
-
-      <!-- Explore All Exam Categories List -->
-      <div class="category-explore-header">
-        <h3>690+ Exam Mocks &amp; Video Series</h3>
-        <p>Select your target board for exam-pattern timed CBT mocks, analytics and video lessons.</p>
-      </div>
-
-      <div class="category-list-rows">
-        {examCategoriesList.map((cat) => (
-          <a href="/courses" class="category-row-card glass-panel glass-panel-hover">
-            <div class="cat-row-icon">
-              {cat.logo ? (
-                <div class="cat-icon-box real-logo-box">
-                  <img src={cat.logo} alt={cat.title} class="cat-real-logo" />
-                </div>
-              ) : (
-                <div class="cat-icon-box fallback-bg">
-                  {cat.icon === 'upsc' && (
-                    <div class="cat-icon-box upsc-bg">
-                      <svg viewBox="0 0 24 24" width="26" height="26" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2l3 6 7 1-5 5 1 7-6-3-6 3 1-7-5-5 7-1z"/></svg>
-                    </div>
-                  )}
-                  {cat.icon === 'defense' && (
-                    <div class="cat-icon-box defense-bg">
-                      <svg viewBox="0 0 24 24" width="26" height="26" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
-                    </div>
-                  )}
-                  {cat.icon === 'teaching' && (
-                    <div class="cat-icon-box teaching-bg">
-                      <svg viewBox="0 0 24 24" width="26" height="26" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 10v6M2 10l10-5 10 5-10 5z"/><path d="M6 12v5c3 3 9 3 12 0v-5"/></svg>
-                    </div>
-                  )}
-                </div>
-              )}
-            </div>
-            <div class="cat-row-info">
-              <div class="cat-row-title-wrap">
-                <h4>{cat.title}</h4>
-                <span class="cat-exam-count">{cat.tag}</span>
-              </div>
-              <p>{cat.desc}</p>
-            </div>
-            <div class="cat-row-action">
-              <span class="cat-mock-badge">{cat.count}</span>
-              <span class="chevron-arrow">›</span>
-            </div>
-          </a>
-        ))}
-      </div>
-    </div>
-  </section>
 
   <!-- ============ LIVE COURSE CATALOG ============ -->
   <section class="catalog reveal">
@@ -215,7 +87,7 @@ const faqSchema = JSON.stringify({
   <!-- ============ HOW IT WORKS ============ -->
   <section class="steps reveal">
     <div class="wrap">
-      <span class="section-label"><span class="idx">02</span> How it works</span>
+      <span class="section-label"><span class="idx">01</span> How it works</span>
       <h2 class="sec-title">From sign-up to scorecard in three steps.</h2>
       <ol class="steps-row">
         <li>
@@ -240,7 +112,7 @@ const faqSchema = JSON.stringify({
   <!-- ============ PRODUCT DEEP-DIVE ============ -->
   <section class="deep reveal">
     <div class="wrap">
-      <span class="section-label"><span class="idx">03</span> Built like the real thing</span>
+      <span class="section-label"><span class="idx">02</span> Built like the real thing</span>
       <h2 class="sec-title">Every detail of the exam hall, replicated.</h2>
 
       <div class="deep-row">
@@ -312,23 +184,8 @@ const faqSchema = JSON.stringify({
       <div class="spotlight-container glass-panel">
         <div class="spotlight-grid">
           <div class="spotlight-copy">
-            <span class="badge">Trusted by 15,000+ Aspirants</span>
-            <h2>Join India's Most Accurate CBT Mock Test Series</h2>
-            <p>Designed by top exam rankers. Engineered for SSC CGL, SBI PO, IBPS, Railways RRB, UPSC, and State PCS aspirants across India.</p>
-            <div class="spotlight-stats">
-              <div class="stat-box">
-                <span class="stat-num">15k+</span>
-                <span class="stat-lbl">Active Students</span>
-              </div>
-              <div class="stat-box">
-                <span class="stat-num">98.4%</span>
-                <span class="stat-lbl">Exam Accuracy</span>
-              </div>
-              <div class="stat-box">
-                <span class="stat-num">100%</span>
-                <span class="stat-lbl">CBT Pattern Sync</span>
-              </div>
-            </div>
+            <h2>Built for India's toughest CBT exams</h2>
+            <p>Engineered for SSC CGL, SBI PO, IBPS, Railways RRB, UPSC, and State PCS aspirants across India.</p>
           </div>
           <div class="spotlight-visual">
             <div class="group-frame">
@@ -353,32 +210,10 @@ const faqSchema = JSON.stringify({
     </div>
   </section>
 
-  <!-- ============ ASPIRANT VOICES (placeholder) ============ -->
-  <section class="voices reveal">
-    <div class="wrap">
-      <span class="section-label"><span class="idx">04</span> Aspirant voices</span>
-      <h2 class="sec-title">Margin notes from the study table.</h2>
-      <div class="voices-grid">
-        <figure class="voice glass-panel">
-          <blockquote>“The palette behaves exactly like the real SSC CBT. My first actual exam felt like my 30th mock.”</blockquote>
-          <figcaption><b>Ananya S.</b> · SSC CGL aspirant</figcaption>
-        </figure>
-        <figure class="voice glass-panel">
-          <blockquote>“Percentile after every mock kept me honest. GA was my leak — the analytics said it before my teacher did.”</blockquote>
-          <figcaption><b>Rohit K.</b> · IBPS PO aspirant</figcaption>
-        </figure>
-        <figure class="voice glass-panel">
-          <blockquote>“Internet died mid-mock. Logged back in, timer and answers were all intact. That sold me.”</blockquote>
-          <figcaption><b>Meera D.</b> · RRB NTPC aspirant</figcaption>
-        </figure>
-      </div>
-    </div>
-  </section>
-
   <!-- ============ FAQ ============ -->
   <section class="faq reveal">
     <div class="wrap">
-      <span class="section-label"><span class="idx">05</span> Questions, answered</span>
+      <span class="section-label"><span class="idx">03</span> Questions, answered</span>
       <h2 class="sec-title">Before you ask.</h2>
       <div class="faq-list">
         {faqs.map((f) => (
@@ -540,51 +375,6 @@ const faqSchema = JSON.stringify({
   .rank-bar i { display: block; height: 100%; background: var(--grad-primary); border-radius: 99px; }
   .rank-sub { font-size: 0.72rem; color: var(--text-secondary); }
 
-  /* ---------- exam tracks (hall tickets) ---------- */
-  .tracks { padding: 72px 0 20px; }
-
-  .tracks-grid {
-    display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(216px, 1fr));
-    gap: 18px;
-  }
-
-  .ticket { display: flex; overflow: hidden; }
-
-  .ticket-stub {
-    writing-mode: vertical-rl;
-    transform: rotate(180deg);
-    font-family: var(--font-mono);
-    font-size: 0.62rem;
-    font-weight: 700;
-    letter-spacing: 0.3em;
-    color: var(--marker);
-    padding: 14px 7px;
-    border-left: 1px dashed var(--border-strong);
-    background: var(--marker-soft);
-    display: flex; align-items: center; justify-content: center;
-  }
-
-  .ticket-body { padding: 18px; display: flex; flex-direction: column; gap: 7px; flex: 1; }
-
-  .ticket-code {
-    align-self: flex-start;
-    font-family: var(--font-mono);
-    font-size: 0.68rem;
-    font-weight: 700;
-    letter-spacing: 0.1em;
-    color: var(--accent-color);
-    background: var(--accent-soft);
-    border: 1px solid var(--accent-border);
-    padding: 3px 9px;
-    border-radius: 6px;
-  }
-
-  .ticket-title { font-family: var(--font-display); font-weight: 650; font-size: 1.02rem; color: var(--text-primary); }
-  .ticket-subjects { font-size: 0.8rem; color: var(--text-secondary); }
-  .ticket-note { font-size: 0.74rem; color: var(--text-secondary); border-top: 1px dashed var(--border-strong); padding-top: 8px; margin-top: 3px; }
-  .ticket-cta { font-size: 0.8rem; font-weight: 650; color: var(--accent-color); margin-top: 4px; }
-
   /* ---------- catalog ---------- */
   .catalog { padding: 44px 0 8px; }
 
@@ -686,23 +476,6 @@ const faqSchema = JSON.stringify({
   .fact { display: flex; flex-direction: column; gap: 4px; border-left: 2px solid var(--marker); padding-left: 16px; }
   .fact-n { font-family: var(--font-mono); font-size: 1.9rem; font-weight: 700; color: var(--text-primary); font-variant-numeric: tabular-nums; }
   .fact-l { font-size: 0.82rem; color: var(--text-secondary); }
-
-  /* ---------- voices ---------- */
-  .voices { padding: 72px 0 20px; }
-
-  .voices-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(270px, 1fr)); gap: 20px; }
-
-  .voice { margin: 0; padding: 24px; display: flex; flex-direction: column; gap: 14px; }
-  .voice blockquote {
-    margin: 0;
-    font-size: 0.95rem;
-    line-height: 1.7;
-    color: var(--text-primary);
-    border-left: 2px solid var(--marker);
-    padding-left: 14px;
-  }
-  .voice figcaption { font-size: 0.8rem; color: var(--text-secondary); }
-  .voice figcaption b { color: var(--text-primary); }
 
   /* ---------- faq ---------- */
   .faq { padding: 72px 0 20px; }
@@ -806,80 +579,6 @@ const faqSchema = JSON.stringify({
     box-shadow: 0 20px 40px rgba(0, 0, 0, 0.3);
     border: 1px solid var(--border-color);
   }
-  .hero-sim-overlay {
-    position: absolute;
-    bottom: 28px;
-    left: -42px;
-    z-index: 3;
-    width: 170px;
-    padding: 10px 14px;
-    box-shadow: 0 16px 32px rgba(0,0,0,0.4);
-    border: 1px solid rgba(255,255,255,0.18);
-    backdrop-filter: blur(16px);
-    border-radius: 1rem;
-    display: flex;
-    flex-direction: column;
-    gap: 4px;
-  }
-  .mini-timer {
-    font-family: var(--font-mono);
-    font-variant-numeric: tabular-nums;
-    font-size: 0.8rem;
-    font-weight: 700;
-    color: var(--primary);
-    background: var(--primary-soft);
-    padding: 3px 9px;
-    border-radius: 8px;
-    display: inline-flex;
-    align-items: center;
-    gap: 5px;
-  }
-  .mini-test-title {
-    font-size: 0.78rem;
-    font-weight: 700;
-    margin: 2px 0 0;
-    line-height: 1.2;
-    color: var(--text-primary);
-  }
-  .mini-status-chip {
-    font-size: 0.65rem;
-    font-weight: 600;
-    color: var(--accent);
-    text-transform: uppercase;
-    letter-spacing: 0.05em;
-  }
-  .hero-rank-overlay {
-    position: absolute;
-    top: 28px;
-    right: -36px;
-    z-index: 3;
-    width: 145px;
-    padding: 12px 14px;
-    box-shadow: 0 16px 32px rgba(0,0,0,0.4);
-    border: 1px solid rgba(255,255,255,0.18);
-    backdrop-filter: blur(16px);
-    border-radius: 1rem;
-    display: flex;
-    flex-direction: column;
-    gap: 2px;
-  }
-  .hero-rank-overlay .rank-label {
-    font-family: var(--font-mono);
-    font-size: 0.58rem;
-    letter-spacing: 0.1em;
-    color: var(--text-secondary);
-  }
-  .hero-rank-overlay .rank-value {
-    font-size: 1.4rem;
-    font-weight: 800;
-    color: var(--accent);
-    line-height: 1.1;
-  }
-  .hero-rank-overlay .rank-sub {
-    font-size: 0.68rem;
-    color: var(--text-secondary);
-  }
-
   /* Aspirants Spotlight Section */
   .aspirants-spotlight {
     padding: 60px 0;
@@ -897,7 +596,6 @@ const faqSchema = JSON.stringify({
   }
   @media (max-width: 900px) {
     .spotlight-grid { grid-template-columns: 1fr; }
-    .hero-sim-overlay { display: none; }
   }
   .spotlight-copy h2 {
     font-size: clamp(1.8rem, 3vw, 2.4rem);
@@ -909,24 +607,6 @@ const faqSchema = JSON.stringify({
     color: var(--text-secondary);
     font-size: 1.05rem;
     line-height: 1.6;
-  }
-  .spotlight-stats {
-    display: flex;
-    gap: 28px;
-    margin-top: 28px;
-    padding-top: 24px;
-    border-top: 1px solid var(--border-color);
-  }
-  .stat-num {
-    display: block;
-    font-size: 1.75rem;
-    font-weight: 800;
-    color: var(--accent);
-    font-family: var(--font-mono);
-  }
-  .stat-lbl {
-    font-size: 0.8rem;
-    color: var(--text-secondary);
   }
   .group-frame {
     position: relative;
@@ -960,208 +640,6 @@ const faqSchema = JSON.stringify({
   .badge-1 { top: 12px; left: 12px; }
   .badge-2 { bottom: 12px; right: 12px; }
 
-  /* ---------- Popular Exams & Exam Categories (Mobile-First Polish) ---------- */
-  .popular-exams-scroll {
-    display: flex;
-    gap: 14px;
-    overflow-x: auto;
-    padding: 8px 4px 18px;
-    scroll-snap-type: x mandatory;
-    -webkit-overflow-scrolling: touch;
-    margin-bottom: 40px;
-  }
-  .popular-exams-scroll::-webkit-scrollbar {
-    height: 4px;
-  }
-  .popular-exams-scroll::-webkit-scrollbar-thumb {
-    background: var(--accent);
-    border-radius: 99px;
-  }
-  .exam-micro-card {
-    flex: 0 0 200px;
-    scroll-snap-align: start;
-    display: flex;
-    align-items: center;
-    gap: 12px;
-    padding: 12px 14px;
-    border-radius: 1rem;
-    text-decoration: none;
-    color: inherit;
-    border: 1px solid var(--border-color);
-    transition: transform 0.2s var(--ease-out), box-shadow 0.2s var(--ease-out);
-  }
-  @media (min-width: 900px) {
-    .popular-exams-scroll {
-      display: grid;
-      grid-template-columns: repeat(5, 1fr);
-      overflow-x: visible;
-    }
-    .exam-micro-card {
-      flex: none;
-    }
-  }
-  .exam-icon-badge {
-    width: 38px;
-    height: 38px;
-    border-radius: 10px;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    flex-shrink: 0;
-    border: 1px solid;
-  }
-  .exam-micro-info {
-    display: flex;
-    flex-direction: column;
-    gap: 2px;
-    flex-grow: 1;
-    min-width: 0;
-  }
-  .exam-micro-name {
-    font-size: 0.9rem;
-    font-weight: 750;
-    white-space: nowrap;
-    overflow: hidden;
-    text-overflow: ellipsis;
-    color: var(--text-primary);
-  }
-  .exam-micro-count {
-    font-size: 0.72rem;
-    color: var(--text-secondary);
-  }
-  .exam-tag-pill {
-    font-size: 0.62rem;
-    font-weight: 700;
-    padding: 2px 7px;
-    border-radius: 99px;
-    white-space: nowrap;
-  }
-
-  /* Category List Rows */
-  .category-explore-header {
-    margin-top: 20px;
-    margin-bottom: 20px;
-  }
-  .category-explore-header h3 {
-    font-size: 1.4rem;
-    font-weight: 750;
-    margin: 0 0 6px;
-  }
-  .category-explore-header p {
-    color: var(--text-secondary);
-    font-size: 0.95rem;
-    margin: 0;
-  }
-  .category-list-rows {
-    display: flex;
-    flex-direction: column;
-    gap: 12px;
-  }
-  .category-row-card {
-    display: flex;
-    align-items: center;
-    gap: 16px;
-    padding: 16px 20px;
-    border-radius: 1.25rem;
-    text-decoration: none;
-    color: inherit;
-    border: 1px solid var(--border-color);
-    transition: transform 0.2s var(--ease-out), border-color 0.2s var(--ease-out);
-  }
-  .cat-icon-box {
-    width: 48px;
-    height: 48px;
-    border-radius: 14px;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    flex-shrink: 0;
-  }
-  /* exam-category tints — the SPA's tint palette, token-driven so they theme */
-  .ssc-bg { background: var(--reward-bg); color: var(--reward-text); }
-  .sbi-bg { background: var(--success-bg); color: var(--success); }
-  .rrb-bg { background: var(--danger-bg); color: var(--danger); }
-  .upsc-bg { background: var(--primary-soft); color: var(--primary); }
-  .defense-bg { background: var(--ai-bg); color: var(--ai); }
-  .teaching-bg { background: rgba(139, 92, 246, 0.16); color: #b9a6ff; }
-
-  .exam-real-logo {
-    width: 26px;
-    height: 26px;
-    object-fit: contain;
-    border-radius: 4px;
-  }
-  .real-logo-box {
-    background: #ffffff;
-    border: 1px solid var(--border-color);
-    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
-    padding: 6px;
-  }
-  .cat-real-logo {
-    width: 32px;
-    height: 32px;
-    object-fit: contain;
-  }
-
-  .cat-row-info {
-    flex-grow: 1;
-    min-width: 0;
-  }
-  .cat-row-title-wrap {
-    display: flex;
-    align-items: center;
-    gap: 10px;
-    margin-bottom: 4px;
-  }
-  .cat-row-title-wrap h4 {
-    font-size: 1.05rem;
-    font-weight: 750;
-    margin: 0;
-    color: var(--text-primary);
-  }
-  .cat-exam-count {
-    font-size: 0.72rem;
-    font-weight: 650;
-    color: var(--accent);
-    background: rgba(99, 102, 241, 0.12);
-    padding: 2px 8px;
-    border-radius: 99px;
-  }
-  .cat-row-info p {
-    margin: 0;
-    font-size: 0.86rem;
-    color: var(--text-secondary);
-    white-space: nowrap;
-    overflow: hidden;
-    text-overflow: ellipsis;
-  }
-  .cat-row-action {
-    display: flex;
-    align-items: center;
-    gap: 12px;
-    flex-shrink: 0;
-  }
-  .cat-mock-badge {
-    font-size: 0.8rem;
-    font-weight: 700;
-    font-family: var(--font-mono);
-    color: var(--text-primary);
-    background: var(--surface-2);
-    padding: 6px 12px;
-    border-radius: 8px;
-    border: 1px solid var(--border-color);
-  }
-  .chevron-arrow {
-    font-size: 1.5rem;
-    color: var(--text-tertiary);
-    line-height: 1;
-    transition: transform 0.2s var(--ease-out), color 0.2s var(--ease-out);
-  }
-  .category-row-card:hover .chevron-arrow {
-    transform: translateX(4px);
-    color: var(--accent);
-  }
-
   /* ---------- responsive ---------- */
   @media (max-width: 920px) {
     .hero-grid { grid-template-columns: 1fr; gap: 32px; }
@@ -1169,9 +647,5 @@ const faqSchema = JSON.stringify({
     .deep-row { grid-template-columns: 1fr; gap: 24px; }
     .deep-row.rev .deep-copy { order: 1; }
     .deep-row.rev .deep-visual { order: 2; }
-    .hero-rank-overlay { right: 0; top: 12px; }
-    .hero-sim-overlay { left: 0; bottom: 12px; }
-    .cat-mock-badge { display: none; }
-    .category-row-card { padding: 14px 16px; }
   }
 </style>

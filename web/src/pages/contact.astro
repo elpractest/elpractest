@@ -2,6 +2,7 @@
 import Layout from '../layouts/Layout.astro';
 
 const apiUrl = import.meta.env.PUBLIC_API_URL || 'http://localhost:8000';
+const recaptchaSiteKey = import.meta.env.PUBLIC_RECAPTCHA_SITE_KEY || '';
 ---
 
 <Layout
@@ -89,7 +90,7 @@ const apiUrl = import.meta.env.PUBLIC_API_URL || 'http://localhost:8000';
   </div>
 </Layout>
 
-<script define:vars={{ apiUrl }}>
+<script define:vars={{ apiUrl, recaptchaSiteKey }}>
   // Fetch public settings to render real contact details
   async function loadContactInfo() {
     try {
@@ -110,6 +111,18 @@ const apiUrl = import.meta.env.PUBLIC_API_URL || 'http://localhost:8000';
     }
   }
 
+  // Load the reCAPTCHA v3 script only when a site key is configured — same
+  // gate the SPA's Register page uses, and the server middleware itself
+  // no-ops when RECAPTCHA_SECRET_KEY isn't set, so an unconfigured
+  // environment (local/staging) never blocks on a missing token.
+  if (recaptchaSiteKey && !document.getElementById('recaptcha-script')) {
+    const script = document.createElement('script');
+    script.id = 'recaptcha-script';
+    script.src = `https://www.google.com/recaptcha/api.js?render=${recaptchaSiteKey}`;
+    script.async = true;
+    document.head.appendChild(script);
+  }
+
   // Handle Form Submission
   const form = document.getElementById('contact-form');
   const alertBox = document.getElementById('alert-box');
@@ -126,8 +139,17 @@ const apiUrl = import.meta.env.PUBLIC_API_URL || 'http://localhost:8000';
       email: document.getElementById('email').value,
       phone: document.getElementById('phone').value || null,
       message: document.getElementById('message').value,
-      recaptcha_token: 'dummy_token' // Development-friendly recaptcha bypass
     };
+
+    if (recaptchaSiteKey && window.grecaptcha) {
+      try {
+        payload.recaptcha_token = await window.grecaptcha.execute(recaptchaSiteKey, { action: 'contact' });
+      } catch (recapErr) {
+        // If reCAPTCHA fails to produce a token, submit anyway — the server
+        // skips verification when it has no secret configured, and rejects
+        // with a clear 422 (not a silent bypass) when it does.
+      }
+    }
 
     try {
       const response = await fetch(`${apiUrl}/api/contact`, {

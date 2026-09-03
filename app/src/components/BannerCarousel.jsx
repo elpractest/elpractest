@@ -2,13 +2,11 @@ import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import api from '../api';
 import Carousel from './Carousel';
-import { USE_DEMO_DATA, demoBanners } from '../lib/demoData';
 
 /**
  * Home promo carousel. Reads the public banners endpoint that the super-admin
- * panel manages (/api/banners/public). When there are no active banners it
- * falls back to the design demo banners (USE_DEMO_DATA) so the populated
- * reference layout is visible; set USE_DEMO_DATA=false to hide the fallback.
+ * panel manages (/api/banners/public). Renders nothing when there are no
+ * active banners.
  *
  * A banner's cta_url may be an internal path ("/student/test-series") or an
  * external URL ("https://…"); the card routes accordingly.
@@ -17,7 +15,7 @@ import { USE_DEMO_DATA, demoBanners } from '../lib/demoData';
    With no image the card is a flat tint and needs no scrim at all. */
 const SCRIM = 'rgba(14,18,32,.62)';
 
-export default function BannerCarousel({ onDemoCta }) {
+export default function BannerCarousel() {
   const navigate = useNavigate();
   const [banners, setBanners] = useState([]);
 
@@ -35,14 +33,7 @@ export default function BannerCarousel({ onDemoCta }) {
     else navigate(url);
   };
 
-  // Real banners take precedence; demo fills the empty state.
-  const useDemo = banners.length === 0 && USE_DEMO_DATA;
-  const items = useDemo
-    ? demoBanners.map((b, i) => ({
-        id: `demo-${i}`, kicker: b.kicker, title: b.title, subtitle: b.subtitle,
-        cta_label: b.cta, grad: b.grad, scrim: SCRIM, demo: true,
-      }))
-    : banners.map((b) => ({ ...b, grad: 'var(--primary-soft)', scrim: SCRIM }));
+  const items = banners.map((b) => ({ ...b, grad: 'var(--primary-soft)', scrim: SCRIM }));
 
   if (items.length === 0) return null;
 
@@ -60,7 +51,7 @@ export default function BannerCarousel({ onDemoCta }) {
         return (
         <div
           key={b.id}
-          onClick={() => (b.demo ? onDemoCta?.() : go(b.cta_url))}
+          onClick={() => go(b.cta_url)}
           style={{
             flex: 'none', width: '296px', aspectRatio: '16 / 9', borderRadius: '20px', scrollSnapAlign: 'start',
             position: 'relative', overflow: 'hidden', cursor: 'pointer',

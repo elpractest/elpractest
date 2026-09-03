@@ -8,10 +8,6 @@ import StudentCheckout from './StudentCheckout';
 import ActivationModal from './ActivationModal';
 import { useTheme } from '../lib/theme';
 import { useActivity } from '../lib/activity';
-import {
-  withDemo, demoCourses, demoExamCats,
-  demoContinue, demoGoal,
-} from '../lib/demoData';
 
 /* ============================================================
    HOME — artboard 03.
@@ -122,9 +118,8 @@ export default function Dashboard({ user }) {
     else navigate('/student/test-series');
   };
 
-  // Popular test series: real courses first (enrolled ∪ purchasable), demo fallback.
-  const realCards = [...courses, ...purchasableCourses].map(toCard);
-  const popular = withDemo(realCards, demoCourses);
+  // Popular test series: enrolled ∪ purchasable courses.
+  const popular = [...courses, ...purchasableCourses].map(toCard);
 
   const statusColors = {
     pending: { bg: 'var(--reward-bg)', text: 'var(--reward-text)', border: 'var(--reward-border)' },
@@ -147,7 +142,7 @@ export default function Dashboard({ user }) {
   const active = summary?.active_session || null;
   const accuracy = summary?.week?.accuracy ?? null;
   const daysLeft = summary?.entitlement?.days_remaining ?? null;
-  const goalLine = summary?.entitlement?.batch_name || demoGoal;
+  const goalLine = summary?.entitlement?.batch_name || '';
   const weakest = summary?.weakest_topic || null;
 
   const readinessHeadline = active
@@ -204,18 +199,7 @@ export default function Dashboard({ user }) {
         onClick: () => navigate(`/student/test-series/${c.id}`),
       }));
 
-  const railCards = continueCards.length
-    ? continueCards
-    : [{
-        key: 'demo',
-        overline: 'MOCK',
-        title: demoContinue.title,
-        done: demoContinue.pct,
-        total: 100,
-        hue: 'blue',
-        icon: 'target',
-        onClick: () => navigate('/student/test-series'),
-      }];
+  const railCards = continueCards;
 
   return (
     <div style={{ padding: '16px 0 24px' }}>
@@ -225,11 +209,9 @@ export default function Dashboard({ user }) {
         .dash-rail { display: flex; gap: 11px; overflow-x: auto; padding: 0 18px 4px; scroll-snap-type: x mandatory; scrollbar-width: none; }
         .dash-rail::-webkit-scrollbar { display: none; }
         .dash-rail-card { flex: none; width: 190px; scroll-snap-align: start; }
-        .dash-exam { display: grid; grid-template-columns: repeat(4, 1fr); gap: 14px 10px; padding: 0 18px; }
         @media (min-width: 640px) {
           .dash-popular { display: grid; grid-template-columns: repeat(2, 1fr); overflow: visible; }
           .dash-popular-card { width: auto; }
-          .dash-exam { grid-template-columns: repeat(8, 1fr); }
         }
         @media (min-width: 1024px) {
           .dash-popular { grid-template-columns: repeat(3, 1fr); }
@@ -254,16 +236,18 @@ export default function Dashboard({ user }) {
         />
         <div style={{ position: 'relative', display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: '12px' }}>
           <div style={{ minWidth: 0 }}>
-            <div
-              style={{
-                font: '600 9px/1 var(--font-mono)',
-                letterSpacing: '.18em',
-                color: 'var(--on-primary-soft)',
-                textTransform: 'uppercase',
-              }}
-            >
-              {goalLine}{daysLeft !== null ? ` · ${daysLeft} DAYS LEFT` : ''}
-            </div>
+            {(goalLine || daysLeft !== null) && (
+              <div
+                style={{
+                  font: '600 9px/1 var(--font-mono)',
+                  letterSpacing: '.18em',
+                  color: 'var(--on-primary-soft)',
+                  textTransform: 'uppercase',
+                }}
+              >
+                {goalLine}{daysLeft !== null ? ` · ${daysLeft} DAYS LEFT` : ''}
+              </div>
+            )}
             <div style={{ marginTop: '9px', font: '700 22px/1.12 var(--font-display)', letterSpacing: '-.03em' }}>
               {readinessHeadline}
             </div>
@@ -429,6 +413,7 @@ export default function Dashboard({ user }) {
       </div>
 
       {/* ---- 4. Continue where you left ---- */}
+      {railCards.length > 0 && (
       <div style={{ margin: '24px 0 0' }}>
         {sectionHead('Continue where you left')}
         <div className="dash-rail">
@@ -480,6 +465,7 @@ export default function Dashboard({ user }) {
           })}
         </div>
       </div>
+      )}
 
       {/* ---- your mock tests (real, startable) ---- */}
       {tests.length > 0 && (
@@ -534,57 +520,13 @@ export default function Dashboard({ user }) {
         </div>
       )}
 
-      {/* ---- 5. Explore by exam ---- */}
-      <div style={{ margin: '24px 0 0' }}>
-        {sectionHead('Explore by exam', 'See all', () => navigate('/student/test-series'))}
-        <div className="dash-exam">
-          {demoExamCats.map((c) => {
-            const t = tint(c.hue);
-            return (
-              <button
-                key={c.k}
-                type="button"
-                onClick={() => navigate('/student/test-series')}
-                style={{
-                  background: 'none',
-                  border: 'none',
-                  padding: 0,
-                  cursor: 'pointer',
-                  display: 'flex',
-                  flexDirection: 'column',
-                  alignItems: 'center',
-                  gap: '7px',
-                }}
-              >
-                <span
-                  style={{
-                    width: '52px',
-                    height: '52px',
-                    borderRadius: '16px',
-                    background: t.bg,
-                    color: t.c,
-                    border: `1px solid ${t.bd}`,
-                    display: 'grid',
-                    placeItems: 'center',
-                    font: '700 14px var(--font-display)',
-                    letterSpacing: '-.02em',
-                  }}
-                >
-                  {c.mono}
-                </span>
-                <span style={{ font: '500 11px/1.1 var(--font-body)', color: 'var(--tx2)', textAlign: 'center' }}>{c.k}</span>
-              </button>
-            );
-          })}
-        </div>
-      </div>
-
-      {/* ---- 6. Promo banners (real, demo fallback) ---- */}
+      {/* ---- 5. Promo banners (real data only) ---- */}
       <div style={{ marginTop: '24px' }}>
-        <BannerCarousel onDemoCta={() => setShowActivationModal(true)} />
+        <BannerCarousel />
       </div>
 
-      {/* ---- 7. Popular test series ---- */}
+      {/* ---- 6. Popular test series ---- */}
+      {popular.length > 0 && (
       <div style={{ margin: '24px 0 0' }}>
         {sectionHead('Popular test series', 'View all', () => navigate('/student/test-series'))}
         <Carousel trackClassName="dash-popular" ariaLabel="Popular test series">
@@ -672,6 +614,7 @@ export default function Dashboard({ user }) {
           ))}
         </Carousel>
       </div>
+      )}
 
       {/* ---- Activation requests status (real data only) ---- */}
       {activationRequests.length > 0 && (

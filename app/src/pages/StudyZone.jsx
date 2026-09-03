@@ -3,7 +3,6 @@ import { useNavigate } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import Icon from '../components/Icon';
 import { useTheme } from '../lib/theme';
-import { demoStudyStats } from '../lib/demoData';
 
 /**
  * Study zone hub — stat header + tile grid. Tiles that map to a real
@@ -36,16 +35,6 @@ export default function StudyZone() {
       `}</style>
       <h1 className="t-title" style={{ margin: '0 0 4px', color: 'var(--tx)' }}>{t('study.title')}</h1>
       <p style={{ margin: '0 0 18px', font: '400 13.5px var(--font-body)', color: 'var(--muted)' }}>{t('study.subtitle')}</p>
-
-      {/* Stat header — a figure is mono and tabular; the label is the overline */}
-      <div style={{ padding: '16px', borderRadius: '20px', background: 'var(--card)', border: '1px solid var(--line)', marginBottom: '18px', display: 'flex', justifyContent: 'space-between', gap: '10px' }}>
-        {demoStudyStats.map((s) => (
-          <div key={s.label}>
-            <div className="t-num" style={{ fontSize: '24px', lineHeight: 1, color: 'var(--tx)' }}>{s.value}</div>
-            <div className="t-overline" style={{ marginTop: '7px', letterSpacing: '.14em', color: 'var(--muted)' }}>{s.label}</div>
-          </div>
-        ))}
-      </div>
 
       <div className="study-tiles">
         {tiles.map((t) => {

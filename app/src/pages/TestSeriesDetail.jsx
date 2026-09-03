@@ -2,130 +2,6 @@ import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import api from '../api';
 import Icon from '../components/Icon';
-import ActivationModal from './ActivationModal';
-import { useTheme } from '../lib/theme';
-import { demoCourses, demoDetailFeatures } from '../lib/demoData';
-
-/* ------------------------------------------------------------------
-   Reference "course detail" — a pre-enrollment sales page (hero + tags +
-   rating + price card + What's inside + How to get access + sticky enroll
-   bar). Shown for demo / browse courses (ids that aren't a real enrolled
-   series). Real enrolled series render the study-path view below instead.
-   ------------------------------------------------------------------ */
-function SalesDetail({ course }) {
-  const navigate = useNavigate();
-  const { tint } = useTheme();
-  const [showActivation, setShowActivation] = useState(false);
-
-  return (
-    <div style={{ paddingBottom: '92px', animation: 'fade-in .35s ease both' }}>
-      {/* Hero — a card on the app's own ground, not a dark plate */}
-      <div style={{ padding: '14px 18px 0' }}>
-        <button
-          onClick={() => navigate('/student/test-series')}
-          aria-label="Back"
-          className="chrome-btn"
-          style={{ marginBottom: '14px' }}
-        >
-          <Icon name="arrow-left" size={19} />
-        </button>
-
-        <div
-          style={{
-            display: 'flex',
-            gap: '14px',
-            alignItems: 'center',
-            padding: '16px',
-            borderRadius: '20px',
-            background: 'var(--card)',
-            border: '1px solid var(--line)',
-          }}
-        >
-          <span
-            style={{
-              width: '72px',
-              height: '72px',
-              flex: 'none',
-              borderRadius: '18px',
-              background: course.grad,
-              display: 'grid',
-              placeItems: 'center',
-              color: 'var(--primary)',
-            }}
-          >
-            <Icon name="target" size={30} />
-          </span>
-          <div style={{ minWidth: 0 }}>
-            <div style={{ display: 'flex', gap: '6px', marginBottom: '7px', flexWrap: 'wrap' }}>
-              <span style={{ font: '600 10px var(--font-body)', letterSpacing: '.06em', color: 'var(--primary)', background: 'var(--primary-soft)', padding: '4px 9px', borderRadius: '999px' }}>{course.exam}</span>
-              <span style={{ font: '600 10px var(--font-hindi)', color: 'var(--tx2)', background: 'var(--surf)', border: '1px solid var(--line)', padding: '4px 9px', borderRadius: '999px' }}>{course.lang}</span>
-              <span style={{ font: '600 10px var(--font-body)', color: 'var(--ai)', background: 'var(--ai-bg)', padding: '4px 9px', borderRadius: '999px' }}>{course.tag}</span>
-            </div>
-            <h1 className="t-title" style={{ margin: 0, color: 'var(--tx)' }}>{course.title}</h1>
-          </div>
-        </div>
-      </div>
-
-      <div style={{ padding: '18px 18px 24px' }}>
-        {/* Rating row */}
-        <div style={{ display: 'flex', alignItems: 'center', gap: '14px', font: '600 12px var(--font-body)', color: 'var(--muted)' }}>
-          <span style={{ display: 'flex', alignItems: 'center', gap: '5px', color: 'var(--reward-text)' }}>
-            <Icon name="star" size={15} /><span className="t-num" style={{ fontSize: '12.5px', color: 'var(--tx)' }}>{course.rating || 4.8}</span>
-          </span>
-          <span>· <span className="t-num" style={{ fontSize: '12px', fontWeight: 500 }}>{course.ratingCount || '12.4k'}</span> enrolled</span>
-          <span>· Updated Aug 2026</span>
-        </div>
-
-        {/* Price card */}
-        <div style={{ marginTop: '16px', padding: '16px', borderRadius: '20px', background: 'var(--card)', border: '1px solid var(--line)' }}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: '9px' }}>
-            <span className="t-num" style={{ fontSize: '24px', color: 'var(--tx)' }}>{course.price}</span>
-            <span className="t-num" style={{ fontSize: '13px', fontWeight: 500, color: 'var(--muted)', textDecoration: 'line-through' }}>{course.mrp}</span>
-            <span style={{ font: '600 12px var(--font-body)', color: 'var(--success)', background: 'var(--success-bg)', padding: '4px 10px', borderRadius: '999px', marginLeft: 'auto' }}>{course.off}</span>
-          </div>
-          <div style={{ font: '600 12px var(--font-body)', color: 'var(--muted)', marginTop: '8px' }}>or 3 × ₹500 · no-cost EMI · 1-year access</div>
-        </div>
-
-        {/* What's inside */}
-        <h2 className="t-heading" style={{ margin: '22px 0 12px', color: 'var(--tx)' }}>What's inside</h2>
-        <div style={{ display: 'flex', flexDirection: 'column', gap: '11px' }}>
-          {demoDetailFeatures.map((f) => {
-            const t = tint(f.hue);
-            return (
-              <div key={f.k} style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
-                <span style={{ width: '36px', height: '36px', borderRadius: '11px', background: t.bg, display: 'grid', placeItems: 'center', flex: 'none', color: t.c }}>
-                  <Icon name={f.icon} size={18} />
-                </span>
-                <span style={{ font: '400 13.5px var(--font-body)', color: 'var(--tx2)' }}>{f.k}</span>
-              </div>
-            );
-          })}
-        </div>
-
-        {/* How to get access */}
-        <h2 style={{ margin: '24px 0 12px', font: '700 16px var(--font-display)', color: 'var(--tx)' }}>How to get access</h2>
-        <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
-          <div style={{ padding: '14px 15px', borderRadius: '14px', background: 'var(--card)', border: '1px solid var(--line)' }}>
-            <div style={{ font: '700 13px var(--font-body)', color: 'var(--tx)' }}>Redeem an activation code</div>
-            <div style={{ font: '600 11.5px var(--font-body)', color: 'var(--muted)', marginTop: '3px' }}>Got a code from your institute? Enter it to unlock instantly.</div>
-          </div>
-          <div style={{ padding: '14px 15px', borderRadius: '14px', background: 'var(--card)', border: '1px solid var(--line)' }}>
-            <div style={{ font: '700 13px var(--font-body)', color: 'var(--tx)' }}>Pay online</div>
-            <div style={{ font: '600 11.5px var(--font-body)', color: 'var(--muted)', marginTop: '3px' }}>Instant activation on successful payment.</div>
-          </div>
-        </div>
-      </div>
-
-      {/* Sticky enroll bar */}
-      <div style={{ position: 'sticky', bottom: 0, display: 'flex', gap: '10px', padding: '12px 16px', background: 'var(--nav)', backdropFilter: 'blur(16px)', borderTop: '1px solid var(--line)' }}>
-        <button onClick={() => navigate('/tests/demo')} style={{ flex: 'none', padding: '14px 16px', border: '1px solid var(--line2)', borderRadius: '14px', background: 'var(--surf)', color: 'var(--tx2)', font: '700 13px var(--font-body)', cursor: 'pointer' }}>Free test</button>
-        <button onClick={() => setShowActivation(true)} className="btn-primary" style={{ flex: 1, padding: '14px', borderRadius: '14px', fontSize: '15px' }}>Enroll {course.price}</button>
-      </div>
-
-      {showActivation && <ActivationModal onClose={() => setShowActivation(false)} onSuccess={() => setShowActivation(false)} />}
-    </div>
-  );
-}
 
 export default function TestSeriesDetail() {
   const { id } = useParams();
@@ -138,11 +14,7 @@ export default function TestSeriesDetail() {
   const [loading, setLoading] = useState(true);
   const [notFound, setNotFound] = useState(false);
 
-  // Demo/browse course? (id from demo cards) — show the sales page.
-  const demoCourse = demoCourses.find((c) => c.id === id) || (String(id).startsWith('demo') ? demoCourses[0] : null);
-
   useEffect(() => {
-    if (demoCourse) { setLoading(false); return; }
     let alive = true;
     Promise.all([
       api.get(`/api/student/test-series/${id}`),
@@ -163,9 +35,18 @@ export default function TestSeriesDetail() {
     return <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', height: '300px', color: 'var(--muted)' }}><div className="spinner" /></div>;
   }
 
-  // Demo course, or real series missing → reference sales page.
-  if (demoCourse || (notFound && !series)) {
-    return <SalesDetail course={demoCourse || demoCourses[0]} />;
+  if (notFound || !series) {
+    return (
+      <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '12px', padding: '80px 24px', textAlign: 'center' }}>
+        <span style={{ display: 'grid', placeItems: 'center', width: '48px', height: '48px', borderRadius: '999px', background: 'var(--surf)', color: 'var(--muted)' }}>
+          <Icon name="target" size={24} />
+        </span>
+        <p style={{ margin: 0, maxWidth: '40ch', font: '400 13.5px/1.6 var(--font-body)', color: 'var(--muted)' }}>
+          This test series isn't available.
+        </p>
+        <button onClick={() => navigate('/student/test-series')} className="btn-secondary" style={{ padding: '8px 16px', fontSize: '0.85rem' }}>← Back to test series</button>
+      </div>
+    );
   }
 
   const filteredTests = activeCategoryTab === 'all'
