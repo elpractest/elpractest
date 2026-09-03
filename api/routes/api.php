@@ -130,6 +130,7 @@ Route::middleware('auth:sanctum')->group(function () {
         Route::post('questions/import', [QuestionController::class, 'import']);
         Route::get('questions/import/{jobId}/status', [QuestionController::class, 'importStatus']);
         Route::get('questions/import-template', [QuestionController::class, 'downloadTemplate']);
+        Route::post('questions/bulk-deactivate', [QuestionController::class, 'bulkDestroy']);
         Route::apiResource('questions', QuestionController::class);
 
         // Review workflow + item analysis (difficulty, discrimination, distractors)

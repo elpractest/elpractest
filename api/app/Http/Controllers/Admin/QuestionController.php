@@ -250,6 +250,35 @@ class QuestionController extends Controller
     }
 
     /**
+     * Same effect as destroy(), for many questions at once — cleaning up a
+     * bad bulk import (wrong exam tags, a passage_id nobody had created yet,
+     * a whole file uploaded twice) meant clicking "Deactivate" once per row
+     * with no other way to claw it back. Audit-logged per question, same as
+     * the single-delete path, so "who deactivated this and when" still
+     * resolves per question even when forty went out in one request.
+     */
+    public function bulkDestroy(Request $request): JsonResponse
+    {
+        $validated = $request->validate([
+            'ids' => ['required', 'array', 'min:1', 'max:1000'],
+            'ids.*' => ['integer', 'distinct'],
+        ]);
+
+        $questions = Question::whereIn('id', $validated['ids'])->get();
+
+        foreach ($questions as $question) {
+            $oldValue = $question->toArray();
+            $question->update(['is_active' => false]);
+            AuditService::log('question.deactivated', $question, $oldValue, $question->toArray());
+        }
+
+        return response()->json([
+            'message' => $questions->count() . ' question(s) deactivated.',
+            'count' => $questions->count(),
+        ]);
+    }
+
+    /**
      * Handle bulk CSV import of questions.
      */
     public function import(Request $request): JsonResponse

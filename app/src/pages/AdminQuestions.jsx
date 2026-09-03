@@ -414,6 +414,7 @@ export default function AdminQuestions({ csvState, triggerCsvImport, csvJobId })
   const [selectedIds, setSelectedIds] = useState([]);
   const [detailQuestion, setDetailQuestion] = useState(null);
   const [pendingDelete, setPendingDelete] = useState(null);
+  const [pendingBulkDelete, setPendingBulkDelete] = useState(false);
   const [pendingPassageDelete, setPendingPassageDelete] = useState(null);
   const [bulkBusy, setBulkBusy] = useState(false);
 
@@ -806,6 +807,25 @@ export default function AdminQuestions({ csvState, triggerCsvImport, csvJobId })
     setBulkBusy(false);
   };
 
+  /* Unlike bulkReview, this hits one batch endpoint rather than looping —
+     the whole reason it exists is to claw back a bad CSV import (wrong tags,
+     a passage_id nobody had created yet) without one request per row. */
+  const bulkDeactivate = async () => {
+    setBulkBusy(true);
+    setError('');
+    setSuccess('');
+    try {
+      await api.post('/api/admin/questions/bulk-deactivate', { ids: selectedIds });
+      setSuccess(`${selectedIds.length} question(s) deactivated.`);
+      setSelectedIds([]);
+      fetchQuestions();
+    } catch (err) {
+      setError('Failed to deactivate the selected questions.');
+    } finally {
+      setBulkBusy(false);
+    }
+  };
+
   const statusTone = (st) =>
     st === 'approved' ? 'success' : st === 'rejected' ? 'danger' : 'reward';
 
@@ -1017,6 +1037,15 @@ export default function AdminQuestions({ csvState, triggerCsvImport, csvJobId })
                   onClick={() => bulkReview('rejected')}
                 >
                   Reject
+                </button>
+                <button
+                  type="button"
+                  className="btn-secondary"
+                  style={{ padding: '7px 13px', minHeight: '36px', fontSize: '11.5px', color: 'var(--danger)', borderColor: 'var(--danger-border)' }}
+                  disabled={bulkBusy}
+                  onClick={() => setPendingBulkDelete(true)}
+                >
+                  Deactivate
                 </button>
               </>
             ) : (
@@ -1855,6 +1884,28 @@ export default function AdminQuestions({ csvState, triggerCsvImport, csvJobId })
             <span dangerouslySetInnerHTML={renderMath(pendingDelete.question_text.substring(0, 200))} />
           </div>
         </Modal>
+      )}
+
+      {pendingBulkDelete && (
+        <Modal
+          danger
+          title={`Deactivate ${selectedIds.length} question(s)?`}
+          description="They stop appearing in test selection. Papers that already contain them keep them, and nothing already scored changes."
+          width={480}
+          onClose={() => setPendingBulkDelete(false)}
+          footer={
+            <>
+              <button type="button" className="btn-secondary" onClick={() => setPendingBulkDelete(false)}>Cancel</button>
+              <button
+                type="button"
+                className="btn-danger"
+                onClick={() => { setPendingBulkDelete(false); bulkDeactivate(); }}
+              >
+                Deactivate {selectedIds.length} question(s)
+              </button>
+            </>
+          }
+        />
       )}
 
       {pendingPassageDelete && (
