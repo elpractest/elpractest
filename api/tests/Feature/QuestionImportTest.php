@@ -379,4 +379,24 @@ class QuestionImportTest extends TestCase
         $this->assertNotNull($reasoning);
         $this->assertEquals(4, $reasoning->options()->count());
     }
+
+    public function test_an_admin_can_download_the_import_template(): void
+    {
+        $response = $this->actingAs($this->admin)
+            ->withSession(['2fa_verified' => true])
+            ->get('/api/admin/questions/import-template');
+
+        $response->assertOk()->assertDownload('question_import_sample.csv');
+        $this->assertStringContainsString('subject,topic,difficulty', $response->streamedContent());
+    }
+
+    public function test_a_student_cannot_download_the_import_template(): void
+    {
+        $student = User::factory()->create();
+        $student->assignRole('student');
+
+        $this->actingAs($student)
+            ->get('/api/admin/questions/import-template')
+            ->assertStatus(403);
+    }
 }

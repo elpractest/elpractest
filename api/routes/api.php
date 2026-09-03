@@ -124,10 +124,12 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::middleware(['role:admin|super-admin', '2fa.verified'])->prefix('admin')->group(function () {
 
         // Question bank
-        // NOTE: the two static `questions/import*` paths are declared BEFORE the
-        // apiResource so `questions/{question}` cannot swallow them.
+        // NOTE: the static `questions/import*` and `questions/import-template`
+        // paths are declared BEFORE the apiResource so `questions/{question}`
+        // cannot swallow them.
         Route::post('questions/import', [QuestionController::class, 'import']);
         Route::get('questions/import/{jobId}/status', [QuestionController::class, 'importStatus']);
+        Route::get('questions/import-template', [QuestionController::class, 'downloadTemplate']);
         Route::apiResource('questions', QuestionController::class);
 
         // Review workflow + item analysis (difficulty, discrimination, distractors)

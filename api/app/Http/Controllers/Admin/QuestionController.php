@@ -320,6 +320,24 @@ class QuestionController extends Controller
     }
 
     /**
+     * The exact CSV an admin needs to hand-edit and re-upload — same headers
+     * `rules()` validates against, with worked examples of every question_type
+     * and the image/passage columns (including an option-image-only reasoning
+     * row). Served from disk rather than generated on the fly so what an admin
+     * downloads is the same file this app's own tests import against.
+     */
+    public function downloadTemplate(): \Symfony\Component\HttpFoundation\BinaryFileResponse
+    {
+        $path = storage_path('app/templates/question_import_sample.csv');
+
+        abort_unless(is_file($path), 404, 'Sample template is missing from this deployment.');
+
+        return response()->download($path, 'question_import_sample.csv', [
+            'Content-Type' => 'text/csv',
+        ]);
+    }
+
+    /**
      * Move a question through the review workflow.
      *
      * Approving is the only transition that lets a question reach a candidate,

@@ -350,6 +350,7 @@ export default function AdminQuestions({ csvState, triggerCsvImport, csvJobId })
   // Drag and Drop CSV file state
   const [dragOver, setDragOver] = useState(false);
   const [uploadingCsv, setUploadingCsv] = useState(false);
+  const [downloadingTemplate, setDownloadingTemplate] = useState(false);
 
   // Single Question Form State
   const [showForm, setShowForm] = useState(false);
@@ -739,6 +740,24 @@ export default function AdminQuestions({ csvState, triggerCsvImport, csvJobId })
     uploadCsvFile(files[0]);
   };
 
+  const handleDownloadTemplate = async () => {
+    setDownloadingTemplate(true);
+    setError('');
+    try {
+      const res = await api.get('/api/admin/questions/import-template', { responseType: 'blob' });
+      const url = URL.createObjectURL(new Blob([res.data], { type: 'text/csv' }));
+      const link = document.createElement('a');
+      link.href = url;
+      link.download = 'question_import_sample.csv';
+      link.click();
+      URL.revokeObjectURL(url);
+    } catch (err) {
+      setError('Failed to download the sample CSV template.');
+    } finally {
+      setDownloadingTemplate(false);
+    }
+  };
+
   const uploadCsvFile = async (file) => {
     setUploadingCsv(true);
     setError('');
@@ -891,10 +910,22 @@ export default function AdminQuestions({ csvState, triggerCsvImport, csvJobId })
               Passage images/tables are still authored one at a time in the passage editor, not through the CSV.
             </p>
           </div>
-          <label className="btn-secondary" style={{ cursor: 'pointer' }}>
-            Browse for a file
-            <input type="file" accept=".csv" onChange={handleFileChange} style={{ display: 'none' }} />
-          </label>
+          <div style={{ display: 'flex', gap: '10px', flexWrap: 'wrap', justifyContent: 'center' }}>
+            <label className="btn-secondary" style={{ cursor: 'pointer' }}>
+              Browse for a file
+              <input type="file" accept=".csv" onChange={handleFileChange} style={{ display: 'none' }} />
+            </label>
+            <button
+              type="button"
+              className="btn-secondary"
+              onClick={handleDownloadTemplate}
+              disabled={downloadingTemplate}
+              style={{ display: 'inline-flex', alignItems: 'center', gap: '6px' }}
+            >
+              <Icon name="download" size={14} />
+              {downloadingTemplate ? 'Downloading…' : 'Download template'}
+            </button>
+          </div>
           {uploadingCsv && (
             <span style={{ font: '500 12.5px var(--font-body)', color: 'var(--primary)' }}>Uploading and parsing…</span>
           )}
