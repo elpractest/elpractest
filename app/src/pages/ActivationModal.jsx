@@ -3,7 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import api from '../api';
 import Icon from '../components/Icon';
 
-export default function ActivationModal({ user, onClose, onSuccess }) {
+export default function ActivationModal({ user, onClose, onSuccess, presetCourseId }) {
   const [tab, setTab] = useState('request'); // 'request' | 'redeem'
   const [courses, setCourses] = useState([]);
   const [loadingCourses, setLoadingCourses] = useState(true);
@@ -23,11 +23,36 @@ export default function ActivationModal({ user, onClose, onSuccess }) {
     setLoadingCourses(true);
     api.get('/api/courses/public')
       .then(res => {
-        setCourses(res.data.courses || res.data || []);
+        const list = res.data.courses || res.data || [];
+        setCourses(list);
+        // Arrived from a specific Store card ("Request access" on one
+        // course) — jump straight to its batch instead of making the
+        // student find it again in a list of every course. A course with
+        // more than one open batch still needs a manual pick, since we
+        // can't guess which one they already paid for offline.
+        if (presetCourseId) {
+          const match = list.find((c) => c.id === presetCourseId);
+          if (match?.batches?.length === 1) {
+            setSelectedBatchId(String(match.batches[0].id));
+          }
+        }
       })
       .catch(() => {})
       .finally(() => setLoadingCourses(false));
-  }, []);
+  }, [presetCourseId]);
+
+  // Scoped to one course when opened from its Store card — this is a
+  // *published* course (Course.is_published, via /api/courses/public) that
+  // may still be entirely absent from that list, or published with no
+  // priced active batch: a course can sit in the Store (a Product wraps it)
+  // without ever having been published on the course record itself, since
+  // those are two independent admin actions. That gap is real, so it's
+  // surfaced here rather than left as a dropdown with nothing in it.
+  const presetCourse = presetCourseId ? courses.find((c) => c.id === presetCourseId) : null;
+  const presetCourseUnavailable = presetCourseId && !loadingCourses && !presetCourse;
+  const batchOptions = presetCourseId
+    ? (presetCourse?.batches || []).map((b) => ({ ...b, courseTitle: presetCourse.title }))
+    : courses.flatMap((c) => (c.batches || []).map((b) => ({ ...b, courseTitle: c.title })));
 
   const handleRequestSubmit = async (e) => {
     e.preventDefault();
@@ -184,9 +209,19 @@ export default function ActivationModal({ user, onClose, onSuccess }) {
         {tab === 'request' ? (
           <form onSubmit={handleRequestSubmit} style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
             <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
-              <label style={{ fontSize: '0.85rem', fontWeight: 600, color: 'var(--text-secondary)' }}>Select Course & Batch *</label>
+              <label style={{ fontSize: '0.85rem', fontWeight: 600, color: 'var(--text-secondary)' }}>
+                {presetCourseId ? 'Batch' : 'Select Course & Batch *'}
+              </label>
               {loadingCourses ? (
                 <div style={{ fontSize: '0.85rem', color: 'var(--text-secondary)' }}>Loading batches...</div>
+              ) : presetCourseUnavailable ? (
+                <div style={{ background: 'var(--warning-bg, var(--danger-bg))', border: '1px solid var(--warning-border, var(--danger-border))', padding: '10px 14px', borderRadius: '8px', color: 'var(--warning-text, var(--danger-text))', fontSize: '0.82rem', lineHeight: 1.5 }}>
+                  This course isn't open for activation requests yet — it has no active priced batch. Ask your admin to set one up, or use Buy if online payment is available.
+                </div>
+              ) : batchOptions.length === 0 ? (
+                <div style={{ background: 'var(--warning-bg, var(--danger-bg))', border: '1px solid var(--warning-border, var(--danger-border))', padding: '10px 14px', borderRadius: '8px', color: 'var(--warning-text, var(--danger-text))', fontSize: '0.82rem', lineHeight: 1.5 }}>
+                  {presetCourse?.title || 'This course'} has no batch open for activation requests right now.
+                </div>
               ) : (
                 <select
                   className="form-input"
@@ -195,13 +230,11 @@ export default function ActivationModal({ user, onClose, onSuccess }) {
                   required
                   style={{ background: 'var(--surface-2)', color: 'var(--text-primary)' }}
                 >
-                  <option value="" style={{ background: 'var(--bg-color)' }}>-- Select Course Batch --</option>
-                  {courses.map(c => (
-                    c.batches?.map(b => (
-                      <option key={b.id} value={b.id} style={{ background: 'var(--bg-color)' }}>
-                        {c.title} — {b.name} ({b.price_in_rupees || (b.price_paise ? `₹${b.price_paise / 100}` : 'Free')})
-                      </option>
-                    ))
+                  <option value="" style={{ background: 'var(--bg-color)' }}>-- Select {presetCourseId ? 'Batch' : 'Course Batch'} --</option>
+                  {batchOptions.map((b) => (
+                    <option key={b.id} value={b.id} style={{ background: 'var(--bg-color)' }}>
+                      {presetCourseId ? b.name : `${b.courseTitle} — ${b.name}`} ({b.price_in_rupees || (b.price_paise ? `₹${b.price_paise / 100}` : 'Free')})
+                    </option>
                   ))}
                 </select>
               )}

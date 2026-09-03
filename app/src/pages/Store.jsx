@@ -46,6 +46,11 @@ export default function Store({ user }) {
   const [filter, setFilter] = useState('all');
   const [checkoutProduct, setCheckoutProduct] = useState(null);
   const [showActivation, setShowActivation] = useState(false);
+  // Set when "Request access" is clicked on a specific product's card, so
+  // the modal opens straight to that course's batch instead of a blank
+  // course picker. Null opens the modal unscoped (the empty-state's
+  // generic "Redeem an activation code" entry point).
+  const [activationCourseId, setActivationCourseId] = useState(null);
 
   const load = () => {
     setLoading(true);
@@ -176,13 +181,29 @@ export default function Store({ user }) {
                     {product.owned ? (
                       <span style={{ font: '600 12px var(--font-body)', color: tint('green').c, flex: 'none' }}>In your library</span>
                     ) : (
-                      <button
-                        onClick={() => setCheckoutProduct(product)}
-                        className="btn-primary"
-                        style={{ padding: '9px 16px', fontSize: '0.82rem', flex: 'none' }}
-                      >
-                        Buy
-                      </button>
+                      <div style={{ display: 'flex', gap: '8px', flex: 'none' }}>
+                        {/* Only when the product is a single course: the activation
+                            request behind this targets one course's batch, so a
+                            bundle of several courses has no single batch to scope
+                            it to and falls back to the plain Buy flow. */}
+                        {product.items.length === 1 && product.items[0].kind === 'course' && (
+                          <button
+                            onClick={() => { setActivationCourseId(product.items[0].id); setShowActivation(true); }}
+                            className="btn-secondary"
+                            style={{ padding: '9px 14px', fontSize: '0.82rem' }}
+                            title="Already paid your institute offline? Request access with your payment proof."
+                          >
+                            Request access
+                          </button>
+                        )}
+                        <button
+                          onClick={() => setCheckoutProduct(product)}
+                          className="btn-primary"
+                          style={{ padding: '9px 16px', fontSize: '0.82rem' }}
+                        >
+                          Buy
+                        </button>
+                      </div>
                     )}
                   </div>
                 </div>
@@ -215,7 +236,12 @@ export default function Store({ user }) {
         />
       )}
       {showActivation && (
-        <ActivationModal user={user} onClose={() => setShowActivation(false)} onSuccess={() => { setShowActivation(false); load(); }} />
+        <ActivationModal
+          user={user}
+          presetCourseId={activationCourseId}
+          onClose={() => { setShowActivation(false); setActivationCourseId(null); }}
+          onSuccess={() => { setShowActivation(false); setActivationCourseId(null); load(); }}
+        />
       )}
     </div>
   );
