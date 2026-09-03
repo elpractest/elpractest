@@ -2,5 +2,3 @@
 !private/
 !public/
 !.gitignore
-!templates/
-!templates/question_import_sample.csv

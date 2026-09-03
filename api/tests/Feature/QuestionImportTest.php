@@ -366,7 +366,7 @@ class QuestionImportTest extends TestCase
      */
     public function test_the_shipped_sample_csv_template_imports_cleanly(): void
     {
-        $path = base_path('storage/app/templates/question_import_sample.csv');
+        $path = resource_path('templates/question_import_sample.csv');
         $this->assertFileExists($path);
 
         $import = new QuestionImport($this->admin->id);

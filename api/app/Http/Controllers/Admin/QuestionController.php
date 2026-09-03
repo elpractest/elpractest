@@ -325,10 +325,17 @@ class QuestionController extends Controller
      * and the image/passage columns (including an option-image-only reasoning
      * row). Served from disk rather than generated on the fly so what an admin
      * downloads is the same file this app's own tests import against.
+     *
+     * Lives in resources/, NOT storage/app: in production storage/app is a
+     * persistent Docker volume (docker-compose.coolify.yml) that survives
+     * every redeploy, so a file only baked into the image under storage/app
+     * is invisible at runtime — shadowed by whatever the volume already had
+     * (nothing, the first time this shipped). resources/ is part of the
+     * image itself, no volume in front of it.
      */
     public function downloadTemplate(): \Symfony\Component\HttpFoundation\BinaryFileResponse
     {
-        $path = storage_path('app/templates/question_import_sample.csv');
+        $path = resource_path('templates/question_import_sample.csv');
 
         abort_unless(is_file($path), 404, 'Sample template is missing from this deployment.');
 
