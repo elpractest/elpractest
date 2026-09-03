@@ -14,6 +14,7 @@ class Question extends Model
         'difficulty',
         'exam_tags',
         'question_text',
+        'image_path',
         'explanation',
         'marks',
         'negative_marks',
@@ -61,6 +62,13 @@ class Question extends Model
 
     /** Below this many attempts, item statistics are too noisy to act on. */
     public const MIN_STATS_SAMPLE = 30;
+
+    protected $appends = ['image_url'];
+
+    public function getImageUrlAttribute(): ?string
+    {
+        return $this->image_path ? \Illuminate\Support\Facades\Storage::disk('public')->url($this->image_path) : null;
+    }
 
     protected function casts(): array
     {

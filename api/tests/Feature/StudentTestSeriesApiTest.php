@@ -106,5 +106,33 @@ class StudentTestSeriesApiTest extends TestCase
         $response->assertJsonPath('tests.0.category', 'full_mock');
         $response->assertJsonPath('tests.0.status', 'not_started');
         $this->assertNotNull($response->json('next_test_id'));
+        // Not started yet, so there is no attempt to link to.
+        $this->assertNull($response->json('tests.0.session_id'));
+    }
+
+    /**
+     * Regression: the "Analysis" link on a completed test in the study path
+     * had nowhere real to go — it navigated to a route keyed by SESSION id,
+     * but this payload only ever carried the TEST id. `session_id` is the
+     * completed attempt's own id, which is what a results page actually needs.
+     */
+    public function test_a_completed_test_reports_its_own_session_id(): void
+    {
+        $test = Test::where('test_series_id', $this->series->id)->first();
+
+        $session = \App\Models\TestSession::create([
+            'user_id' => $this->student->id,
+            'test_id' => $test->id,
+            'started_at' => now()->subMinutes(30),
+            'submitted_at' => now(),
+            'duration_seconds' => $test->duration_seconds,
+            'total_score' => 120,
+        ]);
+
+        $response = $this->actingAs($this->student)->getJson("/api/student/test-series/{$this->series->id}");
+
+        $response->assertStatus(200);
+        $response->assertJsonPath('tests.0.status', 'completed');
+        $response->assertJsonPath('tests.0.session_id', $session->id);
     }
 }

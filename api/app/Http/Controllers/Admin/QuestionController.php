@@ -14,6 +14,7 @@ use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Str;
 
 class QuestionController extends Controller
@@ -71,13 +72,18 @@ class QuestionController extends Controller
      */
     public function store(StoreQuestionRequest $request): JsonResponse
     {
-        $question = DB::transaction(function () use ($request) {
+        $imagePath = $request->hasFile('image')
+            ? $request->file('image')->store('question_images', 'public')
+            : null;
+
+        $question = DB::transaction(function () use ($request, $imagePath) {
             $question = Question::create([
                 'subject' => $request->subject,
                 'topic' => $request->topic,
                 'difficulty' => $request->difficulty,
                 'exam_tags' => $request->exam_tags,
                 'question_text' => $request->question_text,
+                'image_path' => $imagePath,
                 'explanation' => $request->explanation,
                 'marks' => $request->marks,
                 'negative_marks' => $request->negative_marks,
@@ -91,10 +97,15 @@ class QuestionController extends Controller
 
             // Numeric questions carry no options at all.
             foreach ($request->input('options', []) as $index => $optionData) {
+                $optionImage = $request->hasFile("options.{$index}.image")
+                    ? $request->file("options.{$index}.image")->store('option_images', 'public')
+                    : null;
+
                 QuestionOption::create([
                     'question_id' => $question->id,
                     'label' => strtolower($optionData['label']),
-                    'option_text' => $optionData['option_text'],
+                    'option_text' => $optionData['option_text'] ?? '',
+                    'image_path' => $optionImage,
                     'is_correct' => $optionData['is_correct'],
                     'sort_order' => $index,
                 ]);
@@ -128,7 +139,24 @@ class QuestionController extends Controller
     {
         $oldValue = $question->load('options')->toArray();
 
-        $updatedQuestion = DB::transaction(function () use ($request, $question) {
+        // Old per-option image files, keyed by the OLD row's sort position —
+        // the closest thing to identity these rows have, since options carry
+        // no id in the payload and are about to be deleted wholesale below.
+        // Used only to know which files are now orphaned once the new set
+        // is written; a genuinely reordered option keeping its picture is
+        // handled by the frontend resending that image's own path, not by
+        // this positional guess.
+        $previousOptionImages = $question->options()->pluck('image_path', 'sort_order');
+
+        $newImagePath = $request->hasFile('image')
+            ? $request->file('image')->store('question_images', 'public')
+            : null;
+        // Distinct from "no new file" — a nullable file input simply omits
+        // its key when nothing is chosen, so removing the picture entirely
+        // (as opposed to leaving it alone) needs its own explicit signal.
+        $removeImage = $request->boolean('remove_image');
+
+        $updatedQuestion = DB::transaction(function () use ($request, $question, $newImagePath, $removeImage) {
             $question->update($request->only([
                 'subject',
                 'topic',
@@ -144,16 +172,31 @@ class QuestionController extends Controller
                 'passage_id',
             ]));
 
+            if ($newImagePath) {
+                $question->update(['image_path' => $newImagePath]);
+            } elseif ($removeImage) {
+                $question->update(['image_path' => null]);
+            }
+
             if ($request->has('options')) {
                 // Delete existing options
                 $question->options()->delete();
 
-                // Recreate options
+                // Recreate options. An option's image is either a fresh
+                // upload, or the SAME path the form sent back for an
+                // untouched image (see StoreQuestionRequest — options are
+                // replaced wholesale, so "leave it alone" has to be spelled
+                // out explicitly rather than implied by omission).
                 foreach ($request->options as $index => $optionData) {
+                    $optionImage = $request->hasFile("options.{$index}.image")
+                        ? $request->file("options.{$index}.image")->store('option_images', 'public')
+                        : ($optionData['image_path'] ?? null);
+
                     QuestionOption::create([
                         'question_id' => $question->id,
                         'label' => strtolower($optionData['label']),
-                        'option_text' => $optionData['option_text'],
+                        'option_text' => $optionData['option_text'] ?? '',
+                        'image_path' => $optionImage,
                         'is_correct' => $optionData['is_correct'],
                         'sort_order' => $index,
                     ]);
@@ -162,6 +205,24 @@ class QuestionController extends Controller
 
             return $question;
         });
+
+        // Cleanup, after the transaction has committed: the old question
+        // image, if it was just replaced OR explicitly removed.
+        $oldImagePath = $oldValue['image_path'] ?? null;
+        if (($newImagePath || $removeImage) && $oldImagePath) {
+            Storage::disk('public')->delete($oldImagePath);
+        }
+
+        // And any option image that existed before this save and is not
+        // referenced by any option after it — genuinely removed, not just
+        // reordered (a path still in use survives this diff untouched).
+        if ($request->has('options')) {
+            $stillUsed = $updatedQuestion->options()->pluck('image_path')->filter()->all();
+            $orphaned = $previousOptionImages->filter()->reject(fn ($path) => in_array($path, $stillUsed, true));
+            foreach ($orphaned as $path) {
+                Storage::disk('public')->delete($path);
+            }
+        }
 
         $updatedQuestion->load('options');
 

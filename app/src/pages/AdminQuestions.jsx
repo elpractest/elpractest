@@ -9,6 +9,100 @@ import {
 import katex from 'katex';
 import 'katex/dist/katex.min.css';
 
+/**
+ * A question or a passage can now carry a File (a fresh image upload)
+ * alongside its ordinary fields, so both save as multipart FormData rather
+ * than JSON. This is the one generic serializer for that: it walks the
+ * object recursively and appends each leaf under Laravel's own bracket
+ * convention (`options[0][option_text]`, `exam_tags[]`), which the
+ * FormRequest classes on the other end already parse into normal nested
+ * arrays — no server-side change needed to accept this shape.
+ *
+ * null/undefined are skipped entirely rather than sent as the string
+ * "null" — that is what lets a field stay `nullable` and simply absent
+ * when the admin has not touched it (an untouched question image, for
+ * instance).
+ */
+function appendToFormData(formData, data, parentKey) {
+  if (data === null || data === undefined) return;
+
+  if (data instanceof File) {
+    formData.append(parentKey, data);
+    return;
+  }
+
+  if (Array.isArray(data)) {
+    // An empty array is sent as nothing at all — multipart form encoding
+    // has no wire representation for "a present but empty array" the way
+    // JSON does, and the one trick that fakes it (`field[]=''`) arrives
+    // server-side as a ONE-element array containing an empty string,
+    // which is worse than simply omitting the key. handleQuestionSubmit
+    // uses the plain JSON path instead of this serializer whenever
+    // nothing in the form is actually a File, which is what makes
+    // "clear every exam tag" and "switch to numeric (empty options)"
+    // both still work correctly for the common, no-upload save.
+    data.forEach((value, index) => appendToFormData(formData, value, `${parentKey}[${index}]`));
+    return;
+  }
+
+  if (typeof data === 'object') {
+    Object.entries(data).forEach(([key, value]) => {
+      const nextKey = parentKey ? `${parentKey}[${key}]` : key;
+      appendToFormData(formData, value, nextKey);
+    });
+    return;
+  }
+
+  if (typeof data === 'boolean') {
+    formData.append(parentKey, data ? '1' : '0');
+    return;
+  }
+
+  formData.append(parentKey, String(data));
+}
+
+function toFormData(data) {
+  const formData = new FormData();
+  Object.entries(data).forEach(([key, value]) => appendToFormData(formData, value, key));
+  return formData;
+}
+
+/**
+ * `api` (src/api.js) sets `Content-Type: application/json` as a DEFAULT
+ * header on every request, for the JSON body every other endpoint in this
+ * app sends. axios only auto-detects a FormData body and fills in the
+ * correct `multipart/form-data; boundary=...` header when Content-Type has
+ * NOT already been set — an explicit default always wins, so a plain
+ * `api.post(url, formData)` silently sent the JSON content type over an
+ * actual multipart body. The server received a request it could not
+ * parse as either: no files, and field values arriving mangled. Every
+ * upload in this file goes through this instead of touching `api.post`
+ * directly, so that mistake cannot quietly reappear at a future call site.
+ */
+function postFormData(url, formData) {
+  return api.post(url, formData, { headers: { 'Content-Type': undefined } });
+}
+
+/**
+ * One object URL per File, reused for as long as that exact File instance
+ * is selected. Calling URL.createObjectURL() directly inside render mints
+ * a brand new blob URL on every re-render of the form (every keystroke in
+ * an unrelated field) and never releases the old ones — a real leak over
+ * an editing session. Keyed by the File object itself in a WeakMap, so a
+ * File that is no longer referenced anywhere in the form can be collected
+ * normally; the blob URL only needs releasing at all if the admin churns
+ * through many different files in one sitting, which this form's six-
+ * option ceiling makes a non-issue.
+ */
+const objectUrlCache = new WeakMap();
+function previewUrlFor(file) {
+  if (!file) return null;
+  if (!objectUrlCache.has(file)) {
+    objectUrlCache.set(file, URL.createObjectURL(file));
+  }
+  return objectUrlCache.get(file);
+}
+
 // Math Renderer helper
 const renderMath = (text) => {
   if (!text) return { __html: '' };
@@ -49,6 +143,189 @@ const renderMath = (text) => {
   }
 };
 
+/**
+ * A single image field: shows the current picture (a fresh upload, or the
+ * one already stored when editing) with a Change/Remove pair, or a plain
+ * file input when there is none yet. Shared by the question's own diagram
+ * and the passage exhibit — both are exactly this "zero or one image"
+ * shape, unlike an option's image which lives inline in its own row.
+ */
+function ImagePicker({ id, file, existingUrl, onChange, onClear }) {
+  const previewUrl = file ? previewUrlFor(file) : existingUrl;
+
+  if (previewUrl) {
+    return (
+      <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+        <img src={previewUrl} alt="" style={{ width: '84px', height: '84px', objectFit: 'cover', borderRadius: '10px', border: '1px solid var(--line)' }} />
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
+          <label className="btn-secondary" style={{ padding: '7px 12px', fontSize: '12px', cursor: 'pointer', textAlign: 'center' }}>
+            Change
+            <input
+              id={id}
+              type="file"
+              accept="image/png,image/jpeg,image/webp"
+              onChange={(e) => onChange(e.target.files?.[0] || null)}
+              style={{ display: 'none' }}
+            />
+          </label>
+          <button type="button" onClick={onClear} className="btn-secondary" style={{ padding: '7px 12px', fontSize: '12px' }}>
+            Remove
+          </button>
+        </div>
+      </div>
+    );
+  }
+
+  return (
+    <input
+      id={id}
+      type="file"
+      accept="image/png,image/jpeg,image/webp"
+      onChange={(e) => onChange(e.target.files?.[0] || null)}
+      className="form-input"
+    />
+  );
+}
+
+/** A read-only rendering of {headers, rows} for the live preview and the
+    passage manager — the same shape TestTaking.jsx renders for real. */
+function PreviewTable({ table }) {
+  if (!table?.headers?.length) return null;
+  return (
+    <div style={{ overflowX: 'auto', border: '1px solid var(--line)', borderRadius: '10px' }}>
+      <table style={{ borderCollapse: 'collapse', width: '100%', minWidth: '280px', font: '400 12px var(--font-body)' }}>
+        <thead>
+          <tr>
+            {table.headers.map((h, i) => (
+              <th key={i} style={{ textAlign: 'left', padding: '6px 10px', background: 'var(--surf)', color: 'var(--tx)', fontWeight: 700, borderBottom: '1px solid var(--line)', whiteSpace: 'nowrap' }}>{h}</th>
+            ))}
+          </tr>
+        </thead>
+        <tbody>
+          {(table.rows || []).map((row, ri) => (
+            <tr key={ri}>
+              {row.map((cell, ci) => (
+                <td key={ci} style={{ padding: '5px 10px', color: 'var(--tx2)', borderBottom: '1px solid var(--line)', whiteSpace: 'nowrap' }}>{cell}</td>
+              ))}
+            </tr>
+          ))}
+        </tbody>
+      </table>
+    </div>
+  );
+}
+
+/**
+ * A flat Data Interpretation grid — headers plus rows of the same width,
+ * nothing else. No cell typing, no merged cells, no per-column formatting:
+ * a real DI table on an SSC/Banking paper is short labels and numbers, and
+ * that is all this needs to author. Deliberately not a spreadsheet.
+ */
+function TableEditor({ table, onChange }) {
+  if (!table) {
+    return (
+      <button
+        type="button"
+        onClick={() => onChange({ headers: ['', ''], rows: [['', '']] })}
+        className="btn-secondary"
+        style={{ padding: '8px 14px', minHeight: '38px', fontSize: '12px', alignSelf: 'flex-start' }}
+      >
+        <Icon name="plus" size={14} strokeWidth={2.4} />
+        Add a data table
+      </button>
+    );
+  }
+
+  const colCount = table.headers.length;
+
+  const setHeader = (i, value) => {
+    const headers = [...table.headers];
+    headers[i] = value;
+    onChange({ ...table, headers });
+  };
+  const setCell = (ri, ci, value) => {
+    const rows = table.rows.map((row, r) => (r === ri ? row.map((c, cc) => (cc === ci ? value : c)) : row));
+    onChange({ ...table, rows });
+  };
+  const addColumn = () => {
+    onChange({ headers: [...table.headers, ''], rows: table.rows.map((row) => [...row, '']) });
+  };
+  const removeColumn = (i) => {
+    if (colCount <= 1) return;
+    onChange({ headers: table.headers.filter((_, c) => c !== i), rows: table.rows.map((row) => row.filter((_, c) => c !== i)) });
+  };
+  const addRow = () => {
+    onChange({ ...table, rows: [...table.rows, Array(colCount).fill('')] });
+  };
+  const removeRow = (ri) => {
+    if (table.rows.length <= 1) return;
+    onChange({ ...table, rows: table.rows.filter((_, r) => r !== ri) });
+  };
+
+  return (
+    <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+      <div style={{ overflowX: 'auto' }}>
+        <table style={{ borderCollapse: 'collapse' }}>
+          <thead>
+            <tr>
+              {table.headers.map((h, i) => (
+                <th key={i} style={{ padding: '2px' }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '3px' }}>
+                    <input
+                      value={h}
+                      onChange={(e) => setHeader(i, e.target.value)}
+                      placeholder={`Col ${i + 1}`}
+                      className="form-input"
+                      style={{ width: '104px', padding: '6px 8px', fontSize: '12px', fontWeight: 700 }}
+                    />
+                    <button type="button" onClick={() => removeColumn(i)} disabled={colCount <= 1} className="adm-rowaction" style={{ opacity: colCount <= 1 ? 0.3 : 1 }} aria-label={`Remove column ${i + 1}`}>
+                      <Icon name="x" size={12} />
+                    </button>
+                  </div>
+                </th>
+              ))}
+              <th style={{ padding: '2px' }}>
+                <button type="button" onClick={addColumn} className="adm-rowaction" aria-label="Add column" title="Add column">
+                  <Icon name="plus" size={13} />
+                </button>
+              </th>
+            </tr>
+          </thead>
+          <tbody>
+            {table.rows.map((row, ri) => (
+              <tr key={ri}>
+                {row.map((cell, ci) => (
+                  <td key={ci} style={{ padding: '2px' }}>
+                    <input
+                      value={cell}
+                      onChange={(e) => setCell(ri, ci, e.target.value)}
+                      className="form-input"
+                      style={{ width: '104px', padding: '6px 8px', fontSize: '12px' }}
+                    />
+                  </td>
+                ))}
+                <td style={{ padding: '2px' }}>
+                  <button type="button" onClick={() => removeRow(ri)} disabled={table.rows.length <= 1} className="adm-rowaction" style={{ opacity: table.rows.length <= 1 ? 0.3 : 1 }} aria-label={`Remove row ${ri + 1}`}>
+                    <Icon name="x" size={13} />
+                  </button>
+                </td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
+      <div style={{ display: 'flex', gap: '8px' }}>
+        <button type="button" onClick={addRow} className="btn-secondary" style={{ padding: '6px 12px', minHeight: '32px', fontSize: '11.5px' }}>
+          <Icon name="plus" size={13} strokeWidth={2.4} /> Add row
+        </button>
+        <button type="button" onClick={() => onChange(null)} className="btn-secondary" style={{ padding: '6px 12px', minHeight: '32px', fontSize: '11.5px' }}>
+          Remove table
+        </button>
+      </div>
+    </div>
+  );
+}
+
 export default function AdminQuestions({ csvState, triggerCsvImport, csvJobId }) {
   const [questions, setQuestions] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -84,17 +361,32 @@ export default function AdminQuestions({ csvState, triggerCsvImport, csvJobId })
     marks: 1.0,
     negative_marks: 0.25,
     question_text: '',
+    // `image` is a fresh upload (a File, or null); `image_url` is the
+    // already-stored picture's preview when editing. Only `image` is ever
+    // sent back to the server — `image_url` exists purely to show the
+    // admin what is currently attached.
+    image: null,
+    image_url: null,
+    // Explicit removal signal for the question's OWN image — distinct from
+    // "no new file chosen", which on its own means "leave it alone". Set
+    // by the remove button next to the preview, cleared the moment a new
+    // file is chosen instead.
+    remove_image: false,
     explanation: '',
     exam_tags: [],
     question_type: 'single_choice',
     numeric_answer: '',
     numeric_tolerance: 0,
     passage_id: '',
+    // `image` is a fresh upload for this option; `image_path` is the
+    // already-stored file's path, carried forward so an untouched image
+    // survives the save (options are replaced wholesale — see
+    // QuestionController::update). `image_url` is the preview only.
     options: [
-      { label: 'a', option_text: '', is_correct: false },
-      { label: 'b', option_text: '', is_correct: false },
-      { label: 'c', option_text: '', is_correct: false },
-      { label: 'd', option_text: '', is_correct: false },
+      { label: 'a', option_text: '', image: null, image_path: null, image_url: null, is_correct: false },
+      { label: 'b', option_text: '', image: null, image_path: null, image_url: null, is_correct: false },
+      { label: 'c', option_text: '', image: null, image_path: null, image_url: null, is_correct: false },
+      { label: 'd', option_text: '', image: null, image_path: null, image_url: null, is_correct: false },
     ]
   });
   const [form, setForm] = useState(blankForm());
@@ -103,7 +395,18 @@ export default function AdminQuestions({ csvState, triggerCsvImport, csvJobId })
   // low-volume authoring flow (unlike the CSV path for plain questions).
   const [passages, setPassages] = useState([]);
   const [showPassageManager, setShowPassageManager] = useState(false);
-  const [passageForm, setPassageForm] = useState({ id: null, title: '', body: '' });
+  const blankPassageForm = () => ({
+    id: null,
+    title: '',
+    body: '',
+    image: null,
+    image_url: null,
+    remove_image: false,
+    // {headers: string[], rows: string[][]} — a Data Interpretation table,
+    // or null for a plain text (or image-only) passage.
+    table: null,
+  });
+  const [passageForm, setPassageForm] = useState(blankPassageForm());
 
   /* Presentation only: row selection for bulk review, the detail drawer,
      and the two destructive confirmations. No fetch or mutation changes. */
@@ -127,13 +430,26 @@ export default function AdminQuestions({ csvState, triggerCsvImport, csvJobId })
   const savePassage = async (e) => {
     e.preventDefault();
     setError('');
+
+    const { image_url: _imageUrl, ...payload } = passageForm; // display-only
+
     try {
-      if (passageForm.id) {
-        await api.put(`/api/admin/passages/${passageForm.id}`, passageForm);
+      if (payload.image) {
+        // Multipart only when a file is actually attached — see
+        // handleQuestionSubmit for why plain JSON is kept as the default
+        // path (it is the only one that can faithfully clear a nested
+        // field like `table` back to null).
+        if (payload.id) {
+          await postFormData(`/api/admin/passages/${payload.id}`, toFormData({ ...payload, _method: 'PUT' }));
+        } else {
+          await postFormData('/api/admin/passages', toFormData(payload));
+        }
+      } else if (payload.id) {
+        await api.put(`/api/admin/passages/${payload.id}`, payload);
       } else {
-        await api.post('/api/admin/passages', passageForm);
+        await api.post('/api/admin/passages', payload);
       }
-      setPassageForm({ id: null, title: '', body: '' });
+      setPassageForm(blankPassageForm());
       fetchPassages();
     } catch (err) {
       setError(err.response?.data?.message || 'Failed to save passage.');
@@ -236,7 +552,29 @@ export default function AdminQuestions({ csvState, triggerCsvImport, csvJobId })
   const addOption = () => {
     const label = nextOptionLabel();
     if (!label || form.options.length >= 6) return;
-    setForm({ ...form, options: [...form.options, { label, option_text: '', is_correct: false }] });
+    setForm({ ...form, options: [...form.options, { label, option_text: '', image: null, image_path: null, image_url: null, is_correct: false }] });
+  };
+
+  const setQuestionImage = (file) => {
+    setForm({ ...form, image: file, remove_image: false });
+  };
+
+  const clearQuestionImage = () => {
+    setForm({ ...form, image: null, image_url: null, remove_image: true });
+  };
+
+  const setOptionImage = (index, file) => {
+    const updated = [...form.options];
+    // A fresh upload replaces whatever path was being carried forward —
+    // the new file is what will actually be stored on save.
+    updated[index] = { ...updated[index], image: file, image_path: null };
+    setForm({ ...form, options: updated });
+  };
+
+  const clearOptionImage = (index) => {
+    const updated = [...form.options];
+    updated[index] = { ...updated[index], image: null, image_path: null, image_url: null };
+    setForm({ ...form, options: updated });
   };
 
   const removeOption = (index) => {
@@ -267,23 +605,55 @@ export default function AdminQuestions({ csvState, triggerCsvImport, csvJobId })
         setError('Select at least one correct option.');
         return;
       }
+      // Mirrors the server's own check (StoreQuestionRequest) so a bare
+      // option is caught before the round trip, not after it.
+      const emptyOption = form.options.find(
+        (opt) => !opt.option_text?.trim() && !opt.image && !opt.image_path
+      );
+      if (emptyOption) {
+        setError(`Option ${emptyOption.label.toUpperCase()} needs either text or an image.`);
+        return;
+      }
     }
 
     const payload = { ...form };
+    // Display-only; the server has no use for it and never validates it.
+    delete payload.image_url;
     if (isNumeric) {
       delete payload.options;
     } else {
       delete payload.numeric_answer;
       delete payload.numeric_tolerance;
+      // image_url is a display-only preview; the server has no use for it
+      // and image/image_path are what actually carry the option's picture.
+      payload.options = payload.options.map(({ image_url: _imageUrl, ...opt }) => opt);
     }
     if (!payload.passage_id) payload.passage_id = null;
 
+    // Plain JSON stays the path for the overwhelming common case — a
+    // text-only save — because multipart form encoding has no faithful
+    // way to send an EMPTY array (see appendToFormData), which would
+    // otherwise put clearing every exam tag, or switching to numeric with
+    // its now-empty options list, at risk. Multipart is used only when
+    // this save actually attaches a new file somewhere.
+    const hasNewUpload = !!payload.image
+      || (Array.isArray(payload.options) && payload.options.some((opt) => opt.image));
+
     try {
       if (form.id) {
-        await api.put(`/api/admin/questions/${form.id}`, payload);
+        if (hasNewUpload) {
+          await postFormData(`/api/admin/questions/${form.id}`, toFormData({ ...payload, _method: 'PUT' }));
+        } else {
+          const { image: _image, ...jsonPayload } = payload; // image is always null here
+          await api.put(`/api/admin/questions/${form.id}`, jsonPayload);
+        }
         setSuccess('Question updated successfully.');
+      } else if (hasNewUpload) {
+        await postFormData('/api/admin/questions', toFormData(payload));
+        setSuccess('Question created successfully.');
       } else {
-        await api.post('/api/admin/questions', payload);
+        const { image: _image, ...jsonPayload } = payload; // image is always null here
+        await api.post('/api/admin/questions', jsonPayload);
         setSuccess('Question created successfully.');
       }
       setShowForm(false);
@@ -302,6 +672,9 @@ export default function AdminQuestions({ csvState, triggerCsvImport, csvJobId })
       marks: q.marks,
       negative_marks: q.negative_marks,
       question_text: q.question_text,
+      image: null,
+      image_url: q.image_url || null,
+      remove_image: false,
       explanation: q.explanation || '',
       exam_tags: q.exam_tags || [],
       question_type: q.question_type || 'single_choice',
@@ -312,7 +685,10 @@ export default function AdminQuestions({ csvState, triggerCsvImport, csvJobId })
         ? blankForm().options
         : q.options.map(opt => ({
             label: opt.label,
-            option_text: opt.option_text,
+            option_text: opt.option_text || '',
+            image: null,
+            image_path: opt.image_path || null,
+            image_url: opt.image_url || null,
             is_correct: !!opt.is_correct
           }))
     });
@@ -507,8 +883,12 @@ export default function AdminQuestions({ csvState, triggerCsvImport, csvJobId })
             <h3 className="t-heading" style={{ margin: 0, fontSize: '15px', color: 'var(--tx)' }}>Drop a question CSV</h3>
             <p style={{ margin: '6px auto 0', maxWidth: '48ch', font: '400 12px/1.6 var(--font-body)', color: 'var(--muted)' }}>
               Required: subject, topic, difficulty, question_text, option_a…option_f, correct_option, marks,
-              negative_marks, explanation. Optional: question_type, numeric_answer, numeric_tolerance. For
+              negative_marks, explanation. Optional: question_type, numeric_answer, numeric_tolerance,
+              question_image_url and option_a_image_url…option_f_image_url (diagrams fetched from those
+              URLs — an option can be image-only, with its text column left blank, for reasoning
+              figure-series questions), passage_id (links into an existing comprehension/DI set). For
               multi-select, pipe-separate correct_option (e.g. <code style={{ font: '500 11px var(--font-mono)' }}>a|c</code>).
+              Passage images/tables are still authored one at a time in the passage editor, not through the CSV.
             </p>
           </div>
           <label className="btn-secondary" style={{ cursor: 'pointer' }}>
@@ -913,7 +1293,7 @@ export default function AdminQuestions({ csvState, triggerCsvImport, csvJobId })
           title="Comprehension passages"
           description="Author a passage once, then link several questions to it from the question form."
           width={720}
-          onClose={() => { setShowPassageManager(false); setPassageForm({ id: null, title: '', body: '' }); }}
+          onClose={() => { setShowPassageManager(false); setPassageForm(blankPassageForm()); }}
         >
           <FormSection title={passageForm.id ? 'Edit passage' : 'New passage'}>
             <form onSubmit={savePassage} style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
@@ -921,16 +1301,16 @@ export default function AdminQuestions({ csvState, triggerCsvImport, csvJobId })
                 <input
                   id="pg-title"
                   type="text"
-                  placeholder="e.g. RC Passage 1 — Climate Change"
+                  placeholder="e.g. RC Passage 1 — Climate Change, or DI Set 3 — Company sales"
                   value={passageForm.title}
                   onChange={(e) => setPassageForm({ ...passageForm, title: e.target.value })}
                   className="form-input"
                 />
               </Field>
-              <Field label="Passage text" htmlFor="pg-body">
+              <Field label="Passage text" hint="For a Data Interpretation set this can just be the instruction line — the table or chart below carries the actual data." htmlFor="pg-body">
                 <textarea
                   id="pg-body"
-                  placeholder="Paste the passage here…"
+                  placeholder="Paste the passage here, or write the instruction for a table/chart below…"
                   rows={5}
                   required
                   value={passageForm.body}
@@ -938,11 +1318,23 @@ export default function AdminQuestions({ csvState, triggerCsvImport, csvJobId })
                   className="form-input"
                 />
               </Field>
+              <Field label="Chart or exhibit image (optional)" htmlFor="pg-image">
+                <ImagePicker
+                  id="pg-image"
+                  file={passageForm.image}
+                  existingUrl={passageForm.remove_image ? null : passageForm.image_url}
+                  onChange={(file) => setPassageForm({ ...passageForm, image: file, remove_image: false })}
+                  onClear={() => setPassageForm({ ...passageForm, image: null, image_url: null, remove_image: true })}
+                />
+              </Field>
+              <Field label="Data table (optional)" hint="For a DI set — headers plus rows of numbers. Rendered as a real table, not a picture.">
+                <TableEditor table={passageForm.table} onChange={(table) => setPassageForm({ ...passageForm, table })} />
+              </Field>
               <div style={{ display: 'flex', gap: '10px', justifyContent: 'flex-end' }}>
                 {passageForm.id && (
                   <button
                     type="button"
-                    onClick={() => setPassageForm({ id: null, title: '', body: '' })}
+                    onClick={() => setPassageForm(blankPassageForm())}
                     className="btn-secondary"
                   >
                     Cancel edit
@@ -990,15 +1382,25 @@ export default function AdminQuestions({ csvState, triggerCsvImport, csvJobId })
                       >
                         {pg.body}
                       </div>
-                      <div style={{ marginTop: '5px', font: '400 11.5px var(--font-body)', color: 'var(--muted)' }}>
+                      <div style={{ marginTop: '5px', display: 'flex', alignItems: 'center', gap: '8px', font: '400 11.5px var(--font-body)', color: 'var(--muted)' }}>
                         <Num style={{ fontSize: '11.5px' }}>{pg.questions_count ?? 0}</Num> linked
+                        {pg.image_url && <Badge tone="ai">image</Badge>}
+                        {pg.table_data && <Badge tone="ai">table</Badge>}
                       </div>
                     </div>
                     <div style={{ display: 'flex', gap: '4px', flexShrink: 0 }}>
                       <button
                         type="button"
                         className="adm-rowaction"
-                        onClick={() => setPassageForm({ id: pg.id, title: pg.title || '', body: pg.body })}
+                        onClick={() => setPassageForm({
+                          id: pg.id,
+                          title: pg.title || '',
+                          body: pg.body,
+                          image: null,
+                          image_url: pg.image_url || null,
+                          remove_image: false,
+                          table: pg.table_data || null,
+                        })}
                         aria-label="Edit passage"
                         title="Edit"
                       >
@@ -1139,6 +1541,20 @@ export default function AdminQuestions({ csvState, triggerCsvImport, csvJobId })
                     required
                   />
                 </Field>
+
+                <Field
+                  label="Diagram (optional)"
+                  hint="A figure THIS question refers to — a chart, a mirror-image puzzle. For an exhibit several questions share, attach it to a passage instead (below)."
+                  htmlFor="qf-image"
+                >
+                  <ImagePicker
+                    id="qf-image"
+                    file={form.image}
+                    existingUrl={form.remove_image ? null : form.image_url}
+                    onChange={setQuestionImage}
+                    onClear={clearQuestionImage}
+                  />
+                </Field>
               </FormSection>
 
               <FormSection
@@ -1178,41 +1594,84 @@ export default function AdminQuestions({ csvState, triggerCsvImport, csvJobId })
                   </FormGrid>
                 ) : (
                   <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
-                    {form.options.map((opt, idx) => (
-                      <div key={idx} style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-                        <input
-                          type="checkbox"
-                          checked={opt.is_correct}
-                          onChange={() => handleCorrectOptionSelect(idx)}
-                          style={{ width: '20px', height: '20px', flex: 'none', cursor: 'pointer' }}
-                          aria-label={`Mark option ${opt.label.toUpperCase()} correct`}
-                          title="Set as correct answer"
-                        />
-                        <span style={{ font: '600 13px var(--font-body)', color: 'var(--tx2)', width: '18px', flex: 'none', textTransform: 'uppercase' }}>
-                          {opt.label}
-                        </span>
-                        <input
-                          type="text"
-                          value={opt.option_text}
-                          onChange={(e) => handleOptionTextChange(idx, e.target.value)}
-                          className="form-input"
-                          placeholder={`Option ${opt.label.toUpperCase()}`}
-                          style={{ flex: 1 }}
-                          required
-                        />
-                        <button
-                          type="button"
-                          className="adm-rowaction"
-                          onClick={() => removeOption(idx)}
-                          disabled={form.options.length <= 2}
-                          style={{ opacity: form.options.length <= 2 ? 0.35 : 1 }}
-                          aria-label={`Remove option ${opt.label.toUpperCase()}`}
-                          title="Remove option"
-                        >
-                          <Icon name="x" size={16} />
-                        </button>
-                      </div>
-                    ))}
+                    {form.options.map((opt, idx) => {
+                      const optionImageUrl = opt.image
+                        ? previewUrlFor(opt.image)
+                        : opt.image_path
+                          ? opt.image_url
+                          : null;
+                      return (
+                        <div key={idx} style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                          <input
+                            type="checkbox"
+                            checked={opt.is_correct}
+                            onChange={() => handleCorrectOptionSelect(idx)}
+                            style={{ width: '20px', height: '20px', flex: 'none', cursor: 'pointer' }}
+                            aria-label={`Mark option ${opt.label.toUpperCase()} correct`}
+                            title="Set as correct answer"
+                          />
+                          <span style={{ font: '600 13px var(--font-body)', color: 'var(--tx2)', width: '18px', flex: 'none', textTransform: 'uppercase' }}>
+                            {opt.label}
+                          </span>
+
+                          {/* Reasoning figure-series options (SSC CGL/CHSL
+                              non-verbal reasoning) are routinely image-only —
+                              a 32px square doubling as thumbnail-or-add-button
+                              keeps that possible without breaking this row
+                              onto a second line for the common text-only case. */}
+                          <label
+                            title={optionImageUrl ? 'Change image' : 'Add an image for this option'}
+                            style={{
+                              width: '34px', height: '34px', flex: 'none', borderRadius: '8px',
+                              border: '1.5px dashed var(--line2)', cursor: 'pointer', overflow: 'hidden',
+                              display: 'grid', placeItems: 'center', background: 'var(--card2)',
+                            }}
+                          >
+                            <input
+                              type="file"
+                              accept="image/png,image/jpeg,image/webp"
+                              onChange={(e) => setOptionImage(idx, e.target.files?.[0] || null)}
+                              style={{ display: 'none' }}
+                            />
+                            {optionImageUrl
+                              ? <img src={optionImageUrl} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                              : <Icon name="image" size={15} style={{ color: 'var(--muted)' }} />}
+                          </label>
+                          {optionImageUrl && (
+                            <button
+                              type="button"
+                              className="adm-rowaction"
+                              onClick={() => clearOptionImage(idx)}
+                              aria-label={`Remove image from option ${opt.label.toUpperCase()}`}
+                              title="Remove image"
+                              style={{ flex: 'none' }}
+                            >
+                              <Icon name="x" size={13} />
+                            </button>
+                          )}
+
+                          <input
+                            type="text"
+                            value={opt.option_text}
+                            onChange={(e) => handleOptionTextChange(idx, e.target.value)}
+                            className="form-input"
+                            placeholder={optionImageUrl ? `Caption for option ${opt.label.toUpperCase()} (optional)` : `Option ${opt.label.toUpperCase()}`}
+                            style={{ flex: 1 }}
+                          />
+                          <button
+                            type="button"
+                            className="adm-rowaction"
+                            onClick={() => removeOption(idx)}
+                            disabled={form.options.length <= 2}
+                            style={{ opacity: form.options.length <= 2 ? 0.35 : 1 }}
+                            aria-label={`Remove option ${opt.label.toUpperCase()}`}
+                            title="Remove option"
+                          >
+                            <Icon name="x" size={16} />
+                          </button>
+                        </div>
+                      );
+                    })}
                     {form.options.length < 6 && (
                       <button
                         type="button"
@@ -1260,17 +1719,33 @@ export default function AdminQuestions({ csvState, triggerCsvImport, csvJobId })
                     {form.question_type !== 'single_choice' && ` · ${form.question_type.replace('_', ' ')}`}
                   </div>
 
-                  {form.passage_id && passages.find((pg) => String(pg.id) === String(form.passage_id)) && (
-                    <div style={{ padding: '14px', borderRadius: '14px', background: 'var(--card)', border: '1px dashed var(--line2)', font: '400 13px/1.62 var(--font-body)', color: 'var(--tx2)' }}>
-                      {passages.find((pg) => String(pg.id) === String(form.passage_id)).body}
-                    </div>
-                  )}
+                  {form.passage_id && passages.find((pg) => String(pg.id) === String(form.passage_id)) && (() => {
+                    const pg = passages.find((p) => String(p.id) === String(form.passage_id));
+                    return (
+                      <div style={{ padding: '14px', borderRadius: '14px', background: 'var(--card)', border: '1px dashed var(--line2)', display: 'flex', flexDirection: 'column', gap: '10px' }}>
+                        <div style={{ font: '400 13px/1.62 var(--font-body)', color: 'var(--tx2)' }}>{pg.body}</div>
+                        {pg.table_data && <PreviewTable table={pg.table_data} />}
+                        {pg.image_url && (
+                          <img src={pg.image_url} alt="" style={{ maxWidth: '100%', maxHeight: '180px', borderRadius: '8px', border: '1px solid var(--line)' }} />
+                        )}
+                      </div>
+                    );
+                  })()}
 
-                  <div style={{ font: '400 15px/1.62 var(--font-body)', color: 'var(--tx)', borderBottom: '1px solid var(--line)', paddingBottom: '16px' }}>
-                    {form.question_text ? (
-                      <div dangerouslySetInnerHTML={renderMath(form.question_text)} />
-                    ) : (
-                      <span style={{ color: 'var(--muted)', fontStyle: 'italic' }}>Type the stem to preview it…</span>
+                  <div style={{ borderBottom: '1px solid var(--line)', paddingBottom: '16px', display: 'flex', flexDirection: 'column', gap: '12px' }}>
+                    <div style={{ font: '400 15px/1.62 var(--font-body)', color: 'var(--tx)' }}>
+                      {form.question_text ? (
+                        <div dangerouslySetInnerHTML={renderMath(form.question_text)} />
+                      ) : (
+                        <span style={{ color: 'var(--muted)', fontStyle: 'italic' }}>Type the stem to preview it…</span>
+                      )}
+                    </div>
+                    {(form.image || (form.image_url && !form.remove_image)) && (
+                      <img
+                        src={form.image ? previewUrlFor(form.image) : form.image_url}
+                        alt=""
+                        style={{ maxWidth: '260px', maxHeight: '180px', borderRadius: '10px', border: '1px solid var(--line)' }}
+                      />
                     )}
                   </div>
 
@@ -1286,22 +1761,28 @@ export default function AdminQuestions({ csvState, triggerCsvImport, csvJobId })
                     </div>
                   ) : (
                     <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
-                      {form.options.map((opt, idx) => (
-                        <div
-                          key={idx}
-                          className={`mcq-option ${opt.is_correct ? 'selected' : ''}`}
-                          style={{ margin: 0, padding: '12px 15px', cursor: 'default' }}
-                        >
-                          <span className="option-badge">{opt.label}</span>
-                          {/* renderMath escapes markup, so an HTML placeholder would
-                              print as literal tags — render the empty state as JSX. */}
-                          {opt.option_text ? (
-                            <div dangerouslySetInnerHTML={renderMath(opt.option_text)} />
-                          ) : (
-                            <div style={{ color: 'var(--muted)', fontStyle: 'italic' }}>Option {opt.label.toUpperCase()} empty</div>
-                          )}
-                        </div>
-                      ))}
+                      {form.options.map((opt, idx) => {
+                        const optImg = opt.image ? previewUrlFor(opt.image) : opt.image_path ? opt.image_url : null;
+                        return (
+                          <div
+                            key={idx}
+                            className={`mcq-option ${opt.is_correct ? 'selected' : ''}`}
+                            style={{ margin: 0, padding: '12px 15px', cursor: 'default', display: 'flex', alignItems: 'center', gap: '10px' }}
+                          >
+                            <span className="option-badge">{opt.label}</span>
+                            {optImg && (
+                              <img src={optImg} alt="" style={{ width: '48px', height: '48px', objectFit: 'cover', borderRadius: '8px', flex: 'none' }} />
+                            )}
+                            {/* renderMath escapes markup, so an HTML placeholder would
+                                print as literal tags — render the empty state as JSX. */}
+                            {opt.option_text ? (
+                              <div dangerouslySetInnerHTML={renderMath(opt.option_text)} />
+                            ) : optImg ? null : (
+                              <div style={{ color: 'var(--muted)', fontStyle: 'italic' }}>Option {opt.label.toUpperCase()} empty</div>
+                            )}
+                          </div>
+                        );
+                      })}
                     </div>
                   )}
 

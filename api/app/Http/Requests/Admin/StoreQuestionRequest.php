@@ -25,6 +25,12 @@ class StoreQuestionRequest extends FormRequest
             'exam_tags' => ['nullable', 'array'],
             'exam_tags.*' => ['string'],
             'question_text' => ['required', 'string'],
+            // The question's own diagram — a figure a single question
+            // refers to, not the shared exhibit a whole passage-linked SET
+            // reads (that lives on the passage — see passage_id below).
+            // 4MB comfortably covers a scanned diagram; a chart this size
+            // rendered on a phone gains nothing from being any bigger.
+            'image' => ['nullable', 'image', 'max:4096', 'mimes:jpeg,png,jpg,webp'],
             'explanation' => ['nullable', 'string'],
             'marks' => ['required', 'numeric', 'min:0'],
             'negative_marks' => ['required', 'numeric', 'min:0'],
@@ -35,7 +41,22 @@ class StoreQuestionRequest extends FormRequest
             // numeric carries an answer + tolerance instead.
             'options' => [$isNumeric ? 'prohibited' : 'required', 'array', 'min:2', 'max:6'],
             'options.*.label' => ['required_with:options', 'string', 'size:1', 'in:a,b,c,d,e,f'],
-            'options.*.option_text' => ['required_with:options', 'string'],
+            // An option needs EITHER text or its own image, not necessarily
+            // both — "which figure completes the series" reasoning
+            // questions (SSC CGL/CHSL non-verbal reasoning) have four image
+            // options with nothing meaningful to caption them with. Cross-
+            // checked properly (rejecting an option with NEITHER) in
+            // validateOptions() below, since that needs to see both
+            // sibling fields together.
+            'options.*.option_text' => ['nullable', 'string'],
+            'options.*.image' => ['nullable', 'image', 'max:4096', 'mimes:jpeg,png,jpg,webp'],
+            // Options are replaced wholesale on every save (delete + recreate
+            // — see QuestionController::update), so there is no option ROW to
+            // attach a new upload to and no way to say "leave the old image
+            // alone" implicitly. An edit that is not re-uploading a file
+            // carries the existing path back as a plain string instead, and
+            // the controller keeps it for the recreated row.
+            'options.*.image_path' => ['nullable', 'string'],
             'options.*.is_correct' => ['required_with:options', 'boolean'],
             'numeric_answer' => [$isNumeric ? 'required' : 'prohibited', 'numeric'],
             'numeric_tolerance' => ['nullable', 'numeric', 'min:0'],
@@ -64,9 +85,21 @@ class StoreQuestionRequest extends FormRequest
         }
 
         $correct = 0;
-        foreach ($options as $option) {
+        foreach ($options as $index => $option) {
             if (is_array($option) && filter_var($option['is_correct'] ?? false, FILTER_VALIDATE_BOOLEAN)) {
                 $correct++;
+            }
+
+            // An option with neither text nor an image (new upload or a
+            // carried-over path) is empty — the one thing `nullable` on
+            // both fields cannot catch on its own, since either alone
+            // satisfies it.
+            $hasText = is_array($option) && trim((string) ($option['option_text'] ?? '')) !== '';
+            $hasImage = $this->hasFile("options.{$index}.image")
+                || (is_array($option) && trim((string) ($option['image_path'] ?? '')) !== '');
+            if (is_array($option) && !$hasText && !$hasImage) {
+                $label = strtoupper((string) ($option['label'] ?? $index));
+                $validator->errors()->add('options', "Option {$label} needs either text or an image.");
             }
         }
 

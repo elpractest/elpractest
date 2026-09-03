@@ -122,6 +122,10 @@ class StudentTestSeriesController extends Controller
                 'status' => $status,
                 'score' => $submittedSession?->total_score,
                 'submitted_at' => $submittedSession?->submitted_at,
+                // The completed-attempt's OWN session id — results are keyed
+                // by session, not test, so "view analysis" on a finished test
+                // needs this to have anywhere real to link to.
+                'session_id' => $submittedSession?->id,
             ];
         });
 

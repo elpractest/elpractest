@@ -17,6 +17,7 @@ import AdminActivationCodes from './AdminActivationCodes';
 import AdminResults from './AdminResults';
 import AdminResultDetail from './AdminResultDetail';
 import AdminCohortAnalytics from './AdminCohortAnalytics';
+import AdminVideoAnalytics from './AdminVideoAnalytics';
 import SuperAdminSettings from './SuperAdminSettings';
 import SuperAdminOnboarding from './SuperAdminOnboarding';
 import SuperAdminAuditLogs from './SuperAdminAuditLogs';
@@ -53,6 +54,7 @@ const NAV_GROUPS = [
       { id: 'products', label: 'Store products', icon: 'shopping-bag' },
       { id: 'results', label: 'Results', icon: 'chart' },
       { id: 'cohort', label: 'Cohort analytics', icon: 'trending-up' },
+      { id: 'video_analytics', label: 'Video engagement', icon: 'play' },
     ],
   },
   {
@@ -410,6 +412,8 @@ export default function AdminDashboard({ user, setUser }) {
         );
       case 'cohort':
         return <AdminCohortAnalytics />;
+      case 'video_analytics':
+        return <AdminVideoAnalytics />;
       case 'result_detail':
         return (
           <AdminResultDetail

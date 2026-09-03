@@ -59,7 +59,6 @@ export default function Dashboard({ user }) {
 
   const [showActivationModal, setShowActivationModal] = useState(false);
   const [checkoutBatch, setCheckoutBatch] = useState(null);
-  const [startError, setStartError] = useState('');
 
   const fetchEnrolledCourses = () => {
     api.get('/api/student/courses')
@@ -90,16 +89,12 @@ export default function Dashboard({ user }) {
       .catch(() => {});
   };
 
-  const handleStartTest = async (testId) => {
-    setStartError('');
-    try {
-      const res = await api.post(`/api/student/tests/${testId}/start`);
-      const session = res.data.session;
-      navigate(`/tests/${session.id}`);
-    } catch (err) {
-      setStartError(err.response?.data?.message || 'Could not start the test session.');
-    }
-  };
+  // A fresh test always goes through the instructions gate first — duration,
+  // marking scheme and the admin-written instructions — never straight into
+  // a session. `active` (an in-progress session) is a separate, resume-only
+  // path that navigates by SESSION id and bypasses this on purpose: a
+  // candidate already mid-paper has already cleared the gate once.
+  const goToTest = (testId) => navigate(`/tests/${testId}/instructions`);
 
   useEffect(() => {
     fetchEnrolledCourses();
@@ -171,7 +166,7 @@ export default function Dashboard({ user }) {
 
   const onReadinessCta = () => {
     if (active) navigate(`/tests/${active.id}`);
-    else if (tests.length > 0) handleStartTest(tests[0].id);
+    else if (tests.length > 0) goToTest(tests[0].id);
     else navigate('/student/test-series');
   };
 
@@ -342,26 +337,6 @@ export default function Dashboard({ user }) {
           <Icon name="arrow-right" size={16} strokeWidth={2.4} />
         </button>
       </div>
-
-      {startError && (
-        <div
-          style={{
-            margin: '12px 18px 0',
-            background: 'var(--danger-bg)',
-            border: '1px solid var(--danger-border)',
-            padding: '11px 14px',
-            borderRadius: '13px',
-            color: 'var(--danger)',
-            font: '500 12.5px var(--font-body)',
-            display: 'flex',
-            alignItems: 'center',
-            gap: '8px',
-          }}
-        >
-          <Icon name="alert" size={15} />
-          {startError}
-        </div>
-      )}
 
       {/* ---- 2. Quick modes ---- */}
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4,1fr)', gap: '9px', padding: '16px 18px 0' }}>
@@ -547,7 +522,7 @@ export default function Dashboard({ user }) {
                 </div>
                 <button
                   type="button"
-                  onClick={() => handleStartTest(tst.id)}
+                  onClick={() => goToTest(tst.id)}
                   className="btn-secondary"
                   style={{ padding: '10px 18px', minHeight: '44px', fontSize: '13px', flex: 'none' }}
                 >

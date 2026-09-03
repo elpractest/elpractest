@@ -55,6 +55,92 @@ class TestTakingController extends Controller
     }
 
     /**
+     * What a candidate needs to see BEFORE the clock starts: duration, marks,
+     * marking scheme, section structure, and the instructions text an admin
+     * wrote for this specific paper.
+     *
+     * Read-only — it must never create a session. `instructions` has been a
+     * real, admin-editable column since the schema shipped, but nothing
+     * between here and the student ever read it back: `start()` and `resume()`
+     * hand the candidate straight into the live paper, so a field built to
+     * warn about negative marking or a sectional cutoff was never actually
+     * seen by anyone it was written for.
+     *
+     * Same access rule as start() — a student who is not entitled to sit the
+     * test should not see what is behind that wall either — but it deliberately
+     * does NOT create the pre-created answer rows start() does; a student who
+     * previews and never presses Start should leave no trace of an attempt.
+     */
+    public function preview(Request $request, Test $test): JsonResponse
+    {
+        $user = $request->user();
+
+        if (!$this->entitlements->mayStartTest($user, $test)) {
+            return response()->json([
+                'message' => 'This test is not available to you.',
+            ], 403);
+        }
+
+        // A session already in progress means the gate has already been
+        // cleared once this attempt — the frontend uses this to skip straight
+        // to resume rather than showing instructions a second time mid-paper.
+        $resumableSessionId = TestSession::where('user_id', $user->id)
+            ->where('test_id', $test->id)
+            ->whereNull('submitted_at')
+            ->value('id');
+
+        $completedAttempts = TestSession::where('user_id', $user->id)
+            ->where('test_id', $test->id)
+            ->whereNotNull('submitted_at')
+            ->count();
+
+        $sections = $test->sections()->withCount('questions')->orderBy('sort_order')->get();
+        $questionCount = $sections->sum('questions_count');
+
+        // "Does a wrong answer cost you here?" is the one fact about marking
+        // worth stating up front. Whether it is the SAME penalty on every
+        // question is a second, smaller fact — real papers occasionally vary
+        // it by section (e.g. no negative marking on the general-awareness
+        // section) — so this reports both rather than collapsing to one
+        // possibly-misleading number.
+        $negativeValues = DB::table('test_section_questions')
+            ->join('test_sections', 'test_sections.id', '=', 'test_section_questions.test_section_id')
+            ->join('questions', 'questions.id', '=', 'test_section_questions.question_id')
+            ->where('test_sections.test_id', $test->id)
+            ->pluck('questions.negative_marks')
+            ->map(fn ($v) => (float) $v)
+            ->unique();
+
+        return response()->json([
+            'test' => [
+                'id' => $test->id,
+                'title' => $test->title,
+                'category' => $test->category,
+                'type' => $test->type,
+                'is_free' => $test->is_free,
+                'duration_seconds' => $test->duration_seconds,
+                'total_marks' => $test->total_marks,
+                'question_count' => $questionCount,
+                'max_attempts' => $test->max_attempts,
+                'attempts_used' => $completedAttempts,
+                'instructions' => $test->instructions,
+                'has_negative_marking' => $negativeValues->contains(fn ($v) => $v > 0),
+                'negative_marking_uniform' => $negativeValues->count() <= 1,
+                'uniform_negative_marks' => $negativeValues->count() === 1 ? $negativeValues->first() : null,
+                'sections' => $sections->map(fn ($s) => [
+                    'id' => $s->id,
+                    'title' => $s->title,
+                    'question_count' => $s->questions_count,
+                    'duration_seconds' => $s->duration_seconds,
+                    'is_qualifying' => (bool) $s->is_qualifying,
+                    'cutoff_marks' => $s->cutoff_marks,
+                ]),
+            ],
+            'resumable_session_id' => $resumableSessionId,
+        ]);
+    }
+
+    /**
      * Start a new test session (or resume if there's an in-progress one).
      */
     public function start(Request $request, Test $test): JsonResponse
@@ -437,6 +523,7 @@ class TestTakingController extends Controller
                 return [
                     'question_id' => $ans->question_id,
                     'question_text' => $q->question_text,
+                    'image_url' => $q->image_url,
                     'question_type' => $q->question_type,
                     'explanation' => $q->explanation,
                     'marks' => $q->marks,
@@ -453,11 +540,14 @@ class TestTakingController extends Controller
                         'id' => $q->passage->id,
                         'title' => $q->passage->title,
                         'body' => $q->passage->body,
+                        'image_url' => $q->passage->image_url,
+                        'table' => $q->passage->table_data,
                     ] : null,
                     'options' => $q->options->map(fn($o) => [
                         'id' => $o->id,
                         'label' => $o->label,
                         'option_text' => $o->option_text,
+                        'image_url' => $o->image_url,
                         'is_correct' => $o->is_correct,
                     ]),
                 ];
@@ -589,6 +679,7 @@ class TestTakingController extends Controller
                         'difficulty' => $q->difficulty,
                         'exam_tags' => $q->exam_tags,
                         'question_text' => $q->question_text,
+                        'image_url' => $q->image_url,
                         'question_type' => $q->question_type,
                         'marks' => $q->marks,
                         'negative_marks' => $q->negative_marks,
@@ -596,6 +687,8 @@ class TestTakingController extends Controller
                             'id' => $q->passage->id,
                             'title' => $q->passage->title,
                             'body' => $q->passage->body,
+                            'image_url' => $q->passage->image_url,
+                            'table' => $q->passage->table_data,
                         ] : null,
                         // Options excluding is_correct for cheating prevention.
                         // Numeric questions have none — the array is just empty.
@@ -603,6 +696,7 @@ class TestTakingController extends Controller
                             'id' => $o->id,
                             'label' => $o->label,
                             'option_text' => $o->option_text,
+                            'image_url' => $o->image_url,
                             'sort_order' => $o->sort_order,
                         ]),
                     ];

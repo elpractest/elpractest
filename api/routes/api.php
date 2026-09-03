@@ -147,6 +147,7 @@ Route::middleware('auth:sanctum')->group(function () {
         Route::get('batches/{batch}/students-progress', [CohortAnalyticsController::class, 'studentsProgress']);
         Route::get('tests/{test}/leaderboard', [CohortAnalyticsController::class, 'testLeaderboard']);
         Route::get('test-series/{series}/leaderboard', [CohortAnalyticsController::class, 'seriesLeaderboard']);
+        Route::get('courses/{course}/video-analytics', [CohortAnalyticsController::class, 'videoEngagement']);
 
         // Course outlines
         Route::apiResource('courses', CourseCRUDController::class);
@@ -157,6 +158,16 @@ Route::middleware('auth:sanctum')->group(function () {
         Route::post('modules/{module}/lessons', [CourseCRUDController::class, 'storeLesson']);
         Route::put('lessons/{lesson}', [CourseCRUDController::class, 'updateLesson']);
         Route::delete('lessons/{lesson}', [CourseCRUDController::class, 'destroyLesson']);
+
+        // Study materials — the PDFs the student reader opens. Uploads land on
+        // the PRIVATE disk (config/studymaterials.php); nothing here ever hands
+        // out a file URL. Update is a POST rather than a PUT because PHP does
+        // not populate $_FILES for a PUT body, so a multipart edit has to come
+        // in as a POST (or as POST + _method=PUT, which is the same request).
+        Route::get('courses/{course}/study-materials', [\App\Http\Controllers\Admin\StudyMaterialController::class, 'index']);
+        Route::post('courses/{course}/study-materials', [\App\Http\Controllers\Admin\StudyMaterialController::class, 'store']);
+        Route::post('study-materials/{material}', [\App\Http\Controllers\Admin\StudyMaterialController::class, 'update']);
+        Route::delete('study-materials/{material}', [\App\Http\Controllers\Admin\StudyMaterialController::class, 'destroy']);
 
         // Manual enrollments
         Route::get('enrollments', [EnrollmentController::class, 'index']);
@@ -269,6 +280,10 @@ Route::middleware('auth:sanctum')->group(function () {
 
         // Test taking
         Route::get('tests', [TestTakingController::class, 'availableTests']);
+        // Read-only — duration, marks, marking scheme and the instructions
+        // text, gated the same as start() but never creates a session. The
+        // instructions screen calls this before the candidate presses Start.
+        Route::get('tests/{test}/preview', [TestTakingController::class, 'preview']);
         // Tighter than the global 60/min — see the 'test-start' limiter.
         Route::post('tests/{test}/start', [TestTakingController::class, 'start'])
             ->middleware('throttle:test-start');
@@ -295,6 +310,28 @@ Route::middleware('auth:sanctum')->group(function () {
         Route::get('courses/{course}/outline', [LmsController::class, 'courseOutline']);
         Route::get('lessons/{lesson}', [LmsController::class, 'lessonDetails']);
         Route::post('lessons/{lesson}/progress', [LmsController::class, 'updateProgress']);
+
+        // Study materials + the ebook reader.
+        //
+        // `show` returns the material, the student's reading position and their
+        // annotations in one call — the reader cannot draw without all three.
+        // `file` streams the PDF itself and re-checks the entitlement on every
+        // request; there is no public URL for these files anywhere.
+        Route::get('study-materials', [\App\Http\Controllers\Student\StudyMaterialController::class, 'index']);
+        Route::get('courses/{course}/study-materials', [\App\Http\Controllers\Student\StudyMaterialController::class, 'forCourse']);
+        Route::get('study-materials/{material}', [\App\Http\Controllers\Student\StudyMaterialController::class, 'show']);
+        Route::get('study-materials/{material}/file', [\App\Http\Controllers\Student\StudyMaterialController::class, 'file']);
+
+        // Reader write-side — position, bookmarks, highlights and notes. Called
+        // on a 30s timer from an open reader, so it is throttled apart from the
+        // read endpoints a page load depends on.
+        Route::middleware('throttle:reader-sync')->group(function () {
+            Route::patch('study-materials/{material}/progress', [\App\Http\Controllers\Student\ReaderController::class, 'sync']);
+        });
+        Route::get('study-materials/{material}/annotations', [\App\Http\Controllers\Student\ReaderController::class, 'annotations']);
+        Route::post('study-materials/{material}/annotations', [\App\Http\Controllers\Student\ReaderController::class, 'storeAnnotation']);
+        Route::put('annotations/{annotation}', [\App\Http\Controllers\Student\ReaderController::class, 'updateAnnotation']);
+        Route::delete('annotations/{annotation}', [\App\Http\Controllers\Student\ReaderController::class, 'destroyAnnotation']);
 
         // Activation
         Route::get('activation-requests', [StudentActivationController::class, 'index']);

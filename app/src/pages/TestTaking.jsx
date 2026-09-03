@@ -37,6 +37,97 @@ const MathRenderer = ({ text }) => {
   );
 };
 
+/**
+ * A diagram that grows to full-screen on tap — the standard affordance
+ * every real Indian CBT platform gives a dense DI chart or a reasoning
+ * figure, because the card width that fits an MCQ option never fits the
+ * detail those actually need. `onZoom` hands the src up to the one
+ * lightbox the page owns, rather than each figure managing its own.
+ */
+function ZoomableFigure({ src, alt, onZoom, style }) {
+  return (
+    <button
+      type="button"
+      onClick={(e) => { e.stopPropagation(); onZoom(src); }}
+      style={{
+        display: 'block', padding: 0, border: '1px solid #E4E8F0', borderRadius: '10px',
+        background: '#fff', cursor: 'zoom-in', maxWidth: '100%', ...style,
+      }}
+      aria-label="Tap to zoom"
+    >
+      <img src={src} alt={alt} style={{ display: 'block', maxWidth: '100%', maxHeight: '260px', borderRadius: '9px' }} />
+    </button>
+  );
+}
+
+/**
+ * One option's content — text, an image, or both. A reasoning figure-series
+ * option (SSC CGL/CHSL non-verbal reasoning) is routinely image-only with
+ * no meaningful caption; ordinary options are text-only. Both branches
+ * of the option list (single_choice, multi_select) share this rather than
+ * duplicating the image/text decision twice.
+ */
+function OptionContent({ option, onZoom }) {
+  return (
+    <span style={{ display: 'flex', alignItems: 'center', gap: '10px', flex: 1, minWidth: 0 }}>
+      {option.image_url && (
+        <ZoomableFigure
+          src={option.image_url}
+          alt={`Option ${option.label?.toUpperCase()}`}
+          onZoom={onZoom}
+          style={{ maxWidth: '96px', flex: 'none' }}
+        />
+      )}
+      {option.option_text && (
+        <span style={{ fontSize: '15px' }}><MathRenderer text={option.option_text} /></span>
+      )}
+    </span>
+  );
+}
+
+/**
+ * A Data Interpretation table, rendered as an actual HTML table rather
+ * than baked into a picture: crisp at any zoom, selectable, and it is,
+ * underneath, just numbers — the same reasoning that keeps a passage's
+ * table_data as structured JSON instead of an image server-side.
+ * Horizontally scrollable rather than shrunk to fit, so a wide table
+ * (five years of sales across six companies) stays legible on a phone
+ * instead of becoming a wall of tiny digits.
+ */
+function DataTable({ table, style }) {
+  if (!table?.headers?.length || !table?.rows?.length) return null;
+
+  return (
+    <div style={{ overflowX: 'auto', border: '1px solid #E4E8F0', borderRadius: '10px', ...style }}>
+      <table style={{ borderCollapse: 'collapse', width: '100%', minWidth: '360px', font: '400 12.5px var(--font-body)' }}>
+        <thead>
+          <tr>
+            {table.headers.map((h, i) => (
+              <th
+                key={i}
+                style={{ textAlign: 'left', padding: '8px 12px', background: '#EEF1F6', color: '#1D2130', fontWeight: 700, borderBottom: '1px solid #E4E8F0', whiteSpace: 'nowrap' }}
+              >
+                {h}
+              </th>
+            ))}
+          </tr>
+        </thead>
+        <tbody>
+          {table.rows.map((row, ri) => (
+            <tr key={ri}>
+              {row.map((cell, ci) => (
+                <td key={ci} style={{ padding: '7px 12px', color: '#4A5060', borderBottom: ri === table.rows.length - 1 ? 'none' : '1px solid #F0F2F6', whiteSpace: 'nowrap' }}>
+                  {cell}
+                </td>
+              ))}
+            </tr>
+          ))}
+        </tbody>
+      </table>
+    </div>
+  );
+}
+
 export default function TestTaking() {
   const { session: sessionId } = useParams();
   const navigate = useNavigate();
@@ -70,6 +161,13 @@ export default function TestTaking() {
   const [showSubmitConfirm, setShowSubmitConfirm] = useState(false);
   // Presentation only: the right rail becomes a sheet under 1024px.
   const [paletteOpen, setPaletteOpen] = useState(false);
+
+  // Full-screen zoom for a question/passage/option diagram — a dense DI
+  // chart or a reasoning figure is routinely too small to read at the
+  // width a question card gives it, especially on a phone, which is most
+  // of this audience (CLAUDE.md §14). Holds the src of whichever image is
+  // currently zoomed, or null.
+  const [zoomedImage, setZoomedImage] = useState(null);
 
   // Keep track of active question start time for calculating time spent
   const questionStartTime = useRef(Date.now());
@@ -905,23 +1003,52 @@ export default function TestTaking() {
                   </div>
                 </div>
 
-                {/* Passage, pinned above a comprehension-linked question */}
+                {/* Passage, pinned above a comprehension-linked question —
+                    English RC text, or a Data Interpretation set's shared
+                    table/chart. A DI table is rendered as a real <table>
+                    rather than baked into a picture: crisp at any zoom,
+                    selectable, and it is, underneath, just numbers. */}
                 {activeQuestion.passage && (
-                  <div style={{ padding: '14px 16px', borderRadius: '14px', background: '#F7F9FC', border: '1px solid #E4E8F0', marginBottom: '14px', maxHeight: '220px', overflowY: 'auto' }}>
+                  <div style={{ padding: '14px 16px', borderRadius: '14px', background: '#F7F9FC', border: '1px solid #E4E8F0', marginBottom: '14px', maxHeight: '320px', overflowY: 'auto' }}>
                     {activeQuestion.passage.title && (
                       <div style={{ font: '700 13px var(--font-display)', letterSpacing: '-.02em', color: '#1D2130', marginBottom: '6px' }}>
                         {activeQuestion.passage.title}
                       </div>
                     )}
-                    <div style={{ font: '400 13.5px/1.62 var(--font-body)', color: '#4A5060', whiteSpace: 'pre-wrap' }}>
-                      {activeQuestion.passage.body}
-                    </div>
+                    {activeQuestion.passage.body && (
+                      <div style={{ font: '400 13.5px/1.62 var(--font-body)', color: '#4A5060', whiteSpace: 'pre-wrap' }}>
+                        {activeQuestion.passage.body}
+                      </div>
+                    )}
+                    {activeQuestion.passage.table && (
+                      <DataTable table={activeQuestion.passage.table} style={{ marginTop: activeQuestion.passage.body ? '12px' : 0 }} />
+                    )}
+                    {activeQuestion.passage.image_url && (
+                      <ZoomableFigure
+                        src={activeQuestion.passage.image_url}
+                        alt="Exhibit for this question set"
+                        onZoom={setZoomedImage}
+                        style={{ marginTop: '12px' }}
+                      />
+                    )}
                   </div>
                 )}
 
                 <p className="cbt-qtext">
                   <MathRenderer text={activeQuestion.question_text} />
                 </p>
+
+                {/* The question's OWN diagram — a figure this one question
+                    refers to, distinct from a passage's shared exhibit
+                    above. */}
+                {activeQuestion.image_url && (
+                  <ZoomableFigure
+                    src={activeQuestion.image_url}
+                    alt="Figure for this question"
+                    onZoom={setZoomedImage}
+                    style={{ marginTop: '12px', maxWidth: '360px' }}
+                  />
+                )}
 
                 {activeQuestion.question_type === 'multi_select' && (
                   <div style={{ marginTop: '14px', font: '600 11.5px var(--font-body)', color: '#8b5cf6' }}>{t('exam.selectAll')}</div>
@@ -957,7 +1084,7 @@ export default function TestTaking() {
                           <span className="option-badge" style={{ borderRadius: '7px' }}>
                             {isSelected ? <Icon name="check" size={15} strokeWidth={3} /> : option.label}
                           </span>
-                          <span style={{ fontSize: '15px' }}><MathRenderer text={option.option_text} /></span>
+                          <OptionContent option={option} onZoom={setZoomedImage} />
                         </div>
                       );
                     })
@@ -967,7 +1094,7 @@ export default function TestTaking() {
                       return (
                         <div key={option.id} onClick={() => selectOption(option.id)} className={`mcq-option ${isSelected ? 'selected' : ''}`}>
                           <span className="option-badge">{option.label}</span>
-                          <span style={{ fontSize: '15px' }}><MathRenderer text={option.option_text} /></span>
+                          <OptionContent option={option} onZoom={setZoomedImage} />
                         </div>
                       );
                     })
@@ -1095,6 +1222,43 @@ export default function TestTaking() {
               </button>
             </div>
           </div>
+        </div>
+      )}
+
+      {/* Full-screen zoom for whichever diagram was tapped — a DI chart or
+          a reasoning figure is routinely too small to read at card width
+          on a phone, and there is nowhere else in a live CBT screen to
+          grow it into. */}
+      {zoomedImage && (
+        <div
+          role="dialog"
+          aria-label="Zoomed figure"
+          onClick={() => setZoomedImage(null)}
+          style={{
+            position: 'fixed', inset: 0, zIndex: 200,
+            background: 'rgba(10,12,20,0.92)',
+            display: 'flex', alignItems: 'center', justifyContent: 'center',
+            padding: '24px', cursor: 'zoom-out',
+          }}
+        >
+          <img
+            src={zoomedImage}
+            alt=""
+            style={{ maxWidth: '100%', maxHeight: '100%', objectFit: 'contain', borderRadius: '8px' }}
+          />
+          <button
+            type="button"
+            onClick={(e) => { e.stopPropagation(); setZoomedImage(null); }}
+            aria-label="Close"
+            style={{
+              position: 'absolute', top: '16px', right: '16px',
+              width: '40px', height: '40px', borderRadius: '50%',
+              border: 'none', background: 'rgba(255,255,255,0.15)', color: '#fff',
+              display: 'grid', placeItems: 'center', cursor: 'pointer',
+            }}
+          >
+            <Icon name="x" size={20} />
+          </button>
         </div>
       )}
     </div>

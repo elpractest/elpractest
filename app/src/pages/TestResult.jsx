@@ -36,6 +36,59 @@ const MathRenderer = ({ text }) => {
   );
 };
 
+/** Tap-to-zoom, same affordance as the live test screen — a review is
+    exactly when a candidate wants to actually study a dense DI chart or
+    reasoning figure they may have rushed past under a clock. */
+function ZoomableFigure({ src, alt, onZoom, style }) {
+  return (
+    <button
+      type="button"
+      onClick={() => onZoom(src)}
+      style={{
+        display: 'block', padding: 0, border: '1px solid var(--line)', borderRadius: '10px',
+        background: 'var(--card)', cursor: 'zoom-in', maxWidth: '100%', ...style,
+      }}
+      aria-label="Tap to zoom"
+    >
+      <img src={src} alt={alt} style={{ display: 'block', maxWidth: '100%', maxHeight: '220px', borderRadius: '9px' }} />
+    </button>
+  );
+}
+
+/** A Data Interpretation table, as a real <table> — see TestTaking.jsx for
+    why this is not an image. Horizontally scrollable so a wide table stays
+    legible on a phone rather than shrinking to unreadable digits. */
+function DataTable({ table, style }) {
+  if (!table?.headers?.length || !table?.rows?.length) return null;
+
+  return (
+    <div style={{ overflowX: 'auto', border: '1px solid var(--line)', borderRadius: '10px', ...style }}>
+      <table style={{ borderCollapse: 'collapse', width: '100%', minWidth: '320px', font: '400 12px var(--font-body)' }}>
+        <thead>
+          <tr>
+            {table.headers.map((h, i) => (
+              <th key={i} style={{ textAlign: 'left', padding: '7px 11px', background: 'var(--surf)', color: 'var(--tx)', fontWeight: 700, borderBottom: '1px solid var(--line)', whiteSpace: 'nowrap' }}>
+                {h}
+              </th>
+            ))}
+          </tr>
+        </thead>
+        <tbody>
+          {table.rows.map((row, ri) => (
+            <tr key={ri}>
+              {row.map((cell, ci) => (
+                <td key={ci} style={{ padding: '6px 11px', color: 'var(--tx2)', borderBottom: ri === table.rows.length - 1 ? 'none' : '1px solid var(--line)', whiteSpace: 'nowrap' }}>
+                  {cell}
+                </td>
+              ))}
+            </tr>
+          ))}
+        </tbody>
+      </table>
+    </div>
+  );
+}
+
 export default function TestResult() {
   const { session: sessionId } = useParams();
   const navigate = useNavigate();
@@ -51,6 +104,7 @@ export default function TestResult() {
   // `rank`, which is standard competition ranking and lets equal scores tie.
   const [meritRank, setMeritRank] = useState(null);
   const [answers, setAnswers] = useState([]);
+  const [zoomedImage, setZoomedImage] = useState(null);
 
   useEffect(() => {
     if (isDemo) return;
@@ -324,13 +378,21 @@ export default function TestResult() {
                   </div>
 
                   {ans.passage && (
-                    <div style={{ padding: '12px 14px', borderRadius: '10px', background: 'var(--surf)', border: '1px solid var(--line)', marginBottom: '14px', maxHeight: '160px', overflowY: 'auto' }}>
+                    <div style={{ padding: '12px 14px', borderRadius: '10px', background: 'var(--surf)', border: '1px solid var(--line)', marginBottom: '14px', maxHeight: '260px', overflowY: 'auto' }}>
                       {ans.passage.title && <div style={{ font: '700 12px var(--font-display)', letterSpacing: '-.02em', color: 'var(--tx)', marginBottom: '4px' }}>{ans.passage.title}</div>}
-                      <div style={{ font: '500 12.5px/1.6 var(--font-body)', color: 'var(--tx2)', whiteSpace: 'pre-wrap' }}>{ans.passage.body}</div>
+                      {ans.passage.body && <div style={{ font: '500 12.5px/1.6 var(--font-body)', color: 'var(--tx2)', whiteSpace: 'pre-wrap' }}>{ans.passage.body}</div>}
+                      {ans.passage.table && <DataTable table={ans.passage.table} style={{ marginTop: ans.passage.body ? '10px' : 0 }} />}
+                      {ans.passage.image_url && (
+                        <ZoomableFigure src={ans.passage.image_url} alt="Exhibit for this question set" onZoom={setZoomedImage} style={{ marginTop: '10px' }} />
+                      )}
                     </div>
                   )}
 
-                  <div style={{ fontSize: '1.02rem', lineHeight: 1.6, marginBottom: '16px', color: 'var(--tx)' }}><MathRenderer text={ans.question_text} /></div>
+                  <div style={{ fontSize: '1.02rem', lineHeight: 1.6, marginBottom: ans.image_url ? '10px' : '16px', color: 'var(--tx)' }}><MathRenderer text={ans.question_text} /></div>
+
+                  {ans.image_url && (
+                    <ZoomableFigure src={ans.image_url} alt="Figure for this question" onZoom={setZoomedImage} style={{ marginBottom: '16px', maxWidth: '320px' }} />
+                  )}
 
                   {isNumeric ? (
                     <div style={{ display: 'flex', gap: '12px', marginBottom: '14px', flexWrap: 'wrap' }}>
@@ -358,8 +420,11 @@ export default function TestResult() {
                         else if (wasSelected) { bg = 'var(--danger-bg)'; border = 'var(--danger-border)'; }
                         return (
                           <div key={opt.id} style={{ display: 'flex', alignItems: 'center', padding: '10px 14px', borderRadius: '10px', background: bg, border: `1px solid ${border}`, fontSize: '0.95rem', color: 'var(--tx)' }}>
-                            <span style={{ display: 'inline-flex', alignItems: 'center', justifyContent: 'center', width: '24px', height: '24px', borderRadius: isMulti ? '6px' : '50%', background: isRight ? 'var(--success)' : wasSelected ? 'var(--danger)' : 'var(--surf)', color: '#fff', marginRight: '12px', fontWeight: 700, fontSize: '0.8rem' }}>{isMulti ? (wasSelected || isRight ? '✓' : opt.label) : opt.label}</span>
-                            <span><MathRenderer text={opt.option_text} /></span>
+                            <span style={{ display: 'inline-flex', alignItems: 'center', justifyContent: 'center', width: '24px', height: '24px', borderRadius: isMulti ? '6px' : '50%', background: isRight ? 'var(--success)' : wasSelected ? 'var(--danger)' : 'var(--surf)', color: '#fff', marginRight: '12px', fontWeight: 700, fontSize: '0.8rem', flex: 'none' }}>{isMulti ? (wasSelected || isRight ? '✓' : opt.label) : opt.label}</span>
+                            {opt.image_url && (
+                              <ZoomableFigure src={opt.image_url} alt={`Option ${opt.label?.toUpperCase()}`} onZoom={setZoomedImage} style={{ maxWidth: '80px', flex: 'none', marginRight: '10px' }} />
+                            )}
+                            {opt.option_text && <span><MathRenderer text={opt.option_text} /></span>}
                           </div>
                         );
                       })}
@@ -375,6 +440,22 @@ export default function TestResult() {
               );
             })}
           </div>
+        </div>
+      )}
+
+      {zoomedImage && (
+        <div
+          role="dialog"
+          aria-label="Zoomed figure"
+          onClick={() => setZoomedImage(null)}
+          style={{
+            position: 'fixed', inset: 0, zIndex: 200,
+            background: 'rgba(10,12,20,0.92)',
+            display: 'flex', alignItems: 'center', justifyContent: 'center',
+            padding: '24px', cursor: 'zoom-out',
+          }}
+        >
+          <img src={zoomedImage} alt="" style={{ maxWidth: '100%', maxHeight: '100%', objectFit: 'contain', borderRadius: '8px' }} />
         </div>
       )}
     </div>

@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { lazy, Suspense, useState, useEffect } from 'react';
 import { BrowserRouter, Routes, Route, Navigate, useNavigate, useLocation } from 'react-router-dom';
 import api, { setOn2FARequired } from './api';
 import ThemeToggle from './components/ThemeToggle';
@@ -14,6 +14,7 @@ import ForgotPassword from './pages/ForgotPassword';
 import ResetPassword from './pages/ResetPassword';
 import CourseOutline from './pages/CourseOutline';
 import LessonPlayer from './pages/LessonPlayer';
+import TestInstructions from './pages/TestInstructions';
 import ResultsHistory from './pages/ResultsHistory';
 import Receipts from './pages/Receipts';
 import Dashboard from './pages/Dashboard';
@@ -34,6 +35,26 @@ import SearchPage from './pages/SearchPage';
 import AdminDashboard from './pages/AdminDashboard';
 import Admin2FASetup from './pages/Admin2FASetup';
 import Admin2FAVerify from './pages/Admin2FAVerify';
+
+/* The reader and its shelf are the only lazily-loaded routes in the app,
+   and for a specific reason rather than as a general policy: the reader
+   carries pdf.js, its worker and its own stylesheet, which together are
+   larger than the whole rest of the SPA. Most sessions never open a
+   booklet, and making every login pay for the ones that do — on the
+   phone connections this audience is actually on — is the cost this
+   split removes. Everything else stays eagerly imported. */
+const StudyMaterials = lazy(() => import('./pages/StudyMaterials'));
+const Reader = lazy(() => import('./pages/Reader'));
+
+/* Matches the guards' own loading state, so a slow chunk looks like the
+   rest of the app waiting rather than like a broken page. */
+function RouteFallback() {
+  return (
+    <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', minHeight: '60vh' }}>
+      <div className="spinner" />
+    </div>
+  );
+}
 
 // Student Guard Component
 const StudentGuard = ({ user, loading, children }) => {
@@ -181,6 +202,12 @@ function AppContent({ user, setUser, loading }) {
           </StudentGuard>
         } />
 
+        <Route path="/materials" element={
+          <StudentGuard user={user} loading={loading}>
+            <Suspense fallback={<RouteFallback />}>{shell(<StudyMaterials />)}</Suspense>
+          </StudentGuard>
+        } />
+
         <Route path="/practice" element={
           <StudentGuard user={user} loading={loading}>
             {shell(<PracticeConsole />)}
@@ -223,10 +250,32 @@ function AppContent({ user, setUser, loading }) {
           </StudentGuard>
         } />
 
+        {/* The gate every real test passes through on a fresh attempt —
+            duration, marks, marking scheme and the admin-written
+            instructions, none of which were ever shown to a student
+            before this page existed. Shelled like LessonPlayer/
+            CourseOutline: it is a decision screen, not the immersive exam
+            surface TestTaking itself is. */}
+        <Route path="/tests/:testId/instructions" element={
+          <StudentGuard user={user} loading={loading}>
+            {shell(<TestInstructions />)}
+          </StudentGuard>
+        } />
+
         {/* Immersive full-bleed surfaces (no shell) */}
         <Route path="/tests/:session" element={
           <StudentGuard user={user} loading={loading}>
             <TestTaking />
+          </StudentGuard>
+        } />
+
+        {/* The reader is full-bleed like the test screen: the app header
+            and the bottom tab bar would take a fifth of a phone screen
+            away from the page and offer navigation nobody wants
+            mid-chapter. `user` is passed for the watermark. */}
+        <Route path="/reader/:materialId" element={
+          <StudentGuard user={user} loading={loading}>
+            <Suspense fallback={<RouteFallback />}><Reader user={user} /></Suspense>
           </StudentGuard>
         } />
 

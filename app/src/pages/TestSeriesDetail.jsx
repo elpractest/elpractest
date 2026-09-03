@@ -199,7 +199,12 @@ export default function TestSeriesDetail() {
               <span style={{ font: '700 11px var(--font-body)', color: 'var(--success-text)', letterSpacing: '.04em' }}>NEXT STEP IN STUDY PATH</span>
               <div style={{ font: '700 15px var(--font-body)', color: 'var(--tx)', marginTop: '2px' }}>{series.tests.find((t) => t.id === series.next_test_id)?.title}</div>
             </div>
-            <button onClick={() => navigate(`/student/test/${series.next_test_id}`)} className="btn-primary" style={{ padding: '11px 20px' }}>Continue →</button>
+            {/* This test's own status decides where "Continue" actually goes:
+                the instructions gate handles both "not started yet" and
+                "already in progress" correctly on its own (it redirects
+                straight to resume when a session already exists), so the
+                same target is right regardless of which one this is. */}
+            <button onClick={() => navigate(`/tests/${series.next_test_id}/instructions`)} className="btn-primary" style={{ padding: '11px 20px' }}>Continue →</button>
           </div>
         )}
       </div>
@@ -242,7 +247,19 @@ export default function TestSeriesDetail() {
                     </div>
                   </div>
                 </div>
-                <button onClick={() => navigate(`/student/test/${test.id}`)} className={test.id === series.next_test_id ? 'btn-primary' : 'btn-secondary'} style={{ padding: '8px 16px', fontSize: '0.85rem' }}>
+                <button
+                  onClick={() => navigate(
+                    test.status === 'completed'
+                      // A completed attempt has its own session id now —
+                      // this used to point at a route keyed by test id that
+                      // did not exist at all, so "Analysis" on every
+                      // finished test in a study path was a dead click.
+                      ? `/tests/${test.session_id}/result`
+                      : `/tests/${test.id}/instructions`
+                  )}
+                  className={test.id === series.next_test_id ? 'btn-primary' : 'btn-secondary'}
+                  style={{ padding: '8px 16px', fontSize: '0.85rem' }}
+                >
                   {test.status === 'completed' ? 'Analysis' : 'Start'}
                 </button>
               </div>

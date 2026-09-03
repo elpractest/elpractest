@@ -27,6 +27,8 @@ class UpdateQuestionRequest extends FormRequest
             'exam_tags' => ['nullable', 'array'],
             'exam_tags.*' => ['string'],
             'question_text' => ['sometimes', 'required', 'string'],
+            'image' => ['nullable', 'image', 'max:4096', 'mimes:jpeg,png,jpg,webp'],
+            'remove_image' => ['nullable', 'boolean'],
             'explanation' => ['nullable', 'string'],
             'marks' => ['sometimes', 'required', 'numeric', 'min:0'],
             'negative_marks' => ['sometimes', 'required', 'numeric', 'min:0'],
@@ -35,7 +37,11 @@ class UpdateQuestionRequest extends FormRequest
 
             'options' => [$isNumeric ? 'prohibited' : 'nullable', 'array', 'min:2', 'max:6'],
             'options.*.label' => ['required_with:options', 'string', 'size:1', 'in:a,b,c,d,e,f'],
-            'options.*.option_text' => ['required_with:options', 'string'],
+            // See StoreQuestionRequest — an option needs text OR an image,
+            // not necessarily both; cross-checked in validateOptions().
+            'options.*.option_text' => ['nullable', 'string'],
+            'options.*.image' => ['nullable', 'image', 'max:4096', 'mimes:jpeg,png,jpg,webp'],
+            'options.*.image_path' => ['nullable', 'string'],
             'options.*.is_correct' => ['required_with:options', 'boolean'],
             'numeric_answer' => [$isNumeric ? 'sometimes' : 'prohibited', 'numeric'],
             'numeric_tolerance' => ['nullable', 'numeric', 'min:0'],
@@ -59,9 +65,17 @@ class UpdateQuestionRequest extends FormRequest
         }
 
         $correct = 0;
-        foreach ($options as $option) {
+        foreach ($options as $index => $option) {
             if (is_array($option) && filter_var($option['is_correct'] ?? false, FILTER_VALIDATE_BOOLEAN)) {
                 $correct++;
+            }
+
+            $hasText = is_array($option) && trim((string) ($option['option_text'] ?? '')) !== '';
+            $hasImage = $this->hasFile("options.{$index}.image")
+                || (is_array($option) && trim((string) ($option['image_path'] ?? '')) !== '');
+            if (is_array($option) && !$hasText && !$hasImage) {
+                $label = strtoupper((string) ($option['label'] ?? $index));
+                $validator->errors()->add('options', "Option {$label} needs either text or an image.");
             }
         }
 

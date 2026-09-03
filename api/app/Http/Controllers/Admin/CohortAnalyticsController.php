@@ -4,7 +4,9 @@ namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
 use App\Models\Batch;
+use App\Models\Course;
 use App\Models\Enrollment;
+use App\Models\LessonProgress;
 use App\Models\Test;
 use App\Models\TestSeries;
 use App\Models\TestSession;
@@ -175,6 +177,109 @@ class CohortAnalyticsController extends Controller
         return response()->json([
             'series' => ['id' => $series->id, 'title' => $series->title],
             'leaderboard' => $rows->map(fn ($r, $i) => $r + ['merit_rank' => $i + 1])->values(),
+        ]);
+    }
+
+    /**
+     * Video engagement for a course: who is actually watching the lessons, and
+     * where they stop.
+     *
+     * `lesson_progress` has been written on every lesson view since the LMS
+     * shipped, but nothing ever read it back in aggregate — an admin could see
+     * ONE student's watched_seconds on the outline page, never the cohort's.
+     * This is the same derive-on-request shape as `batchAnalytics`: no new
+     * table, so a corrected duration or a re-enrolled student is reflected on
+     * the next load rather than leaving a stale number behind.
+     *
+     * Scoped to the COURSE, not a batch, because lessons belong to a course and
+     * `LmsController::lessonDetails` gates on course enrollment — matching that
+     * grain is what makes "enrolled" mean the same thing here as it does to a
+     * student opening the lesson. `batch_id` narrows it further for an owner
+     * who runs several batches of the same course and wants to compare them.
+     */
+    public function videoEngagement(Request $request, Course $course): JsonResponse
+    {
+        $lessons = $course->lessons()
+            ->with('module:id,title')
+            ->orderBy('course_modules.sort_order')
+            ->orderBy('lessons.sort_order')
+            ->get();
+
+        $enrollmentQuery = Enrollment::where('course_id', $course->id)->active();
+        if ($request->filled('batch_id')) {
+            $enrollmentQuery->where('batch_id', $request->integer('batch_id'));
+        }
+        $enrolledUserIds = $enrollmentQuery->pluck('user_id')->unique();
+
+        if ($lessons->isEmpty() || $enrolledUserIds->isEmpty()) {
+            return response()->json([
+                'course' => ['id' => $course->id, 'title' => $course->title],
+                'enrolled_students' => $enrolledUserIds->count(),
+                'total_lessons' => $lessons->count(),
+                'students_who_watched_anything' => 0,
+                'average_course_completion' => 0.0,
+                'lessons' => [],
+                'weakest_lessons' => [],
+            ]);
+        }
+
+        $progress = LessonProgress::whereIn('lesson_id', $lessons->pluck('id'))
+            ->whereIn('user_id', $enrolledUserIds)
+            ->get()
+            ->groupBy('lesson_id');
+
+        $studentsWhoWatchedAnything = $progress->flatten()->pluck('user_id')->unique()->count();
+
+        $rows = $lessons->map(function ($lesson) use ($progress, $enrolledUserIds) {
+            $rows = $progress->get($lesson->id, collect());
+            $viewers = $rows->count();
+            $completers = $rows->where('completed', true)->count();
+            $duration = (int) $lesson->duration_seconds;
+
+            // Percent of the lesson's own length, not a raw second count, so a
+            // 3-minute and a 40-minute lesson compare on the same axis. A
+            // lesson with no stored duration cannot compute this — its watch
+            // seconds are still real, they just cannot be turned into a
+            // percentage of an unknown length.
+            $avgPercent = ($duration > 0 && $viewers > 0)
+                ? round($rows->avg(fn ($r) => min(100, ($r->watched_seconds / $duration) * 100)), 1)
+                : null;
+
+            return [
+                'lesson_id' => $lesson->id,
+                'title' => $lesson->title,
+                'module' => $lesson->module?->title,
+                'duration_seconds' => $duration,
+                'enrolled_students' => $enrolledUserIds->count(),
+                'students_started' => $viewers,
+                'students_completed' => $completers,
+                // Against everyone ENROLLED, not just those who clicked play —
+                // "never opened it" is exactly the drop-off a course owner
+                // needs to see, and hiding those students behind a rate
+                // computed only over viewers would erase them.
+                'start_rate' => $enrolledUserIds->count() > 0
+                    ? round($viewers / $enrolledUserIds->count() * 100, 1)
+                    : 0.0,
+                'completion_rate' => $enrolledUserIds->count() > 0
+                    ? round($completers / $enrolledUserIds->count() * 100, 1)
+                    : 0.0,
+                'average_watched_seconds' => $viewers > 0 ? (int) round($rows->avg('watched_seconds')) : 0,
+                'average_watched_percentage' => $avgPercent,
+            ];
+        })->values();
+
+        // Worst completion first — where the cohort is actually giving up,
+        // not just which lesson happens to be last in the syllabus.
+        $weakest = $rows->sortBy('completion_rate')->take(10)->values();
+
+        return response()->json([
+            'course' => ['id' => $course->id, 'title' => $course->title],
+            'enrolled_students' => $enrolledUserIds->count(),
+            'total_lessons' => $lessons->count(),
+            'students_who_watched_anything' => $studentsWhoWatchedAnything,
+            'average_course_completion' => round($rows->avg('completion_rate'), 1),
+            'lessons' => $rows,
+            'weakest_lessons' => $weakest,
         ]);
     }
 
