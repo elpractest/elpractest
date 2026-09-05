@@ -30,9 +30,25 @@ export default function PracticeConsole() {
   const [subject, setSubject] = useState('');
   const [topics, setTopics] = useState([]);
   const [difficulty, setDifficulty] = useState('');
+  // Taxonomy narrowing. "UGC NET Paper 1, previous-year only" is the request
+  // the whole classification exists to serve, so it is a first-class chip row
+  // rather than something buried behind an advanced toggle.
+  const [examKey, setExamKey] = useState('');
+  const [source, setSource] = useState('');
   const [questionCount, setQuestionCount] = useState(20);
   const [durationMinutes, setDurationMinutes] = useState(20);
   const [matching, setMatching] = useState(null);
+
+  // One chip carries exam + paper together ("UGC NET · P1"), because on a real
+  // paper those are not two independent choices — picking Paper 1 of nothing is
+  // meaningless, and offering them separately invites that combination.
+  const [chosenExam, chosenPaper] = examKey ? examKey.split('|') : ['', ''];
+  const examFacets = {
+    exam_code: chosenExam || undefined,
+    paper: chosenPaper || undefined,
+    source: source || undefined,
+  };
+
 
   const load = useCallback(() => {
     setLoading(true);
@@ -60,13 +76,16 @@ export default function PracticeConsole() {
         subject: subject || undefined,
         topics: topics.length ? topics : undefined,
         difficulty: difficulty || undefined,
+        ...examFacets,
       })
         .then((res) => setMatching(res.data.available))
         .catch(() => setMatching(null));
     }, 250);
 
     return () => clearTimeout(timer);
-  }, [subject, topics, difficulty, options]);
+    // Depends on examKey/source, NOT on examFacets: that object is rebuilt on
+    // every render, so listing it here would re-fire the effect forever.
+  }, [subject, topics, difficulty, examKey, source, options]);
 
   // Changing subject invalidates topic choices from the previous subject.
   useEffect(() => { setTopics([]); }, [subject]);
@@ -85,6 +104,7 @@ export default function PracticeConsole() {
         subject: subject || undefined,
         topics: topics.length ? topics : undefined,
         difficulty: difficulty || undefined,
+        ...examFacets,
         question_count: Number(questionCount),
         duration_minutes: Number(durationMinutes),
       });
@@ -134,6 +154,57 @@ export default function PracticeConsole() {
       ) : (
         <>
           <div className="glass-panel" style={{ padding: '20px', display: 'flex', flexDirection: 'column', gap: '18px' }}>
+            {/* Exam — only shown once the student's pool actually contains
+                classified questions, so an institute that has not adopted the
+                taxonomy never sees an empty row. */}
+            {(options?.exams || []).length > 0 && (
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                <label style={{ font: '700 11px var(--font-body)', color: 'var(--muted)', letterSpacing: '.08em', textTransform: 'uppercase' }}>Exam</label>
+                <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
+                  <button onClick={() => setExamKey('')} className={examKey === '' ? 'btn-primary' : 'btn-secondary'} style={{ padding: '7px 13px', fontSize: '0.78rem', borderRadius: '999px' }}>
+                    All exams
+                  </button>
+                  {(options?.exams || []).map((e) => {
+                    const key = `${e.exam_code}|${e.paper || ''}`;
+                    return (
+                      <button
+                        key={key}
+                        onClick={() => setExamKey(key)}
+                        className={examKey === key ? 'btn-primary' : 'btn-secondary'}
+                        style={{ padding: '7px 13px', fontSize: '0.78rem', borderRadius: '999px' }}
+                      >
+                        {e.exam_name}{e.paper ? ` · ${e.paper}` : ''} <span style={{ opacity: 0.65 }}>{e.total}</span>
+                      </button>
+                    );
+                  })}
+                </div>
+              </div>
+            )}
+
+            {/* Previous-year vs in-house. Only offered when the pool actually
+                holds more than one kind — a choice with one option is noise. */}
+            {Object.keys(options?.source_counts || {}).length > 1 && (
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                <label style={{ font: '700 11px var(--font-body)', color: 'var(--muted)', letterSpacing: '.08em', textTransform: 'uppercase' }}>Source</label>
+                <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
+                  <button onClick={() => setSource('')} className={source === '' ? 'btn-primary' : 'btn-secondary'} style={{ padding: '7px 13px', fontSize: '0.78rem', borderRadius: '999px' }}>
+                    Any
+                  </button>
+                  {Object.entries(options?.source_counts || {}).map(([key, total]) => (
+                    <button
+                      key={key}
+                      onClick={() => setSource(key)}
+                      className={source === key ? 'btn-primary' : 'btn-secondary'}
+                      style={{ padding: '7px 13px', fontSize: '0.78rem', borderRadius: '999px' }}
+                    >
+                      {key === 'pyq' ? 'Previous year' : key === 'mock' ? 'Mock' : 'Practice'}{' '}
+                      <span style={{ opacity: 0.65 }}>{total}</span>
+                    </button>
+                  ))}
+                </div>
+              </div>
+            )}
+
             {/* Subject */}
             <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
               <label style={{ font: '700 11px var(--font-body)', color: 'var(--muted)', letterSpacing: '.08em', textTransform: 'uppercase' }}>Subject</label>

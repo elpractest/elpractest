@@ -7,6 +7,8 @@ use App\Http\Requests\Admin\StoreQuestionRequest;
 use App\Http\Requests\Admin\UpdateQuestionRequest;
 use App\Jobs\ImportQuestionsJob;
 use App\Services\ItemAnalysisService;
+use App\Services\QuestionCodeService;
+use Illuminate\Validation\Rule;
 use App\Models\Question;
 use App\Models\QuestionOption;
 use App\Services\AuditService;
@@ -58,8 +60,49 @@ class QuestionController extends Controller
                   });
         }
 
+        // Taxonomy filters — the whole point of the exam columns. A blank
+        // facet means "any", so these compose: exam + paper + year + shift
+        // narrows to one sitting of one paper.
+        if ($request->filled('exam_code')) {
+            $query->byExam($request->exam_code);
+        }
+
+        if ($request->filled('paper')) {
+            $query->byPaper($request->paper);
+        }
+
+        if ($request->filled('source')) {
+            $query->bySource($request->source);
+        }
+
+        if ($request->filled('year')) {
+            $query->byYear((int) $request->year);
+        }
+
+        if ($request->filled('shift')) {
+            $query->byShift($request->shift);
+        }
+
+        if ($request->filled('medium')) {
+            $query->byMedium($request->medium);
+        }
+
+        // Unclassified: everything that predates the taxonomy, or came in
+        // without one. Worth being able to find deliberately — it is the
+        // backlog of questions no filter will ever surface otherwise.
+        if ($request->boolean('unclassified')) {
+            $query->whereNull('exam_code');
+        }
+
         if ($request->filled('search')) {
-            $query->where('question_text', 'like', '%' . $request->search . '%');
+            // A code is the one thing an admin can carry between screens (or
+            // read off a support ticket), so search matches it as well as the
+            // stem rather than making it a separate field.
+            $term = '%' . $request->search . '%';
+            $query->where(function ($q) use ($term) {
+                $q->where('question_text', 'like', $term)
+                  ->orWhere('question_code', 'like', $term);
+            });
         }
 
         $questions = $query->latest()->paginate(20);
@@ -287,7 +330,35 @@ class QuestionController extends Controller
             'file' => ['required', 'file', 'mimes:csv,txt', 'max:10240'], // Max 10MB
             // Opt-out for a trusted, already-proofed batch. Absent = review queue.
             'auto_approve' => ['nullable', 'boolean'],
+
+            // Taxonomy for the whole file. A CSV is almost always one paper in
+            // one medium, so these are asked once here rather than repeated on
+            // every row; a row may still override any of them with its own
+            // column. Leave them all blank and the questions import
+            // unclassified, exactly as they did before the taxonomy existed.
+            'exam_code' => ['nullable', 'string', Rule::in(array_keys(config('exams.registry')))],
+            'paper' => ['nullable', 'string', 'max:16'],
+            'source' => ['nullable', 'string', Rule::in(array_keys(config('exams.sources')))],
+            'year' => ['nullable', 'integer', 'min:1950', 'max:' . ((int) date('Y') + 1)],
+            'shift' => ['nullable', 'string', 'max:16'],
+            'medium' => ['nullable', 'string', Rule::in(array_keys(config('exams.mediums')))],
         ]);
+
+        $facets = array_filter(
+            $request->only(['exam_code', 'paper', 'source', 'year', 'shift', 'medium']),
+            fn ($v) => $v !== null && $v !== '',
+        );
+
+        // Fail the upload, not 200 individual rows, when the paper does not
+        // belong to the exam.
+        try {
+            app(QuestionCodeService::class)->resolve($facets + ['serial' => 1]);
+        } catch (\InvalidArgumentException $e) {
+            return response()->json([
+                'message' => $e->getMessage(),
+                'errors' => ['exam_code' => [$e->getMessage()]],
+            ], 422);
+        }
 
         $status = $request->boolean('auto_approve')
             ? Question::STATUS_APPROVED
@@ -323,7 +394,7 @@ class QuestionController extends Controller
         ], 3600);
 
         // Dispatch queued job
-        ImportQuestionsJob::dispatch($tempPath, $jobUuid, $request->user()->id, $status);
+        ImportQuestionsJob::dispatch($tempPath, $jobUuid, $request->user()->id, $status, $facets);
 
         return response()->json([
             'message' => 'Question import has been queued.',

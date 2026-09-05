@@ -373,11 +373,23 @@ class QuestionImportTest extends TestCase
         $import->import($path, null, \Maatwebsite\Excel\Excel::CSV);
 
         $this->assertEmpty($import->getErrors());
-        $this->assertEquals(7, $import->getImportedCount());
+        $this->assertEquals(8, $import->getImportedCount());
 
         $reasoning = Question::where('subject', 'Reasoning')->first();
         $this->assertNotNull($reasoning);
         $this->assertEquals(4, $reasoning->options()->count());
+
+        // The template's last row demonstrates the per-row taxonomy override
+        // columns. If it stops being classified, the template has stopped
+        // documenting the one thing those columns are for.
+        $pyq = Question::where('subject', 'Teaching Aptitude')->first();
+        $this->assertNotNull($pyq);
+        $this->assertSame('UGCNET-P1-PY-2024-S2-EN-001', $pyq->question_code);
+
+        // Every other row leaves them blank and stays unclassified — proving
+        // the columns are genuinely optional, not a new required field.
+        $this->assertNull($reasoning->exam_code);
+        $this->assertNull($reasoning->question_code);
     }
 
     public function test_an_admin_can_download_the_import_template(): void

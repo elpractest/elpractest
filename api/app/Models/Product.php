@@ -21,11 +21,19 @@ class Product extends Model
     public const TYPE_COURSE = 'course';
     public const TYPE_TEST_SERIES = 'test_series';
     public const TYPE_BUNDLE = 'bundle';
+    /**
+     * A slice of the question bank sold for practice rather than as papers to
+     * sit. Its own type rather than a bundle, because the storefront groups by
+     * this and "12,000 questions to drill" is not the same purchase as "10
+     * mocks to attempt".
+     */
+    public const TYPE_QUESTION_BANK = 'question_bank';
 
     public const TYPES = [
         self::TYPE_COURSE,
         self::TYPE_TEST_SERIES,
         self::TYPE_BUNDLE,
+        self::TYPE_QUESTION_BANK,
     ];
 
     protected $fillable = [

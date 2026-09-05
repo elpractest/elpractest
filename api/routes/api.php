@@ -141,6 +141,13 @@ Route::middleware('auth:sanctum')->group(function () {
         Route::apiResource('passages', \App\Http\Controllers\Admin\PassageController::class);
 
         // Test management
+        //
+        // Door B — a whole paper in one upload (CSV of questions + a meta block
+        // carrying the pattern). Declared BEFORE the apiResource so
+        // `tests/{test}` cannot swallow the static paths, same as the question
+        // import routes above.
+        Route::post('tests/import-paper', [\App\Http\Controllers\Admin\PaperImportController::class, 'import']);
+        Route::get('tests/import-paper/template', [\App\Http\Controllers\Admin\PaperImportController::class, 'downloadTemplate']);
         Route::apiResource('tests', TestController::class);
         Route::post('tests/{test}/publish', [TestController::class, 'publish']);
         Route::post('tests/{test}/unpublish', [TestController::class, 'unpublish']);
@@ -210,7 +217,13 @@ Route::middleware('auth:sanctum')->group(function () {
         Route::get('batches/{batch}/assignments', [\App\Http\Controllers\Admin\AssignmentController::class, 'batchAssignments']);
         Route::delete('assignments/{assignment}', [\App\Http\Controllers\Admin\AssignmentController::class, 'destroy']);
 
-        // Store products — courses, test series and bundles put on sale
+        // Question pools — named slices of the bank, sellable as products and
+        // grantable for practice. Static `preview` before the apiResource so
+        // `question-pools/{questionPool}` cannot swallow it.
+        Route::get('question-pools/preview', [\App\Http\Controllers\Admin\QuestionPoolController::class, 'preview']);
+        Route::apiResource('question-pools', \App\Http\Controllers\Admin\QuestionPoolController::class);
+
+        // Store products — courses, test series, question pools and bundles put on sale
         Route::apiResource('products', \App\Http\Controllers\Admin\ProductController::class);
         Route::post('products/{product}/publish', [\App\Http\Controllers\Admin\ProductController::class, 'publish']);
         Route::post('products/{product}/unpublish', [\App\Http\Controllers\Admin\ProductController::class, 'unpublish']);

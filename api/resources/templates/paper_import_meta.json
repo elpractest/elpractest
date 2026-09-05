@@ -1,0 +1,77 @@
+{
+  "_comment": "Door B. Upload this beside paper_import_sample.csv. Every question in the CSV inherits the exam facets below; the CSV's row order is the paper's question order. See docs/QUESTION-BANK-REDESIGN.md.",
+  "title": "UGC NET 2024 Paper 1 \u2014 Shift 2",
+  "test_series_id": 1,
+  "course_id": null,
+  "batch_id": null,
+  "type": "mock",
+  "category": "pyp",
+  "duration_minutes": 60,
+  "max_attempts": 1,
+  "is_free": false,
+  "auto_approve": false,
+  "instructions": "All questions are compulsory. There is no negative marking in UGC NET Paper 1.",
+  "exam_code": "UGCNET",
+  "paper": "P1",
+  "source": "pyq",
+  "year": 2024,
+  "shift": "2",
+  "medium": "en",
+  "marks": 2,
+  "negative_marks": 0,
+  "cutoff_percentage": null,
+  "shuffle_questions": false,
+  "shuffle_options": false,
+  "shift_label": "Shift 2",
+  "normalization_method": "none",
+  "sections": [
+    {
+      "title": "Teaching Aptitude",
+      "duration_minutes": null,
+      "is_qualifying": false
+    },
+    {
+      "title": "Research Aptitude",
+      "duration_minutes": null,
+      "is_qualifying": false
+    },
+    {
+      "title": "Data Interpretation",
+      "duration_minutes": null,
+      "is_qualifying": false,
+      "marks": 2,
+      "negative_marks": 0
+    }
+  ],
+  "passages": [
+    {
+      "ref": "DI1",
+      "title": "Enrolment by year",
+      "body": "The table below shows enrolment at two institutes over three years.",
+      "table_data": {
+        "headers": [
+          "Year",
+          "Institute A",
+          "Institute B"
+        ],
+        "rows": [
+          [
+            "2022",
+            "100",
+            "90"
+          ],
+          [
+            "2023",
+            "120",
+            "110"
+          ],
+          [
+            "2024",
+            "150",
+            "125"
+          ]
+        ]
+      }
+    }
+  ]
+}

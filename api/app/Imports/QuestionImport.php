@@ -4,6 +4,8 @@ namespace App\Imports;
 
 use App\Models\Question;
 use App\Models\QuestionOption;
+use App\Services\QuestionCodeService;
+use App\Services\QuestionRowBuilder;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Storage;
@@ -25,6 +27,9 @@ class QuestionImport implements OnEachRow, WithHeadingRow, WithValidation, Skips
     private int $importedCount = 0;
     private ?int $createdBy = null;
     private string $status;
+    private array $facets = [];
+    private QuestionCodeService $codes;
+    private QuestionRowBuilder $rows;
 
     /**
      * Imported questions land in review by default.
@@ -34,10 +39,38 @@ class QuestionImport implements OnEachRow, WithHeadingRow, WithValidation, Skips
      * looking at each row. So bulk import feeds the review queue rather than
      * going live; pass 'approved' explicitly to skip that.
      */
-    public function __construct(?int $createdBy = null, string $status = Question::STATUS_PENDING)
-    {
+    public function __construct(
+        ?int $createdBy = null,
+        string $status = Question::STATUS_PENDING,
+        array $facets = [],
+    ) {
         $this->createdBy = $createdBy;
         $this->status = $status;
+        $this->facets = $facets;
+        $this->codes = app(QuestionCodeService::class);
+        $this->rows = app(QuestionRowBuilder::class);
+    }
+
+    /**
+     * Resolve a row's taxonomy: upload-level facets, overridden per row only
+     * where the row actually says something.
+     *
+     * The facets ride the UPLOAD because a file is almost always one paper in
+     * one medium — repeating "UGCNET,P1,pyq,2024,2,en" on 200 rows is both
+     * tedious and the likeliest place for classification to drift. The override
+     * columns exist for the genuinely mixed file.
+     */
+    private function facetsFor(array $row): array
+    {
+        $merged = $this->facets;
+
+        foreach (['exam_code', 'paper', 'source', 'year', 'shift', 'medium', 'serial'] as $key) {
+            if (isset($row[$key]) && trim((string) $row[$key]) !== '') {
+                $merged[$key] = trim((string) $row[$key]);
+            }
+        }
+
+        return $this->codes->resolve($merged);
     }
 
     /**
@@ -70,13 +103,28 @@ class QuestionImport implements OnEachRow, WithHeadingRow, WithValidation, Skips
                     throw new \RuntimeException("Unknown question_type '{$type}'.");
                 }
 
-                $question = Question::create([
+                // Taxonomy first: a row that cannot be filed is rejected before
+                // anything is written, so a typo'd exam code costs one row
+                // rather than leaving an unfindable question in the bank.
+                $taxonomy = $this->facetsFor($cleanedData);
+
+                // The unique index would catch this anyway, but a raw
+                // constraint violation says nothing useful. Re-uploading the
+                // same paper is the single most likely operator mistake, and
+                // the fix is to know WHICH question already exists.
+                if ($this->codes->isTaken($taxonomy['question_code'])) {
+                    throw new \RuntimeException(
+                        "Duplicate: {$taxonomy['question_code']} is already in the bank."
+                    );
+                }
+
+                $question = Question::create($taxonomy + [
                     'subject' => trim($cleanedData['subject']),
                     'topic' => trim($cleanedData['topic']),
                     'difficulty' => strtolower(trim($cleanedData['difficulty'])),
                     'exam_tags' => $examTags,
                     'question_text' => trim($cleanedData['question_text']),
-                    'image_path' => $this->downloadImage($cleanedData['question_image_url'] ?? null),
+                    'image_path' => $this->rows->downloadImage($cleanedData['question_image_url'] ?? null),
                     'explanation' => isset($cleanedData['explanation']) ? trim($cleanedData['explanation']) : null,
                     'marks' => (float) $cleanedData['marks'],
                     'negative_marks' => (float) $cleanedData['negative_marks'],
@@ -96,57 +144,9 @@ class QuestionImport implements OnEachRow, WithHeadingRow, WithValidation, Skips
                     'passage_id' => !empty($cleanedData['passage_id']) ? (int) $cleanedData['passage_id'] : null,
                 ]);
 
-                if ($type === Question::TYPE_NUMERIC) {
-                    return; // no options at all for a numeric question
-                }
-
-                // Correct letters, pipe-separated for multi_select ("a|c"), a
-                // single letter for single_choice — same '|' convention exam_tags
-                // already uses in this file.
-                $correctLetters = array_map(
-                    fn ($l) => strtolower(trim($l)),
-                    explode('|', (string) $cleanedData['correct_option'])
-                );
-
-                $correctCount = 0;
-                $optionCount = 0;
-                foreach (range('a', 'f') as $label) {
-                    $text = isset($cleanedData["option_{$label}"]) ? trim((string) $cleanedData["option_{$label}"]) : '';
-                    // Reasoning figure-series options ("which figure completes
-                    // the series?") have nothing meaningful to put in the text
-                    // column — a downloaded image alone is enough to make the
-                    // option real, same as the admin single-question form.
-                    $imagePath = $this->downloadImage($cleanedData["option_{$label}_image_url"] ?? null, 'option_images');
-
-                    if ($text === '' && !$imagePath) {
-                        continue;
-                    }
-
-                    $isCorrect = in_array($label, $correctLetters, true);
-                    if ($isCorrect) {
-                        $correctCount++;
-                    }
-
-                    QuestionOption::create([
-                        'question_id' => $question->id,
-                        'label' => $label,
-                        'option_text' => $text,
-                        'image_path' => $imagePath,
-                        'is_correct' => $isCorrect,
-                        'sort_order' => ord($label) - ord('a'),
-                    ]);
-                    $optionCount++;
-                }
-
-                if ($optionCount < 2) {
-                    throw new \RuntimeException("At least two options (text and/or image) are required (found {$optionCount}).");
-                }
-                if ($type === Question::TYPE_SINGLE_CHOICE && $correctCount !== 1) {
-                    throw new \RuntimeException("correct_option must name exactly one option (found {$correctCount}).");
-                }
-                if ($type === Question::TYPE_MULTI_SELECT && $correctCount < 1) {
-                    throw new \RuntimeException('correct_option must name at least one option.');
-                }
+                // Option shape, the answer-key checks and image fetching are
+                // shared with the paper importer — see QuestionRowBuilder.
+                $this->rows->createOptions($question, $cleanedData);
             });
         } catch (\Throwable $e) {
             $this->errors[] = [
@@ -214,59 +214,26 @@ class QuestionImport implements OnEachRow, WithHeadingRow, WithValidation, Skips
             'option_e_image_url' => ['nullable', 'url', 'max:2048'],
             'option_f_image_url' => ['nullable', 'url', 'max:2048'],
             'passage_id' => ['nullable', 'integer', 'exists:passages,id'],
+
+            // Per-row taxonomy OVERRIDES. Normally blank: the upload form
+            // carries these once for the whole file. Only shape is checked
+            // here — QuestionCodeService::resolve() is what actually validates
+            // a value against the exam registry, because that check needs the
+            // other facets in hand (a paper is only valid for its own exam).
+            // Deliberately shape-free. A spreadsheet reader types a shift of
+            // "2" as an INTEGER, which fails `string`, and `max:16` on that
+            // same value silently changes meaning from "16 characters" to
+            // "not more than 16". Both length and vocabulary are checked in
+            // QuestionCodeService::resolve(), where the value has already been
+            // cast and the other facets are in hand.
+            'exam_code' => ['nullable'],
+            'paper' => ['nullable'],
+            'source' => ['nullable'],
+            'year' => ['nullable', 'integer'],
+            'shift' => ['nullable'],
+            'medium' => ['nullable'],
+            'serial' => ['nullable', 'integer', 'min:1'],
         ];
-    }
-
-    /**
-     * Best-effort fetch of a question or option image from a CSV-supplied URL.
-     *
-     * A bad or dead URL degrades to "it imports without that picture", never
-     * to the row failing outright — text is the primary content, and an
-     * admin can attach the image by hand afterward from the edit form.
-     * Treating a broken image link as a hard failure would mean one stale
-     * URL in row 340 of a 500-row file silently drops a perfectly good
-     * question along with it. (An image-only option with a dead URL and no
-     * text still fails, same as it would via the admin form — see onRow().)
-     */
-    private function downloadImage(?string $url, string $directory = 'question_images'): ?string
-    {
-        $url = trim((string) $url);
-        if ($url === '') {
-            return null;
-        }
-
-        try {
-            $response = Http::timeout(10)->get($url);
-            if (!$response->successful()) {
-                return null;
-            }
-
-            $contentType = $response->header('Content-Type', '');
-            if (!str_starts_with($contentType, 'image/')) {
-                return null;
-            }
-
-            $body = $response->body();
-            // 6MB cap: generous for a diagram, small enough that one
-            // misbehaving URL cannot make a 500-row import balloon in size
-            // or tie up the queue worker fetching something enormous.
-            if (strlen($body) === 0 || strlen($body) > 6 * 1024 * 1024) {
-                return null;
-            }
-
-            $extension = match ($contentType) {
-                'image/png' => 'png',
-                'image/webp' => 'webp',
-                default => 'jpg',
-            };
-
-            $path = $directory . '/' . Str::uuid() . '.' . $extension;
-            Storage::disk('public')->put($path, $body);
-
-            return $path;
-        } catch (\Throwable $e) {
-            return null;
-        }
     }
 
     public function onFailure(Failure ...$failures)

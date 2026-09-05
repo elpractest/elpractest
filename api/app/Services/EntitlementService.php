@@ -7,6 +7,7 @@ use App\Models\Entitlement;
 use App\Models\Enrollment;
 use App\Models\Payment;
 use App\Models\Product;
+use App\Models\QuestionPool;
 use App\Models\Test;
 use App\Models\TestSeries;
 use App\Models\User;
@@ -78,6 +79,44 @@ class EntitlementService
                 ->pluck('assignable_id');
 
         return $direct->merge($viaAssignment)->filter()->unique()->values()->all();
+    }
+
+    /**
+     * Question pools this user may practise from.
+     *
+     * Pools are the newer, additive rail: before them, practice access was
+     * derived entirely from tests (you could drill a question only if it
+     * appeared in a paper you had bought). That rule still holds — this widens
+     * it, it does not replace it — so nobody's existing access changes.
+     *
+     * @return array<int>
+     */
+    public function poolIds(User $user): array
+    {
+        return Entitlement::live()
+            ->where('user_id', $user->id)
+            ->where('grantable_type', QuestionPool::class)
+            ->pluck('grantable_id')
+            ->filter()
+            ->unique()
+            ->values()
+            ->all();
+    }
+
+    /**
+     * The live pools themselves, ready to be turned into a match query.
+     *
+     * @return Collection<int, QuestionPool>
+     */
+    public function accessiblePools(User $user): Collection
+    {
+        $ids = $this->poolIds($user);
+
+        if ($ids === []) {
+            return collect();
+        }
+
+        return QuestionPool::query()->active()->whereIn('id', $ids)->get();
     }
 
     /**

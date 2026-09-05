@@ -42,15 +42,34 @@ class PracticeTestBuilder
     public function pool(User $user): \Illuminate\Database\Eloquent\Builder
     {
         $testIds = $this->entitlements->accessibleTestIds($user);
+        $pools = $this->entitlements->accessiblePools($user);
 
         return Question::query()
             ->where('questions.is_active', true)
             ->where('questions.status', Question::STATUS_APPROVED)
-            ->whereIn('questions.id', function ($q) use ($testIds) {
-                $q->select('tsq.question_id')
-                  ->from('test_section_questions as tsq')
-                  ->join('test_sections as ts', 'tsq.test_section_id', '=', 'ts.id')
-                  ->whereIn('ts.test_id', $testIds);
+            ->where(function ($outer) use ($testIds, $pools) {
+                // Rail one, unchanged: every question in a paper they may sit.
+                $outer->whereIn('questions.id', function ($q) use ($testIds) {
+                    $q->select('tsq.question_id')
+                      ->from('test_section_questions as tsq')
+                      ->join('test_sections as ts', 'tsq.test_section_id', '=', 'ts.id')
+                      ->whereIn('ts.test_id', $testIds);
+                });
+
+                // Rail two, additive: every question matching a pool they own.
+                // A pool is a saved taxonomy filter, so this stays correct as
+                // more of that exam is imported — there is no list to re-sync.
+                foreach ($pools as $poolEntitlement) {
+                    $facets = $poolEntitlement->facets();
+
+                    // An unbounded pool would match the whole bank. Guarded at
+                    // creation, and skipped here too rather than trusted.
+                    if ($facets === []) {
+                        continue;
+                    }
+
+                    $outer->orWhere(fn ($q) => $q->matchingFacets($facets));
+                }
             });
     }
 
@@ -87,10 +106,42 @@ class PracticeTestBuilder
             ->get()
             ->mapWithKeys(fn ($row) => [$row->difficulty => (int) $row->total]);
 
+        // Exams the student can actually drill, with the display name from
+        // the registry so the console never shows a raw code.
+        $exams = (clone $this->pool($user))
+            ->select('questions.exam_code', 'questions.paper', DB::raw('count(*) as total'))
+            ->whereNotNull('questions.exam_code')
+            ->groupBy('questions.exam_code', 'questions.paper')
+            ->orderBy('questions.exam_code')
+            ->get()
+            ->map(fn ($row) => [
+                'exam_code' => $row->exam_code,
+                'exam_name' => config("exams.registry.{$row->exam_code}.name", $row->exam_code),
+                'paper' => $row->paper,
+                'total' => (int) $row->total,
+            ]);
+
+        $sources = (clone $this->pool($user))
+            ->select('questions.source', DB::raw('count(*) as total'))
+            ->groupBy('questions.source')
+            ->get()
+            ->mapWithKeys(fn ($row) => [$row->source => (int) $row->total]);
+
+        $years = (clone $this->pool($user))
+            ->select('questions.year', DB::raw('count(*) as total'))
+            ->whereNotNull('questions.year')
+            ->groupBy('questions.year')
+            ->orderByDesc('questions.year')
+            ->get()
+            ->map(fn ($row) => ['year' => (int) $row->year, 'total' => (int) $row->total]);
+
         return [
             'subjects' => $subjects->values()->all(),
             'topics' => $topics->values()->all(),
             'difficulty_counts' => $difficulties->all(),
+            'exams' => $exams->values()->all(),
+            'source_counts' => $sources->all(),
+            'years' => $years->values()->all(),
             'total_available' => (clone $this->pool($user))->count(),
         ];
     }
@@ -194,6 +245,15 @@ class PracticeTestBuilder
             $query->where('questions.difficulty', strtolower($spec['difficulty']));
         }
 
+        // Taxonomy narrowing — "UGC NET Paper 1 previous-year only" is the
+        // request the whole classification exists to serve.
+        $query->matchingFacets([
+            'exam_code' => $spec['exam_code'] ?? null,
+            'paper' => $spec['paper'] ?? null,
+            'source' => $spec['source'] ?? null,
+            'year' => $spec['year'] ?? null,
+        ]);
+
         return $query;
     }
 
@@ -204,6 +264,10 @@ class PracticeTestBuilder
         }
 
         $parts = array_filter([
+            !empty($spec['exam_code'])
+                ? config("exams.registry.{$spec['exam_code']}.name", $spec['exam_code'])
+                : null,
+            $spec['paper'] ?? null,
             $spec['subject'] ?? null,
             !empty($spec['difficulty']) ? ucfirst($spec['difficulty']) : null,
         ]);

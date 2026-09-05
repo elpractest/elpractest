@@ -10,6 +10,7 @@ import AdminCourses from './AdminCourses';
 import AdminQuestions from './AdminQuestions';
 import AdminTests from './AdminTests';
 import AdminTestSeries from './AdminTestSeries';
+import AdminQuestionPools from './AdminQuestionPools';
 import AdminProducts from './AdminProducts';
 import AdminEnrollments from './AdminEnrollments';
 import AdminActivations from './AdminActivations';
@@ -43,6 +44,7 @@ const NAV_GROUPS = [
       { id: 'questions', label: 'Question bank', icon: 'file-text', count: 'questions' },
       { id: 'tests', label: 'Tests manager', icon: 'award' },
       { id: 'test_series', label: 'Test series', icon: 'target' },
+      { id: 'question_pools', label: 'Question pools', icon: 'layers' },
     ],
   },
   {
@@ -76,6 +78,7 @@ const PAGE_META = {
   questions: { crumb: 'CONTENT / QUESTIONS', title: 'Question bank' },
   tests: { crumb: 'CONTENT / TESTS', title: 'Tests manager' },
   test_series: { crumb: 'CONTENT / SERIES', title: 'Test series' },
+  question_pools: { crumb: 'CONTENT / POOLS', title: 'Question pools' },
   enrollments: { crumb: 'STUDENTS / BATCHES', title: 'Batches & enrollments' },
   activations: { crumb: 'STUDENTS / ACTIVATIONS', title: 'Activation requests' },
   codes: { crumb: 'STUDENTS / CODES', title: 'Activation codes' },
@@ -89,7 +92,7 @@ const PAGE_META = {
   audit_logs: { crumb: 'GOVERNANCE / AUDIT', title: 'System audit logs' },
 };
 
-const AUTHORING_TABS = new Set(['questions', 'tests', 'test_series']);
+const AUTHORING_TABS = new Set(['questions', 'tests', 'test_series', 'question_pools']);
 const NAV_KEY = 'practest-admin-nav';
 
 function compactCount(n) {
@@ -393,6 +396,8 @@ export default function AdminDashboard({ user, setUser }) {
         return <AdminTests />;
       case 'test_series':
         return <AdminTestSeries />;
+      case 'question_pools':
+        return <AdminQuestionPools />;
       case 'products':
         return <AdminProducts />;
       case 'enrollments':

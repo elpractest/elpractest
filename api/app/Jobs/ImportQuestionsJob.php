@@ -18,7 +18,15 @@ class ImportQuestionsJob implements ShouldQueue
         private readonly string $tempFilePath,
         private readonly string $jobUuid,
         private readonly ?int $createdBy,
-        private readonly string $status = \App\Models\Question::STATUS_PENDING
+        private readonly string $status = \App\Models\Question::STATUS_PENDING,
+        /**
+         * Exam / paper / source / year / shift / medium, chosen once on the
+         * upload form rather than retyped into all 200 rows. A row may still
+         * override any of them with its own column; see QuestionImport.
+         *
+         * @var array<string, mixed>
+         */
+        private readonly array $facets = [],
     ) {}
 
     public function handle(): void
@@ -55,7 +63,7 @@ class ImportQuestionsJob implements ShouldQueue
         ], 3600);
 
         try {
-            $import = new QuestionImport($this->createdBy, $this->status);
+            $import = new QuestionImport($this->createdBy, $this->status, $this->facets);
             $import->import($filePath);
 
             Cache::put("import_status_{$this->jobUuid}", [

@@ -166,7 +166,7 @@ class ProductController extends Controller
             'sort_order' => ['nullable', 'integer', 'min:0'],
 
             'items' => [$required, 'array', 'min:1'],
-            'items.*.kind' => ['required', 'string', Rule::in(['course', 'test_series'])],
+            'items.*.kind' => ['required', 'string', Rule::in(['course', 'test_series', 'question_pool'])],
             'items.*.id' => ['required', 'integer'],
             'items.*.batch_id' => ['nullable', 'integer', 'exists:batches,id'],
         ]);
@@ -182,7 +182,15 @@ class ProductController extends Controller
         $product->items()->delete();
 
         foreach ($items as $index => $item) {
-            $class = $item['kind'] === 'course' ? Course::class : TestSeries::class;
+            // A question pool grants practice access to a slice of the bank.
+            // It costs nothing extra here because product_items and
+            // entitlements were already polymorphic — only the vocabulary of
+            // what they may point at has widened.
+            $class = match ($item['kind']) {
+                'course' => Course::class,
+                'test_series' => TestSeries::class,
+                'question_pool' => \App\Models\QuestionPool::class,
+            };
 
             // Validated here rather than with an `exists` rule, because the table
             // depends on the sibling `kind` field.

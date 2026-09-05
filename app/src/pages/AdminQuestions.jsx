@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import api from '../api';
+import { useExamTaxonomy, papersFor } from '../lib/examCategories';
 import Icon from '../components/Icon';
 import {
   PageHead, TableCard, Toolbar, Chip, Table, Row, Cell, CellTitle, CellSub, RowChevron,
@@ -327,6 +328,7 @@ function TableEditor({ table, onChange }) {
 }
 
 export default function AdminQuestions({ csvState, triggerCsvImport, csvJobId }) {
+  const taxonomy = useExamTaxonomy();
   const [questions, setQuestions] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
@@ -339,6 +341,19 @@ export default function AdminQuestions({ csvState, triggerCsvImport, csvJobId })
   const [topic, setTopic] = useState('');
   const [difficulty, setDifficulty] = useState('');
   const [search, setSearch] = useState('');
+  // Taxonomy filters. Blank means "any", so they compose: exam + paper + year
+  // narrows to one sitting of one paper.
+  const [examCode, setExamCode] = useState('');
+  const [paper, setPaper] = useState('');
+  const [source, setSource] = useState('');
+  const [year, setYear] = useState('');
+  const [medium, setMedium] = useState('');
+  const [unclassified, setUnclassified] = useState(false);
+  // Facets applied to the NEXT CSV upload — asked once here rather than
+  // repeated on every row of the file.
+  const [importFacets, setImportFacets] = useState({
+    exam_code: '', paper: '', source: 'pyq', year: '', shift: '', medium: 'en',
+  });
   // Review queue + item-health filters.
   const [status, setStatus] = useState('');
   const [flaggedOnly, setFlaggedOnly] = useState(false);
@@ -478,8 +493,14 @@ export default function AdminQuestions({ csvState, triggerCsvImport, csvJobId })
         difficulty,
         search,
         status,
+        exam_code: examCode,
+        paper,
+        source,
+        year,
+        medium,
         // Server-side filter for items whose measured stats look wrong.
         ...(flaggedOnly ? { flagged: 1 } : {}),
+        ...(unclassified ? { unclassified: 1 } : {}),
       };
       const res = await api.get('/api/admin/questions', { params });
       setQuestions(res.data.data);
@@ -766,6 +787,11 @@ export default function AdminQuestions({ csvState, triggerCsvImport, csvJobId })
 
     const formData = new FormData();
     formData.append('file', file);
+    // Only send what was actually chosen: an empty facet must mean
+    // "unclassified", not an empty string the API would have to reject.
+    Object.entries(importFacets).forEach(([key, value]) => {
+      if (value !== '' && value != null) formData.append(key, value);
+    });
 
     try {
       const res = await api.post('/api/admin/questions/import', formData, {
@@ -930,6 +956,87 @@ export default function AdminQuestions({ csvState, triggerCsvImport, csvJobId })
               Passage images/tables are still authored one at a time in the passage editor, not through the CSV.
             </p>
           </div>
+          {/* Facets for the whole file. A CSV is almost always one paper in one
+              medium, so these are asked once rather than repeated on every row;
+              a row may still override any of them with its own column. */}
+          <div style={{ width: '100%', maxWidth: '640px', textAlign: 'left' }}>
+            <p style={{ margin: '0 0 8px', font: '500 11.5px var(--font-body)', color: 'var(--tx2)' }}>
+              File this upload under (optional — leave blank to import unclassified):
+            </p>
+            <FormGrid min="120px">
+              <Field label="Exam" htmlFor="qb-imp-exam">
+                <select
+                  id="qb-imp-exam"
+                  className="form-input"
+                  value={importFacets.exam_code}
+                  onChange={(e) => setImportFacets((f) => ({ ...f, exam_code: e.target.value, paper: '' }))}
+                >
+                  <option value="">Unclassified</option>
+                  {Object.entries(taxonomy.registry).map(([code, meta]) => (
+                    <option key={code} value={code}>{meta.name}</option>
+                  ))}
+                </select>
+              </Field>
+              <Field label="Paper" htmlFor="qb-imp-paper">
+                <select
+                  id="qb-imp-paper"
+                  className="form-input"
+                  value={importFacets.paper}
+                  disabled={papersFor(taxonomy.registry, importFacets.exam_code).length === 0}
+                  onChange={(e) => setImportFacets((f) => ({ ...f, paper: e.target.value }))}
+                >
+                  <option value="">—</option>
+                  {papersFor(taxonomy.registry, importFacets.exam_code).map((p) => (
+                    <option key={p} value={p}>{p}</option>
+                  ))}
+                </select>
+              </Field>
+              <Field label="Source" htmlFor="qb-imp-source">
+                <select
+                  id="qb-imp-source"
+                  className="form-input"
+                  value={importFacets.source}
+                  onChange={(e) => setImportFacets((f) => ({ ...f, source: e.target.value }))}
+                >
+                  {Object.entries(taxonomy.sources).map(([key, meta]) => (
+                    <option key={key} value={key}>{meta.name}</option>
+                  ))}
+                </select>
+              </Field>
+              <Field label="Year" htmlFor="qb-imp-year">
+                <input
+                  id="qb-imp-year"
+                  type="number"
+                  className="form-input"
+                  placeholder="2024"
+                  value={importFacets.year}
+                  onChange={(e) => setImportFacets((f) => ({ ...f, year: e.target.value }))}
+                />
+              </Field>
+              <Field label="Shift" htmlFor="qb-imp-shift">
+                <input
+                  id="qb-imp-shift"
+                  type="text"
+                  className="form-input"
+                  placeholder="1, 2, Morning…"
+                  value={importFacets.shift}
+                  onChange={(e) => setImportFacets((f) => ({ ...f, shift: e.target.value }))}
+                />
+              </Field>
+              <Field label="Medium" htmlFor="qb-imp-medium">
+                <select
+                  id="qb-imp-medium"
+                  className="form-input"
+                  value={importFacets.medium}
+                  onChange={(e) => setImportFacets((f) => ({ ...f, medium: e.target.value }))}
+                >
+                  {Object.entries(taxonomy.mediums).map(([key, label]) => (
+                    <option key={key} value={key}>{label}</option>
+                  ))}
+                </select>
+              </Field>
+            </FormGrid>
+          </div>
           <div style={{ display: 'flex', gap: '10px', flexWrap: 'wrap', justifyContent: 'center' }}>
             <label className="btn-secondary" style={{ cursor: 'pointer' }}>
               Browse for a file
@@ -990,7 +1097,81 @@ export default function AdminQuestions({ csvState, triggerCsvImport, csvJobId })
                   <option value="hard">Hard</option>
                 </select>
               </Field>
+              <Field label="Exam" htmlFor="qb-exam">
+                <select
+                  id="qb-exam"
+                  className="form-input"
+                  value={examCode}
+                  onChange={(e) => { setExamCode(e.target.value); setPaper(''); }}
+                >
+                  <option value="">All</option>
+                  {Object.entries(taxonomy.registry).map(([code, meta]) => (
+                    <option key={code} value={code}>{meta.name}</option>
+                  ))}
+                </select>
+              </Field>
+              <Field label="Paper" htmlFor="qb-paper">
+                <select
+                  id="qb-paper"
+                  className="form-input"
+                  value={paper}
+                  disabled={papersFor(taxonomy.registry, examCode).length === 0}
+                  onChange={(e) => setPaper(e.target.value)}
+                >
+                  <option value="">All</option>
+                  {papersFor(taxonomy.registry, examCode).map((p) => (
+                    <option key={p} value={p}>{p}</option>
+                  ))}
+                </select>
+              </Field>
+              <Field label="Source" htmlFor="qb-source">
+                <select
+                  id="qb-source"
+                  className="form-input"
+                  value={source}
+                  onChange={(e) => setSource(e.target.value)}
+                >
+                  <option value="">All</option>
+                  {Object.entries(taxonomy.sources).map(([key, meta]) => (
+                    <option key={key} value={key}>{meta.name}</option>
+                  ))}
+                </select>
+              </Field>
+              <Field label="Year" htmlFor="qb-year">
+                <input
+                  id="qb-year"
+                  type="number"
+                  className="form-input"
+                  placeholder="Any"
+                  value={year}
+                  onChange={(e) => setYear(e.target.value)}
+                />
+              </Field>
+              <Field label="Medium" htmlFor="qb-medium">
+                <select
+                  id="qb-medium"
+                  className="form-input"
+                  value={medium}
+                  onChange={(e) => setMedium(e.target.value)}
+                >
+                  <option value="">All</option>
+                  {Object.entries(taxonomy.mediums).map(([key, label]) => (
+                    <option key={key} value={key}>{label}</option>
+                  ))}
+                </select>
+              </Field>
             </FormGrid>
+
+            {/* The backlog no other filter can reach: questions imported
+                before the taxonomy existed, or without one. */}
+            <label style={{ display: 'inline-flex', alignItems: 'center', gap: '8px', font: '500 12px var(--font-body)', color: 'var(--tx2)', cursor: 'pointer' }}>
+              <input
+                type="checkbox"
+                checked={unclassified}
+                onChange={(e) => setUnclassified(e.target.checked)}
+              />
+              Unclassified only
+            </label>
 
             <div style={{ display: 'flex', gap: '10px' }}>
               <input
@@ -999,7 +1180,7 @@ export default function AdminQuestions({ csvState, triggerCsvImport, csvJobId })
                 value={search}
                 onChange={(e) => setSearch(e.target.value)}
                 className="form-input"
-                placeholder="Search question text…"
+                placeholder="Search question text or code…"
                 style={{ flex: 1 }}
               />
               <button type="submit" className="btn-secondary" style={{ flex: 'none', padding: '0 18px' }}>
@@ -1140,6 +1321,14 @@ export default function AdminQuestions({ csvState, triggerCsvImport, csvJobId })
                         <span dangerouslySetInnerHTML={renderMath(q.question_text.substring(0, 120))} />
                       </CellTitle>
                       <CellSub>
+                        {/* The code is the one handle that survives leaving
+                            this screen — it is what a reviewer quotes in a
+                            ticket and what `search` also matches on. */}
+                        {q.question_code && (
+                          <span style={{ font: '500 10.5px var(--font-mono)', color: 'var(--tx2)', marginRight: '8px' }}>
+                            {q.question_code}
+                          </span>
+                        )}
                         {q.question_type && q.question_type !== 'single_choice'
                           ? q.question_type.replace('_', ' ')
                           : health.label}

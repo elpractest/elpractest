@@ -57,6 +57,7 @@ const MAP = {
   'circle-check-big': Lucide.CircleCheckBig,
   download: Lucide.Download,
   upload: Lucide.Upload,
+  layers: Lucide.Layers,
   trash: Lucide.Trash2,
   'trash-2': Lucide.Trash2,
   ellipsis: Lucide.Ellipsis,

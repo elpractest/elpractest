@@ -50,6 +50,107 @@ export default function AdminTests() {
     ]
   });
 
+  // ── Door B: import a whole paper ──────────────────────────────────────
+  // The picker below builds a test one question-click at a time, which is fine
+  // for a 10-question sectional and unusable for a 100-question mock. This
+  // uploads the paper instead: a CSV of questions plus a meta block carrying
+  // the pattern. It ALWAYS dry-runs first — the commit writes to the question
+  // bank and the test builder in one transaction, so "what would this do" has
+  // to be answerable before it does it.
+  const [showImport, setShowImport] = useState(false);
+  const [importSeries, setImportSeries] = useState([]);
+  const [importCsv, setImportCsv] = useState(null);
+  const [importMeta, setImportMeta] = useState('');
+  const [importReport, setImportReport] = useState(null);
+  const [importBusy, setImportBusy] = useState(false);
+  const [importError, setImportError] = useState('');
+
+  const fetchImportSeries = async () => {
+    try {
+      const res = await api.get('/api/admin/test-series');
+      setImportSeries(res.data.data || res.data || []);
+    } catch (e) {}
+  };
+
+  const downloadPaperTemplate = async (part) => {
+    try {
+      const res = await api.get(`/api/admin/tests/import-paper/template?part=${part}`, { responseType: 'blob' });
+      const url = URL.createObjectURL(new Blob([res.data]));
+      const link = document.createElement('a');
+      link.href = url;
+      link.download = part === 'meta' ? 'paper_import_meta.json' : 'paper_import_sample.csv';
+      link.click();
+      URL.revokeObjectURL(url);
+    } catch (e) {
+      setImportError('Could not download the template.');
+    }
+  };
+
+  const submitPaper = async (dryRun) => {
+    if (!importCsv) { setImportError('Choose a paper CSV first.'); return; }
+
+    setImportBusy(true);
+    setImportError('');
+
+    const body = new FormData();
+    body.append('file', importCsv);
+    body.append('meta', importMeta);
+    body.append('dry_run', dryRun ? '1' : '0');
+
+    try {
+      const res = await api.post('/api/admin/tests/import-paper', body, {
+        headers: { 'Content-Type': 'multipart/form-data' },
+      });
+      setImportReport(res.data);
+
+      if (!dryRun) {
+        setSuccess(res.data.message);
+        setShowImport(false);
+        setImportReport(null);
+        setImportCsv(null);
+        fetchTests();
+      }
+    } catch (err) {
+      const data = err.response?.data;
+      // A failed commit still carries the full report, so show it rather than
+      // collapsing a per-row problem into one unhelpful banner.
+      if (data?.errors && Array.isArray(data.errors)) {
+        setImportReport(data);
+      } else if (data?.errors) {
+        setImportError(Object.values(data.errors).flat().join(' '));
+      } else {
+        setImportError(data?.message || 'The import failed.');
+      }
+    } finally {
+      setImportBusy(false);
+    }
+  };
+
+  const openImport = () => {
+    setImportError('');
+    setImportReport(null);
+    setImportCsv(null);
+    setImportMeta(JSON.stringify({
+      title: 'UGC NET 2024 Paper 1 — Shift 2',
+      test_series_id: null,
+      type: 'mock',
+      duration_minutes: 60,
+      exam_code: 'UGCNET',
+      paper: 'P1',
+      source: 'pyq',
+      year: 2024,
+      shift: '2',
+      medium: 'en',
+      marks: 2,
+      negative_marks: 0,
+      auto_approve: false,
+      instructions: 'All questions are compulsory.',
+      sections: [{ title: 'Teaching Aptitude' }],
+    }, null, 2));
+    fetchImportSeries();
+    setShowImport(true);
+  };
+
   // Current active section index inside form editor
   const [activeSectionIdx, setActiveSectionIdx] = useState(0);
 
@@ -342,6 +443,10 @@ export default function AdminTests() {
         title="Tests manager"
         subtitle="A paper is its sections: each carries its own clock, its own cut-off, and the questions you pick for it."
       >
+        <button type="button" onClick={openImport} className="btn-secondary">
+          <Icon name="upload" size={16} strokeWidth={2.4} />
+          Import a paper
+        </button>
         <button type="button" onClick={startNewTest} className="btn-primary">
           <Icon name="plus" size={16} strokeWidth={2.4} />
           New test
@@ -1012,6 +1117,160 @@ export default function AdminTests() {
                 )}
               </FormSection>
             </section>
+          </div>
+        </Modal>
+      )}
+      {/* ── Door B: import a whole paper ─────────────────────────────── */}
+      {showImport && (
+        <Modal
+          title="Import a paper"
+          onClose={() => setShowImport(false)}
+          footer={
+            <>
+              <button type="button" className="btn-secondary" onClick={() => setShowImport(false)}>
+                Cancel
+              </button>
+              <button
+                type="button"
+                className="btn-secondary"
+                disabled={importBusy || !importCsv}
+                onClick={() => submitPaper(true)}
+              >
+                {importBusy ? 'Checking…' : 'Dry run'}
+              </button>
+              <button
+                type="button"
+                className="btn-primary"
+                /* Commit is deliberately gated on a CLEAN dry run: this writes
+                   to the question bank and the test builder together, and a
+                   half-imported paper is far more work to unpick than to
+                   re-upload. */
+                disabled={importBusy || !importReport?.ok}
+                onClick={() => submitPaper(false)}
+              >
+                {importBusy ? 'Importing…' : 'Create the paper'}
+              </button>
+            </>
+          }
+        >
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
+            <Notice tone="info" icon="info">
+              One upload becomes one draft paper <em>and</em> adds every question to the bank, classified
+              by the exam facets in the meta block. Row order is question order. Nothing is written until
+              a dry run comes back clean.
+            </Notice>
+
+            <FormSection title="The file">
+              <div style={{ display: 'flex', gap: '10px', flexWrap: 'wrap', alignItems: 'center' }}>
+                <label className="btn-secondary" style={{ cursor: 'pointer' }}>
+                  {importCsv ? importCsv.name : 'Choose paper CSV'}
+                  <input
+                    type="file"
+                    accept=".csv"
+                    style={{ display: 'none' }}
+                    onChange={(e) => { setImportCsv(e.target.files?.[0] || null); setImportReport(null); }}
+                  />
+                </label>
+                <button type="button" className="btn-secondary" onClick={() => downloadPaperTemplate('csv')}>
+                  <Icon name="download" size={14} /> Sample CSV
+                </button>
+                <button type="button" className="btn-secondary" onClick={() => downloadPaperTemplate('meta')}>
+                  <Icon name="download" size={14} /> Sample meta
+                </button>
+              </div>
+              <p style={{ margin: '10px 0 0', font: '400 12px/1.6 var(--font-body)', color: 'var(--muted)' }}>
+                Columns: <code style={{ font: '500 11px var(--font-mono)' }}>section</code> (must match a
+                section declared in the meta), <code style={{ font: '500 11px var(--font-mono)' }}>question_text</code>,
+                <code style={{ font: '500 11px var(--font-mono)' }}> option_a…option_f</code>,
+                <code style={{ font: '500 11px var(--font-mono)' }}> correct_option</code>. Optional:
+                serial, question_type, subject, topic, difficulty, marks, negative_marks, explanation,
+                passage_ref, and the image URL columns.
+              </p>
+            </FormSection>
+
+            <FormSection title="Scope">
+              <Field label="Test series" htmlFor="imp-series">
+                <select
+                  id="imp-series"
+                  className="form-input"
+                  onChange={(e) => {
+                    /* Patch the id straight into the meta the operator is
+                       editing, so the dropdown and the JSON cannot disagree. */
+                    try {
+                      const meta = JSON.parse(importMeta);
+                      meta.test_series_id = e.target.value ? Number(e.target.value) : null;
+                      setImportMeta(JSON.stringify(meta, null, 2));
+                    } catch (err) {
+                      setImportError('Fix the meta JSON before choosing a series.');
+                    }
+                  }}
+                >
+                  <option value="">Choose a series…</option>
+                  {importSeries.map((series) => (
+                    <option key={series.id} value={series.id}>{series.title}</option>
+                  ))}
+                </select>
+              </Field>
+              <p style={{ margin: '8px 0 0', font: '400 12px/1.6 var(--font-body)', color: 'var(--muted)' }}>
+                A paper must belong to a series or a course. An unscoped test is visible to every user
+                on the platform, so the import refuses one.
+              </p>
+            </FormSection>
+
+            <FormSection title="Meta">
+              <textarea
+                className="form-input"
+                rows={16}
+                spellCheck={false}
+                value={importMeta}
+                onChange={(e) => { setImportMeta(e.target.value); setImportReport(null); }}
+                style={{ font: '400 12px/1.6 var(--font-mono)', resize: 'vertical' }}
+              />
+            </FormSection>
+
+            {importError && <Notice tone="danger" icon="alert">{importError}</Notice>}
+
+            {importReport && (
+              <FormSection title={importReport.ok ? 'Dry run — ready' : 'Dry run — problems found'}>
+                {importReport.ok ? (
+                  <Notice tone="success" icon="check-circle">
+                    <strong>{importReport.summary?.questions}</strong> questions,{' '}
+                    <strong>{importReport.summary?.total_marks}</strong> marks,{' '}
+                    <strong>{importReport.summary?.sections}</strong> sections
+                    {importReport.summary?.duration_minutes
+                      ? `, ${importReport.summary.duration_minutes} minutes`
+                      : ''}.
+                  </Notice>
+                ) : (
+                  <Notice tone="danger" icon="alert">
+                    {importReport.errors?.length} problem(s). Nothing has been created.
+                  </Notice>
+                )}
+
+                {importReport.sections && Object.keys(importReport.sections).length > 0 && (
+                  <ul style={{ margin: '10px 0 0', paddingLeft: '18px', font: '400 12.5px/1.7 var(--font-body)', color: 'var(--tx2)' }}>
+                    {Object.entries(importReport.sections).map(([title, count]) => (
+                      <li key={title}>{title} — <Num>{count}</Num> question(s)</li>
+                    ))}
+                  </ul>
+                )}
+
+                {importReport.errors?.length > 0 && (
+                  <ul style={{ margin: '10px 0 0', paddingLeft: '18px', font: '400 12.5px/1.7 var(--font-body)', color: 'var(--danger)' }}>
+                    {importReport.errors.slice(0, 25).map((e, i) => (
+                      <li key={i}>{e.row ? `Row ${e.row}: ` : ''}{e.message}</li>
+                    ))}
+                    {importReport.errors.length > 25 && <li>…and {importReport.errors.length - 25} more.</li>}
+                  </ul>
+                )}
+
+                {importReport.warnings?.length > 0 && (
+                  <ul style={{ margin: '10px 0 0', paddingLeft: '18px', font: '400 12.5px/1.7 var(--font-body)', color: 'var(--muted)' }}>
+                    {importReport.warnings.map((w, i) => <li key={i}>{w}</li>)}
+                  </ul>
+                )}
+              </FormSection>
+            )}
           </div>
         </Modal>
       )}

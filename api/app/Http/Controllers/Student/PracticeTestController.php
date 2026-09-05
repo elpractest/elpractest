@@ -145,6 +145,12 @@ class PracticeTestController extends Controller
             'topics' => ['nullable', 'array', 'max:50'],
             'topics.*' => ['string', 'max:255'],
             'difficulty' => ['nullable', 'string', Rule::in(['easy', 'medium', 'hard'])],
+            // Taxonomy narrowing. All optional: omit them and the console
+            // behaves exactly as it did before the bank was classified.
+            'exam_code' => ['nullable', 'string', Rule::in(array_keys(config('exams.registry')))],
+            'paper' => ['nullable', 'string', 'max:16'],
+            'source' => ['nullable', 'string', Rule::in(array_keys(config('exams.sources')))],
+            'year' => ['nullable', 'integer', 'min:1950', 'max:' . ((int) date('Y') + 1)],
             'question_count' => $sizeRules,
             'duration_minutes' => $durationRules,
         ]);
@@ -154,6 +160,10 @@ class PracticeTestController extends Controller
             'subject' => $validated['subject'] ?? null,
             'topics' => $validated['topics'] ?? null,
             'difficulty' => $validated['difficulty'] ?? null,
+            'exam_code' => $validated['exam_code'] ?? null,
+            'paper' => $validated['paper'] ?? null,
+            'source' => $validated['source'] ?? null,
+            'year' => $validated['year'] ?? null,
             'question_count' => (int) ($validated['question_count'] ?? 0),
             'duration_minutes' => (int) ($validated['duration_minutes'] ?? 0),
         ];

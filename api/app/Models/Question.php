@@ -32,6 +32,14 @@ class Question extends Model
         'numeric_answer',
         'numeric_tolerance',
         'passage_id',
+        'exam_code',
+        'paper',
+        'source',
+        'year',
+        'shift',
+        'medium',
+        'serial',
+        'question_code',
     ];
 
     /** Formats real SSC/Banking/RRB papers actually use. */
@@ -60,6 +68,22 @@ class Question extends Model
         self::STATUS_RETIRED,
     ];
 
+    /**
+     * Where a question came from. `pyq` is the one that carries a real year and
+     * shift; the other two are authored in house. Keys mirror config/exams.php,
+     * which also holds the two-letter form used in question_code.
+     */
+    public const SOURCE_PYQ = 'pyq';
+    public const SOURCE_MOCK = 'mock';
+    public const SOURCE_PRACTICE = 'practice';
+
+    /**
+     * Papers are set in more than one language, and the same question in two
+     * mediums is two ITEMS, not one row with a translation: the options, the
+     * key position and the item statistics all differ per medium.
+     */
+    public const MEDIUM_DEFAULT = 'en';
+
     /** Below this many attempts, item statistics are too noisy to act on. */
     public const MIN_STATS_SAMPLE = 30;
 
@@ -84,6 +108,8 @@ class Question extends Model
             'stats_sample_size' => 'integer',
             'numeric_answer' => 'decimal:4',
             'numeric_tolerance' => 'decimal:4',
+            'year' => 'integer',
+            'serial' => 'integer',
         ];
     }
 
@@ -141,6 +167,73 @@ class Question extends Model
     public function scopeByStatus($query, string $status)
     {
         return $query->where('status', $status);
+    }
+
+    // ── Taxonomy scopes ────────────────────────────────────────────
+    //
+    // One place that knows how a taxonomy filter is spelled, so the admin bank
+    // listing, the paper importer and a question pool's match query cannot
+    // drift apart the way the exam dropdowns once did.
+
+    public function scopeByExam($query, string $examCode)
+    {
+        return $query->where('exam_code', strtoupper($examCode));
+    }
+
+    public function scopeByPaper($query, string $paper)
+    {
+        return $query->where('paper', strtoupper($paper));
+    }
+
+    public function scopeBySource($query, string $source)
+    {
+        return $query->where('source', strtolower($source));
+    }
+
+    public function scopeByYear($query, int $year)
+    {
+        return $query->where('year', $year);
+    }
+
+    public function scopeByShift($query, string $shift)
+    {
+        return $query->where('shift', $shift);
+    }
+
+    public function scopeByMedium($query, string $medium)
+    {
+        return $query->where('medium', strtolower($medium));
+    }
+
+    /**
+     * Apply whichever taxonomy facets are present, ignoring the rest.
+     *
+     * A null facet means "any", not "is null" — a pool scoped to UGCNET with no
+     * year set covers every year of UGC NET, which is the reading an operator
+     * expects from leaving a filter blank.
+     */
+    public function scopeMatchingFacets($query, array $facets)
+    {
+        foreach (['exam_code' => 'byExam', 'paper' => 'byPaper', 'source' => 'bySource',
+                  'shift' => 'byShift', 'medium' => 'byMedium'] as $key => $scope) {
+            if (!empty($facets[$key])) {
+                $query->{$scope}((string) $facets[$key]);
+            }
+        }
+
+        if (!empty($facets['year'])) {
+            $query->byYear((int) $facets['year']);
+        }
+
+        return $query;
+    }
+
+    /** The exam's display name, from the registry. */
+    public function getExamNameAttribute(): ?string
+    {
+        return $this->exam_code
+            ? config("exams.registry.{$this->exam_code}.name", $this->exam_code)
+            : null;
     }
 
     /** Usable in a live test: approved AND still active. */

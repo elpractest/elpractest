@@ -104,6 +104,15 @@ class SettingsController extends Controller
         // forms had already drifted apart. See config/exams.php.
         $settings = $settings->put('exam_categories', config('exams.categories'));
 
+        // The question bank's finer taxonomy, served for the same reason the
+        // categories are: the admin's exam/paper/medium dropdowns must offer
+        // exactly what the API will accept. Registry entries carry their own
+        // papers, so choosing an exam can narrow the paper list client-side
+        // without a second round trip.
+        $settings = $settings->put('exam_registry', config('exams.registry'));
+        $settings = $settings->put('question_sources', config('exams.sources'));
+        $settings = $settings->put('question_mediums', config('exams.mediums'));
+
         return response()->json(['settings' => $settings]);
     }
 }
