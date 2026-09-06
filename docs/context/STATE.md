@@ -2,7 +2,7 @@
 
 Where Practest work stopped. Keep short and current — history goes in JOURNAL.md.
 
-_Last updated: 2026-09-05_
+_Last updated: 2026-09-06_
 
 ## In flight
 
@@ -41,27 +41,27 @@ before changing any of it. The short version:
 
 ## Next step
 
-1. **Import a real paper through Door B.** The bank is still empty on prod —
-   this is now the fastest path to a non-sparse site, and it replaces what used
-   to be "seed content by hand". Templates download from inside the admin
-   import modal, or `GET /api/admin/tests/import-paper/template?part=csv|meta`.
-2. **Check the exam registry matches the real catalogue.** `config/exams.php`
-   ships with 20 exams that were chosen, not sourced from the owner. It is now
-   the live vocabulary for every admin dropdown. Correcting it is a config edit
-   + deploy (no migration) — and much cheaper *before* content is classified
-   against the wrong codes.
-3. Set `FIREBASE_CREDENTIALS_JSON` + `FIREBASE_PROJECT_ID` on the Coolify api
+1. **Import real papers through Door B.** The bank is still empty on prod — this
+   is now the fastest path to a non-sparse site, and it replaces what used to be
+   "seed content by hand". The full runbook, including the review and publish
+   steps that come after the import, is in
+   **[docs/DOOR-B-RUNBOOK.md](../DOOR-B-RUNBOOK.md)**.
+2. Set `FIREBASE_CREDENTIALS_JSON` + `FIREBASE_PROJECT_ID` on the Coolify api
    container — FCM push backend has been live for weeks, just never configured.
    Project id under "Prod facts".
-4. Ship a release Flutter build once (3) is done — the Android client's FCM +
+3. Ship a release Flutter build once (2) is done — the Android client's FCM +
    native Google sign-in code is complete and committed but has never sent or
    received a real push on a device.
 
 ## Open / blocked
 
-- **Nothing blocked.** Owner decisions: whether the shipped exam registry is the
-  right list; when to configure Firebase creds; whether/when to cut a Flutter
-  release build.
+- **Nothing blocked.** Owner decisions: when to configure Firebase creds;
+  whether/when to cut a Flutter release build.
+- **The exam registry is settled** (`3a2c0b3`, 2026-09-06): five exams, confirmed
+  by the owner. Adding one later is a config edit + deploy, no migration.
+  RENAMING or removing one is only free while no content carries it — a
+  question's `question_code` is built from its exam code, so a rename after
+  import leaves existing questions pointing at an exam that no longer exists.
 - **Never verified live:** real FCM device send (no service account configured);
   Flutter token-registration and push-tap deep-link on an actual device; the two
   FCM migrations have never run on prod.
@@ -93,6 +93,12 @@ before changing any of it. The short version:
   `GOOGLE_CLIENT_ID` is `904862810932-…`, a different Google project — leave it
   alone. SHA-1 `E1:F1:54:75:9E:E5:F2:5A:9B:BC:50:88:9A:35:C8:25:C2:03:6E:4E` is
   registered; debug/release share it (no release keystore yet).
+- **Exam registry (`config/exams.php`) — the five exams taught:** `SSCCGL`
+  (T1/T2), `SSCCHSL` (T1/T2), `UGCNET` (P1/P2), `RRBNTPC` (CBT1/CBT2),
+  `RRBGROUPD` (no papers, single CBT). Both railway exams sit under the coarse
+  category `RRB`, not `Railways`, so the Store keeps them together. Papers are
+  VALIDATED on import: a row claiming a paper the exam does not declare is
+  rejected with the expected list.
 - **Store rule:** a course lists in the Store only when
   `Course.is_published=true` AND it has an `is_active` batch with `price_paise`
   set.

@@ -50,6 +50,7 @@ class PaperImportService
         $warnings = [];
         $duplicates = [];
         $perSection = [];
+        $namedSections = [];
         $seenCodes = [];
         $totalMarks = 0.0;
 
@@ -58,6 +59,40 @@ class PaperImportService
 
         if ($rows === []) {
             $errors[] = ['row' => 0, 'field' => 'file', 'message' => 'The paper has no question rows.'];
+        }
+
+        // Check the PAPER's own facets once, before touching a single row.
+        //
+        // These live in the meta block, so a typo there is one mistake, not one
+        // per row — and reporting it per row buries every genuinely row-specific
+        // problem under a hundred identical lines. Returning early also stops
+        // the report claiming a section "has no rows" when its rows merely
+        // failed this same check.
+        try {
+            $this->codes->resolve([
+                'exam_code' => $meta['exam_code'] ?? null,
+                'paper' => $meta['paper'] ?? null,
+                'source' => $meta['source'] ?? null,
+                'year' => $meta['year'] ?? null,
+                'shift' => $meta['shift'] ?? null,
+                'medium' => $meta['medium'] ?? null,
+                'serial' => 1,
+            ]);
+        } catch (\InvalidArgumentException $e) {
+            return [
+                'ok' => false,
+                'errors' => [['row' => 0, 'field' => 'meta', 'message' => $e->getMessage()]],
+                'duplicates' => [],
+                'warnings' => [],
+                'summary' => [
+                    'title' => $meta['title'] ?? null,
+                    'questions' => 0,
+                    'total_marks' => 0,
+                    'sections' => count($sectionTitles),
+                    'duration_minutes' => $meta['duration_minutes'] ?? null,
+                ],
+                'sections' => [],
+            ];
         }
 
         foreach ($rows as $index => $row) {
@@ -77,6 +112,46 @@ class PaperImportService
                     'message' => "Section '{$section}' is not declared in the meta file.",
                 ];
                 continue;
+            }
+
+            // Counted before the row's own checks, so "this section has no
+            // rows" stays a statement about the FILE rather than a side effect
+            // of those rows failing something unrelated.
+            $namedSections[$section] = true;
+
+            // Serial defaults to the row's position in the file, which is what
+            // makes "one upload of a real paper" work without renumbering by
+            // hand: row order IS question order on the paper.
+            //
+            // Deliberately checked BEFORE the row's content checks. A serial
+            // collision is a fact about two rows' positions, independent of
+            // whether either row's options are valid — so a row that is going
+            // to fail for some other reason must still register its serial, or
+            // the operator fixes the options, re-runs, and only then discovers
+            // the duplicate. The dry run exists to say everything in one pass.
+            try {
+                $taxonomy = $this->codes->resolve($this->facetsFor($meta, $row, $index));
+            } catch (\InvalidArgumentException $e) {
+                $errors[] = ['row' => $rowNumber, 'field' => 'taxonomy', 'message' => $e->getMessage()];
+                continue;
+            }
+
+            $code = $taxonomy['question_code'];
+
+            if ($code !== null) {
+                if (isset($seenCodes[$code])) {
+                    $errors[] = [
+                        'row' => $rowNumber,
+                        'field' => 'serial',
+                        'message' => "Row {$seenCodes[$code]} already uses {$code} in this same file.",
+                    ];
+                    continue;
+                }
+                $seenCodes[$code] = $rowNumber;
+
+                if ($this->codes->isTaken($code)) {
+                    $duplicates[] = ['row' => $rowNumber, 'question_code' => $code];
+                }
             }
 
             if (trim((string) ($row['question_text'] ?? '')) === '') {
@@ -108,34 +183,6 @@ class PaperImportService
                 continue;
             }
 
-            // Serial defaults to the row's position in the file, which is what
-            // makes "one upload of a real paper" work without renumbering by
-            // hand: row order IS question order on the paper.
-            try {
-                $taxonomy = $this->codes->resolve($this->facetsFor($meta, $row, $index));
-            } catch (\InvalidArgumentException $e) {
-                $errors[] = ['row' => $rowNumber, 'field' => 'taxonomy', 'message' => $e->getMessage()];
-                continue;
-            }
-
-            $code = $taxonomy['question_code'];
-
-            if ($code !== null) {
-                if (isset($seenCodes[$code])) {
-                    $errors[] = [
-                        'row' => $rowNumber,
-                        'field' => 'serial',
-                        'message' => "Row {$seenCodes[$code]} already uses {$code} in this same file.",
-                    ];
-                    continue;
-                }
-                $seenCodes[$code] = $rowNumber;
-
-                if ($this->codes->isTaken($code)) {
-                    $duplicates[] = ['row' => $rowNumber, 'question_code' => $code];
-                }
-            }
-
             $marks = $this->marksFor($meta, $row, $section);
             $totalMarks += $marks['marks'];
 
@@ -153,7 +200,7 @@ class PaperImportService
         }
 
         foreach ($sectionTitles as $title) {
-            if (!isset($perSection[$title])) {
+            if (!isset($namedSections[$title])) {
                 $warnings[] = "Section '{$title}' is declared in the meta file but has no rows.";
             }
         }

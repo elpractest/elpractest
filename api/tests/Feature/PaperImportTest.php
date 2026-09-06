@@ -223,11 +223,52 @@ class PaperImportTest extends TestCase
         );
     }
 
-    public function test_an_unknown_paper_for_the_exam_is_rejected(): void
+    /**
+     * A bad facet in the meta is ONE mistake, so it must be reported once — not
+     * once per row. Found by walking a real paper through: a single typo'd
+     * paper produced an error line for every row in the file, burying the
+     * genuinely row-specific problems underneath it.
+     */
+    public function test_an_unknown_paper_for_the_exam_is_reported_once_not_per_row(): void
     {
-        $this->importPaper($this->meta(['paper' => 'P9']), $this->csv(), dryRun: true)
+        $response = $this->importPaper($this->meta(['paper' => 'P9']), $this->csv(), dryRun: true)
             ->assertOk()
             ->assertJsonPath('ok', false);
+
+        $errors = $response->json('errors');
+
+        $this->assertCount(1, $errors, 'a paper-level mistake must not be reported per row');
+        $this->assertSame('meta', $errors[0]['field']);
+        $this->assertStringContainsString("has no paper 'P9'", $errors[0]['message']);
+        $this->assertStringContainsString('expected: P1, P2', $errors[0]['message']);
+
+        // And it must not also claim the sections are empty — their rows were
+        // never reached, which is not the same as the file omitting them.
+        $this->assertSame([], $response->json('warnings'));
+    }
+
+    /**
+     * The inverse: a section declared in the meta that genuinely has no rows is
+     * still worth warning about, and must survive the fix above.
+     */
+    public function test_a_declared_section_with_no_rows_is_warned_about(): void
+    {
+        $meta = $this->meta([
+            'sections' => [
+                ['title' => 'Teaching Aptitude'],
+                ['title' => 'Research Aptitude'],
+                ['title' => 'General Awareness'],
+            ],
+        ]);
+
+        $response = $this->importPaper($meta, $this->csv(), dryRun: true)
+            ->assertOk()
+            ->assertJsonPath('ok', true);
+
+        $this->assertStringContainsString(
+            "Section 'General Awareness' is declared in the meta file but has no rows",
+            implode(' ', $response->json('warnings'))
+        );
     }
 
     public function test_inline_passages_are_created_and_linked(): void
@@ -334,6 +375,34 @@ class PaperImportTest extends TestCase
             'already uses',
             collect($response->json('errors'))->pluck('message')->implode(' ')
         );
+    }
+
+    /**
+     * A dry run exists to say everything in one pass. A serial collision is a
+     * fact about two rows' positions, so it must surface even when one of those
+     * rows also fails a content check — otherwise the operator fixes the
+     * options, re-runs, and only then learns about the duplicate.
+     */
+    public function test_a_serial_collision_surfaces_even_when_a_row_also_fails_a_content_check(): void
+    {
+        $csv = $this->csv(
+            "section,serial,question_text,option_a,option_b,option_c,option_d,correct_option
+"
+            // Row 2 has a broken key AND shares row 3's serial.
+            . "Teaching Aptitude,7,\"Bad key\",A,B,C,D,a|b
+"
+            . "Teaching Aptitude,7,\"Same serial\",A,B,C,D,a
+"
+        );
+
+        $response = $this->importPaper($this->meta(), $csv, dryRun: true)
+            ->assertOk()
+            ->assertJsonPath('ok', false);
+
+        $messages = collect($response->json('errors'))->pluck('message')->implode(' | ');
+
+        $this->assertStringContainsString('exactly one option', $messages);
+        $this->assertStringContainsString('already uses', $messages, 'the collision must not hide behind the key error');
     }
 
     public function test_a_student_cannot_import_a_paper(): void
