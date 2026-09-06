@@ -60,26 +60,19 @@ return [
     */
 
     'registry' => [
-        'UGCNET' => ['name' => 'UGC NET', 'category' => 'UGC NET', 'papers' => ['P1', 'P2']],
+        // The owner's actual catalogue, 2026-09-06. Ordered as they teach it,
+        // because this order is what the admin dropdowns show.
+        //
+        // Papers are VALIDATED on import: once an exam declares its list, a row
+        // claiming any other paper is rejected. So this reflects the exams as
+        // they are actually conducted, not every division they have ever had.
         'SSCCGL' => ['name' => 'SSC CGL', 'category' => 'SSC', 'papers' => ['T1', 'T2']],
         'SSCCHSL' => ['name' => 'SSC CHSL', 'category' => 'SSC', 'papers' => ['T1', 'T2']],
-        'SSCMTS' => ['name' => 'SSC MTS', 'category' => 'SSC', 'papers' => ['T1', 'T2']],
-        'SSCGD' => ['name' => 'SSC GD Constable', 'category' => 'SSC', 'papers' => []],
-        'IBPSPO' => ['name' => 'IBPS PO', 'category' => 'Banking', 'papers' => ['PRE', 'MAIN']],
-        'IBPSCLERK' => ['name' => 'IBPS Clerk', 'category' => 'Banking', 'papers' => ['PRE', 'MAIN']],
-        'SBIPO' => ['name' => 'SBI PO', 'category' => 'Banking', 'papers' => ['PRE', 'MAIN']],
-        'SBICLERK' => ['name' => 'SBI Clerk', 'category' => 'Banking', 'papers' => ['PRE', 'MAIN']],
+        'UGCNET' => ['name' => 'UGC NET', 'category' => 'UGC NET', 'papers' => ['P1', 'P2']],
         'RRBNTPC' => ['name' => 'RRB NTPC', 'category' => 'RRB', 'papers' => ['CBT1', 'CBT2']],
-        'RRBGROUPD' => ['name' => 'RRB Group D', 'category' => 'RRB', 'papers' => []],
-        'RRBALP' => ['name' => 'RRB ALP', 'category' => 'RRB', 'papers' => ['CBT1', 'CBT2']],
-        'UPSCCSE' => ['name' => 'UPSC Civil Services', 'category' => 'UPSC', 'papers' => ['GS1', 'CSAT', 'MAIN']],
-        'NEETUG' => ['name' => 'NEET UG', 'category' => 'NEET', 'papers' => []],
-        'JEEMAIN' => ['name' => 'JEE Main', 'category' => 'JEE', 'papers' => ['P1', 'P2']],
-        'JEEADV' => ['name' => 'JEE Advanced', 'category' => 'JEE', 'papers' => ['P1', 'P2']],
-        'STATEPCS' => ['name' => 'State PCS', 'category' => 'State PCS', 'papers' => ['PRE', 'MAIN']],
-        'CDS' => ['name' => 'CDS', 'category' => 'Defence', 'papers' => []],
-        'NDA' => ['name' => 'NDA', 'category' => 'Defence', 'papers' => ['MATH', 'GAT']],
-        'OTHER' => ['name' => 'Other', 'category' => 'Other', 'papers' => []],
+        // Single CBT, no divisions — so its questions carry no `paper` at all
+        // and their codes simply omit that segment.
+        'RRBGROUPD' => ['name' => 'Railway Group D', 'category' => 'RRB', 'papers' => []],
     ],
 
     /*
